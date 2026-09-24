@@ -30,14 +30,14 @@
     background: var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-body);
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
   @media (min-width: 768px) {
     html {
-      font-size: 18px;
+      font-size: 16px;
     }
   }
 
@@ -56,25 +56,25 @@
   }
 
   h1 {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 800;
   }
   h2 {
-    font-size: 30px;
+    font-size: 24px;
   }
   h3 {
-    font-size: 24px;
+    font-size: 19px;
   }
 
   @media (min-width: 768px) {
     h1 {
-      font-size: 56px;
-    }
-    h2 {
       font-size: 40px;
     }
-    h3 {
+    h2 {
       font-size: 28px;
+    }
+    h3 {
+      font-size: 20px;
     }
   }
 
@@ -90,8 +90,8 @@
     border-radius: var(--radius-control);
     color: var(--color-ink);
     font: inherit;
-    min-height: 44px;
-    padding: 0 12px;
+    min-height: 40px;
+    padding: 0 10px;
     width: 100%;
   }
 
@@ -110,7 +110,7 @@
 
 @utility label {
   font-family: var(--font-label);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -118,11 +118,11 @@
 
 @utility container-dk {
   margin-inline: auto;
-  max-width: 1200px;
+  max-width: 1080px;
   padding-inline: 16px;
   width: 100%;
 
   @media (min-width: 768px) {
-    padding-inline: 32px;
+    padding-inline: 24px;
   }
 }

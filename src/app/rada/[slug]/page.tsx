@@ -28,19 +28,19 @@ export default async function LinePage({ params, searchParams }: Props) {
   const products = (await getProductsByLine(slug)).filter((p) => !animal || p.animals.includes(animal));
 
   return (
-    <div className="container-dk py-10 md:py-14">
+    <div className="container-dk py-6 md:py-10">
       <p className="label mb-2 text-brick-text">Řada</p>
       <h1>{line.name}</h1>
-      <p className="mt-4 max-w-2xl text-muted">{line.description}</p>
+      <p className="mt-2 max-w-2xl text-muted">{line.description}</p>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3">
         <LineFilters active={animal} />
         <span className="text-sm text-muted">
           {products.length} {products.length === 1 ? "produkt" : products.length < 5 ? "produkty" : "produktů"}
         </span>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-5">
         <ProductGrid products={products} />
       </div>
     </div>

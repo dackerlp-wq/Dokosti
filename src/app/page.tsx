@@ -14,15 +14,15 @@ export default async function HomePage() {
     <>
       {/* Hero: jediná zelená sekce na stránce (kromě hlavičky a patičky). */}
       <section className="bg-green text-cream">
-        <div className="container-dk grid items-center gap-10 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
+        <div className="container-dk grid items-center gap-8 py-10 md:grid-cols-[1.2fr_1fr] md:py-14">
           <div>
-            <p className="label mb-4 text-cream/80">Syrové krmivo pro psy a kočky</p>
+            <p className="label mb-3 text-cream/80">Syrové krmivo pro psy a kočky</p>
             <h1>Poctivé do kosti.</h1>
-            <p className="mt-5 max-w-lg text-lg text-cream/90">
+            <p className="mt-4 max-w-md text-cream/90">
               Hotové BARF mixy, masité kosti a doplňky od ověřených výrobců. Víme, co je v každém balíčku, a
               řekneme to na rovinu.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <ButtonLink href="/rada/zaklad" variant="action">
                 Vybrat krmivo
               </ButtonLink>
@@ -32,7 +32,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="hidden justify-center md:flex">
-            <Logo variant="znak-negativ" width={280} priority />
+            <Logo variant="znak-negativ" width={200} priority />
           </div>
         </div>
       </section>
@@ -48,11 +48,11 @@ export default async function HomePage() {
               <Link
                 key={slug}
                 href={`/rada/${slug}`}
-                className="group flex flex-col rounded-[var(--radius-card)] border border-line bg-paper p-6 transition-colors hover:border-green"
+                className="group flex flex-col rounded-[var(--radius-card)] border border-line bg-paper p-4 transition-colors hover:border-green"
               >
                 <span className="label text-brick-text">Řada</span>
                 <h3 className="mt-1 group-hover:underline">{line.name}</h3>
-                <p className="mt-2 text-muted">{line.tagline}</p>
+                <p className="mt-1 text-sm text-muted">{line.tagline}</p>
               </Link>
             );
           })}
@@ -77,7 +77,7 @@ export default async function HomePage() {
             Po celé ČR v polystyrenu se suchým ledem. Posíláme na začátku týdne.
           </Feature>
         </div>
-        <div className="mt-8">
+        <div className="mt-6">
           <ButtonLink href="/doprava" variant="secondary">
             Podrobnosti o doručení
           </ButtonLink>
@@ -86,10 +86,10 @@ export default async function HomePage() {
 
       <Section tone="paper">
         <div className="grid items-center gap-8 md:grid-cols-[1fr_1.4fr]">
-          <Logo variant="barevne" width={280} />
+          <Logo variant="barevne" width={220} />
           <div>
             <SectionHeading eyebrow="O nás" title="Prodejna, ne sklad" />
-            <p className="-mt-4 text-muted">
+            <p className="-mt-2 text-muted">
               Jsme Dvořák a Kostová. BARF krmíme vlastní zvířata a víme, že začátky bývají zmatek. Proto v
               prodejně poradíme, spočítáme dávku a nepřemlouváme. BARF není pro každého, a to je v pořádku.
             </p>
@@ -107,10 +107,10 @@ export default async function HomePage() {
 
 function Feature({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-6">
-      <div className="mb-3 text-green [&_svg]:h-8 [&_svg]:w-8">{icon}</div>
-      <h3 className="text-[22px]">{title}</h3>
-      <p className="mt-2 text-muted">{children}</p>
+    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <div className="mb-2 text-green [&_svg]:h-6 [&_svg]:w-6">{icon}</div>
+      <h3>{title}</h3>
+      <p className="mt-1 text-sm text-muted">{children}</p>
     </div>
   );
 }

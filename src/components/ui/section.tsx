@@ -17,7 +17,7 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`${tones[tone]} py-12 md:py-16 ${className}`}>
+    <section className={`${tones[tone]} py-8 md:py-12 ${className}`}>
       <div className="container-dk">{children}</div>
     </section>
   );
@@ -33,10 +33,10 @@ export function SectionHeading({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-8 max-w-2xl">
+    <div className="mb-5 max-w-2xl">
       {eyebrow && <p className="label mb-2 text-brick-text">{eyebrow}</p>}
       <h2>{title}</h2>
-      {children && <p className="mt-3 text-muted">{children}</p>}
+      {children && <p className="mt-2 text-muted">{children}</p>}
     </div>
   );
 }

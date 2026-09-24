@@ -34,8 +34,8 @@ export default async function ProductPage({ params }: Props) {
     .slice(0, 4);
 
   return (
-    <div className="container-dk py-10 md:py-14">
-      <nav aria-label="Drobečková navigace" className="label mb-6 flex flex-wrap gap-2 text-[13px] text-muted">
+    <div className="container-dk py-6 md:py-10">
+      <nav aria-label="Drobečková navigace" className="label mb-4 flex flex-wrap gap-2 text-[11px] text-muted">
         <Link href="/" className="hover:text-green hover:underline">
           Úvod
         </Link>
@@ -47,13 +47,13 @@ export default async function ProductPage({ params }: Props) {
         <span className="text-ink">{product.variant}</span>
       </nav>
 
-      <div className="grid gap-8 md:grid-cols-2 md:gap-12">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,420px)_1fr] md:gap-10">
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-3">
           <ProductImage product={product} sizes="(min-width: 768px) 50vw, 100vw" />
         </div>
 
         <div>
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-1.5">
             <Badge kind={product.inStock ? "skladem" : "neutral"}>
               {product.inStock ? "Skladem" : "Momentálně není"}
             </Badge>
@@ -65,34 +65,34 @@ export default async function ProductPage({ params }: Props) {
             ))}
           </div>
 
-          <h1 className="text-[34px] md:text-[44px]">{productName(product)}</h1>
-          <p className="mt-4 text-lg">{product.intro}</p>
+          <h1 className="text-[28px] md:text-[34px]">{productName(product)}</h1>
+          <p className="mt-3">{product.intro}</p>
 
-          <div className="mt-6 flex flex-wrap items-baseline gap-3">
-            <span className={`font-display text-[32px] font-semibold ${onSale ? "text-brick-text" : ""}`}>
+          <div className="mt-4 flex flex-wrap items-baseline gap-3">
+            <span className={`font-display text-[26px] font-semibold ${onSale ? "text-brick-text" : ""}`}>
               {formatPrice(product.priceCzk)}
             </span>
             {onSale && (
-              <span className="text-lg text-muted line-through">{formatPrice(product.originalPriceCzk!)}</span>
+              <span className="text-muted line-through">{formatPrice(product.originalPriceCzk!)}</span>
             )}
-            <span className="text-muted">
+            <span className="text-sm text-muted">
               {formatWeight(product.weightGrams)} · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}
               /kg
             </span>
           </div>
 
-          <div className="mt-6">
-            <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-56" />
+          <div className="mt-5">
+            <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-48" />
           </div>
 
-          <dl className="mt-10 divide-y divide-line border-y border-line">
+          <dl className="mt-8 divide-y divide-line border-y border-line text-sm">
             <Row term="Složení">{product.composition}</Row>
             <Row term="Skladování">{product.storageNote}</Row>
             <Row term="Dávkování">{product.dosage}</Row>
             <Row term="Výrobce">{product.producer}</Row>
           </dl>
 
-          <p className="mt-6 text-sm text-muted">
+          <p className="mt-4 text-xs text-muted">
             Dávkování je orientační. Když si nejste jistí nebo má zvíře zdravotní potíže, poraďte se s veterinářem
             nebo se stavte v prodejně, spočítáme to spolu.
           </p>
@@ -100,8 +100,8 @@ export default async function ProductPage({ params }: Props) {
       </div>
 
       {related.length > 0 && (
-        <section className="mt-16">
-          <h2 className="mb-6">Další z řady {line.name}</h2>
+        <section className="mt-12">
+          <h2 className="mb-4">Další z řady {line.name}</h2>
           <ProductGrid products={related} />
         </section>
       )}
@@ -111,8 +111,8 @@ export default async function ProductPage({ params }: Props) {
 
 function Row({ term, children }: { term: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1 py-4 sm:grid-cols-[140px_1fr]">
-      <dt className="label text-[13px] text-brick-text">{term}</dt>
+    <div className="grid gap-1 py-3 sm:grid-cols-[120px_1fr]">
+      <dt className="label text-[11px] text-brick-text">{term}</dt>
       <dd className="text-muted">{children}</dd>
     </div>
   );

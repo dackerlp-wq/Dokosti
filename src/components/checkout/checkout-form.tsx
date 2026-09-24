@@ -83,11 +83,11 @@ export function CheckoutForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-8 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-10">
+    <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="space-y-8">
         <fieldset>
-          <legend className="mb-4 text-[24px] font-display font-semibold">Způsob dodání</legend>
-          <div className="space-y-3">
+          <legend className="mb-3 text-[20px] font-display font-semibold">Způsob dodání</legend>
+          <div className="space-y-2">
             {SHIPPING.map((s) => (
               <RadioCard
                 key={s.id}
@@ -110,8 +110,8 @@ export function CheckoutForm() {
         </fieldset>
 
         <fieldset>
-          <legend className="mb-4 text-[24px] font-display font-semibold">Platba</legend>
-          <div className="space-y-3">
+          <legend className="mb-3 text-[20px] font-display font-semibold">Platba</legend>
+          <div className="space-y-2">
             {paymentOptions.map((p) => (
               <RadioCard
                 key={p.id}
@@ -126,8 +126,8 @@ export function CheckoutForm() {
         </fieldset>
 
         <fieldset>
-          <legend className="mb-4 text-[24px] font-display font-semibold">Kontakt</legend>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <legend className="mb-3 text-[20px] font-display font-semibold">Kontakt</legend>
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Jméno a příjmení" name="name" autoComplete="name" required />
             <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required />
             <Field label="E-mail" name="email" type="email" autoComplete="email" required className="sm:col-span-2" />
@@ -136,8 +136,8 @@ export function CheckoutForm() {
 
         {needsAddress && (
           <fieldset>
-            <legend className="mb-4 text-[24px] font-display font-semibold">Adresa doručení</legend>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <legend className="mb-3 text-[20px] font-display font-semibold">Adresa doručení</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" />
               <Field label="Město" name="city" autoComplete="address-level2" required />
               <Field label="PSČ" name="zip" autoComplete="postal-code" required />
@@ -146,15 +146,15 @@ export function CheckoutForm() {
         )}
 
         <div>
-          <label className="label mb-2 block text-[13px] text-muted" htmlFor="note">
+          <label className="label mb-1 block text-[11px] text-muted" htmlFor="note">
             Poznámka
           </label>
           <textarea id="note" name="note" rows={3} placeholder="Kdy vám můžeme zavolat, jak se k vám dostaneme…" />
         </div>
       </div>
 
-      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-6 lg:sticky lg:top-6">
-        <h2 className="text-[24px]">Objednávka</h2>
+      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5 lg:sticky lg:top-4">
+        <h2 className="text-[20px]">Objednávka</h2>
         <ul className="mt-4 divide-y divide-line text-sm">
           {cart.items.map(({ product, qty }) => (
             <li key={product.slug} className="flex justify-between gap-3 py-2">
@@ -174,7 +174,7 @@ export function CheckoutForm() {
             <dt className="text-muted">Doprava</dt>
             <dd>{shippingCzk === 0 ? "zdarma" : formatPrice(shippingCzk)}</dd>
           </div>
-          <div className="flex justify-between font-display text-[22px] font-semibold">
+          <div className="flex justify-between font-display text-[19px] font-semibold">
             <dt>Celkem</dt>
             <dd>{formatPrice(cart.subtotalCzk + shippingCzk)}</dd>
           </div>
@@ -225,17 +225,17 @@ function RadioCard({
 }) {
   return (
     <label
-      className={`flex cursor-pointer gap-3 rounded-[var(--radius-card)] border bg-paper p-4 ${
+      className={`flex cursor-pointer gap-3 rounded-[var(--radius-card)] border bg-paper p-3 text-sm ${
         checked ? "border-green ring-1 ring-green" : "border-line hover:border-green"
       }`}
     >
-      <input type="radio" name={name} checked={checked} onChange={onChange} className="mt-1 h-5 w-5 min-h-0 accent-green" />
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="mt-0.5 h-4 w-4 min-h-0 accent-green" />
       <span className="flex-1">
         <span className="flex justify-between gap-3 font-semibold">
           <span>{title}</span>
           {price !== undefined && <span>{price === 0 ? "zdarma" : formatPrice(price)}</span>}
         </span>
-        <span className="mt-1 block text-sm text-muted">{description}</span>
+        <span className="mt-0.5 block text-xs text-muted">{description}</span>
       </span>
     </label>
   );
@@ -249,7 +249,7 @@ function Field({
 }: { label: string; name: string; className?: string } & React.ComponentProps<"input">) {
   return (
     <div className={className}>
-      <label htmlFor={name} className="label mb-2 block text-[13px] text-muted">
+      <label htmlFor={name} className="label mb-1 block text-[11px] text-muted">
         {label}
       </label>
       <input id={name} name={name} {...rest} />

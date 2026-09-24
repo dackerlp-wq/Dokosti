@@ -4,10 +4,10 @@ import { NAV, SITE } from "@/lib/site";
 
 export function Footer() {
   return (
-    <footer className="mt-16 bg-green text-cream">
-      <div className="container-dk grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="mt-12 bg-green text-cream">
+      <div className="container-dk grid gap-8 py-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <Logo variant="negativ" width={240} />
+          <Logo variant="negativ" width={180} />
           <p className="mt-4 max-w-xs text-sm text-cream/80">
             Kamenná prodejna a e-shop se syrovým krmivem pro psy a kočky. Kladno.
           </p>
@@ -47,7 +47,7 @@ export function Footer() {
         </FooterCol>
       </div>
       <div className="border-t border-green-hover">
-        <div className="container-dk flex flex-col gap-2 py-4 text-sm text-cream/70 md:flex-row md:justify-between">
+        <div className="container-dk flex flex-col gap-2 py-3 text-xs text-cream/70 md:flex-row md:justify-between">
           <span>
             © {new Date().getFullYear()} {SITE.name} · IČO {SITE.ico}
           </span>

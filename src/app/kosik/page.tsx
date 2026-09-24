@@ -5,9 +5,9 @@ export const metadata: Metadata = { title: "Košík" };
 
 export default function CartPage() {
   return (
-    <div className="container-dk py-10 md:py-14">
+    <div className="container-dk py-6 md:py-10">
       <h1>Košík</h1>
-      <div className="mt-8">
+      <div className="mt-6">
         <CartView />
       </div>
     </div>

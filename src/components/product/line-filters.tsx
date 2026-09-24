@@ -18,7 +18,7 @@ export function LineFilters({ active }: { active: Animal | null }) {
             key={o.label}
             href={o.value ? `?zvire=${o.value}` : "?"}
             aria-current={isActive ? "true" : undefined}
-            className={`label inline-flex min-h-10 items-center rounded-full border px-4 text-[13px] ${
+            className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${
               isActive ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"
             }`}
           >

@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "O nás" };
 export default function AboutPage() {
   return (
     <>
-      <div className="container-dk grid items-center gap-8 pt-10 md:grid-cols-[1fr_1.4fr] md:pt-14">
-        <Logo variant="barevne" width={300} priority />
+      <div className="container-dk grid items-center gap-8 pt-6 md:grid-cols-[1fr_1.4fr] md:pt-10">
+        <Logo variant="barevne" width={240} priority />
         <div>
           <p className="label mb-2 text-brick-text">O nás</p>
           <h1>Dvořák a Kostová</h1>
@@ -64,9 +64,9 @@ export default function AboutPage() {
 
 function Value({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-6">
-      <h2 className="text-[24px]">{title}</h2>
-      <p className="mt-2 text-muted">{children}</p>
+    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <h2 className="text-[19px]">{title}</h2>
+      <p className="mt-1 text-sm text-muted">{children}</p>
     </div>
   );
 }

@@ -6,15 +6,15 @@ import { NAV } from "@/lib/site";
 
 export function Header() {
   return (
-    <header className="relative bg-green text-cream">
-      <div className="container-dk flex min-h-[72px] items-center justify-between gap-4 py-3">
+    <header className="relative border-b border-line bg-paper">
+      <div className="container-dk flex min-h-16 items-center justify-between gap-4 py-2">
         <Link href="/" className="shrink-0" aria-label="DoKosti BARF, úvodní stránka">
-          {/* Desktop: logo bez podtitulu (min. 150 px). Mobil: jen nápis s kostí. */}
+          {/* Barevné logo bez podtitulu (min. 150 px). Na mobilu jen nápis s kostí. */}
           <span className="hidden md:block">
-            <Logo variant="bez-podtitulu-negativ" width={150} priority />
+            <Logo variant="bez-podtitulu" width={150} priority />
           </span>
           <span className="md:hidden">
-            <Logo variant="napis-negativ" width={120} priority />
+            <Logo variant="napis" width={110} priority />
           </span>
         </Link>
 
@@ -23,7 +23,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="label inline-flex min-h-11 items-center rounded-[var(--radius-control)] px-3 hover:bg-green-hover"
+              className="label inline-flex min-h-10 items-center rounded-[var(--radius-control)] px-3 text-green hover:bg-cream"
             >
               {item.label}
             </Link>
@@ -31,7 +31,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <CartLink onGreen />
+          <CartLink />
           <MobileNav />
         </div>
       </div>

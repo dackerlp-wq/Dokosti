@@ -16,7 +16,7 @@ export function MobileNav() {
         aria-expanded={open}
         aria-controls="mobile-nav"
         aria-label={open ? "Zavřít menu" : "Otevřít menu"}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--radius-control)] text-cream hover:bg-green-hover"
+        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-[var(--radius-control)] text-green hover:bg-cream"
       >
         {open ? <X strokeWidth={1.75} /> : <Menu strokeWidth={1.75} />}
       </button>
@@ -25,7 +25,7 @@ export function MobileNav() {
         <nav
           id="mobile-nav"
           aria-label="Hlavní"
-          className="absolute inset-x-0 z-20 border-t border-green-hover bg-green"
+          className="absolute inset-x-0 z-20 border-t border-line bg-paper"
         >
           <ul className="container-dk flex flex-col py-2">
             {NAV.map((item) => (
@@ -33,7 +33,7 @@ export function MobileNav() {
                 <Link
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="label flex min-h-12 items-center text-cream hover:bg-green-hover"
+                  className="label flex min-h-11 items-center text-green hover:bg-cream"
                 >
                   {item.label}
                 </Link>

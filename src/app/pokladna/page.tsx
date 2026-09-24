@@ -5,9 +5,9 @@ export const metadata: Metadata = { title: "Pokladna" };
 
 export default function CheckoutPage() {
   return (
-    <div className="container-dk py-10 md:py-14">
+    <div className="container-dk py-6 md:py-10">
       <h1>Dodání a platba</h1>
-      <div className="mt-8">
+      <div className="mt-6">
         <CheckoutForm />
       </div>
     </div>

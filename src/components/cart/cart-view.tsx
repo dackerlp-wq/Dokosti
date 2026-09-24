@@ -29,7 +29,7 @@ export function CartView() {
   const toFree = cheapestDelivery - subtotalCzk;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper">
         {items.map(({ product, qty }) => (
           <li key={product.slug} className="grid grid-cols-[80px_1fr] gap-4 p-4 sm:grid-cols-[96px_1fr_auto]">
@@ -37,7 +37,7 @@ export function CartView() {
               <ProductImage product={product} sizes="96px" />
             </Link>
             <div>
-              <h3 className="text-[20px]">
+              <h3 className="text-[17px]">
                 <Link href={`/produkt/${product.slug}`} className="hover:underline">
                   {productName(product)}
                 </Link>
@@ -64,15 +64,15 @@ export function CartView() {
                 </button>
               </div>
             </div>
-            <p className="col-start-2 font-display text-[20px] font-semibold sm:col-start-3 sm:text-right">
+            <p className="col-start-2 font-display text-[17px] font-semibold sm:col-start-3 sm:text-right">
               {formatPrice(product.priceCzk * qty)}
             </p>
           </li>
         ))}
       </ul>
 
-      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-6">
-        <h2 className="text-[24px]">Souhrn</h2>
+      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5">
+        <h2 className="text-[20px]">Souhrn</h2>
         <dl className="mt-4 space-y-2">
           <div className="flex justify-between">
             <dt className="text-muted">Zboží</dt>
@@ -109,7 +109,7 @@ function QtyButton({ label, onClick, children }: { label: string; onClick: () =>
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-control)] border border-line bg-cream text-green hover:border-green"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line bg-cream text-green hover:border-green"
     >
       {children}
     </button>
