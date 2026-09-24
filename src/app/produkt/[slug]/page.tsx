@@ -5,38 +5,31 @@ import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/product/product-image";
 import { Badge } from "@/components/ui/badge";
-import {
-  ANIMAL_LABEL,
-  LINE_INFO,
-  PRODUCTS,
-  STORAGE_LABEL,
-  getProduct,
-  getProductsByLine,
-  productName,
-} from "@/lib/catalog";
+import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, productName } from "@/lib/catalog";
+import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  return (await getProducts()).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) return {};
   return { title: productName(product), description: product.intro };
 }
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
 
   const line = LINE_INFO[product.line];
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
-  const related = getProductsByLine(product.line)
+  const related = (await getProductsByLine(product.line))
     .filter((p) => p.slug !== product.slug)
     .slice(0, 4);
 

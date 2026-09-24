@@ -9,9 +9,17 @@ npm install
 npm run dev
 ```
 
-Web běží na http://localhost:3000. Bez `.env.local` používá ukázkový katalog ze `src/lib/catalog.ts`
-a objednávky jen loguje do konzole. Pro připojení Supabase zkopírujte `.env.example` do `.env.local`
-a doplňte klíče.
+Web běží na http://localhost:3000. Pro připojení Supabase zkopírujte `.env.example` do `.env.local`
+a doplňte URL a publishable klíč (Project settings → API). Bez nich používá ukázkový katalog
+ze `src/lib/catalog.ts` a objednávky jen loguje do konzole.
+
+## Supabase a Vercel
+
+- Supabase projekt **DoKosti** (eu-west-1). Migrace jsou v `supabase/migrations/`, ukázková data
+  v `supabase/seed.sql`. Produkty se na webu zobrazují, jen když mají `is_published = true`.
+- Objednávky zakládá RPC `create_order` (security definer), web tedy pracuje jen s publishable klíčem.
+- Vercel projekt **dokosti**, nasazuje se z větve `main`. Proměnné prostředí jsou nastavené v projektu.
+- Katalog se na webu obnoví nejpozději minutu po změně v databázi (`revalidate = 60`).
 
 ## Struktura
 
@@ -23,6 +31,7 @@ a doplňte klíče.
 | `src/app/`                    | Stránky (App Router).                                          |
 | `src/components/`             | UI, layout, produkt, košík, pokladna.                          |
 | `src/lib/catalog.ts`          | Datový model a ukázková data produktů.                         |
+| `src/lib/products.ts`         | Načítání produktů ze Supabase (fallback na ukázková data).     |
 | `src/lib/shipping.ts`         | Způsoby dodání a platby.                                       |
 | `src/lib/site.ts`             | Údaje o prodejně a navigace.                                   |
 | `supabase/migrations/`        | Schéma databáze.                                               |

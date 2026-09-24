@@ -328,14 +328,6 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-export function getProduct(slug: string) {
-  return PRODUCTS.find((p) => p.slug === slug) ?? null;
-}
-
-export function getProductsByLine(line: LineSlug) {
-  return PRODUCTS.filter((p) => p.line === line);
-}
-
 export function isLineSlug(value: string): value is LineSlug {
   return (LINES as readonly string[]).includes(value);
 }

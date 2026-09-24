@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
-import { getProduct, type Product } from "@/lib/catalog";
+import type { Product } from "@/lib/catalog";
 
 export type CartLine = { slug: string; qty: number };
 
@@ -82,7 +82,8 @@ const actions = {
 
 const CartContext = createContext<CartState | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+/** `products` dodá layout ze serveru, košík podle nich dopočítá ceny. */
+export function CartProvider({ products, children }: { products: Product[]; children: React.ReactNode }) {
   const current = useSyncExternalStore(subscribe, read, () => EMPTY);
   const ready = useSyncExternalStore(
     () => () => {},
@@ -92,7 +93,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartState>(() => {
     const items = current.flatMap((l) => {
-      const product = getProduct(l.slug);
+      const product = products.find((p) => p.slug === l.slug);
       return product ? [{ product, qty: l.qty }] : [];
     });
     return {
@@ -103,7 +104,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       ...actions,
       ready,
     };
-  }, [current, ready]);
+  }, [current, ready, products]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

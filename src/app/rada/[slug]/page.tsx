@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductGrid } from "@/components/product/product-grid";
 import { LineFilters } from "@/components/product/line-filters";
-import { LINES, LINE_INFO, getProductsByLine, isLineSlug, type Animal } from "@/lib/catalog";
+import { LINES, LINE_INFO, isLineSlug, type Animal } from "@/lib/catalog";
+import { getProductsByLine } from "@/lib/products";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ zvire?: string }> };
 
@@ -24,7 +25,7 @@ export default async function LinePage({ params, searchParams }: Props) {
 
   const line = LINE_INFO[slug];
   const animal: Animal | null = zvire === "pes" || zvire === "kocka" ? zvire : null;
-  const products = getProductsByLine(slug).filter((p) => !animal || p.animals.includes(animal));
+  const products = (await getProductsByLine(slug)).filter((p) => !animal || p.animals.includes(animal));
 
   return (
     <div className="container-dk py-10 md:py-14">

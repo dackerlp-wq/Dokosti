@@ -1,8 +1,9 @@
 "use server";
 
-import { getProduct, productName } from "@/lib/catalog";
+import { productName } from "@/lib/catalog";
+import { getProduct } from "@/lib/products";
 import { PAYMENT, SHIPPING, shippingPrice, type PaymentId } from "@/lib/shipping";
-import { getServiceClient } from "@/lib/supabase/server";
+import { getSupabase } from "@/lib/supabase/server";
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
@@ -42,7 +43,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
 
   const items = [];
   for (const line of input.lines) {
-    const product = getProduct(line.slug);
+    const product = await getProduct(line.slug);
     const qty = Math.floor(line.qty);
     if (!product || !product.inStock || qty < 1) continue;
     items.push({
@@ -64,7 +65,6 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
 
   const order = {
     order_number: orderNumber,
-    status: "nova",
     customer_name: c.name.trim(),
     customer_email: c.email.trim(),
     customer_phone: c.phone.trim(),
@@ -79,23 +79,16 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     total_czk: total,
   };
 
-  const db = getServiceClient();
+  const db = getSupabase();
   if (!db) {
     console.info("[objednávka, Supabase není nastavené]", order, items);
     return { ok: true, orderNumber };
   }
 
-  const { data, error } = await db.from("orders").insert(order).select("id").single();
-  if (error || !data) {
-    console.error("orders.insert", error);
+  const { data, error } = await db.rpc("create_order", { p_order: order, p_items: items });
+  if (error || typeof data !== "string") {
+    console.error("create_order", error);
     return { ok: false, error: "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
   }
-  const { error: itemsError } = await db
-    .from("order_items")
-    .insert(items.map((i) => ({ ...i, order_id: data.id })));
-  if (itemsError) {
-    console.error("order_items.insert", itemsError);
-    return { ok: false, error: "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
-  }
-  return { ok: true, orderNumber };
+  return { ok: true, orderNumber: data };
 }

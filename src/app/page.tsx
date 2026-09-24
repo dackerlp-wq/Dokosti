@@ -4,10 +4,11 @@ import { ProductGrid } from "@/components/product/product-grid";
 import { ButtonLink } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { LINES, LINE_INFO, PRODUCTS } from "@/lib/catalog";
+import { LINES, LINE_INFO } from "@/lib/catalog";
+import { getProducts } from "@/lib/products";
 
-export default function HomePage() {
-  const featured = PRODUCTS.filter((p) => p.inStock).slice(0, 8);
+export default async function HomePage() {
+  const featured = (await getProducts()).filter((p) => p.inStock).slice(0, 8);
 
   return (
     <>
