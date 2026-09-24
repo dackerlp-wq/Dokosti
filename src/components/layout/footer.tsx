@@ -14,7 +14,7 @@ export function Footer() {
         </div>
 
         <FooterCol title="Nabídka">
-          {NAV.slice(0, 4).map((i) => (
+          {NAV.slice(0, 5).map((i) => (
             <FooterLink key={i.href} href={i.href}>
               {i.label}
             </FooterLink>

@@ -22,24 +22,24 @@ export function HeroProduct({ product }: { product: Product }) {
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
 
   return (
-    <article className="w-full max-w-xs rounded-[var(--radius-card)] bg-paper p-3 text-ink">
+    <article className="grid w-full max-w-sm grid-cols-[112px_1fr] gap-3 rounded-[var(--radius-card)] bg-paper p-3 text-ink">
       <Link href={href} className="relative block">
-        <ProductImage product={product} sizes="320px" />
-        <div className="absolute left-2 top-2">
+        <ProductImage product={product} sizes="112px" />
+        <div className="absolute left-1.5 top-1.5">
           {onSale ? <Badge kind="sleva">Akce</Badge> : product.isNew ? <Badge kind="novinka">Novinka</Badge> : <Badge kind="skladem">Doporučujeme</Badge>}
         </div>
       </Link>
-      <div className="pt-3">
-        <h2 className="text-[18px]">
+      <div className="flex flex-col justify-center">
+        <h2 className="text-[16px]">
           <Link href={href} className="hover:underline">
             {productName(product)}
           </Link>
         </h2>
         <p className="text-xs text-muted">{formatWeight(product.weightGrams)}</p>
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <p className="font-display text-[20px] font-semibold">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="font-display text-[18px] font-semibold">
             {onSale && (
-              <span className="mr-2 text-sm font-normal text-muted line-through">{formatPrice(product.originalPriceCzk!)}</span>
+              <span className="mr-1.5 text-xs font-normal text-muted line-through">{formatPrice(product.originalPriceCzk!)}</span>
             )}
             <span className={onSale ? "text-brick-text" : ""}>{formatPrice(product.priceCzk)}</span>
           </p>

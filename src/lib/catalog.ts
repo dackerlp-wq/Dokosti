@@ -3,7 +3,7 @@
  * (viz supabase/migrations), aby šlo přepnout z ukázkových dat bez změny UI.
  */
 
-export const LINES = ["zaklad", "kosti", "navic", "mlsky"] as const;
+export const LINES = ["zaklad", "kosti", "navic", "mlsky", "granule"] as const;
 export type LineSlug = (typeof LINES)[number];
 
 export type Line = {
@@ -42,6 +42,13 @@ export const LINE_INFO: Record<LineSlug, Line> = {
     tagline: "Sušené pamlsky z jedné suroviny. Odměna bez chemie.",
     description:
       "Sušené maso, vnitřnosti a kůže z jedné suroviny. Bez soli, cukru a barviv. Do kapsy na procházku i na trénink.",
+  },
+  granule: {
+    slug: "granule",
+    name: "Granule",
+    tagline: "Suché krmivo s vysokým podílem masa. Pro štěňata i na cesty.",
+    description:
+      "Kvalitní granule pro ty, kdo nechtějí nebo nemohou krmit syrově. Vedeme Elbeville a Brit Fresh, obojí s vysokým podílem čerstvého masa. Dobrá volba pro štěňata a na dovolenou.",
   },
 };
 

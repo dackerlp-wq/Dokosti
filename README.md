@@ -36,10 +36,17 @@ ze `src/lib/catalog.ts` a objednávky jen loguje do konzole.
 | `src/lib/site.ts`             | Údaje o prodejně a navigace.                                   |
 | `supabase/migrations/`        | Schéma databáze.                                               |
 
+## Administrace
+
+`/admin` (přihlášení `/admin/login`). Přístup mají jen uživatelé Supabase Auth zapsaní v tabulce `admins`.
+Přehled objednávek a změna jejich stavu, správa produktů včetně nahrávání fotek do bucketu `product-images`.
+Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
+do tabulky `admins`.
+
 ## Stránky
 
 - `/` úvod
-- `/rada/zaklad`, `/rada/kosti`, `/rada/navic`, `/rada/mlsky` výpis řady, filtr `?zvire=pes|kocka`
+- `/rada/zaklad`, `/rada/kosti`, `/rada/navic`, `/rada/mlsky`, `/rada/granule` výpis řady, filtr `?zvire=pes|kocka`
 - `/produkt/[slug]` detail produktu
 - `/kosik`, `/pokladna` košík a objednávka
 - `/doprava`, `/o-nas`, `/kontakt`, `/obchodni-podminky`, `/ochrana-udaju`

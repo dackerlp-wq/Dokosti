@@ -43,10 +43,10 @@ export default async function HomePage() {
       </section>
 
       <Section tone="cream">
-        <SectionHeading eyebrow="Nabídka" title="Čtyři řady, jasný systém">
-          Základ je denní krmení, Kosti na hryzání, Navíc doplní, Mlsky odmění.
+        <SectionHeading eyebrow="Nabídka" title="Pět řad, jasný systém">
+          Základ je denní krmení, Kosti na hryzání, Navíc doplní, Mlsky odmění, Granule pro ty, kdo syrově nekrmí.
         </SectionHeading>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {LINES.map((slug) => {
             const line = LINE_INFO[slug];
             return (
