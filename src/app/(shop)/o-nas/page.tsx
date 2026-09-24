@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Logo } from "@/components/ui/logo";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { SITE } from "@/lib/site";
+import { getSettings } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "O nás" };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { shop, pages } = await getSettings();
   return (
     <>
       <div className="container-dk grid items-center gap-8 pt-6 md:grid-cols-[1fr_1.4fr] md:pt-10">
@@ -13,11 +14,7 @@ export default function AboutPage() {
         <div>
           <p className="label mb-2 text-brick-text">O nás</p>
           <h1>Prodejna, ne sklad</h1>
-          <p className="mt-4 text-muted">
-            Prodejnu jsme otevřeli, protože jsme sami krmili syrově a pořád jsme za krmivem jezdili
-            přes půl kraje. Vlastní krmivo nevyrábíme, vybíráme od výrobců, kterým věříme, a víme, co je v každém
-            balíčku.
-          </p>
+          <p className="mt-4 whitespace-pre-line text-muted">{pages.about}</p>
         </div>
       </div>
 
@@ -39,14 +36,14 @@ export default function AboutPage() {
         <SectionHeading eyebrow="Prodejna" title="Kde nás najdete" />
         <div className="grid gap-8 md:grid-cols-2">
           <address className="not-italic text-muted">
-            {SITE.address}
+            {shop.address}, {shop.city}
             <br />
-            {SITE.phone}
+            {shop.phone}
             <br />
-            {SITE.email}
+            {shop.email}
           </address>
           <dl className="text-muted">
-            {SITE.openingHours.map((o) => (
+            {shop.openingHours.map((o) => (
               <div key={o.days} className="flex justify-between border-b border-line py-2">
                 <dt>{o.days}</dt>
                 <dd>{o.hours}</dd>

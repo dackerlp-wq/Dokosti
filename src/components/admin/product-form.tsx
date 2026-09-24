@@ -99,6 +99,18 @@ export function ProductForm({ product }: { product?: ProductRow }) {
           <ImageUpload name="image_url" initialUrl={p?.image_url ?? null} slug={p?.slug ?? "novy"} />
         </Fieldset>
 
+        <Fieldset title="Sklad">
+          <div className="grid gap-3 grid-cols-2">
+            <Field label="Kusů skladem" hint="prázdné = neevidovat">
+              <input name="stock_qty" type="number" min={0} defaultValue={p?.stock_qty ?? ""} />
+            </Field>
+            <Field label="Hlásit od" hint="kusů">
+              <input name="low_stock_threshold" type="number" min={0} defaultValue={p?.low_stock_threshold ?? 3} />
+            </Field>
+          </div>
+          <p className="mt-2 text-xs text-muted">Když se množství eviduje, při nule se produkt sám označí „Momentálně není“ a objednávka nad stav se nepřijme.</p>
+        </Fieldset>
+
         <Fieldset title="Zobrazení">
           <div className="space-y-2 text-sm">
             <Check name="is_published" label="Zveřejnit na webu" defaultChecked={p?.is_published ?? false} />

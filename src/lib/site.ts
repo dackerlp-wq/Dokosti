@@ -1,22 +1,8 @@
-/**
- * Údaje o prodejně. Hodnoty v hranatých závorkách jsou placeholdery
- * z BRAND.md, doplní se po ověření.
- */
+/** Neměnné údaje značky. Provozní údaje (adresa, telefon, otevírací doba) jsou v nastavení (lib/settings). */
 export const SITE = {
   name: "DoKosti BARF",
   brand: "DoKosti",
   slogan: "Poctivé do kosti.",
-  domain: "[DOMENA]",
-  handle: "[HANDLE]",
-  address: "[ADRESA], Kladno",
-  phone: "[TELEFON]",
-  email: "[E-MAIL]",
-  ico: "[IČO]",
-  openingHours: [
-    { days: "Po–Pá", hours: "[OTEVÍRACÍ DOBA]" },
-    { days: "So", hours: "[OTEVÍRACÍ DOBA]" },
-    { days: "Ne", hours: "zavřeno" },
-  ],
 } as const;
 
 export const NAV = [

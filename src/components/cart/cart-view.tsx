@@ -7,9 +7,8 @@ import { ProductImage } from "@/components/product/product-image";
 import { ButtonLink } from "@/components/ui/button";
 import { productName } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
-import { SHIPPING } from "@/lib/shipping";
 
-export function CartView() {
+export function CartView({ freeDeliveryFromCzk }: { freeDeliveryFromCzk: number | null }) {
   const { items, subtotalCzk, setQty, remove, ready } = useCart();
 
   if (!ready) return <p className="text-muted">Načítám košík…</p>;
@@ -25,8 +24,7 @@ export function CartView() {
     );
   }
 
-  const cheapestDelivery = Math.min(...SHIPPING.filter((s) => s.id !== "odber").map((s) => s.freeFromCzk ?? Infinity));
-  const toFree = cheapestDelivery - subtotalCzk;
+  const toFree = freeDeliveryFromCzk === null ? 0 : freeDeliveryFromCzk - subtotalCzk;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">

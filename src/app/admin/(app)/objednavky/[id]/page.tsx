@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { Button } from "@/components/ui/button";
-import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUSES, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
+import { formatDate, formatDay, ORDER_STATUS_LABEL, ORDER_STATUSES, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 import { setOrderStatus } from "./actions";
@@ -59,7 +59,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Box title="Zákazník">
-              {o.customer_name}
+              {o.customer_id ? (
+                <Link href={`/admin/zakaznici/${o.customer_id}`} className="font-semibold text-green hover:underline">
+                  {o.customer_name}
+                </Link>
+              ) : (
+                o.customer_name
+              )}
               <br />
               <a href={`tel:${o.customer_phone}`} className="text-green hover:underline">
                 {o.customer_phone}
@@ -70,7 +76,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </a>
             </Box>
             <Box title="Dodání a platba">
-              {SHIPPING_LABEL[o.shipping_method]} · {PAYMENT_LABEL[o.payment_method]}
+              {SHIPPING_LABEL[o.shipping_method]}
+              {o.delivery_date && <> · {formatDay(o.delivery_date)}</>} · {PAYMENT_LABEL[o.payment_method]}
               {o.street && (
                 <>
                   <br />

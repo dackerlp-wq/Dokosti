@@ -51,10 +51,14 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     dosage: String(formData.get("dosage") ?? "").trim(),
     image_url: String(formData.get("image_url") ?? "").trim() || null,
     sort_order: Math.round(num(formData.get("sort_order")) || 0),
+    stock_qty: String(formData.get("stock_qty") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("stock_qty")))),
+    low_stock_threshold: Math.max(0, Math.round(num(formData.get("low_stock_threshold")) || 0)),
     in_stock: formData.get("in_stock") === "on",
     is_new: formData.get("is_new") === "on",
     is_published: formData.get("is_published") === "on",
   };
+
+  if (row.stock_qty === 0) row.in_stock = false;
 
   const db = await getAuthSupabase();
   const { error } = id

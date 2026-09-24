@@ -1,43 +1,35 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
+import { AdminNav } from "@/components/admin/admin-nav";
+import { Logo } from "@/components/ui/logo";
 import { getAdmin } from "@/lib/supabase/auth";
 
-export const metadata: Metadata = { title: "Administrace", robots: { index: false } };
+export const metadata: Metadata = { title: { default: "Administrace", template: "%s · Administrace" }, robots: { index: false } };
 
-const ADMIN_NAV = [
-  { href: "/admin", label: "Přehled" },
-  { href: "/admin/objednavky", label: "Objednávky" },
-  { href: "/admin/produkty", label: "Produkty" },
-];
-
+/** Administrace má vlastní rozhraní: boční menu, bez hlavičky a patičky e-shopu. */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await getAdmin();
   if (!admin) redirect("/admin/login");
 
   return (
-    <div className="container-dk py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-        <nav className="flex flex-wrap gap-1" aria-label="Administrace">
-          {ADMIN_NAV.map((i) => (
-            <Link
-              key={i.href}
-              href={i.href}
-              className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] px-3 text-green hover:bg-paper"
-            >
-              {i.label}
-            </Link>
-          ))}
-        </nav>
-        <form action={logout} className="flex items-center gap-3 text-sm text-muted">
-          <span>{admin.email}</span>
-          <button type="submit" className="label text-brick-text hover:underline">
+    <div className="flex min-h-full flex-1 flex-col md:flex-row">
+      <aside className="flex shrink-0 flex-col border-b border-line bg-paper md:w-56 md:border-b-0 md:border-r">
+        <div className="flex items-center justify-between px-4 py-3 md:block md:py-5">
+          <Logo variant="napis" width={100} />
+          <span className="label mt-1 hidden text-[10px] text-muted md:block">Administrace</span>
+        </div>
+        <AdminNav />
+        <form action={logout} className="mt-auto hidden border-t border-line px-4 py-3 text-xs text-muted md:block">
+          <p className="truncate" title={admin.email}>
+            {admin.email}
+          </p>
+          <button type="submit" className="label mt-1 text-[11px] text-brick-text hover:underline">
             Odhlásit
           </button>
         </form>
-      </div>
-      <div className="pt-6">{children}</div>
+      </aside>
+      <main className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-6">{children}</main>
     </div>
   );
 }

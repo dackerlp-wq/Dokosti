@@ -32,14 +32,18 @@ ze `src/lib/catalog.ts` a objednávky jen loguje do konzole.
 | `src/components/`             | UI, layout, produkt, košík, pokladna.                          |
 | `src/lib/catalog.ts`          | Datový model a ukázková data produktů.                         |
 | `src/lib/products.ts`         | Načítání produktů ze Supabase (fallback na ukázková data).     |
-| `src/lib/shipping.ts`         | Způsoby dodání a platby.                                       |
-| `src/lib/site.ts`             | Údaje o prodejně a navigace.                                   |
+| `src/lib/settings.ts`         | Nastavení e-shopu (výchozí hodnoty, načítání ze Supabase).     |
+| `src/lib/shipping.ts`         | Způsoby dodání a platby odvozené z nastavení.                  |
+| `src/lib/site.ts`             | Název značky a navigace.                                       |
 | `supabase/migrations/`        | Schéma databáze.                                               |
 
 ## Administrace
 
-`/admin` (přihlášení `/admin/login`). Přístup mají jen uživatelé Supabase Auth zapsaní v tabulce `admins`.
-Přehled objednávek a změna jejich stavu, správa produktů včetně nahrávání fotek do bucketu `product-images`.
+`/admin` (přihlášení `/admin/login`) má vlastní rozhraní oddělené od e-shopu. Přístup mají jen uživatelé
+Supabase Auth zapsaní v tabulce `admins`. Sekce: Přehled (otevřené objednávky, docházející sklad),
+Objednávky (stavy), Rozvoz a odběry (plán podle dne), Produkty a sklad (fotky do bucketu `product-images`,
+množství s hlídáním nuly), Zákazníci (historie, poznámka), Nastavení (prodejna, otevírací doba, doprava
+a rozvozové dny, platby, texty stránek; tabulka `settings`, výchozí hodnoty v `src/lib/settings.ts`).
 Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
 do tabulky `admins`.
 

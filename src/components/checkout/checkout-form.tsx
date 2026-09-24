@@ -2,19 +2,28 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { submitOrder, type CheckoutInput } from "@/app/pokladna/actions";
+import { submitOrder, type CheckoutInput } from "@/app/(shop)/pokladna/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
-import { PAYMENT, SHIPPING, shippingPrice, type PaymentId } from "@/lib/shipping";
+import { DAY_NAMES } from "@/lib/settings";
+import { shippingPrice, type PaymentId, type PaymentMethod, type ShippingId, type ShippingMethod } from "@/lib/shipping";
 
-type ShippingId = (typeof SHIPPING)[number]["id"];
+type Props = {
+  shipping: ShippingMethod[];
+  payment: PaymentMethod[];
+  deliveryDays: string[];
+  deliveryWindow: string;
+};
 
-export function CheckoutForm() {
+const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
+
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow }: Props) {
   const cart = useCart();
-  const [shipping, setShipping] = useState<ShippingId>("odber");
-  const [payment, setPayment] = useState<PaymentId>("hotove");
+  const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");
+  const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
+  const [deliveryDate, setDeliveryDate] = useState<string>(deliveryDays[0] ?? "");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -46,7 +55,7 @@ export function CheckoutForm() {
     );
   }
 
-  const method = SHIPPING.find((s) => s.id === shipping)!;
+  const method = SHIPPING.find((s) => s.id === shipping) ?? SHIPPING[0];
   const shippingCzk = shippingPrice(method, cart.subtotalCzk);
   const belowMin = cart.subtotalCzk < method.minOrderCzk;
   const needsAddress = shipping !== "odber";
@@ -61,6 +70,7 @@ export function CheckoutForm() {
       lines: cart.lines,
       shipping,
       payment,
+      deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -95,7 +105,7 @@ export function CheckoutForm() {
                 checked={shipping === s.id}
                 onChange={() => {
                   setShipping(s.id);
-                  if (s.id === "prepravce" && payment === "hotove") setPayment("prevod");
+                  if (s.id === "prepravce" && payment === "hotove") setPayment(PAYMENT.find((p) => p.id !== "hotove")?.id ?? "prevod");
                 }}
                 title={s.name}
                 price={shippingPrice(s, cart.subtotalCzk)}
@@ -108,6 +118,32 @@ export function CheckoutForm() {
             ))}
           </div>
         </fieldset>
+
+        {shipping === "rozvoz" && deliveryDays.length > 0 && (
+          <fieldset>
+            <legend className="mb-3 text-[20px] font-display font-semibold">Den rozvozu</legend>
+            <div className="flex flex-wrap gap-2">
+              {deliveryDays.map((d) => {
+                const date = new Date(d + "T12:00:00");
+                const active = d === deliveryDate;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDeliveryDate(d)}
+                    aria-pressed={active}
+                    className={`rounded-[var(--radius-control)] border px-4 py-2 text-sm ${
+                      active ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"
+                    }`}
+                  >
+                    <span className="label block text-[11px]">{DAY_NAMES[date.getDay()]}</span>
+                    {dateFmt.format(date)} · {deliveryWindow}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
 
         <fieldset>
           <legend className="mb-3 text-[20px] font-display font-semibold">Platba</legend>

@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Archivo_Narrow, Fraunces } from "next/font/google";
-import { CartProvider } from "@/components/cart/cart-context";
-import { Footer } from "@/components/layout/footer";
-import { Header } from "@/components/layout/header";
-import { getProducts } from "@/lib/products";
 import { SITE } from "@/lib/site";
 import "./globals.css";
-
-/** Katalog se přegeneruje nejpozději za minutu po změně v Supabase. */
-export const revalidate = 60;
 
 const fraunces = Fraunces({
   subsets: ["latin", "latin-ext"],
@@ -45,20 +38,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const products = await getProducts();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="cs"
       className={`${fraunces.variable} ${archivoNarrow.variable} ${archivo.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">
-        <CartProvider products={products}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </CartProvider>
-      </body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }

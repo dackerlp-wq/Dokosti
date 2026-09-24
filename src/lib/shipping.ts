@@ -1,59 +1,44 @@
-/**
- * Způsoby doručení. Mražené zboží jde jen osobním odběrem, rozvozem
- * nebo chlazeným přepravcem. Ceny a limity jsou placeholdery.
- */
-export type ShippingMethod = {
-  id: "odber" | "rozvoz" | "prepravce";
-  name: string;
-  description: string;
-  priceCzk: number;
-  /** Od jaké hodnoty objednávky je doprava zdarma. */
-  freeFromCzk: number | null;
-  /** Minimální hodnota objednávky pro tento způsob. */
-  minOrderCzk: number;
-  /** Zda způsob zvládne mražené a chlazené zboží. */
-  cold: boolean;
+import type { Settings, ShippingSetting } from "@/lib/settings";
+
+export type ShippingId = keyof Settings["shipping"];
+export type PaymentId = keyof Settings["payment"];
+
+export type ShippingMethod = ShippingSetting & { id: ShippingId };
+export type PaymentMethod = { id: PaymentId; name: string; description: string };
+
+const PAYMENT_NAME: Record<PaymentId, string> = {
+  karta: "Kartou online",
+  prevod: "Bankovním převodem",
+  hotove: "Na místě",
 };
 
-export const SHIPPING: ShippingMethod[] = [
-  {
-    id: "odber",
-    name: "Osobní odběr v prodejně",
-    description: "Připravíme do mrazáku, vyzvednete v otevírací době. Zaplatíte na místě nebo předem.",
-    priceCzk: 0,
-    freeFromCzk: null,
-    minOrderCzk: 0,
-    cold: true,
-  },
-  {
-    id: "rozvoz",
-    name: "Rozvoz po Kladně a okolí",
-    description: "Vozíme sami, v chladicím boxu. Domluvíme den a hodinu.",
-    priceCzk: 79,
-    freeFromCzk: 1500,
-    minOrderCzk: 500,
-    cold: true,
-  },
-  {
-    id: "prepravce",
-    name: "Chlazený přepravce po ČR",
-    description: "Balík v polystyrenu se suchým ledem. Posíláme pondělí až středa, aby nestál přes víkend.",
-    priceCzk: 249,
-    freeFromCzk: 3000,
-    minOrderCzk: 1000,
-    cold: true,
-  },
-];
+/** Zapnuté způsoby dodání z nastavení. */
+export function shippingMethods(s: Settings): ShippingMethod[] {
+  return (Object.keys(s.shipping) as ShippingId[])
+    .map((id) => ({ id, ...s.shipping[id] }))
+    .filter((m) => m.enabled);
+}
 
-export const PAYMENT = [
-  { id: "karta", name: "Kartou online", description: "Platební brána (bude doplněno)." },
-  { id: "prevod", name: "Bankovním převodem", description: "Údaje pošleme e-mailem, odesíláme po připsání." },
-  { id: "hotove", name: "Na místě", description: "Hotově nebo kartou při odběru či rozvozu." },
-] as const;
+/** Zapnuté způsoby platby z nastavení. */
+export function paymentMethods(s: Settings): PaymentMethod[] {
+  return (Object.keys(s.payment) as PaymentId[])
+    .filter((id) => s.payment[id].enabled)
+    .map((id) => ({ id, name: PAYMENT_NAME[id], description: s.payment[id].description }));
+}
 
-export type PaymentId = (typeof PAYMENT)[number]["id"];
-
-export function shippingPrice(method: ShippingMethod, subtotalCzk: number) {
+export function shippingPrice(method: ShippingSetting, subtotalCzk: number) {
   if (method.freeFromCzk !== null && subtotalCzk >= method.freeFromCzk) return 0;
   return method.priceCzk;
+}
+
+/** Nejbližší rozvozové dny (datum ISO), od zítřka. */
+export function nextDeliveryDays(days: number[], count = 4, from = new Date()): string[] {
+  const out: string[] = [];
+  const d = new Date(from);
+  d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 30 && out.length < count; i++) {
+    if (days.includes(d.getDay())) out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
 }

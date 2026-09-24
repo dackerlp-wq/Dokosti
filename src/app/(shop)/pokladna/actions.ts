@@ -2,13 +2,16 @@
 
 import { productName } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
-import { PAYMENT, SHIPPING, shippingPrice, type PaymentId } from "@/lib/shipping";
+import { getSettings } from "@/lib/settings";
+import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
 import { getSupabase } from "@/lib/supabase/server";
 
 export type CheckoutInput = {
   lines: { slug: string; qty: number }[];
-  shipping: (typeof SHIPPING)[number]["id"];
+  shipping: ShippingId;
   payment: PaymentId;
+  /** Rozvozový den (ISO datum), jen u rozvozu. */
+  deliveryDate?: string;
   customer: {
     name: string;
     email: string;
@@ -29,8 +32,9 @@ export type CheckoutResult =
  * Když Supabase není nastavené, objednávka se jen zaloguje (vývoj).
  */
 export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult> {
-  const method = SHIPPING.find((s) => s.id === input.shipping);
-  const payment = PAYMENT.find((p) => p.id === input.payment);
+  const settings = await getSettings();
+  const method = shippingMethods(settings).find((s) => s.id === input.shipping);
+  const payment = paymentMethods(settings).find((p) => p.id === input.payment);
   if (!method || !payment) return { ok: false, error: "Neplatný způsob dodání nebo platby." };
 
   const c = input.customer;
@@ -39,6 +43,17 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   }
   if (method.id !== "odber" && (!c.street.trim() || !c.city.trim() || !c.zip.trim())) {
     return { ok: false, error: "Pro doručení potřebujeme adresu." };
+  }
+  if (method.id === "prepravce" && payment.id === "hotove") {
+    return { ok: false, error: "U přepravce nejde platit na místě." };
+  }
+  let deliveryDate = "";
+  if (method.id === "rozvoz") {
+    const options = nextDeliveryDays(settings.shipping.rozvoz.days);
+    if (!input.deliveryDate || !options.includes(input.deliveryDate)) {
+      return { ok: false, error: "Vyberte den rozvozu." };
+    }
+    deliveryDate = input.deliveryDate;
   }
 
   const items = [];
@@ -74,6 +89,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     note: c.note.trim(),
     shipping_method: method.id,
     payment_method: payment.id,
+    delivery_date: deliveryDate,
     subtotal_czk: subtotal,
     shipping_czk: shipping,
     total_czk: total,
@@ -88,6 +104,9 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   const { data, error } = await db.rpc("create_order", { p_order: order, p_items: items });
   if (error || typeof data !== "string") {
     console.error("create_order", error);
+    if (error?.message?.includes("out of stock")) {
+      return { ok: false, error: "Některé zboží už není skladem v požadovaném množství. Upravte prosím košík." };
+    }
     return { ok: false, error: "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
   }
   return { ok: true, orderNumber: data };

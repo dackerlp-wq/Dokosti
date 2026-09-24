@@ -17,6 +17,22 @@ export type OrderRow = {
   subtotal_czk: number;
   shipping_czk: number;
   total_czk: number;
+  delivery_date: string | null;
+  customer_id: string | null;
+  created_at: string;
+};
+
+export type CustomerRow = {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  street: string;
+  city: string;
+  zip: string;
+  note: string;
+  orders_count: number;
+  total_spent_czk: number;
   created_at: string;
 };
 
@@ -72,6 +88,9 @@ export type ProductRow = {
   image_url: string | null;
   sort_order: number;
   is_published: boolean;
+  /** null = množství se neeviduje */
+  stock_qty: number | null;
+  low_stock_threshold: number;
   updated_at: string;
 };
 
@@ -82,6 +101,12 @@ export function isOrderStatus(v: string): v is OrderStatus {
 const dt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium", timeStyle: "short" });
 export function formatDate(iso: string) {
   return dt.format(new Date(iso));
+}
+
+const d = new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numeric", month: "numeric" });
+/** Datum bez času, např. "út 30. 9." */
+export function formatDay(iso: string) {
+  return d.format(new Date(iso + "T12:00:00"));
 }
 
 /** Z názvu varianty udělá slug: "Základ" + "hovězí mix" → "zaklad-hovezi-mix". */

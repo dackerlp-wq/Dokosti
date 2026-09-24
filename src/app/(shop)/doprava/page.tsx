@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { formatPrice } from "@/lib/format";
-import { PAYMENT, SHIPPING } from "@/lib/shipping";
+import { DAY_NAMES } from "@/lib/settings";
+import { getSettings } from "@/lib/settings";
+import { paymentMethods, shippingMethods } from "@/lib/shipping";
 
 export const metadata: Metadata = {
   title: "Doprava a platba",
   description: "Osobní odběr v Kladně, rozvoz po okolí a chlazený přepravce po celé ČR.",
 };
 
-export default function ShippingPage() {
+export default async function ShippingPage() {
+  const settings = await getSettings();
+  const SHIPPING = shippingMethods(settings);
+  const PAYMENT = paymentMethods(settings);
+  const rozvozDny = settings.shipping.rozvoz.days.map((d) => DAY_NAMES[d]).join(" a ");
   return (
     <>
       <div className="container-dk pt-6 md:pt-10">
@@ -28,7 +34,10 @@ export default function ShippingPage() {
               <p className="mt-1 font-display text-[19px] font-semibold">
                 {s.priceCzk === 0 ? "zdarma" : formatPrice(s.priceCzk)}
               </p>
-              <p className="mt-2 text-sm text-muted">{s.description}</p>
+              <p className="mt-2 text-sm text-muted">
+                {s.description}
+                {s.id === "rozvoz" && ` Jezdíme ${rozvozDny}, ${settings.shipping.rozvoz.window}.`}
+              </p>
               <ul className="mt-3 space-y-1 text-xs text-muted">
                 {s.minOrderCzk > 0 && <li>Minimální objednávka {formatPrice(s.minOrderCzk)}.</li>}
                 {s.freeFromCzk && <li>Zdarma od {formatPrice(s.freeFromCzk)}.</li>}

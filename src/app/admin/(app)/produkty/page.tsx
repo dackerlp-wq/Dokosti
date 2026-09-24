@@ -15,11 +15,11 @@ export default async function ProductsPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1>Produkty</h1>
+        <h1>Produkty a sklad</h1>
         <ButtonLink href="/admin/produkty/novy">Nový produkt</ButtonLink>
       </div>
       <div className="mt-4">
-        <Table head={["Název", "Řada", "Balení", "Cena", "Skladování", "Stav"]}>
+        <Table head={["Název", "Řada", "Balení", "Cena", "Sklad", "Stav"]}>
           {products.map((p) => (
             <tr key={p.id}>
               <Td>
@@ -33,7 +33,13 @@ export default async function ProductsPage() {
                 {formatPrice(p.price_czk)}
                 {p.original_price_czk && <span className="ml-1 text-muted line-through">{formatPrice(p.original_price_czk)}</span>}
               </Td>
-              <Td>{STORAGE_LABEL[p.storage]}</Td>
+              <Td>
+                {p.stock_qty === null ? (
+                  <span className="text-muted">{STORAGE_LABEL[p.storage]}</span>
+                ) : (
+                  <span className={p.stock_qty <= p.low_stock_threshold ? "font-semibold text-brick-text" : ""}>{p.stock_qty} ks</span>
+                )}
+              </Td>
               <Td>
                 <span className="flex flex-wrap gap-1">
                   {p.is_published ? <Badge kind="skladem">Na webu</Badge> : <Badge>Skryté</Badge>}

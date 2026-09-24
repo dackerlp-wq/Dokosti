@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
+import { getSettings } from "@/lib/settings";
 import { NAV, SITE } from "@/lib/site";
 
-export function Footer() {
+export async function Footer() {
+  const { shop } = await getSettings();
   return (
     <footer className="mt-12 bg-green text-cream">
       <div className="container-dk grid gap-8 py-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -23,14 +25,14 @@ export function Footer() {
 
         <FooterCol title="Prodejna">
           <address className="not-italic text-sm text-cream/80">
-            {SITE.address}
+            {shop.address}, {shop.city}
             <br />
-            {SITE.phone}
+            {shop.phone}
             <br />
-            {SITE.email}
+            {shop.email}
           </address>
           <ul className="mt-3 text-sm text-cream/80">
-            {SITE.openingHours.map((o) => (
+            {shop.openingHours.map((o) => (
               <li key={o.days}>
                 {o.days} {o.hours}
               </li>
@@ -49,7 +51,7 @@ export function Footer() {
       <div className="border-t border-green-hover">
         <div className="container-dk flex flex-col gap-2 py-3 text-xs text-cream/70 md:flex-row md:justify-between">
           <span>
-            © {new Date().getFullYear()} {SITE.name} · IČO {SITE.ico}
+            © {new Date().getFullYear()} {SITE.name} · IČO {shop.ico}
           </span>
           <span className="font-display">{SITE.slogan}</span>
         </div>

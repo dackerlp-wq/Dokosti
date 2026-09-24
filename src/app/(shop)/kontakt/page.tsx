@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { getSettings } from "@/lib/settings";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Kontakt" };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { shop } = await getSettings();
   return (
     <div className="container-dk py-6 md:py-10">
       <p className="label mb-2 text-brick-text">Kontakt</p>
@@ -14,20 +16,20 @@ export default function ContactPage() {
           <address className="mt-3 not-italic text-muted">
             {SITE.name}
             <br />
-            {SITE.address}
+            {shop.address}, {shop.city}
             <br />
-            IČO {SITE.ico}
+            IČO {shop.ico}
           </address>
           <p className="mt-4 text-muted">
-            {SITE.phone}
+            {shop.phone}
             <br />
-            {SITE.email}
+            {shop.email}
           </p>
         </div>
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <h2 className="text-[19px]">Otevírací doba</h2>
           <dl className="mt-3 text-muted">
-            {SITE.openingHours.map((o) => (
+            {shop.openingHours.map((o) => (
               <div key={o.days} className="flex justify-between border-b border-line py-2 last:border-0">
                 <dt>{o.days}</dt>
                 <dd>{o.hours}</dd>
