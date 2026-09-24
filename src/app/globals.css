@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* Tokeny značky podle BRAND.md */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-green: #1f3a2d;
+  --color-green-hover: #2b4d3c;
+  --color-cream: #f3ecdd;
+  --color-paper: #fbf7ee;
+  --color-brick: #b5532f;
+  --color-brick-text: #9c4424;
+  --color-ink: #24221f;
+  --color-muted: #55645a;
+  --color-line: #d9cfb8;
+  --color-ochre: #c8892b;
+  --color-ochre-badge: #e9c98f;
+  --color-olive: #7a8c3a;
+
+  --font-display: var(--font-display), Georgia, serif;
+  --font-label: var(--font-label), Arial, sans-serif;
+  --font-body: var(--font-body), Arial, sans-serif;
+
+  --radius-control: 6px;
+  --radius-card: 12px;
+}
+
+@layer base {
+  html {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  body {
+    background: var(--color-cream);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-size: 40px;
+    font-weight: 800;
+  }
+  h2 {
+    font-size: 30px;
+  }
+  h3 {
+    font-size: 24px;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 56px;
+    }
+    h2 {
+      font-size: 40px;
+    }
+    h3 {
+      font-size: 28px;
+    }
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    color: var(--color-ink);
+    font: inherit;
+    min-height: 44px;
+    padding: 0 12px;
+    width: 100%;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    border-color: var(--color-green);
+    box-shadow: inset 0 0 0 1px var(--color-green);
+    outline: none;
+  }
+
+  textarea {
+    padding: 10px 12px;
+  }
+}
+
+@utility label {
+  font-family: var(--font-label);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+@utility container-dk {
+  margin-inline: auto;
+  max-width: 1200px;
+  padding-inline: 16px;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    padding-inline: 32px;
+  }
+}
