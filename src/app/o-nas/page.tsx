@@ -12,9 +12,9 @@ export default function AboutPage() {
         <Logo variant="barevne" width={240} priority />
         <div>
           <p className="label mb-2 text-brick-text">O nás</p>
-          <h1>Dvořák a Kostová</h1>
+          <h1>Prodejna, ne sklad</h1>
           <p className="mt-4 text-muted">
-            Odtud DoKosti. Prodejnu jsme otevřeli, protože jsme sami krmili syrově a pořád jsme za krmivem jezdili
+            Prodejnu jsme otevřeli, protože jsme sami krmili syrově a pořád jsme za krmivem jezdili
             přes půl kraje. Vlastní krmivo nevyrábíme, vybíráme od výrobců, kterým věříme, a víme, co je v každém
             balíčku.
           </p>

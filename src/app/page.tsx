@@ -1,5 +1,6 @@
 import { Snowflake, Store, Truck } from "lucide-react";
 import Link from "next/link";
+import { HeroProduct, pickHeroProduct } from "@/components/product/hero-product";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ButtonLink } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -8,7 +9,9 @@ import { LINES, LINE_INFO } from "@/lib/catalog";
 import { getProducts } from "@/lib/products";
 
 export default async function HomePage() {
-  const featured = (await getProducts()).filter((p) => p.inStock).slice(0, 8);
+  const products = await getProducts();
+  const hero = pickHeroProduct(products);
+  const featured = products.filter((p) => p.inStock && p.slug !== hero?.slug).slice(0, 8);
 
   return (
     <>
@@ -31,9 +34,11 @@ export default async function HomePage() {
               </ButtonLink>
             </div>
           </div>
-          <div className="hidden justify-center md:flex">
-            <Logo variant="znak-negativ" width={200} priority />
-          </div>
+          {hero && (
+            <div className="flex justify-center md:justify-end">
+              <HeroProduct product={hero} />
+            </div>
+          )}
         </div>
       </section>
 
@@ -90,7 +95,7 @@ export default async function HomePage() {
           <div>
             <SectionHeading eyebrow="O nás" title="Prodejna, ne sklad" />
             <p className="-mt-2 text-muted">
-              Jsme Dvořák a Kostová. BARF krmíme vlastní zvířata a víme, že začátky bývají zmatek. Proto v
+              BARF krmíme vlastní zvířata a víme, že začátky bývají zmatek. Proto v
               prodejně poradíme, spočítáme dávku a nepřemlouváme. BARF není pro každého, a to je v pořádku.
             </p>
             <div className="mt-6">
