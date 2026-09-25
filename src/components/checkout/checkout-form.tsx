@@ -7,8 +7,8 @@ import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
-import { DAY_NAMES, type Settings } from "@/lib/settings";
-import { shippingPrice, type PaymentId, type PaymentMethod, type ShippingId, type ShippingMethod } from "@/lib/shipping";
+import { DAY_NAMES, DAY_NAMES_SHORT, type Settings } from "@/lib/settings";
+import { INTERVAL_LABEL, nextWeekday, shippingPrice, type PaymentId, type PaymentMethod, type ShippingId, type ShippingMethod } from "@/lib/shipping";
 
 type Props = {
   shipping: ShippingMethod[];
@@ -16,19 +16,29 @@ type Props = {
   deliveryDays: string[];
   deliveryWindow: string;
   loyalty: Settings["loyalty"];
+  subscription: Settings["subscription"];
+  /** Dny v týdnu, kdy lze pravidelně dodávat, podle způsobu dodání. */
+  weekdays: Record<ShippingId, number[]>;
+  /** Předvolený interval z kalkulačky (?predplatne=14). */
+  initialInterval?: number;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, prefill }: Props) {
+const INTERVALS = [0, 7, 14, 28] as const;
+type Interval = (typeof INTERVALS)[number];
+
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, prefill }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");
+  const [interval, setInterval] = useState<Interval>(subscription.enabled && (INTERVALS as readonly number[]).includes(initialInterval) ? (initialInterval as Interval) : 0);
+  const [weekdayChoice, setWeekdayChoice] = useState<number | null>(null);
   const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
   const [deliveryDate, setDeliveryDate] = useState<string>(deliveryDays[0] ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<{ number: string; total: number; points: number } | null>(null);
+  const [done, setDone] = useState<{ number: string; total: number; points: number; subscription?: { token: string; nextDate: string } } | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponPreview | null>(null);
   const [email, setEmail] = useState(prefill?.email ?? "");
@@ -46,6 +56,16 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         </p>
         {done.points > 0 && (
           <p className="mt-2 text-muted">Po doručení vám připíšeme {done.points} Kostiček.</p>
+        )}
+        {done.subscription && (
+          <p className="mt-2 text-muted">
+            Pravidelný odběr je nastavený, další dodávka {dateFmt.format(new Date(done.subscription.nextDate + "T12:00:00"))}. Přeskočit, změnit nebo zrušit ho
+            můžete kdykoli na{" "}
+            <Link href={`/predplatne/${done.subscription.token}`} className="text-green underline">
+              stránce předplatného
+            </Link>
+            , odkaz posíláme i e-mailem.
+          </p>
         )}
         <div className="mt-6">
           <ButtonLink href="/">Zpět na úvod</ButtonLink>
@@ -68,7 +88,13 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
   const method = SHIPPING.find((s) => s.id === shipping) ?? SHIPPING[0];
   const shippingCzk = shippingPrice(method, cart.subtotalCzk);
-  const discountCzk = coupon?.ok ? Math.min(coupon.discountCzk, cart.subtotalCzk) : 0;
+  const couponCzk = coupon?.ok ? Math.min(coupon.discountCzk, cart.subtotalCzk) : 0;
+  const subscriptionCzk = interval > 0 && subscription.discountPct > 0 ? Math.round(((cart.subtotalCzk - couponCzk) * subscription.discountPct) / 100) : 0;
+  const discountCzk = couponCzk + subscriptionCzk;
+  // Den pravidelné dodávky: u rozvozu podle vybraného termínu, jinak volba zákazníka.
+  const allowedWeekdays = weekdays[shipping] ?? [];
+  const weekday = shipping === "rozvoz" && deliveryDate ? new Date(deliveryDate + "T12:00:00").getDay() : weekdayChoice !== null && allowedWeekdays.includes(weekdayChoice) ? weekdayChoice : (allowedWeekdays[0] ?? 1);
+  const firstDate = shipping === "rozvoz" && deliveryDate ? deliveryDate : nextWeekday(weekday);
   const maxSteps = balance === null ? 0 : Math.floor(balance / loyalty.redeemStep);
   const pointsCzk = Math.min(redeemSteps * loyalty.redeemValueCzk, cart.subtotalCzk - discountCzk);
   const totalCzk = cart.subtotalCzk - discountCzk - pointsCzk + shippingCzk;
@@ -100,6 +126,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
       couponCode: coupon?.ok ? coupon.code : undefined,
       pointsRedeem: redeemSteps * loyalty.redeemStep,
+      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate } : undefined,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -114,7 +141,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       const res = await submitOrder(input);
       if (res.ok) {
         cart.clear();
-        setDone({ number: res.orderNumber, total: res.totalCzk, points: res.pointsEarned });
+        setDone({ number: res.orderNumber, total: res.totalCzk, points: res.pointsEarned, subscription: res.subscription });
       } else {
         setError(res.error);
       }
@@ -171,6 +198,52 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                 );
               })}
             </div>
+          </fieldset>
+        )}
+
+        {subscription.enabled && (
+          <fieldset>
+            <legend className="mb-1 text-[20px] font-display font-semibold">Pravidelně?</legend>
+            <p className="mb-3 text-sm text-muted">
+              Stejný nákup vám pošleme znovu{subscription.discountPct > 0 ? ` a dáme ${subscription.discountPct} % slevu na zboží` : ""}. Platíte za každou dodávku zvlášť, kdykoli ji přeskočíte nebo zrušíte.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {INTERVALS.map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setInterval(i)}
+                  aria-pressed={interval === i}
+                  className={`rounded-[var(--radius-control)] border px-4 py-2 text-sm ${interval === i ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}
+                >
+                  {i === 0 ? "Jednorázově" : INTERVAL_LABEL[i]}
+                </button>
+              ))}
+            </div>
+            {interval > 0 && (
+              <div className="mt-3 text-sm">
+                {shipping !== "rozvoz" && allowedWeekdays.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="label text-[11px] text-muted">{shipping === "odber" ? "Den vyzvednutí" : "Den odeslání"}</span>
+                    {allowedWeekdays.map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setWeekdayChoice(d)}
+                        aria-pressed={weekday === d}
+                        className={`rounded-[var(--radius-control)] border px-3 py-1 text-sm ${weekday === d ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}
+                      >
+                        {DAY_NAMES_SHORT[d]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-muted">
+                  První dodávka {dateFmt.format(new Date(firstDate + "T12:00:00"))}, další vždy v {DAY_NAMES[weekday] === "úterý" ? "úterý" : DAY_NAMES[weekday]}{" "}
+                  {INTERVAL_LABEL[interval]}. {subscription.reminderDaysBefore} dny předem vám napíšeme, co posíláme, a jde to jedním kliknutím přeskočit.
+                </p>
+              </div>
+            )}
           </fieldset>
         )}
 
@@ -248,7 +321,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
               {coupon && !coupon.ok && <p className="mt-1 text-sm text-brick-text">{coupon.error}</p>}
               {coupon?.ok && (
                 <p className="mt-1 text-sm text-green">
-                  Kód {coupon.code} ({coupon.label}): sleva {formatPrice(discountCzk)}.
+                  Kód {coupon.code} ({coupon.label}): sleva {formatPrice(couponCzk)}.
                 </p>
               )}
             </div>
@@ -314,10 +387,16 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             <dt className="text-muted">Zboží</dt>
             <dd>{formatPrice(cart.subtotalCzk)}</dd>
           </div>
-          {discountCzk > 0 && (
+          {couponCzk > 0 && (
             <div className="flex justify-between text-brick-text">
               <dt>Sleva {coupon?.ok ? coupon.code : ""}</dt>
-              <dd>−{formatPrice(discountCzk)}</dd>
+              <dd>−{formatPrice(couponCzk)}</dd>
+            </div>
+          )}
+          {subscriptionCzk > 0 && (
+            <div className="flex justify-between text-brick-text">
+              <dt>Pravidelný odběr −{subscription.discountPct} %</dt>
+              <dd>−{formatPrice(subscriptionCzk)}</dd>
             </div>
           )}
           {pointsCzk > 0 && (

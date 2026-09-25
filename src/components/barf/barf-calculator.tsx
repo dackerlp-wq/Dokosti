@@ -1,14 +1,20 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { FileDown, Mail, Plus, Printer, Trash2, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { emailPlan } from "@/app/(shop)/kalkulacka/actions";
 import { savePet } from "@/app/(shop)/ucet/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   ACTIVITY_LABEL,
+  ADDON_LABEL,
   BREEDS,
+  MEAT_LABEL,
+  type AddonKey,
+  type MeatKey,
   buildPlan,
   CONDITION_LABEL,
   estimateAdultWeight,
@@ -41,7 +47,7 @@ function readStored(): AnimalInput[] | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as AnimalInput[]) : null;
-    cached = Array.isArray(parsed) && parsed.length ? parsed.map((a) => ({ ...newAnimal(a.species), ...a })) : null;
+    cached = Array.isArray(parsed) && parsed.length ? parsed.map(withDefaults) : null;
   } catch {
     cached = null;
   }
@@ -57,13 +63,42 @@ function writeStored(list: AnimalInput[]) {
 }
 const noop = () => () => {};
 
-export function BarfCalculator({ products, user, savedPets = [], compact = false }: { products: Product[]; user: { email: string } | null; savedPets?: SavedPet[]; compact?: boolean }) {
+/** Doplní nová pole do profilů uložených dřív. */
+function withDefaults(a: Partial<AnimalInput>): AnimalInput {
+  const base = newAnimal(a.species);
+  return { ...base, ...a, addons: { ...base.addons, ...(a.addons ?? {}) }, exclude: a.exclude ?? [], removed: a.removed ?? [] } as AnimalInput;
+}
+
+/** Zakóduje vstup do URL parametru pro PDF a e-mail (base64url, stejně jako lib/pdf/request na serveru). */
+function encodeRequest(animals: AnimalInput[], days: number) {
+  const json = JSON.stringify({ animals, days });
+  return btoa(Array.from(new TextEncoder().encode(json), (b) => String.fromCharCode(b)).join(""))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+export function BarfCalculator({
+  products,
+  user,
+  savedPets = [],
+  compact = false,
+  initial,
+}: {
+  products: Product[];
+  user: { email: string } | null;
+  savedPets?: SavedPet[];
+  compact?: boolean;
+  /** Předvyplnění z odkazu v e-mailu s plánem. */
+  initial?: { animals: AnimalInput[]; days: number } | null;
+}) {
   const cart = useCart();
+  const router = useRouter();
   const stored = useSyncExternalStore(noop, readStored, () => null);
   const [edited, setEdited] = useState<AnimalInput[] | null>(null);
-  const animals = edited ?? stored ?? DEFAULT;
-  const [days, setDays] = useState<7 | 14 | 28>(14);
-  const [submitted, setSubmitted] = useState(false);
+  const animals = edited ?? initial?.animals ?? stored ?? DEFAULT;
+  const [days, setDays] = useState<7 | 14 | 28>((initial?.days as 7 | 14 | 28) ?? 14);
+  const [submitted, setSubmitted] = useState(!!initial);
   const [added, setAdded] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -110,7 +145,7 @@ export function BarfCalculator({ products, user, savedPets = [], compact = false
             <button
               key={p.id}
               type="button"
-              onClick={() => update([{ ...newAnimal(p.data.species), ...p.data, id: p.id, name: p.name } as AnimalInput])}
+              onClick={() => update([withDefaults({ ...p.data, id: p.id, name: p.name })])}
               className="rounded-[var(--radius-control)] border border-line bg-cream px-3 py-1 hover:border-green"
             >
               {p.name}
@@ -151,13 +186,15 @@ export function BarfCalculator({ products, user, savedPets = [], compact = false
       {plans.length > 0 && (
         <div className="mt-6 space-y-6 border-t border-line pt-5">
           {plans.map((pl) => (
-            <PlanView key={pl.input.id} plan={pl} user={user} onSave={() => save(pl.input)} pending={pending} />
+            <PlanView key={pl.input.id} plan={pl} user={user} onSave={() => save(pl.input)} pending={pending} onChange={(p) => patch(pl.input.id, p)} />
           ))}
           {saveMsg && (
             <p role="status" className="text-sm text-green">
               {saveMsg}
             </p>
           )}
+
+          <PlanExport encoded={encodeRequest(animals, days)} defaultEmail={user?.email ?? ""} />
 
           {merged.length > 0 && (
             <div className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
@@ -190,6 +227,17 @@ export function BarfCalculator({ products, user, savedPets = [], compact = false
                     Do košíku
                   </ButtonLink>
                 )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    if (!added) merged.forEach((r) => cart.add(r.product.slug, r.qty));
+                    setAdded(true);
+                    router.push(`/pokladna?predplatne=${days}`);
+                  }}
+                >
+                  Posílat pravidelně
+                </Button>
                 <span className="text-sm text-muted">
                   To je {formatPrice(Math.round(total / days))} za den
                   {plans.length > 1 ? " za všechna zvířata" : ""}.
@@ -205,6 +253,56 @@ export function BarfCalculator({ products, user, savedPets = [], compact = false
             veterinární vyšetření.
           </p>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Stažení, tisk a odeslání plánu krmení v PDF. */
+function PlanExport({ encoded, defaultEmail }: { encoded: string; defaultEmail: string }) {
+  const [email, setEmail] = useState(defaultEmail);
+  const [open, setOpen] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, startTransition] = useTransition();
+  const href = `/kalkulacka/plan.pdf?d=${encoded}`;
+  const btn = "inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line bg-paper px-3 text-sm text-green hover:border-green";
+
+  return (
+    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <p className="label text-[11px] text-brick-text">Plán krmení na lednici</p>
+      <p className="mt-1 text-sm text-muted">Jedna stránka na zvíře: dávka, porce, týden v misce a u začátečníků postup přechodu.</p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <a href={`${href}&download=1`} className={btn}>
+          <FileDown strokeWidth={1.75} className="h-4 w-4" /> Stáhnout PDF
+        </a>
+        <a href={href} target="_blank" rel="noopener" className={btn}>
+          <Printer strokeWidth={1.75} className="h-4 w-4" /> Vytisknout
+        </a>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={btn}>
+          <Mail strokeWidth={1.75} className="h-4 w-4" /> Poslat e-mailem
+        </button>
+      </div>
+      {open && (
+        <form
+          className="mt-3 flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            startTransition(async () => {
+              const res = await emailPlan(email, encoded);
+              setMsg(res.ok ? { ok: true, text: `Plán jsme poslali na ${email}.` } : { ok: false, text: res.error });
+            });
+          }}
+        >
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vas@email.cz" required className="w-auto min-w-[220px]" aria-label="E-mail pro zaslání plánu" />
+          <Button type="submit" variant="secondary" disabled={pending}>
+            {pending ? "Odesílám…" : "Odeslat"}
+          </Button>
+        </form>
+      )}
+      {msg && (
+        <p role="status" className={`mt-2 text-sm ${msg.ok ? "text-green" : "text-brick-text"}`}>
+          {msg.text}
+        </p>
       )}
     </div>
   );
@@ -336,6 +434,20 @@ function AnimalForm({ a, index, canRemove, onChange, onRemove }: { a: AnimalInpu
           </Field>
         )}
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="label text-[11px] text-muted">Nesmí:</span>
+        {(Object.keys(MEAT_LABEL) as MeatKey[]).map((k) => (
+          <label key={k} className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={a.exclude.includes(k)}
+              onChange={(e) => onChange({ exclude: e.target.checked ? [...a.exclude, k] : a.exclude.filter((x) => x !== k), removed: [] })}
+              className="h-4 w-4 min-h-0 w-auto accent-brick"
+            />
+            {MEAT_LABEL[k]}
+          </label>
+        ))}
+      </div>
       {canRemove && (
         <button type="button" onClick={onRemove} className="mt-3 inline-flex items-center gap-1 text-xs text-brick-text hover:underline">
           <Trash2 strokeWidth={1.75} className="h-3.5 w-3.5" /> Odebrat
@@ -345,8 +457,15 @@ function AnimalForm({ a, index, canRemove, onChange, onRemove }: { a: AnimalInpu
   );
 }
 
-function PlanView({ plan, user, onSave, pending }: { plan: Plan; user: { email: string } | null; onSave: () => void; pending: boolean }) {
+function PlanView({ plan, user, onSave, pending, onChange }: { plan: Plan; user: { email: string } | null; onSave: () => void; pending: boolean; onChange: (p: Partial<AnimalInput>) => void }) {
   const { input: a, result: r, items, days } = plan;
+  // Které doplňky dávají u tohoto zvířete smysl.
+  const addonKeys = (Object.keys(ADDON_LABEL) as AddonKey[]).filter((k) => {
+    if (k === "zelenina") return a.species === "pes" && a.ration === "zelenina";
+    if (k === "rekreacni") return a.species === "pes" && a.stage !== "mlade" && r.idealKg >= 10;
+    if (k === "granule") return a.rawShare < 100;
+    return true;
+  });
   const who = a.name || (a.species === "pes" ? "Váš pes" : "Vaše kočka");
   const perMeal = Math.round(r.dailyGrams / r.mealsPerDay / 5) * 5;
   const weeklyKg = Math.round((r.dailyGrams * 7) / 100) / 10;
@@ -402,6 +521,21 @@ function PlanView({ plan, user, onSave, pending }: { plan: Plan; user: { email: 
         </ul>
       )}
 
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <span className="label text-[11px] text-muted">Do nákupu přidat:</span>
+        {addonKeys.map((k) => (
+          <label key={k} className="flex items-center gap-1">
+            <input type="checkbox" checked={a.addons[k]} onChange={(e) => onChange({ addons: { ...a.addons, [k]: e.target.checked } })} className="h-4 w-4 min-h-0 w-auto accent-green" />
+            {ADDON_LABEL[k]}
+          </label>
+        ))}
+        {a.removed.length > 0 && (
+          <button type="button" onClick={() => onChange({ removed: [] })} className="text-xs text-green underline">
+            vrátit vyřazené produkty ({a.removed.length})
+          </button>
+        )}
+      </div>
+
       {items.length > 0 && (
         <div className="mt-4">
           <p className="label text-[11px] text-brick-text">Doporučení z naší nabídky na {days} dní</p>
@@ -418,8 +552,11 @@ function PlanView({ plan, user, onSave, pending }: { plan: Plan; user: { email: 
                     {it.gramsPerDay > 0 && it.role !== "olej" ? ` · ${Math.round(it.gramsPerDay / 5) * 5} g denně` : ""} · {it.why}
                   </span>
                 </div>
-                <div className="whitespace-nowrap">
+                <div className="flex items-center gap-2 whitespace-nowrap">
                   {it.qty} × {formatPrice(it.product.priceCzk)}
+                  <button type="button" onClick={() => onChange({ removed: [...a.removed, it.product.slug] })} aria-label={`Vyřadit ${productName(it.product)}`} title="Vyřadit z doporučení" className="inline-flex h-6 w-6 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-paper hover:text-brick-text">
+                    <X strokeWidth={1.75} className="h-4 w-4" />
+                  </button>
                 </div>
               </li>
             ))}

@@ -3,12 +3,12 @@ import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { getCustomerUser } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { nextDeliveryDays, paymentMethods, shippingMethods } from "@/lib/shipping";
+import { nextDeliveryDays, paymentMethods, shippingMethods, subscriptionWeekdays } from "@/lib/shipping";
 
 export const metadata: Metadata = { title: "Pokladna" };
 
-export default async function CheckoutPage() {
-  const [settings, user] = await Promise.all([getSettings(), getCustomerUser()]);
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ predplatne?: string }> }) {
+  const [settings, user, { predplatne }] = await Promise.all([getSettings(), getCustomerUser(), searchParams]);
   let prefill: { name: string; email: string; phone: string; street: string; city: string; zip: string } | undefined;
   if (user) {
     const db = await getAuthSupabase();
@@ -25,6 +25,9 @@ export default async function CheckoutPage() {
           deliveryDays={nextDeliveryDays(settings.shipping.rozvoz.days)}
           deliveryWindow={settings.shipping.rozvoz.window}
           loyalty={settings.loyalty}
+          subscription={settings.subscription}
+          weekdays={{ odber: subscriptionWeekdays(settings, "odber"), rozvoz: subscriptionWeekdays(settings, "rozvoz"), prepravce: subscriptionWeekdays(settings, "prepravce") }}
+          initialInterval={Number(predplatne ?? 0) || 0}
           prefill={prefill}
         />
       </div>

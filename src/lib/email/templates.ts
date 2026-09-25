@@ -1,6 +1,7 @@
 import { PAYMENT_LABEL, SHIPPING_LABEL } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import type { Settings } from "@/lib/settings";
+import { DAY_NAMES, type Settings } from "@/lib/settings";
+import { INTERVAL_LABEL } from "@/lib/shipping";
 
 /** Objednávka tak, jak ji vrací RPC order_for_email. */
 export type OrderForEmail = {
@@ -179,5 +180,62 @@ export function statusUpdate(o: OrderForEmail, s: Settings, status: string): Ema
   }
   const body = `<p>Dobrý den, ${esc(o.customer_name)},</p><p>${esc(msg)}</p><p>Děkujeme, ${esc(s.shop.name)}.</p>`;
   const text = `Dobrý den, ${o.customer_name},\n\n${msg}\n\nDěkujeme, ${s.shop.name}.`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}
+
+/** E-mail s plánem krmení v příloze (z kalkulačky). */
+export function feedingPlanEmail(names: string[], planUrl: string, s: Settings): EmailMessage {
+  const who = names.join(", ");
+  const title = `Plán krmení: ${who}`;
+  const body = `<p>Dobrý den,</p>
+<p>v příloze posíláme plán krmení pro: <strong>${esc(who)}</strong>. Je to orientační výchozí hodnota podle doporučení FEDIAF; po dvou až čtyřech týdnech zvíře zvažte a plán přepočítejte.</p>
+<p><a href="${esc(planUrl)}" style="color:#1f3a2d">Otevřít plán znovu v kalkulačce</a></p>
+<p>Kdykoli se ozvěte, rádi poradíme.</p>`;
+  const text = `Dobrý den,\n\nv příloze posíláme plán krmení pro: ${who}. Je to orientační výchozí hodnota podle doporučení FEDIAF; po dvou až čtyřech týdnech zvíře zvažte a plán přepočítejte.\n\nOtevřít plán znovu: ${planUrl}\n\n${s.shop.name}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}
+
+export type SubscriptionForEmail = { intervalDays: number; weekday: number; nextDate: string; manageUrl: string };
+
+/** Potvrzení nastavení pravidelného odběru (posílá se spolu s potvrzením první objednávky). */
+export function subscriptionCreated(o: OrderForEmail, s: Settings, sub: SubscriptionForEmail): EmailMessage {
+  const title = "Pravidelný odběr je nastavený";
+  const when = `${INTERVAL_LABEL[sub.intervalDays] ?? ""}, vždy v ${DAY_NAMES[sub.weekday]}`;
+  const body = `<p>Dobrý den, ${esc(o.customer_name)},</p>
+<p>stejný nákup jako v objednávce ${esc(o.order_number)} vám budeme posílat <strong>${esc(when)}</strong>. Další dodávka: <strong>${esc(fmtDay(sub.nextDate))}</strong>.</p>
+<p>${s.subscription.reminderDaysBefore} dny před každou dodávkou vám napíšeme, co posíláme. Kdykoli můžete dodávku přeskočit, upravit množství, změnit interval nebo odběr zrušit:</p>
+<p><a href="${esc(sub.manageUrl)}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;padding:10px 18px;border-radius:6px;text-decoration:none">Spravovat pravidelný odběr</a></p>
+<p style="font-size:12px;color:#55645a">Odkaz si uložte, platí jen pro vás. Platí se za každou dodávku zvlášť, stejně jako u této objednávky.</p>`;
+  const text = `Dobrý den, ${o.customer_name},\n\nstejný nákup jako v objednávce ${o.order_number} vám budeme posílat ${when}. Další dodávka: ${fmtDay(sub.nextDate)}.\n\nSpravovat (přeskočit, změnit, zrušit): ${sub.manageUrl}\n\n${s.shop.name}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}
+
+/** Připomínka před dodávkou z předplatného. */
+export function subscriptionReminder(
+  sub: { customer_name: string; next_date: string; items: { name: string | null; qty: number; price_czk: number | null; available: boolean | null }[]; shipping_method: "odber" | "rozvoz" | "prepravce" },
+  s: Settings,
+  manageUrl: string,
+): EmailMessage {
+  const title = `${fmtDay(sub.next_date)} vám ${sub.shipping_method === "odber" ? "chystáme" : "posíláme"} pravidelný nákup`;
+  const rows = sub.items.map((i) => `<tr><td style="padding:4px 0;border-bottom:1px solid #d9cfb8">${i.qty} × ${esc(i.name ?? "položka")}${i.available === false ? " <span style=\"color:#9c4424\">(teď není skladem)</span>" : ""}</td><td align="right" style="padding:4px 0;border-bottom:1px solid #d9cfb8;white-space:nowrap">${i.price_czk != null ? formatPrice(i.qty * i.price_czk) : ""}</td></tr>`).join("");
+  const total = sub.items.reduce((n, i) => n + (i.price_czk ?? 0) * i.qty, 0);
+  const cutoff = s.subscription.cutoffDaysBefore;
+  const body = `<p>Dobrý den, ${esc(sub.customer_name)},</p>
+<p>${sub.shipping_method === "odber" ? "k vyzvednutí připravíme" : "přivezeme"} <strong>${esc(fmtDay(sub.next_date))}</strong>:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0">${rows}
+<tr><td style="padding:6px 0;font-weight:bold">Zboží${s.subscription.discountPct > 0 ? ` (před slevou ${s.subscription.discountPct} %)` : ""}</td><td align="right" style="padding:6px 0;font-weight:bold">${formatPrice(total)}</td></tr></table>
+<p>Nic nemusíte dělat. Pokud tentokrát nechcete nic, nebo chcete upravit množství, stačí kliknout, a to do ${cutoff === 0 ? "dne dodání" : cutoff === 1 ? "zítřka" : `${cutoff} dnů před dodáním`}:</p>
+<p><a href="${esc(manageUrl)}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;padding:10px 18px;border-radius:6px;text-decoration:none">Přeskočit nebo upravit</a></p>`;
+  const text = `Dobrý den, ${sub.customer_name},\n\n${fmtDay(sub.next_date)} ${sub.shipping_method === "odber" ? "připravíme k vyzvednutí" : "přivezeme"}:\n${sub.items.map((i) => `${i.qty} × ${i.name ?? "položka"}`).join("\n")}\n\nPřeskočit nebo upravit: ${manageUrl}\n\n${s.shop.name}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}
+
+/** Prodejně: objednávku z předplatného se nepodařilo vytvořit. */
+export function subscriptionFailed(sub: { customer_name: string; customer_email: string; next_date: string }, error: string, s: Settings, adminUrl: string): EmailMessage {
+  const title = `Předplatné ${sub.customer_name}: objednávka nevznikla`;
+  const body = `<p>Dodávku ${esc(fmtDay(sub.next_date))} pro ${esc(sub.customer_name)} (${esc(sub.customer_email)}) se nepodařilo objednat: <strong>${esc(error)}</strong>.</p>
+<p>Předplatné jsme pozastavili. Domluvte se se zákazníkem a v administraci ho obnovte.</p>
+<p><a href="${esc(adminUrl)}" style="color:#1f3a2d">Otevřít předplatné v administraci</a></p>`;
+  const text = `Dodávku ${fmtDay(sub.next_date)} pro ${sub.customer_name} (${sub.customer_email}) se nepodařilo objednat: ${error}. Předplatné je pozastavené.\n${adminUrl}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }

@@ -11,6 +11,7 @@ const TABS = [
   { id: "payment", label: "Platba" },
   { id: "pages", label: "Texty stránek" },
   { id: "loyalty", label: "Kostičky" },
+  { id: "subscription", label: "Předplatné" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -38,6 +39,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "payment" && <PaymentForm s={settings.payment} />}
         {tab === "pages" && <PagesForm s={settings.pages} />}
         {tab === "loyalty" && <LoyaltyForm s={settings.loyalty} />}
+        {tab === "subscription" && <SubscriptionForm s={settings.subscription} />}
       </div>
     </div>
   );
@@ -276,6 +278,33 @@ function LoyaltyForm({ s }: { s: Settings["loyalty"] }) {
         <p className="mt-3 text-xs text-muted">
           Teď: 1 Kostička za každých {s.czkPerPoint} Kč, {s.redeemStep} Kostiček = sleva {s.redeemValueCzk} Kč. Kostičky se
           připisují, když objednávku označíte jako doručenou. Zákazník je uplatní v pokladně zadáním svého e-mailu.
+        </p>
+      </Card>
+    </SectionForm>
+  );
+}
+
+function SubscriptionForm({ s }: { s: Settings["subscription"] }) {
+  return (
+    <SectionForm section="subscription">
+      <Card title="Pravidelný odběr (předplatné)">
+        <Check name="enabled" label="Zákazníci si mohou v pokladně nastavit pravidelný odběr" defaultChecked={s.enabled} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Field label="Sleva na zboží (%)" hint="0 = bez slevy">
+            <input name="discountPct" type="number" min={0} max={50} defaultValue={s.discountPct} />
+          </Field>
+          <Field label="E-mail předem (dní)">
+            <input name="reminderDaysBefore" type="number" min={1} max={14} defaultValue={s.reminderDaysBefore} />
+          </Field>
+          <Field label="Objednávka vzniká (dní předem)" hint="uzávěrka změn">
+            <input name="cutoffDaysBefore" type="number" min={0} max={7} defaultValue={s.cutoffDaysBefore} />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Teď: {s.reminderDaysBefore} dny před dodáním přijde zákazníkovi e-mail s obsahem a odkazem Přeskočit nebo Změnit, {s.cutoffDaysBefore}{" "}
+          {s.cutoffDaysBefore === 1 ? "den" : "dny"} před dodáním vznikne objednávka a objeví se v Objednávkách i v plánu rozvozu. Platí se za každou
+          objednávku zvlášť (převodem nebo při převzetí). Když se objednávku nepodaří vytvořit (zboží není skladem), předplatné se pozastaví a
+          přijde vám e-mail.
         </p>
       </Card>
     </SectionForm>

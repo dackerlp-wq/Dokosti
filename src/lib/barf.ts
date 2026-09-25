@@ -43,7 +43,54 @@ export type AnimalInput = {
   ration: Ration;
   /** Začínáme s BARFem: první týdny jeden druh masa, granule vedle. */
   beginner: boolean;
+  /** Druhy masa, které zvíře nesmí (alergie, nesnášenlivost). Produkty s nimi se vyřadí. */
+  exclude: MeatKey[];
+  /** Co přidat do nákupu; vypnuté role se vynechají. */
+  addons: Record<AddonKey, boolean>;
+  /** Konkrétní produkty, které zákazník z doporučení vyřadil (slugy). */
+  removed: string[];
 };
+
+export type MeatKey = "kureci" | "kruti" | "kachni" | "hovezi" | "jehneci" | "veprove" | "kralici" | "ryby";
+export const MEAT_LABEL: Record<MeatKey, string> = {
+  kureci: "kuřecí",
+  kruti: "krůtí",
+  kachni: "kachní",
+  hovezi: "hovězí",
+  jehneci: "jehněčí",
+  veprove: "vepřové",
+  kralici: "králičí",
+  ryby: "ryby",
+};
+/** Slova ve variantě, složení a úvodu, která daný druh masa prozradí (bez diakritiky, malá písmena). */
+const MEAT_WORDS: Record<MeatKey, string[]> = {
+  kureci: ["kurec", "kure", "chicken"],
+  kruti: ["kruti", "krut", "turkey"],
+  kachni: ["kachn", "duck"],
+  hovezi: ["hovez", "beef", "drstk", "bachor"],
+  jehneci: ["jehnec", "jehne", "lamb", "skopov"],
+  veprove: ["veprov", "prase", "pork"],
+  kralici: ["kralic", "kralik", "rabbit"],
+  ryby: ["ryb", "losos", "sled", "makrel", "tresk", "fish"],
+};
+
+export type AddonKey = "kosti" | "ryba" | "olej" | "zelenina" | "rekreacni" | "granule";
+export const ADDON_LABEL: Record<AddonKey, string> = {
+  kosti: "Kosti",
+  ryba: "Rybí den",
+  olej: "Olej",
+  zelenina: "Zelenina",
+  rekreacni: "Kost na okusování",
+  granule: "Granule",
+};
+export const DEFAULT_ADDONS: Record<AddonKey, boolean> = { kosti: true, ryba: true, olej: true, zelenina: true, rekreacni: true, granule: true };
+
+/** Obsahuje produkt některý z vyloučených druhů masa? */
+export function containsMeat(p: Product, keys: MeatKey[]) {
+  if (!keys.length) return false;
+  const hay = fold(`${p.variant} ${p.composition} ${p.intro}`);
+  return keys.some((k) => MEAT_WORDS[k].some((w) => hay.includes(w)));
+}
 
 export type Composition = {
   /** Cílové podíly z denní syrové dávky v %. */
@@ -376,9 +423,10 @@ export function mixesKcal(mixes: Product[]) {
  * podle bilance, olej, zelenina, u štěňat granule. Množství zaokrouhluje na celá balení.
  */
 export function buildPlan(products: Product[], i: AnimalInput, days: number): Plan {
-  const pool = products.filter((p) => p.inStock && p.animals.includes(i.species));
-  const { mixes, fish } = pickMixes(pool, i);
-  const kibble = i.rawShare < 100 ? pool.find((p) => p.line === "granule" && (i.stage !== "mlade" || has(p, "štěň", "puppy", "junior"))) ?? pool.find((p) => p.line === "granule") ?? null : null;
+  const pool = products.filter((p) => p.inStock && p.animals.includes(i.species) && !i.removed.includes(p.slug) && !containsMeat(p, i.exclude));
+  const { mixes, fish: fishFound } = pickMixes(pool, i);
+  const fish = i.addons.ryba ? fishFound : null;
+  const kibble = i.rawShare < 100 && i.addons.granule ? pool.find((p) => p.line === "granule" && (i.stage !== "mlade" || has(p, "štěň", "puppy", "junior"))) ?? pool.find((p) => p.line === "granule") ?? null : null;
   const result = calculate(i, mixesKcal(mixes), kibble?.nutrition?.kcalPer100g ?? null);
   const D = result.dailyGrams;
   const comp = result.composition;
@@ -393,7 +441,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Bilance kosti: kost v mixu z etikety, jinak neznámá.
   const mixBonePcts = mixes.map((m) => m.nutrition?.bonePct);
   const fromMix = mixes.length && mixBonePcts.every((b) => b != null) ? (mixBonePcts as number[]).reduce((a, b) => a + b, 0) / mixes.length : null;
-  const bone = pickBone(pool, i, adultKg);
+  const bone = i.addons.kosti ? pickBone(pool, i, adultKg) : null;
   const rmbBonePct = bone?.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT;
 
   // Kolik dávky připadá na masité kosti (jako náhrada části mixu).
@@ -416,6 +464,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       if (boneFromMix + rmbShare * rmbBonePct > 12) notes.push({ kind: "warn", text: "Celkový podíl kosti vychází vysoko. Pokud je stolice tvrdá a světlá, kosti uberte." });
     }
   }
+  if (!i.addons.kosti && i.species !== "kocka") notes.push({ kind: "info", text: "Bez Kostí hlídejte, aby mix obsahoval dost kosti. Bez kosti v dávce chybí vápník." });
   const mixShare = Math.max(0, animalShare - fishShare - rmbShare);
 
   // Mixy Základ, rovnoměrně mezi zvolené druhy masa.
@@ -438,7 +487,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     items.push({ product: bone, qty: packs(gpd * days, bone.weightGrams), gramsPerDay: gpd, role: "kosti", why: fromMix == null ? "místo části mixu 2× týdně" : "doplnění kosti do dávky" });
   }
   // Rekreační kost pro psy nad 10 kg, mimo dávku.
-  if (i.species === "pes" && adultKg >= 10 && i.stage !== "mlade") {
+  if (i.addons.rekreacni && i.species === "pes" && adultKg >= 10 && i.stage !== "mlade") {
     const rec = pool.find((p) => p.line === "kosti" && (p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov")));
     if (rec) items.push({ product: rec, qty: 1, gramsPerDay: 0, role: "rekreacni", why: "jen na okusování pod dohledem, nepočítá se do dávky" });
   }
@@ -451,13 +500,13 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     notes.push({ kind: "info", text: "Kočka potřebuje taurin. Mixy zatím nemají taurin deklarovaný, přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
   }
   // Olej: 1 ml na 100 g dávky (Swanie Simon), balení podle výdrže.
-  const oil = pool.find((p) => p.line === "navic" && has(p, "olej"));
+  const oil = i.addons.olej ? pool.find((p) => p.line === "navic" && has(p, "olej")) : null;
   if (oil) {
     const mlPerDay = D / 100;
     items.push({ product: oil, qty: packs(mlPerDay * days, oil.weightGrams), gramsPerDay: mlPerDay, role: "olej", why: `${Math.round(mlPerDay)} ml denně do misky, spolu s vitaminem E` });
   }
   // Zelenina jen v režimu se zeleninou (psi).
-  if (comp.plant > 0) {
+  if (comp.plant > 0 && i.addons.zelenina) {
     const veg = pool.find((p) => p.line === "navic" && has(p, "zelenin"));
     if (veg) {
       const gpd = D * (comp.plant / 100);
@@ -476,7 +525,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     });
   } else if (i.rawShare < 100) notes.push({ kind: "info", text: "Granule pro tuto kombinaci nemáme skladem, podíl granulí dopočítejte podle tabulky výrobce." });
 
-  if (!mixes.length) notes.push({ kind: "warn", text: "Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu." });
+  if (!mixes.length) notes.push({ kind: "warn", text: i.exclude.length ? "Po vyřazení nevhodných druhů masa nemáme skladem žádný vhodný mix. Stavte se v prodejně, poskládáme set spolu." : "Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu." });
 
   const totalCzk = items.reduce((s, r) => s + r.qty * r.product.priceCzk, 0);
   return {
@@ -537,6 +586,9 @@ export function newAnimal(species: Species = "pes"): AnimalInput {
     rawShare: 100,
     ration: "pmr",
     beginner: false,
+    exclude: [],
+    addons: { ...DEFAULT_ADDONS },
+    removed: [],
   };
 }
 
@@ -556,3 +608,68 @@ export const CONDITION_LABEL: Record<Condition, string> = {
   nadvaha: "Mírná nadváha, žebra pod tukem",
   obezita: "Výrazná nadváha, pas není vidět",
 };
+
+/* ----------------------------------------------------------------------------------------
+ * Týdenní rozpis: který den co do misky (pro plán krmení v PDF)
+ * -------------------------------------------------------------------------------------- */
+
+export type DayPlan = { day: number; label: string; items: { product: Product; grams: number; note?: string }[] };
+
+export const WEEK_DAYS = ["pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle"];
+
+/**
+ * Rozloží denní dávku do sedmi dnů: mixy Základ se střídají, rybí den je čtvrtek,
+ * Kosti nahrazují část mixu ve vybrané dny, olej, zelenina a granule jsou každý den.
+ */
+export function weeklySchedule(plan: Plan): DayPlan[] {
+  const { result, items } = plan;
+  const D = result.dailyGrams;
+  const mixes = items.filter((i) => i.role === "zaklad");
+  const fish = items.find((i) => i.role === "ryba");
+  const bones = items.find((i) => i.role === "kosti");
+  const daily = items.filter((i) => ["olej", "zelenina", "granule", "vnitrnosti"].includes(i.role));
+  const plantShare = result.composition.plant / 100;
+  const animalGrams = D * (1 - plantShare);
+  const round5 = (g: number) => Math.max(5, Math.round(g / 5) * 5);
+
+  // Dny s kostmi podle jejich podílu: málo = neděle, středně = středa a neděle, hodně = každý den.
+  const boneAvg = bones?.gramsPerDay ?? 0;
+  const boneDays = !bones ? [] : boneAvg / D <= 0.06 ? [6] : boneAvg / D <= 0.12 ? [2, 6] : [0, 1, 2, 3, 4, 5, 6];
+  const boneGrams = boneDays.length ? (boneAvg * 7) / boneDays.length : 0;
+  const fishDay = fish ? 3 : -1;
+
+  let mixIdx = 0;
+  return WEEK_DAYS.map((label, day) => {
+    const out: DayPlan["items"] = [];
+    if (day === fishDay && fish) {
+      out.push({ product: fish.product, grams: round5(animalGrams), note: "rybí den místo masa" });
+    } else {
+      let meat = animalGrams;
+      if (boneDays.includes(day) && bones) {
+        const g = Math.min(round5(boneGrams), animalGrams * 0.5);
+        out.push({ product: bones.product, grams: g, note: "místo části mixu" });
+        meat -= g;
+      }
+      if (mixes.length) {
+        const m = mixes[mixIdx % mixes.length];
+        mixIdx++;
+        out.push({ product: m.product, grams: round5(meat) });
+      }
+    }
+    daily.forEach((d) => {
+      if (d.role === "olej") out.push({ product: d.product, grams: 0, note: `${Math.max(1, Math.round(d.gramsPerDay))} ml` });
+      else if (d.role === "granule") out.push({ product: d.product, grams: d.gramsPerDay, note: d.gramsPerDay > 0 ? "v jiném jídle" : `${result.kibbleKcal} kcal podle obalu` });
+      else if (d.gramsPerDay > 0) out.push({ product: d.product, grams: round5(d.gramsPerDay) });
+    });
+    return { day, label, items: out };
+  });
+}
+
+/** Kroky přechodu pro začátečníky (shodné se stránkou Jak začít). */
+export const TRANSITION_STEPS: { when: string; title: string; text: string }[] = [
+  { when: "1. týden", title: "Jeden druh masa", text: "Lehce stravitelná drůbeží svalovina, u psů případně s troškou zeleniny. Granule v jiném jídle." },
+  { when: "2. týden", title: "Přidejte kosti", text: "Měkké masité kosti, například kuřecí krky. Tvrdá nebo světlá stolice znamená kostí moc." },
+  { when: "3. týden", title: "Vnitřnosti a bachory", text: "Po malých kouscích, játra jsou silná. U psů zařaďte i zelené bachory." },
+  { when: "od 4. týdne", title: "Další druhy masa", text: "Hovězí, jehněčí, králičí nebo ryba, každý nový druh zvlášť pár dní." },
+  { when: "dál", title: "Plný jídelníček", text: "Přidejte olej a doplňky, střídejte více druhů masa. Přechod je hotový." },
+];

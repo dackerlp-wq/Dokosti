@@ -75,6 +75,15 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
         redeemValueCzk: Math.max(1, num(fd, "redeemValueCzk", 50)),
       };
       break;
+    case "subscription":
+      value = {
+        enabled: bool(fd, "enabled"),
+        discountPct: Math.min(50, Math.max(0, Math.round(num(fd, "discountPct", 5)))),
+        reminderDaysBefore: Math.min(14, Math.max(1, Math.round(num(fd, "reminderDaysBefore", 3)))),
+        cutoffDaysBefore: Math.min(7, Math.max(0, Math.round(num(fd, "cutoffDaysBefore", 1)))),
+      };
+      if (value.cutoffDaysBefore >= value.reminderDaysBefore) return { error: "E-mail musí chodit dřív, než vzniká objednávka." };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

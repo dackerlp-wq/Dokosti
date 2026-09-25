@@ -42,3 +42,20 @@ export function nextDeliveryDays(days: number[], count = 4, from = new Date()): 
   }
   return out;
 }
+
+/** Dny v týdnu, kdy lze u daného způsobu dodání pravidelně dodávat (0 = neděle). */
+export function subscriptionWeekdays(s: Settings, method: ShippingId): number[] {
+  if (method === "rozvoz") return s.shipping.rozvoz.days;
+  if (method === "prepravce") return s.shipping.prepravce.shipDays;
+  return [1, 2, 3, 4, 5, 6];
+}
+
+/** Nejbližší datum (ISO) s daným dnem v týdnu, nejdřív zítra. */
+export function nextWeekday(weekday: number, from = new Date()): string {
+  const d = new Date(from);
+  d.setDate(d.getDate() + 1);
+  while (d.getDay() !== weekday) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+export const INTERVAL_LABEL: Record<number, string> = { 7: "každý týden", 14: "každých 14 dní", 28: "každé 4 týdny" };

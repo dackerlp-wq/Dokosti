@@ -4,6 +4,7 @@ import { BarfCalculator, type SavedPet } from "@/components/barf/barf-calculator
 import { JsonLd } from "@/components/seo/json-ld";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { getCustomerUser } from "@/lib/customer";
+import { decodePlanRequest } from "@/lib/pdf/request";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getAuthSupabase } from "@/lib/supabase/auth";
@@ -24,8 +25,9 @@ const FAQ = [
   ["Co kalkulačka nespočítá?", "Dávku pro nemocná zvířata, hubnutí při výrazné nadváze a přesné složení pro štěňata obřích plemen. To patří k veterináři, kalkulačka vám dá jen výchozí bod."],
 ] as const;
 
-export default async function CalculatorPage() {
-  const [products, user] = await Promise.all([getProducts(), getCustomerUser()]);
+export default async function CalculatorPage({ searchParams }: { searchParams: Promise<{ d?: string }> }) {
+  const [products, user, { d }] = await Promise.all([getProducts(), getCustomerUser(), searchParams]);
+  const initial = decodePlanRequest(d ?? null);
   let savedPets: SavedPet[] = [];
   if (user) {
     const db = await getAuthSupabase();
@@ -52,7 +54,7 @@ export default async function CalculatorPage() {
       </div>
 
       <Section tone="cream">
-        <BarfCalculator products={products} user={user} savedPets={savedPets} />
+        <BarfCalculator products={products} user={user} savedPets={savedPets} initial={initial} />
       </Section>
 
       <Section tone="paper">

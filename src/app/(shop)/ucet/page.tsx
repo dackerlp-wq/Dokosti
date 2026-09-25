@@ -6,6 +6,8 @@ import { formatDate, formatDay, SHIPPING_LABEL, type CustomerRow, type LoyaltyRo
 import { getCustomerUser } from "@/lib/customer";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
+import { INTERVAL_LABEL } from "@/lib/shipping";
+import { SUBSCRIPTION_STATUS_LABEL, type SubscriptionStatus } from "@/lib/subscriptions";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 import { customerLogout, deletePet, type PetRow } from "./actions";
 
@@ -15,17 +17,19 @@ export default async function AccountPage() {
   const user = await getCustomerUser();
   if (!user) redirect("/ucet/prihlaseni");
   const db = await getAuthSupabase();
-  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: pets }, settings] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: pets }, { data: subs }, settings] = await Promise.all([
     db.from("customers").select("*").eq("email", user.email).maybeSingle(),
     db.from("orders").select("*").eq("customer_email", user.email).order("created_at", { ascending: false }).limit(50),
     db.from("loyalty_transactions").select("id, points, reason, created_at").order("created_at", { ascending: false }).limit(20),
     db.from("pets").select("id, name, data, updated_at").order("updated_at", { ascending: false }),
+    db.from("subscriptions").select("id, token, interval_days, next_date, status, skip_next").eq("customer_email", user.email).order("created_at", { ascending: false }),
     getSettings(),
   ]);
   const c = customer as CustomerRow | null;
   const list = (orders ?? []) as OrderRow[];
   const points = (loyalty ?? []) as LoyaltyRow[];
   const petList = (pets ?? []) as PetRow[];
+  const subList = (subs ?? []) as { id: string; token: string; interval_days: number; next_date: string; status: SubscriptionStatus; skip_next: boolean }[];
   const { loyalty: L } = settings;
 
   return (
@@ -105,6 +109,28 @@ export default async function AccountPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {subList.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 text-[22px]">Pravidelný odběr</h2>
+          <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+            {subList.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+                <span>
+                  <strong>{INTERVAL_LABEL[s.interval_days]}</strong>
+                  <span className="text-muted">
+                    {" "}
+                    · {s.status === "aktivni" ? `další ${formatDay(s.next_date)}${s.skip_next ? " (přeskočíme)" : ""}` : SUBSCRIPTION_STATUS_LABEL[s.status].toLowerCase()}
+                  </span>
+                </span>
+                <Link href={`/predplatne/${s.token}`} className="text-green underline">
+                  Spravovat
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <h2 className="mt-8 mb-3 text-[22px]">Moje zvířata</h2>

@@ -12,6 +12,7 @@ export async function sendEmail(
   msg: EmailMessage,
   kind: string,
   orderId: string | null,
+  attachments: { filename: string; content: Buffer }[] = [],
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
@@ -24,7 +25,15 @@ export async function sendEmail(
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to, subject: msg.subject, html: msg.html, text: msg.text, reply_to: process.env.EMAIL_REPLY_TO || undefined }),
+        body: JSON.stringify({
+          from,
+          to,
+          subject: msg.subject,
+          html: msg.html,
+          text: msg.text,
+          reply_to: process.env.EMAIL_REPLY_TO || undefined,
+          attachments: attachments.length ? attachments.map((a) => ({ filename: a.filename, content: a.content.toString("base64") })) : undefined,
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
       if (res.ok) {

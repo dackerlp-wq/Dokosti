@@ -4,7 +4,8 @@ import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
 import { sendEmail } from "@/lib/email/send";
-import { orderConfirmation, orderNotification, type OrderForEmail } from "@/lib/email/templates";
+import { orderConfirmation, orderNotification, subscriptionCreated, type OrderForEmail } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/seo";
 import { getSupabase } from "@/lib/supabase/server";
 
 export type CheckoutInput = {
@@ -15,6 +16,8 @@ export type CheckoutInput = {
   deliveryDate?: string;
   couponCode?: string;
   pointsRedeem?: number;
+  /** Pravidelný odběr: interval, den v týdnu a datum první dodávky. */
+  subscribe?: { intervalDays: number; weekday: number; firstDate: string };
   customer: {
     name: string;
     email: string;
@@ -27,7 +30,7 @@ export type CheckoutInput = {
 };
 
 export type CheckoutResult =
-  | { ok: true; orderNumber: string; totalCzk: number; pointsEarned: number }
+  | { ok: true; orderNumber: string; totalCzk: number; pointsEarned: number; subscription?: { token: string; nextDate: string } }
   | { ok: false; error: string };
 
 const DB_ERRORS: [string, string][] = [
@@ -74,6 +77,15 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     .filter((l) => l.qty >= 1);
   if (items.length === 0) return { ok: false, error: "Košík je prázdný." };
 
+  let subscribe: { intervalDays: number; weekday: number; firstDate: string } | null = null;
+  if (input.subscribe && settings.subscription.enabled) {
+    const { intervalDays, weekday, firstDate } = input.subscribe;
+    if (![7, 14, 28].includes(intervalDays) || !(weekday >= 0 && weekday <= 6) || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) {
+      return { ok: false, error: "Neplatné nastavení pravidelného odběru." };
+    }
+    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate };
+  }
+
   const order = {
     customer_name: c.name.trim(),
     customer_email: c.email.trim(),
@@ -87,6 +99,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     delivery_date: deliveryDate,
     coupon_code: (input.couponCode ?? "").trim(),
     points_redeem: Math.max(0, Math.floor(input.pointsRedeem ?? 0)),
+    subscribe_interval: subscribe ? String(subscribe.intervalDays) : "",
   };
 
   const db = getSupabase();
@@ -109,6 +122,20 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   }
   const r = data as { order_number: string; total_czk: number; points_earned: number };
 
+  // Předplatné: založit po první objednávce. Chyba předplatného objednávku nezruší.
+  let subscriptionResult: { token: string; nextDate: string } | undefined;
+  if (subscribe) {
+    const { data: sub, error: subError } = await db.rpc("create_subscription", {
+      p_sub: { ...order, interval_days: subscribe.intervalDays, weekday: subscribe.weekday, first_date: subscribe.firstDate, order_number: r.order_number },
+      p_items: items,
+    });
+    if (subError || !sub) console.error("create_subscription", subError);
+    else {
+      const sr = sub as { token: string; next_date: string };
+      subscriptionResult = { token: sr.token, nextDate: sr.next_date };
+    }
+  }
+
   // E-maily: zákazníkovi potvrzení, prodejně upozornění. Chyba e-mailu objednávku nezruší.
   try {
     const { data: full } = await db.rpc("order_for_email", { p_order_number: r.order_number });
@@ -119,12 +146,21 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
       if (settings.shop.email.includes("@")) {
         await sendEmail(db, settings.shop.email, orderNotification(o, settings, `${base}/admin/objednavky/${o.id}`), "upozorneni", o.id);
       }
+      if (subscriptionResult && subscribe) {
+        await sendEmail(
+          db,
+          o.customer_email,
+          subscriptionCreated(o, settings, { intervalDays: subscribe.intervalDays, weekday: subscribe.weekday, nextDate: subscriptionResult.nextDate, manageUrl: `${SITE_URL}/predplatne/${subscriptionResult.token}` }),
+          "predplatne-zalozeno",
+          o.id,
+        );
+      }
     }
   } catch (e) {
     console.error("order e-mail", e);
   }
 
-  return { ok: true, orderNumber: r.order_number, totalCzk: r.total_czk, pointsEarned: r.points_earned };
+  return { ok: true, orderNumber: r.order_number, totalCzk: r.total_czk, pointsEarned: r.points_earned, subscription: subscriptionResult };
 }
 
 export type CouponPreview = { ok: true; code: string; discountCzk: number; label: string } | { ok: false; error: string };

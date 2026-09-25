@@ -77,7 +77,22 @@ koťata) a převádí ji na gramy podle energie mixu z etikety (`products.kcal_p
 a v Kostech (`bone_pct`, `bone_class`), doporučí produkty na 7/14/28 dní, cenu za den, výdrž balení, umí více zvířat najednou,
 podíl granulí u štěňat a při přechodu, a profil zvířete uloží k účtu (tabulka `pets`) nebo do prohlížeče. Údaje z etikety se
 zadávají u produktu v adminu a nikdy se nedopočítávají. Rešerše a odůvodnění modelu: `reports/BARF krmení pro kalkulačku.md`.
+Zákazník může doplňky (Kosti, rybí den, olej, zelenina, kost na okusování, granule) vypnout, vyřadit druhy masa, které zvíře
+nesmí, i jednotlivé produkty. Plán krmení na lednici generuje `lib/pdf/plan.tsx` (@react-pdf/renderer, písma v `public/fonts`)
+na `/kalkulacka/plan.pdf?d=…`, tlačítka Stáhnout, Vytisknout a Poslat e-mailem (příloha přes Resend).
 Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startovaci-…`.
+
+## Předplatné (pravidelný odběr)
+
+V pokladně zákazník zvolí Jednorázově / každý týden / každých 14 dní / každé 4 týdny a den dodání (u rozvozu rozvozový den,
+jinak den v týdnu). První objednávka projde běžně, `create_subscription` k ní založí předplatné (tabulky `subscriptions`,
+`subscription_items`) a zákazník dostane e-mail s odkazem `/predplatne/<token>`, kde dodávku přeskočí, upraví množství,
+změní interval nebo odběr pozastaví a zruší (RPC `manage_subscription`). Přihlášený zákazník vidí předplatné i v účtu.
+Denní cron `/api/cron/predplatne` (Vercel Cron, `vercel.json`, hlavička `Authorization: Bearer CRON_SECRET`; stejná hodnota je
+v tabulce `secrets`) pošle připomínku `reminderDaysBefore` dní předem a `cutoffDaysBefore` dní předem založí objednávku přes
+`create_order` (sleva `subscription.discountPct` z nastavení, kód `PŘEDPLATNÉ`), pošle potvrzení a posune `next_date`. Když se
+objednávku nepodaří vytvořit, předplatné se pozastaví a prodejna dostane e-mail. Admin: Předplatné (seznam, detail se správou a
+objednávkami), Nastavení → Předplatné. Platba za každou dodávku zvlášť; opakovaná platba kartou přijde s platební bránou.
 Dotazy z poradny jdou do tabulky `inquiries`, e-mailem prodejně a do adminu (Poradna). Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
 Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
 

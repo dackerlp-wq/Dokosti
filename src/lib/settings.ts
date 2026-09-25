@@ -55,6 +55,15 @@ export type Settings = {
     /** Kolik Kč je jeden krok. */
     redeemValueCzk: number;
   };
+  subscription: {
+    enabled: boolean;
+    /** Sleva na zboží při pravidelném odběru, %. 0 = bez slevy. */
+    discountPct: number;
+    /** Kolik dní před dodáním přijde e-mail s možností přeskočit nebo změnit. */
+    reminderDaysBefore: number;
+    /** Kolik dní před dodáním vznikne objednávka (uzávěrka změn). */
+    cutoffDaysBefore: number;
+  };
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -115,9 +124,10 @@ export const DEFAULT_SETTINGS: Settings = {
     privacy: "",
   },
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
+  subscription: { enabled: true, discountPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
 };
 
-export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty"] as const satisfies readonly (keyof Settings)[];
+export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription"] as const satisfies readonly (keyof Settings)[];
 
 /** Hluboké sloučení výchozích hodnot s uloženými (nové klíče dostanou výchozí hodnotu). */
 function merge<T>(base: T, over: unknown): T {
