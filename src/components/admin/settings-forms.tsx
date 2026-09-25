@@ -10,6 +10,7 @@ const TABS = [
   { id: "shipping", label: "Doprava" },
   { id: "payment", label: "Platba" },
   { id: "pages", label: "Texty stránek" },
+  { id: "loyalty", label: "Kostičky" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -36,6 +37,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "shipping" && <ShippingForm s={settings.shipping} />}
         {tab === "payment" && <PaymentForm s={settings.payment} />}
         {tab === "pages" && <PagesForm s={settings.pages} />}
+        {tab === "loyalty" && <LoyaltyForm s={settings.loyalty} />}
       </div>
     </div>
   );
@@ -250,6 +252,31 @@ function PagesForm({ s }: { s: Settings["pages"] }) {
       </Card>
       <Card title="Ochrana osobních údajů">
         <textarea name="privacy" rows={10} defaultValue={s.privacy} />
+      </Card>
+    </SectionForm>
+  );
+}
+
+function LoyaltyForm({ s }: { s: Settings["loyalty"] }) {
+  return (
+    <SectionForm section="loyalty">
+      <Card title="Věrnostní Kostičky">
+        <Check name="enabled" label="Program je zapnutý" defaultChecked={s.enabled} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Field label="1 Kostička za (Kč)">
+            <input name="czkPerPoint" type="number" min={1} defaultValue={s.czkPerPoint} />
+          </Field>
+          <Field label="Uplatnit po (Kostiček)">
+            <input name="redeemStep" type="number" min={1} defaultValue={s.redeemStep} />
+          </Field>
+          <Field label="Hodnota kroku (Kč)">
+            <input name="redeemValueCzk" type="number" min={1} defaultValue={s.redeemValueCzk} />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Teď: 1 Kostička za každých {s.czkPerPoint} Kč, {s.redeemStep} Kostiček = sleva {s.redeemValueCzk} Kč. Kostičky se
+          připisují, když objednávku označíte jako doručenou. Zákazník je uplatní v pokladně zadáním svého e-mailu.
+        </p>
       </Card>
     </SectionForm>
   );

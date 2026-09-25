@@ -16,6 +16,7 @@ export default async function CheckoutPage() {
           payment={paymentMethods(settings)}
           deliveryDays={nextDeliveryDays(settings.shipping.rozvoz.days)}
           deliveryWindow={settings.shipping.rozvoz.window}
+          loyalty={settings.loyalty}
         />
       </div>
     </div>

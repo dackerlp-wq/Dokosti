@@ -67,6 +67,14 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
     case "pages":
       value = { about: str(fd, "about"), terms: str(fd, "terms"), privacy: str(fd, "privacy") };
       break;
+    case "loyalty":
+      value = {
+        enabled: bool(fd, "enabled"),
+        czkPerPoint: Math.max(1, num(fd, "czkPerPoint", 10)),
+        redeemStep: Math.max(1, num(fd, "redeemStep", 100)),
+        redeemValueCzk: Math.max(1, num(fd, "redeemValueCzk", 50)),
+      };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

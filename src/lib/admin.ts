@@ -19,6 +19,33 @@ export type OrderRow = {
   total_czk: number;
   delivery_date: string | null;
   customer_id: string | null;
+  coupon_code: string | null;
+  discount_czk: number;
+  points_redeemed: number;
+  points_discount_czk: number;
+  points_earned: number;
+  created_at: string;
+};
+
+export type CouponRow = {
+  id: string;
+  code: string;
+  type: "percent" | "amount";
+  value: number;
+  min_order_czk: number;
+  valid_from: string | null;
+  valid_to: string | null;
+  max_uses: number | null;
+  used_count: number;
+  active: boolean;
+  note: string;
+  created_at: string;
+};
+
+export type LoyaltyRow = {
+  id: string;
+  points: number;
+  reason: string;
   created_at: string;
 };
 
@@ -33,6 +60,7 @@ export type CustomerRow = {
   note: string;
   orders_count: number;
   total_spent_czk: number;
+  points: number;
   created_at: string;
 };
 

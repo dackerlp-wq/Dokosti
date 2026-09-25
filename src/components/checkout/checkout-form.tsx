@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { submitOrder, type CheckoutInput } from "@/app/(shop)/pokladna/actions";
+import { loyaltyBalance, previewCoupon, submitOrder, type CheckoutInput, type CouponPreview } from "@/app/(shop)/pokladna/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
-import { DAY_NAMES } from "@/lib/settings";
+import { DAY_NAMES, type Settings } from "@/lib/settings";
 import { shippingPrice, type PaymentId, type PaymentMethod, type ShippingId, type ShippingMethod } from "@/lib/shipping";
 
 type Props = {
@@ -15,27 +15,36 @@ type Props = {
   payment: PaymentMethod[];
   deliveryDays: string[];
   deliveryWindow: string;
+  loyalty: Settings["loyalty"];
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");
   const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
   const [deliveryDate, setDeliveryDate] = useState<string>(deliveryDays[0] ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ number: string; total: number; points: number } | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<CouponPreview | null>(null);
+  const [email, setEmail] = useState("");
+  const [balance, setBalance] = useState<number | null>(null);
+  const [redeemSteps, setRedeemSteps] = useState(0);
   const [pending, startTransition] = useTransition();
 
   if (done) {
     return (
       <div className="max-w-xl rounded-[var(--radius-card)] border border-line bg-paper p-8">
         <p className="label text-brick-text">Hotovo</p>
-        <h2 className="mt-1">Objednávka {done} je u nás</h2>
+        <h2 className="mt-1">Objednávka {done.number} je u nás</h2>
         <p className="mt-4 text-muted">
-          Potvrzení pošleme e-mailem. Kdyby něco nesedělo, zavoláme. Děkujeme.
+          Celkem {formatPrice(done.total)}. Potvrzení pošleme e-mailem. Kdyby něco nesedělo, zavoláme. Děkujeme.
         </p>
+        {done.points > 0 && (
+          <p className="mt-2 text-muted">Po doručení vám připíšeme {done.points} Kostiček.</p>
+        )}
         <div className="mt-6">
           <ButtonLink href="/">Zpět na úvod</ButtonLink>
         </div>
@@ -57,6 +66,22 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
   const method = SHIPPING.find((s) => s.id === shipping) ?? SHIPPING[0];
   const shippingCzk = shippingPrice(method, cart.subtotalCzk);
+  const discountCzk = coupon?.ok ? Math.min(coupon.discountCzk, cart.subtotalCzk) : 0;
+  const maxSteps = balance === null ? 0 : Math.floor(balance / loyalty.redeemStep);
+  const pointsCzk = Math.min(redeemSteps * loyalty.redeemValueCzk, cart.subtotalCzk - discountCzk);
+  const totalCzk = cart.subtotalCzk - discountCzk - pointsCzk + shippingCzk;
+  const pointsEarned = loyalty.enabled ? Math.floor((cart.subtotalCzk - discountCzk - pointsCzk) / loyalty.czkPerPoint) : 0;
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setCoupon(await previewCoupon(couponInput, cart.subtotalCzk));
+  }
+
+  async function checkBalance() {
+    if (!email.includes("@")) return;
+    setBalance(await loyaltyBalance(email));
+    setRedeemSteps(0);
+  }
   const belowMin = cart.subtotalCzk < method.minOrderCzk;
   const needsAddress = shipping !== "odber";
   const paymentOptions = PAYMENT.filter((p) => (shipping === "prepravce" ? p.id !== "hotove" : true));
@@ -71,6 +96,8 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       shipping,
       payment,
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
+      couponCode: coupon?.ok ? coupon.code : undefined,
+      pointsRedeem: redeemSteps * loyalty.redeemStep,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -85,7 +112,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       const res = await submitOrder(input);
       if (res.ok) {
         cart.clear();
-        setDone(res.orderNumber);
+        setDone({ number: res.orderNumber, total: res.totalCzk, points: res.pointsEarned });
       } else {
         setError(res.error);
       }
@@ -166,7 +193,20 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Jméno a příjmení" name="name" autoComplete="name" required />
             <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required />
-            <Field label="E-mail" name="email" type="email" autoComplete="email" required className="sm:col-span-2" />
+            <Field
+              label="E-mail"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="sm:col-span-2"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setBalance(null);
+                setRedeemSteps(0);
+              }}
+            />
           </div>
         </fieldset>
 
@@ -180,6 +220,72 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             </div>
           </fieldset>
         )}
+
+        <fieldset>
+          <legend className="mb-3 text-[20px] font-display font-semibold">Sleva</legend>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="coupon" className="label mb-1 block text-[11px] text-muted">
+                Slevový kód
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="coupon"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase());
+                    setCoupon(null);
+                  }}
+                  placeholder="Např. VITEJTE"
+                  className="uppercase"
+                />
+                <Button type="button" variant="secondary" onClick={applyCoupon} disabled={!couponInput.trim()}>
+                  Použít
+                </Button>
+              </div>
+              {coupon && !coupon.ok && <p className="mt-1 text-sm text-brick-text">{coupon.error}</p>}
+              {coupon?.ok && (
+                <p className="mt-1 text-sm text-green">
+                  Kód {coupon.code} ({coupon.label}): sleva {formatPrice(discountCzk)}.
+                </p>
+              )}
+            </div>
+
+            {loyalty.enabled && (
+              <div>
+                <p className="label mb-1 text-[11px] text-muted">Kostičky</p>
+                {balance === null ? (
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+                    <span>Sbíráte Kostičky? Vyplňte e-mail a zjistěte stav.</span>
+                    <Button type="button" variant="secondary" onClick={checkBalance} disabled={!email.includes("@")}>
+                      Zjistit stav
+                    </Button>
+                  </div>
+                ) : maxSteps === 0 ? (
+                  <p className="text-sm text-muted">
+                    Máte {balance} Kostiček. Uplatnit jde po {loyalty.redeemStep}, každých {loyalty.redeemStep} je {formatPrice(loyalty.redeemValueCzk)}.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                    <span>Máte {balance} Kostiček. Uplatnit:</span>
+                    <select
+                      value={redeemSteps}
+                      onChange={(e) => setRedeemSteps(Number(e.target.value))}
+                      aria-label="Kolik Kostiček uplatnit"
+                      className="w-auto"
+                    >
+                      {Array.from({ length: maxSteps + 1 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {i === 0 ? "nic" : `${i * loyalty.redeemStep} Kostiček = ${formatPrice(i * loyalty.redeemValueCzk)}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </fieldset>
 
         <div>
           <label className="label mb-1 block text-[11px] text-muted" htmlFor="note">
@@ -206,15 +312,28 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             <dt className="text-muted">Zboží</dt>
             <dd>{formatPrice(cart.subtotalCzk)}</dd>
           </div>
+          {discountCzk > 0 && (
+            <div className="flex justify-between text-brick-text">
+              <dt>Sleva {coupon?.ok ? coupon.code : ""}</dt>
+              <dd>−{formatPrice(discountCzk)}</dd>
+            </div>
+          )}
+          {pointsCzk > 0 && (
+            <div className="flex justify-between text-brick-text">
+              <dt>Kostičky</dt>
+              <dd>−{formatPrice(pointsCzk)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted">Doprava</dt>
             <dd>{shippingCzk === 0 ? "zdarma" : formatPrice(shippingCzk)}</dd>
           </div>
           <div className="flex justify-between font-display text-[19px] font-semibold">
             <dt>Celkem</dt>
-            <dd>{formatPrice(cart.subtotalCzk + shippingCzk)}</dd>
+            <dd>{formatPrice(totalCzk)}</dd>
           </div>
         </dl>
+        {pointsEarned > 0 && <p className="mt-2 text-xs text-muted">Za tuto objednávku získáte {pointsEarned} Kostiček.</p>}
 
         {belowMin && (
           <p className="mt-4 rounded-[var(--radius-control)] bg-cream p-3 text-sm text-brick-text">

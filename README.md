@@ -43,7 +43,13 @@ ze `src/lib/catalog.ts` a objednávky jen loguje do konzole.
 Supabase Auth zapsaní v tabulce `admins`. Sekce: Přehled (otevřené objednávky, docházející sklad),
 Objednávky (stavy), Rozvoz a odběry (plán podle dne), Produkty a sklad (fotky do bucketu `product-images`,
 množství s hlídáním nuly), Zákazníci (historie, poznámka), Nastavení (prodejna, otevírací doba, doprava
-a rozvozové dny, platby, texty stránek; tabulka `settings`, výchozí hodnoty v `src/lib/settings.ts`).
+a rozvozové dny, platby, texty stránek, Kostičky; tabulka `settings`, výchozí hodnoty v `src/lib/settings.ts`),
+Slevové kódy (procenta nebo částka, platnost, limit použití).
+
+Objednávku počítá výhradně databázová funkce `create_order` (ceny z `products`, doprava ze `settings`,
+sleva z `coupons`, Kostičky z `customers`), web jí posílá jen slugy, množství a volby zákazníka.
+Kostičky (`settings.loyalty`): 1 za každých 10 Kč, 100 = 50 Kč. Připisují se při stavu „doručeno“,
+při zrušení se vrací; historie v `loyalty_transactions`.
 Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
 do tabulky `admins`.
 

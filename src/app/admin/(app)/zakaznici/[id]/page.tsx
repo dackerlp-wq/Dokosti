@@ -3,21 +3,23 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { Button } from "@/components/ui/button";
-import { formatDate, SHIPPING_LABEL, type CustomerRow, type OrderRow } from "@/lib/admin";
+import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { saveCustomerNote } from "./actions";
+import { adjustPoints, saveCustomerNote } from "./actions";
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getAuthSupabase();
-  const [{ data: customer }, { data: orders }] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: loyalty }] = await Promise.all([
     db.from("customers").select("*").eq("id", id).maybeSingle(),
     db.from("orders").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
+    db.from("loyalty_transactions").select("id, points, reason, created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(50),
   ]);
   if (!customer) notFound();
   const c = customer as CustomerRow;
   const list = (orders ?? []) as OrderRow[];
+  const points = (loyalty ?? []) as LoyaltyRow[];
 
   return (
     <>
@@ -52,6 +54,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                 {c.orders_count} objednávek · {formatPrice(c.total_spent_czk)}
               </p>
               <p className="text-muted">Zákazník od {formatDate(c.created_at)}</p>
+              <p className="mt-2 font-display text-[22px] font-semibold">{c.points} Kostiček</p>
             </div>
           </div>
 
@@ -79,6 +82,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           )}
         </div>
 
+        <div className="space-y-4">
         <form action={saveCustomerNote} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <input type="hidden" name="id" value={c.id} />
           <label htmlFor="note" className="label mb-1 block text-[11px] text-muted">
@@ -89,6 +93,32 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             Uložit poznámku
           </Button>
         </form>
+
+        <form action={adjustPoints} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <input type="hidden" name="id" value={c.id} />
+          <p className="label mb-2 text-[11px] text-muted">Kostičky ručně</p>
+          <div className="grid grid-cols-[100px_1fr] gap-2">
+            <input name="points" type="number" placeholder="+50" aria-label="Počet Kostiček, záporné odečte" required />
+            <input name="reason" placeholder="Nákup v prodejně" aria-label="Důvod" />
+          </div>
+          <Button type="submit" variant="secondary" className="mt-2 w-full">
+            Připsat / odepsat
+          </Button>
+          {points.length > 0 && (
+            <ul className="mt-3 divide-y divide-line text-xs">
+              {points.map((t) => (
+                <li key={t.id} className="flex justify-between gap-2 py-1.5">
+                  <span className="text-muted">{t.reason}</span>
+                  <span className={t.points < 0 ? "text-brick-text" : "text-green"}>
+                    {t.points > 0 ? "+" : ""}
+                    {t.points}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </form>
+        </div>
       </div>
     </>
   );

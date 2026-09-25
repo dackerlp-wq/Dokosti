@@ -1,6 +1,5 @@
 "use server";
 
-import { productName } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
@@ -12,6 +11,8 @@ export type CheckoutInput = {
   payment: PaymentId;
   /** Rozvozový den (ISO datum), jen u rozvozu. */
   deliveryDate?: string;
+  couponCode?: string;
+  pointsRedeem?: number;
   customer: {
     name: string;
     email: string;
@@ -24,11 +25,21 @@ export type CheckoutInput = {
 };
 
 export type CheckoutResult =
-  | { ok: true; orderNumber: string }
+  | { ok: true; orderNumber: string; totalCzk: number; pointsEarned: number }
   | { ok: false; error: string };
 
+const DB_ERRORS: [string, string][] = [
+  ["out of stock", "Některé zboží už není skladem v požadovaném množství. Upravte prosím košík."],
+  ["unavailable", "Některé zboží už není v nabídce. Upravte prosím košík."],
+  ["below minimum", "Objednávka nedosahuje minimální částky pro tento způsob dodání."],
+  ["coupon:", "Slevový kód nejde použít. Zkontrolujte ho prosím."],
+  ["points", "Kostičky nejde uplatnit v tomto množství."],
+  ["shipping disabled", "Tento způsob dodání teď nenabízíme."],
+];
+
 /**
- * Přijme objednávku. Ceny se přepočítají na serveru z katalogu, ne z košíku.
+ * Přijme objednávku. Ceny, dopravu, slevu i Kostičky počítá databázová funkce
+ * create_order z vlastních dat, web jen předává, co zákazník vybral.
  * Když Supabase není nastavené, objednávka se jen zaloguje (vývoj).
  */
 export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult> {
@@ -56,30 +67,12 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     deliveryDate = input.deliveryDate;
   }
 
-  const items = [];
-  for (const line of input.lines) {
-    const product = await getProduct(line.slug);
-    const qty = Math.floor(line.qty);
-    if (!product || !product.inStock || qty < 1) continue;
-    items.push({
-      product_slug: product.slug,
-      name: productName(product),
-      qty,
-      unit_price_czk: product.priceCzk,
-    });
-  }
+  const items = input.lines
+    .map((l) => ({ product_slug: l.slug, qty: Math.floor(l.qty) }))
+    .filter((l) => l.qty >= 1);
   if (items.length === 0) return { ok: false, error: "Košík je prázdný." };
 
-  const subtotal = items.reduce((n, i) => n + i.qty * i.unit_price_czk, 0);
-  if (subtotal < method.minOrderCzk) {
-    return { ok: false, error: `Pro tento způsob dodání je minimální objednávka ${method.minOrderCzk} Kč.` };
-  }
-  const shipping = shippingPrice(method, subtotal);
-  const total = subtotal + shipping;
-  const orderNumber = `DK${Date.now().toString().slice(-8)}`;
-
   const order = {
-    order_number: orderNumber,
     customer_name: c.name.trim(),
     customer_email: c.email.trim(),
     customer_phone: c.phone.trim(),
@@ -90,24 +83,49 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     shipping_method: method.id,
     payment_method: payment.id,
     delivery_date: deliveryDate,
-    subtotal_czk: subtotal,
-    shipping_czk: shipping,
-    total_czk: total,
+    coupon_code: (input.couponCode ?? "").trim(),
+    points_redeem: Math.max(0, Math.floor(input.pointsRedeem ?? 0)),
   };
 
   const db = getSupabase();
   if (!db) {
+    // vývoj bez databáze: spočítat aspoň orientačně
+    let subtotal = 0;
+    for (const i of items) {
+      const p = await getProduct(i.product_slug);
+      if (p) subtotal += p.priceCzk * i.qty;
+    }
     console.info("[objednávka, Supabase není nastavené]", order, items);
-    return { ok: true, orderNumber };
+    return { ok: true, orderNumber: `DKDEV${Date.now().toString().slice(-4)}`, totalCzk: subtotal + shippingPrice(method, subtotal), pointsEarned: 0 };
   }
 
   const { data, error } = await db.rpc("create_order", { p_order: order, p_items: items });
-  if (error || typeof data !== "string") {
+  if (error || !data) {
     console.error("create_order", error);
-    if (error?.message?.includes("out of stock")) {
-      return { ok: false, error: "Některé zboží už není skladem v požadovaném množství. Upravte prosím košík." };
-    }
-    return { ok: false, error: "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
+    const known = DB_ERRORS.find(([k]) => error?.message?.includes(k));
+    return { ok: false, error: known?.[1] ?? "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
   }
-  return { ok: true, orderNumber: data };
+  const r = data as { order_number: string; total_czk: number; points_earned: number };
+  return { ok: true, orderNumber: r.order_number, totalCzk: r.total_czk, pointsEarned: r.points_earned };
+}
+
+export type CouponPreview = { ok: true; code: string; discountCzk: number; label: string } | { ok: false; error: string };
+
+/** Náhled slevového kódu v pokladně. Rozhoduje ale až create_order. */
+export async function previewCoupon(code: string, subtotalCzk: number): Promise<CouponPreview> {
+  const db = getSupabase();
+  if (!db) return { ok: false, error: "Slevové kódy fungují až s databází." };
+  const { data, error } = await db.rpc("check_coupon", { p_code: code, p_subtotal: Math.round(subtotalCzk) });
+  if (error || !data) return { ok: false, error: "Kód se nepodařilo ověřit." };
+  const r = data as { error?: string; code?: string; discount?: number; label?: string };
+  if (r.error) return { ok: false, error: r.error };
+  return { ok: true, code: r.code!, discountCzk: r.discount!, label: r.label! };
+}
+
+/** Kolik Kostiček má zákazník s tímto e-mailem. */
+export async function loyaltyBalance(email: string): Promise<number> {
+  const db = getSupabase();
+  if (!db || !email.includes("@")) return 0;
+  const { data } = await db.rpc("loyalty_balance", { p_email: email });
+  return typeof data === "number" ? data : 0;
 }

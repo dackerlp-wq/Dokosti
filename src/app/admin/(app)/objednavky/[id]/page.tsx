@@ -43,6 +43,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <Td>{formatPrice(i.qty * i.unit_price_czk)}</Td>
               </tr>
             ))}
+            {o.discount_czk > 0 && (
+              <tr>
+                <Td className="text-brick-text">Sleva · kód {o.coupon_code}</Td>
+                <Td>{""}</Td>
+                <Td>{""}</Td>
+                <Td className="text-brick-text">−{formatPrice(o.discount_czk)}</Td>
+              </tr>
+            )}
+            {o.points_discount_czk > 0 && (
+              <tr>
+                <Td className="text-brick-text">Kostičky · {o.points_redeemed} uplatněno</Td>
+                <Td>{""}</Td>
+                <Td>{""}</Td>
+                <Td className="text-brick-text">−{formatPrice(o.points_discount_czk)}</Td>
+              </tr>
+            )}
             <tr>
               <Td className="text-muted">Doprava · {SHIPPING_LABEL[o.shipping_method]}</Td>
               <Td>{""}</Td>
@@ -108,6 +124,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <Button type="submit" className="mt-3 w-full">
             Uložit stav
           </Button>
+          {o.points_earned > 0 && (
+            <p className="mt-3 text-xs text-muted">Po označení „Doručeno“ se zákazníkovi připíše {o.points_earned} Kostiček.</p>
+          )}
         </form>
       </div>
     </>

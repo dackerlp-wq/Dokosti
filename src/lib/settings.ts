@@ -46,6 +46,15 @@ export type Settings = {
     terms: string;
     privacy: string;
   };
+  loyalty: {
+    enabled: boolean;
+    /** Kolik Kč = 1 Kostička. */
+    czkPerPoint: number;
+    /** Uplatňuje se po kolika Kostičkách. */
+    redeemStep: number;
+    /** Kolik Kč je jeden krok. */
+    redeemValueCzk: number;
+  };
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -105,9 +114,10 @@ export const DEFAULT_SETTINGS: Settings = {
     terms: "",
     privacy: "",
   },
+  loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
 };
 
-export const SETTING_KEYS = ["shop", "shipping", "payment", "pages"] as const satisfies readonly (keyof Settings)[];
+export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty"] as const satisfies readonly (keyof Settings)[];
 
 /** Hluboké sloučení výchozích hodnot s uloženými (nové klíče dostanou výchozí hodnotu). */
 function merge<T>(base: T, over: unknown): T {
