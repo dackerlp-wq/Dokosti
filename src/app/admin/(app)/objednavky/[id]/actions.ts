@@ -1,11 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { isOrderStatus } from "@/lib/admin";
 import { sendEmail } from "@/lib/email/send";
 import { statusUpdate, type OrderForEmail } from "@/lib/email/templates";
 import { getSettings } from "@/lib/settings";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+
+/** Přidělí objednávce číslo dokladu (číselná řada v databázi) a otevře tisk. */
+export async function issueInvoice(formData: FormData) {
+  if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");
+  const id = String(formData.get("id") ?? "");
+  const db = await getAuthSupabase();
+  const { error } = await db.rpc("issue_invoice", { p_order_id: id });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/objednavky/${id}`);
+  redirect(`/admin/objednavky/${id}/doklad`);
+}
 
 export async function setOrderStatus(formData: FormData) {
   if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");

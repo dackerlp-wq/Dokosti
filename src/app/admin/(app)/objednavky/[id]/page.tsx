@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { formatDate, formatDay, ORDER_STATUS_LABEL, ORDER_STATUSES, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { setOrderStatus } from "./actions";
+import { issueInvoice, setOrderStatus } from "./actions";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -133,6 +133,28 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <p className="mt-3 text-xs text-muted">Po označení „Doručeno“ se zákazníkovi připíše {o.points_earned} Kostiček.</p>
           )}
         </form>
+
+        <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4 lg:col-start-2">
+          <p className="label mb-1 text-[11px] text-muted">Doklad</p>
+          {o.invoice_number ? (
+            <>
+              <p className="text-sm">
+                Č. {o.invoice_number}
+                {o.invoice_issued_at && <span className="text-muted"> · {formatDate(o.invoice_issued_at)}</span>}
+              </p>
+              <Link href={`/admin/objednavky/${o.id}/doklad`} className={buttonClass("secondary", "mt-3 w-full")}>
+                Zobrazit a tisknout
+              </Link>
+            </>
+          ) : (
+            <form action={issueInvoice}>
+              <input type="hidden" name="id" value={o.id} />
+              <Button type="submit" variant="secondary" className="w-full">
+                Vystavit doklad
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
     </>
   );

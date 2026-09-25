@@ -52,6 +52,10 @@ Kostičky (`settings.loyalty`): 1 za každých 10 Kč, 100 = 50 Kč. Připisují
 při zrušení se vrací; historie v `loyalty_transactions`.
 E-maily (potvrzení objednávky zákazníkovi, upozornění prodejně, změny stavu) posílá `src/lib/email` přes Resend.
 Bez `RESEND_API_KEY` a `EMAIL_FROM` se ukládají do `email_log` se stavem „čeká“ a jdou prohlédnout v adminu (E-maily).
+Doklady: tlačítko „Vystavit doklad“ na objednávce přidělí číslo z řady `invoice_seq` (RRRRNNNN) a otevře
+tisknutelný doklad (bez DPH, nebo s rozpisem 12 % po zapnutí plátce DPH v nastavení). Statistiky čtou pohledy
+`sales_by_day` a `top_products`; export CSV pro účetní je na `/admin/export/objednavky.csv?od=&do=`.
+Štítky na balíky: Rozvoz a odběry → Tisk štítků.
 Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
 do tabulky `admins`.
 

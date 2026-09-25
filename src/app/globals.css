@@ -126,3 +126,19 @@
     padding-inline: 24px;
   }
 }
+
+/* Tisk dokladů a štítků: jen obsah, bez menu administrace. */
+@media print {
+  aside,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

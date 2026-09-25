@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { formatDay, PAYMENT_LABEL, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
+import { ButtonLink } from "@/components/ui/button";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Rozvoz a odběry" };
@@ -26,7 +27,12 @@ export default async function DeliveryPage() {
 
   return (
     <>
-      <h1>Rozvoz a odběry</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1>Rozvoz a odběry</h1>
+        <ButtonLink href="/admin/rozvoz/stitky" variant="secondary">
+          Tisk štítků
+        </ButtonLink>
+      </div>
       <p className="mt-1 text-sm text-muted">Otevřené objednávky podle způsobu dodání. Doručené a zrušené se tu neukazují.</p>
 
       <h2 className="mt-6 mb-2 text-[20px]">Rozvoz</h2>

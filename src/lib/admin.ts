@@ -24,6 +24,8 @@ export type OrderRow = {
   points_redeemed: number;
   points_discount_czk: number;
   points_earned: number;
+  invoice_number: string | null;
+  invoice_issued_at: string | null;
   created_at: string;
 };
 
