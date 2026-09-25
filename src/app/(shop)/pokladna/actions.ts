@@ -3,6 +3,8 @@
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
+import { sendEmail } from "@/lib/email/send";
+import { orderConfirmation, orderNotification, type OrderForEmail } from "@/lib/email/templates";
 import { getSupabase } from "@/lib/supabase/server";
 
 export type CheckoutInput = {
@@ -106,6 +108,22 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     return { ok: false, error: known?.[1] ?? "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
   }
   const r = data as { order_number: string; total_czk: number; points_earned: number };
+
+  // E-maily: zákazníkovi potvrzení, prodejně upozornění. Chyba e-mailu objednávku nezruší.
+  try {
+    const { data: full } = await db.rpc("order_for_email", { p_order_number: r.order_number });
+    if (full) {
+      const o = full as OrderForEmail;
+      const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dokosti.vercel.app";
+      await sendEmail(db, o.customer_email, orderConfirmation(o, settings), "potvrzeni", o.id);
+      if (settings.shop.email.includes("@")) {
+        await sendEmail(db, settings.shop.email, orderNotification(o, settings, `${base}/admin/objednavky/${o.id}`), "upozorneni", o.id);
+      }
+    }
+  } catch (e) {
+    console.error("order e-mail", e);
+  }
+
   return { ok: true, orderNumber: r.order_number, totalCzk: r.total_czk, pointsEarned: r.points_earned };
 }
 

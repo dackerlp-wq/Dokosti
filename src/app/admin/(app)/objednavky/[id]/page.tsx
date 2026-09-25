@@ -121,6 +121,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </option>
             ))}
           </select>
+          <label className="mt-3 flex items-center gap-2 text-sm">
+            <input type="checkbox" name="notify" value="on" defaultChecked className="h-4 w-4 min-h-0 w-auto accent-green" />
+            Poslat zákazníkovi e-mail
+          </label>
+          <input type="hidden" name="notify" value="off" />
           <Button type="submit" className="mt-3 w-full">
             Uložit stav
           </Button>
