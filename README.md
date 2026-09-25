@@ -65,12 +65,13 @@ do tabulky `admins`.
 - `/rada/zaklad`, `/rada/kosti`, `/rada/navic`, `/rada/mlsky`, `/rada/granule` výpis řady, filtr `?zvire=pes|kocka`
 - `/produkt/[slug]` detail produktu
 - `/kosik`, `/pokladna` košík a objednávka
-- `/jak-zacit` návod pro začátečníky, `/hledat?q=` vyhledávání
+- `/jak-zacit-s-barfem` průvodce pro začátečníky s kalkulačkou dávky a poradnou (`/jak-zacit` přesměruje), `/hledat?q=` vyhledávání
 - `/doprava`, `/o-nas`, `/kontakt`, `/obchodni-podminky`, `/ochrana-udaju`
 - `/sitemap.xml`, `/robots.txt`; detail produktu má JSON-LD Product, úvod PetStore
 
-Kalkulačka denní dávky (`components/product/dose-calculator.tsx`) je u řad Základ a Granule, procenta jsou
-orientační. Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
+Kalkulačka dávky (`components/barf/barf-calculator.tsx`, výpočet v `lib/barf.ts`) doporučí set na 14 dní z aktuální
+nabídky a umí ho vložit do košíku. Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startovaci-…`.
+Dotazy z poradny jdou do tabulky `inquiries`, e-mailem prodejně a do adminu (Poradna). Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
 Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
 
 ## Co je placeholder

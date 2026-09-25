@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
-import { DoseCalculator } from "@/components/product/dose-calculator";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/seo";
 import { ProductGrid } from "@/components/product/product-grid";
@@ -112,12 +111,6 @@ export default async function ProductPage({ params }: Props) {
             <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-48" />
           </div>
 
-          {(product.line === "zaklad" || product.line === "granule") && (
-            <div className="mt-6">
-              <DoseCalculator weightGrams={product.weightGrams} priceCzk={product.priceCzk} />
-            </div>
-          )}
-
           <dl className="mt-8 divide-y divide-line border-y border-line text-sm">
             <Row term="Složení">{product.composition}</Row>
             <Row term="Skladování">{product.storageNote}</Row>
@@ -126,8 +119,11 @@ export default async function ProductPage({ params }: Props) {
           </dl>
 
           <p className="mt-4 text-xs text-muted">
-            Dávkování je orientační. Když si nejste jistí nebo má zvíře zdravotní potíže, poraďte se s veterinářem
-            nebo se stavte v prodejně, spočítáme to spolu.
+            Dávkování je orientační. Kolik přesně dávat vašemu zvířeti spočítá{" "}
+            <Link href="/jak-zacit-s-barfem#kalkulacka" className="text-green underline">
+              kalkulačka na stránce Jak začít
+            </Link>
+            . Při zdravotních potížích se poraďte s veterinářem.
           </p>
         </div>
       </div>

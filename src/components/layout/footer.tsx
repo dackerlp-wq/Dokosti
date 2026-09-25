@@ -41,7 +41,7 @@ export async function Footer() {
         </FooterCol>
 
         <FooterCol title="Informace">
-          <FooterLink href="/jak-zacit">Jak začít s BARFem</FooterLink>
+          <FooterLink href="/jak-zacit-s-barfem">Jak začít s BARFem</FooterLink>
           <FooterLink href="/doprava">Doprava a platba</FooterLink>
           <FooterLink href="/o-nas">O nás</FooterLink>
           <FooterLink href="/kontakt">Kontakt</FooterLink>

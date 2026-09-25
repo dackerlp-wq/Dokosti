@@ -113,7 +113,7 @@ export default async function HomePage() {
               prodejně poradíme, spočítáme dávku a nepřemlouváme. BARF není pro každého, a to je v pořádku.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <ButtonLink href="/jak-zacit">Jak začít s BARFem</ButtonLink>
+              <ButtonLink href="/jak-zacit-s-barfem">Jak začít s BARFem</ButtonLink>
               <ButtonLink href="/o-nas" variant="secondary">
                 Víc o prodejně
               </ButtonLink>

@@ -11,11 +11,12 @@ export default async function AdminHome() {
   const soon = new Date();
   soon.setDate(soon.getDate() + 14);
   const soonIso = soon.toISOString().slice(0, 10);
-  const [{ data: open }, { count: productCount }, { count: unpublished }, { data: stock }, { data: expiring }] = await Promise.all([
+  const [{ data: open }, { count: productCount }, { count: unpublished }, { data: stock }, { count: openInquiries }, { data: expiring }] = await Promise.all([
     db.from("orders").select("*").in("status", ["nova", "potvrzena", "pripravena"]).order("created_at", { ascending: false }).limit(10),
     db.from("products").select("id", { count: "exact", head: true }),
     db.from("products").select("id", { count: "exact", head: true }).eq("is_published", false),
     db.from("products").select("*").not("stock_qty", "is", null).order("stock_qty"),
+    db.from("inquiries").select("id", { count: "exact", head: true }).eq("answered", false),
     db.from("stock_batches").select("id, product_id, batch_no, expires_on, qty, products(slug, line, variant)").gt("qty", 0).lte("expires_on", soonIso).order("expires_on"),
   ]);
   const orders = (open ?? []) as OrderRow[];
@@ -31,6 +32,7 @@ export default async function AdminHome() {
         <Stat label="Dochází" value={low.length} href="/admin/produkty" warn={low.length > 0} />
         <Stat label="Produktů" value={productCount ?? 0} href="/admin/produkty" />
         <Stat label="Nezveřejněných" value={unpublished ?? 0} href="/admin/produkty" />
+        <Stat label="Dotazy v poradně" value={openInquiries ?? 0} href="/admin/poradna" warn={(openInquiries ?? 0) > 0} />
       </div>
 
       {low.length > 0 && (
