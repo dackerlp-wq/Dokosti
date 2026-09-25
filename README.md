@@ -107,6 +107,12 @@ Site URL `https://dokosti.vercel.app` a Redirect URL `https://dokosti.vercel.app
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 
+## Testovací produkty
+
+V Supabase jsou zveřejněné produkty českého výrobce Yoggies (yoggies.cz, výroba u Slaného, B2B portál b2b.yoggies.cz) s doslovným
+složením, analytickými hodnotami a energií z jejich webu, maloobchodní ceny vč. DPH k 25. 9. 2026. SQL k opakovanému nahrání je
+v `supabase/seed_yoggies.sql`, zdroje a mezery v `research_notes/dodavatel.md`. Původní placeholdery jsou v adminu nezveřejněné.
+
 ## Co je placeholder
 
 Ceny, gramáže a složení v `catalog.ts`, ceny dopravy v `shipping.ts`, údaje o prodejně v `site.ts`

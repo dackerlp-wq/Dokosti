@@ -338,7 +338,7 @@ export function calculate(i: AnimalInput, kcalPer100g: number | null = null, kib
     pct,
     mealsPerDay: mealsPerDay(i),
     composition: targetComposition(i),
-    kcalPer100g: energyMode ? kcalPer100g : null,
+    kcalPer100g: energyMode ? Math.round(kcalPer100g * 10) / 10 : null,
     energyMode,
     notes,
   };
@@ -407,7 +407,7 @@ function pickBone(pool: Product[], i: AnimalInput, adultKg: number) {
   const small = i.species === "kocka" || adultKg < 10 || (i.stage === "mlade" && (i.ageMonths ?? 0) < 6);
   const large = adultKg > 25;
   return (
-    (small ? edible.find((p) => has(p, "kuřecí krk", "krk", "křidélk")) : large ? edible.find((p) => has(p, "krůtí", "skelet", "kachní")) : edible.find((p) => has(p, "křídl", "krk"))) ??
+    (small ? edible.find((p) => has(p, "kuřecí krk", "krk", "křidélk", "kuřecí")) : large ? edible.find((p) => has(p, "krůtí", "skelet", "kachní")) : edible.find((p) => has(p, "křídl", "krk"))) ??
     edible[0]
   );
 }
