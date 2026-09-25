@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -21,9 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         <AdminNav />
         <form action={logout} className="mt-auto hidden border-t border-line px-4 py-3 text-xs text-muted md:block">
-          <p className="truncate" title={admin.email}>
+          <Link href="/admin/ucet" className="block truncate hover:underline" title={admin.email}>
             {admin.email}
-          </p>
+          </Link>
           <button type="submit" className="label mt-1 text-[11px] text-brick-text hover:underline">
             Odhlásit
           </button>
