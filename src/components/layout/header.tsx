@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Calculator, Search } from "lucide-react";
 import Link from "next/link";
 import { AccountLink } from "@/components/layout/account-link";
 import { CartLink } from "@/components/cart/cart-link";
@@ -53,6 +53,10 @@ export function Header({ products }: { products: Product[] }) {
               {item.label}
             </Link>
           ))}
+          <Link href="/kalkulacka" className="label ml-auto inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap px-3 text-brick-text hover:text-green">
+            <Calculator strokeWidth={1.75} className="h-4 w-4" />
+            Kalkulačka dávky
+          </Link>
         </nav>
       </div>
     </header>

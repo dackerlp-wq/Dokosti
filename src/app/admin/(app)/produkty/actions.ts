@@ -13,6 +13,14 @@ function num(v: FormDataEntryValue | null) {
   return Number.isFinite(n) ? n : NaN;
 }
 
+/** Nepovinné číslo z etikety: prázdné = null. */
+function optNum(v: FormDataEntryValue | null, max = Infinity) {
+  const raw = String(v ?? "").trim();
+  if (!raw) return null;
+  const n = num(raw);
+  return Number.isFinite(n) && n >= 0 && n <= max ? Math.round(n * 10) / 10 : NaN;
+}
+
 /** Uloží produkt (nový nebo úprava). Vrací chybu, nebo přesměruje na seznam. */
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
   if (!(await getAdmin())) return { error: "Nejste přihlášeni." };
@@ -34,6 +42,16 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   if (!(weight > 0)) return { error: "Hmotnost musí být větší než 0." };
   if (!(price >= 0)) return { error: "Cena musí být číslo." };
   if (original !== null && !(original > price)) return { error: "Původní cena musí být vyšší než aktuální." };
+
+  const nutrition = {
+    kcal_per_100g: optNum(formData.get("kcal_per_100g")),
+    bone_pct: optNum(formData.get("bone_pct"), 100),
+    organ_pct: optNum(formData.get("organ_pct"), 100),
+    liver_pct: optNum(formData.get("liver_pct"), 100),
+    taurine_mg_per_kg: optNum(formData.get("taurine_mg_per_kg")),
+  };
+  if (Object.values(nutrition).some((n) => Number.isNaN(n))) return { error: "Údaje z etikety musí být čísla, procenta 0–100." };
+  const boneClass = String(formData.get("bone_class") ?? "");
 
   const row = {
     slug: String(formData.get("slug") ?? "").trim() || slugify(LINE_INFO[line].name, variant),
@@ -58,6 +76,9 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     in_stock: formData.get("in_stock") === "on",
     is_new: formData.get("is_new") === "on",
     is_published: formData.get("is_published") === "on",
+    ...nutrition,
+    bone_class: boneClass === "jedla" || boneClass === "rekreacni" ? boneClass : null,
+    is_complete: formData.get("is_complete") === "on",
   };
 
   if (row.stock_qty === 0) row.in_stock = false;

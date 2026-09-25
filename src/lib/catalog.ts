@@ -27,7 +27,7 @@ export const LINE_INFO: Record<LineSlug, Line> = {
     name: "Kosti",
     tagline: "Masité kosti na hryzání a jako část denní dávky.",
     description:
-      "Syrové masité kosti čistí zuby a zaměstnají psa na dlouho. Vždy syrové, nikdy vařené. Velikost volte podle psa, poradíme.",
+      "Syrové masité kosti zaměstnají psa na dlouho a jsou přirozeným zdrojem vápníku. Vždy syrové, nikdy vařené. Velikost volte podle psa, poradíme.",
   },
   navic: {
     slug: "navic",
@@ -95,6 +95,35 @@ export type Product = {
   upsell?: string[];
   /** Cross-sell: hodí se k tomu (slugy). */
   crosssell?: string[];
+  /**
+   * Údaje z etikety výrobce pro kalkulačku dávky. Nikdy se nedopočítávají;
+   * bez nich kalkulačka počítá orientačně procentem hmotnosti.
+   */
+  nutrition?: Nutrition;
+};
+
+export type BoneClass = "jedla" | "rekreacni";
+
+export type Nutrition = {
+  /** Metabolizovatelná energie, kcal/100 g. */
+  kcalPer100g?: number;
+  /** Podíl jedlé kosti v produktu, %. */
+  bonePct?: number;
+  /** Podíl vnitřností celkem, %. */
+  organPct?: number;
+  /** Podíl jater, %. */
+  liverPct?: number;
+  /** Deklarovaný taurin, mg/kg (kočičí mixy). */
+  taurineMgPerKg?: number;
+  /** Jedlá kost do dávky, nebo rekreační (nosná) jen na okusování. */
+  boneClass?: BoneClass;
+  /** Kompletní krmivo podle nařízení 767/2009; jinak doplňkové. */
+  isComplete?: boolean;
+};
+
+export const BONE_CLASS_LABEL: Record<BoneClass, string> = {
+  jedla: "Jedlá kost (do dávky)",
+  rekreacni: "Rekreační kost (jen okusování)",
 };
 
 export function productName(p: Pick<Product, "line" | "variant">) {
@@ -121,7 +150,7 @@ export const PRODUCTS: Product[] = [
     intro: "Kompletní hovězí mix pro psy všech velikostí. Dobrý začátek pro toho, kdo s BARFem začíná.",
     composition: SLOZENI + "hovězí svalovina, hovězí dršťky, hovězí srdce, masité kosti.",
     storageNote: "Skladujte v mrazáku při −18 °C. Rozmrazujte v lednici, rozmražené spotřebujte do 48 hodin.",
-    dosage: "Dospělý pes zhruba 2–3 % hmotnosti těla denně. Dvacetikilový pes tedy 400–600 g.",
+    dosage: "Dospělý pes zhruba 2–3 % hmotnosti těla denně, malí psi víc. Dvacetikilový pes tedy 400–600 g, přesněji spočítá kalkulačka.",
     inStock: true,
     image: null,
   },
@@ -137,7 +166,7 @@ export const PRODUCTS: Product[] = [
     intro: "Lehčí kuřecí mix pro psy i kočky. Vhodný pro citlivější zažívání a pro seniory.",
     composition: SLOZENI + "kuřecí maso s kostí, kuřecí krky, kuřecí játra.",
     storageNote: "Skladujte v mrazáku při −18 °C. Rozmrazujte v lednici, rozmražené spotřebujte do 48 hodin.",
-    dosage: "Pes 2–3 % hmotnosti denně, kočka zhruba 40–60 g na kilo hmotnosti týdně.",
+    dosage: "Pes zhruba 2–3 % hmotnosti denně, kočka 2–4 % hmotnosti denně. Přesněji spočítá kalkulačka.",
     inStock: true,
     image: null,
   },
@@ -153,7 +182,7 @@ export const PRODUCTS: Product[] = [
     intro: "Krůtí mix v půlkilovém balení. Praktické pro kočky a malé psy.",
     composition: SLOZENI + "krůtí maso, krůtí krky, krůtí žaludky.",
     storageNote: "Skladujte v mrazáku při −18 °C. Rozmrazujte v lednici, rozmražené spotřebujte do 48 hodin.",
-    dosage: "Kočka zhruba 40–60 g na kilo hmotnosti týdně, malý pes 2–3 % hmotnosti denně.",
+    dosage: "Kočka 2–4 % hmotnosti denně, malý pes 3–4 % hmotnosti denně. Přesněji spočítá kalkulačka.",
     inStock: true,
     isNew: true,
     image: null,
@@ -206,6 +235,8 @@ export const PRODUCTS: Product[] = [
     dosage: "Jako část denní dávky, kosti mají dělat zhruba 10–15 % krmiva.",
     inStock: true,
     image: null,
+    // Podíl kosti podle veřejné tabulky Perfectly Rawsome (kuřecí krk ≈ 36 %), ne od výrobce.
+    nutrition: { bonePct: 36, boneClass: "jedla" },
   },
   {
     slug: "kosti-hovezi-zebra",
@@ -222,6 +253,7 @@ export const PRODUCTS: Product[] = [
     dosage: "Jedno až dvě žebra podle velikosti psa, vždy pod dohledem.",
     inStock: true,
     image: null,
+    nutrition: { boneClass: "rekreacni" },
   },
   {
     slug: "kosti-kachni-kridla",
@@ -239,6 +271,8 @@ export const PRODUCTS: Product[] = [
     inStock: true,
     isNew: true,
     image: null,
+    // Podíl kosti podle veřejné tabulky Perfectly Rawsome (kachní křídlo ≈ 39 %), ne od výrobce.
+    nutrition: { bonePct: 39, boneClass: "jedla" },
   },
   {
     slug: "navic-lososovy-olej",

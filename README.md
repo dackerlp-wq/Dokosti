@@ -70,8 +70,14 @@ do tabulky `admins`.
 - `/doprava`, `/o-nas`, `/kontakt`, `/obchodni-podminky`, `/ochrana-udaju`
 - `/sitemap.xml`, `/robots.txt`; detail produktu má JSON-LD Product, úvod PetStore
 
-Kalkulačka dávky (`components/barf/barf-calculator.tsx`, výpočet v `lib/barf.ts`) doporučí set na 14 dní z aktuální
-nabídky a umí ho vložit do košíku. Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startovaci-…`.
+Kalkulačka dávky (`/kalkulacka`, komponenta `components/barf/barf-calculator.tsx`, model v `lib/barf.ts`) počítá potřebu
+energie podle FEDIAF/NRC (kg^0,75 pes, kg^0,67 kočka; růstová rovnice pro štěňata, vzorce pro březost a laktaci, tabulka pro
+koťata) a převádí ji na gramy podle energie mixu z etikety (`products.kcal_per_100g`); bez ní počítá s referenční hustotou
+150 kcal/100 g a výsledek označí jako orientační. Dělá bilanci kosti (cíl 8 % pes, 6 % kočka, 15 % štěně) z podílu kosti v mixu
+a v Kostech (`bone_pct`, `bone_class`), doporučí produkty na 7/14/28 dní, cenu za den, výdrž balení, umí více zvířat najednou,
+podíl granulí u štěňat a při přechodu, a profil zvířete uloží k účtu (tabulka `pets`) nebo do prohlížeče. Údaje z etikety se
+zadávají u produktu v adminu a nikdy se nedopočítávají. Rešerše a odůvodnění modelu: `reports/BARF krmení pro kalkulačku.md`.
+Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startovaci-…`.
 Dotazy z poradny jdou do tabulky `inquiries`, e-mailem prodejně a do adminu (Poradna). Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
 Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
 

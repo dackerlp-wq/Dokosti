@@ -6,7 +6,7 @@ import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
-import { ANIMAL_LABEL, LINES, LINE_INFO, STORAGE_LABEL } from "@/lib/catalog";
+import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, STORAGE_LABEL } from "@/lib/catalog";
 
 export function ProductForm({ product, others = [] }: { product?: ProductRow; others?: { slug: string; name: string }[] }) {
   const [state, action, pending] = useActionState(saveProduct, null);
@@ -90,6 +90,43 @@ export function ProductForm({ product, others = [] }: { product?: ProductRow; ot
             <Field label="Dávkování">
               <textarea name="dosage" rows={2} defaultValue={p?.dosage} />
             </Field>
+          </div>
+        </Fieldset>
+
+        <Fieldset title="Údaje z etikety pro kalkulačku">
+          <p className="mb-3 text-xs text-muted">
+            Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u mixů Základ chybí, kalkulačka počítá orientačně procentem
+            hmotnosti; s energií počítá přesněji a zobrazí i kcal. Podíl kosti se používá pro bilanci kostí v dávce.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Energie (kcal/100 g)" hint="ME z etikety">
+              <input name="kcal_per_100g" type="number" min={0} step="0.1" defaultValue={p?.kcal_per_100g ?? ""} />
+            </Field>
+            <Field label="Kost (%)" hint="jedlá kost">
+              <input name="bone_pct" type="number" min={0} max={100} step="0.1" defaultValue={p?.bone_pct ?? ""} />
+            </Field>
+            <Field label="Vnitřnosti (%)" hint="celkem">
+              <input name="organ_pct" type="number" min={0} max={100} step="0.1" defaultValue={p?.organ_pct ?? ""} />
+            </Field>
+            <Field label="Játra (%)">
+              <input name="liver_pct" type="number" min={0} max={100} step="0.1" defaultValue={p?.liver_pct ?? ""} />
+            </Field>
+            <Field label="Taurin (mg/kg)" hint="kočičí mixy">
+              <input name="taurine_mg_per_kg" type="number" min={0} step="1" defaultValue={p?.taurine_mg_per_kg ?? ""} />
+            </Field>
+            <Field label="Druh kosti" hint="řada Kosti">
+              <select name="bone_class" defaultValue={p?.bone_class ?? ""}>
+                <option value="">neurčeno</option>
+                {(Object.keys(BONE_CLASS_LABEL) as (keyof typeof BONE_CLASS_LABEL)[]).map((k) => (
+                  <option key={k} value={k}>
+                    {BONE_CLASS_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="mt-3 text-sm">
+            <Check name="is_complete" label="Kompletní krmivo podle etikety (jinak doplňkové)" defaultChecked={p?.is_complete ?? false} />
           </div>
         </Fieldset>
       </div>

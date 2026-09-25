@@ -34,6 +34,11 @@ export function MobileNav() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/kalkulacka" onClick={close} className="label flex min-h-11 items-center text-brick-text hover:bg-cream">
+                  Kalkulačka dávky
+                </Link>
+              </li>
             </ul>
             <p className="label mb-1 border-t border-line pt-3 text-[11px] text-muted">Informace</p>
             <ul>

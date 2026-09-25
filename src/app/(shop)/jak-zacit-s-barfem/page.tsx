@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarfCalculator } from "@/components/barf/barf-calculator";
+import { BarfCalculator, type SavedPet } from "@/components/barf/barf-calculator";
 import { InquiryForm } from "@/components/barf/inquiry-form";
 import { ProductGrid } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
 import { Section, SectionHeading } from "@/components/ui/section";
+import { getCustomerUser } from "@/lib/customer";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
+import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Jak začít s BARFem: průvodce pro psy i kočky",
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 
 const FAQ = [
   ["Je BARF vhodný pro každého psa a kočku?", "Pro většinu zdravých zvířat ano. U zvířat s onemocněním ledvin, slinivky nebo s oslabenou imunitou se nejdřív poraďte s veterinářem."],
-  ["Můžu kombinovat BARF s granulemi?", "Můžete, ale ne v jedné misce. Pokud chcete krmit obojím, dávejte například ráno granule a večer syrovou stravu."],
+  ["Můžu kombinovat BARF s granulemi?", "Můžete. Nejpřehlednější je dávat například ráno granule a večer syrovou stravu a sečíst energii obou, což za vás udělá kalkulačka. Přechod dělejte postupně."],
   ["Není to drahé?", "Záleží na druhu masa a velikosti zvířete. U středně velkého psa vychází BARF cenově podobně jako kvalitní granule. Kalkulačka výše vám spočítá, kolik krmiva týdně potřebujete."],
   ["Kolikrát denně krmit?", "Dospělého psa jednou až dvakrát denně, kočku dvakrát až třikrát. Štěňata a koťata krmte častěji v menších porcích."],
   ["Jak maso skladovat?", "V mrazáku při −18 °C. Menší porce rozmrazujte v lednici den předem. Maso od nás přichází zamražené v praktických baleních."],
@@ -29,7 +31,13 @@ const FAQ = [
 ] as const;
 
 export default async function HowToStartPage() {
-  const [products, { shop }] = await Promise.all([getProducts(), getSettings()]);
+  const [products, { shop }, user] = await Promise.all([getProducts(), getSettings(), getCustomerUser()]);
+  let savedPets: SavedPet[] = [];
+  if (user) {
+    const db = await getAuthSupabase();
+    const { data } = await db.from("pets").select("id, name, data").order("updated_at", { ascending: false }).limit(10);
+    savedPets = (data ?? []) as SavedPet[];
+  }
   // Startovací balíčky: produkty se slugem začínajícím „startovaci-“, dokud nejsou, ukáže se obecný text.
   const packs = products.filter((p) => p.slug.startsWith("startovaci-"));
   const faqLd = {
@@ -52,7 +60,7 @@ export default async function HowToStartPage() {
           konzerv bez stresu.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
-          <ButtonLink href="#kalkulacka">Spočítat dávku</ButtonLink>
+          <ButtonLink href="/kalkulacka">Spočítat dávku</ButtonLink>
           <ButtonLink href="#balicky" variant="secondary">
             Vybrat startovací balíček
           </ButtonLink>
@@ -150,16 +158,16 @@ export default async function HowToStartPage() {
           Denní dávka se počítá z hmotnosti zvířete. Jde o výchozí bod, podle kterého pak dávku upravujete.
         </SectionHeading>
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card title="Dospělý pes">2–3 % tělesné hmotnosti denně. Klidnější a starší psi spíš 2 %, sportovní a pracovní psi 3 % i víc.</Card>
-          <Card title="Štěně">4–6 % aktuální hmotnosti, s věkem postupně ubírejte.</Card>
-          <Card title="Dospělá kočka">3–4 % tělesné hmotnosti denně.</Card>
-          <Card title="Kotě">5–8 % aktuální hmotnosti, rozděleno do více menších porcí.</Card>
+          <Card title="Dospělý pes">Střední pes 2–3 % tělesné hmotnosti denně, malí psi 3–5 %, obří plemena kolem 2 %. Klidní a kastrovaní psi méně, sportovní víc.</Card>
+          <Card title="Štěně">6–10 % aktuální hmotnosti v prvních měsících, s věkem postupně ubírejte. Přesněji podle věku a dospělé hmotnosti spočítá kalkulačka.</Card>
+          <Card title="Dospělá kočka">2–4 % tělesné hmotnosti denně, bytová kastrovaná kočka spíš 2–3 %.</Card>
+          <Card title="Kotě">10 % aktuální hmotnosti v prvních měsících, před rokem 4 %, rozděleno do více menších porcí.</Card>
         </div>
         <p className="mb-6 max-w-2xl text-sm text-muted">
           Nejlepším ukazatelem je postava. Žebra byste měli nahmatat, ale ne vidět. Když mazlíček přibírá, dávku o kousek snižte,
           když hubne, přidejte.
         </p>
-        <BarfCalculator products={products} />
+        <BarfCalculator products={products} user={user} savedPets={savedPets} />
       </Section>
 
       {/* 6. Přechod krok za krokem */}
@@ -171,7 +179,7 @@ export default async function HowToStartPage() {
         <ol className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <Step n={1} title="Jeden druh masa" when="1. týden">
             Začněte lehce stravitelnou drůbeží, typicky krůtím nebo kuřecím masem. Podávejte jen svalovinu, u psů případně s
-            troškou zeleniny. Granule a syrové maso nedávejte v jedné misce, tráví se jinou rychlostí.
+            troškou zeleniny. Pokud zatím krmíte i granulemi, podávejte je v jiném jídle a celkovou dávku úměrně snižte.
           </Step>
           <Step n={2} title="Přidejte kosti" when="2. týden">
             Přidejte měkké masité kosti, například kuřecí krky. Kosti zpevňují stolici. Když je příliš tvrdá nebo světlá, kostí
@@ -211,7 +219,7 @@ export default async function HowToStartPage() {
               <li>Misky, nože a prkénka umyjte horkou vodou a mýdlem, ruce také.</li>
               <li>Nikdy nepodávejte vařené kosti. Tepelnou úpravou křehnou, tříští se a mohou poranit trávicí trakt.</li>
               <li>Kost volte podle velikosti zvířete. Musí být dost velká, aby ji nespolkl vcelku. Při žvýkání mějte zvíře na očích.</li>
-              <li>Vepřové maso syrové nepodávejte kvůli riziku Aujeszkyho choroby.</li>
+              <li>Vepřové jen z kontrolovaného chovu (u nás vždy s uvedeným původem). Nikdy nekrmte syrovým masem divokých prasat kvůli Aujeszkyho chorobě, mražení virus nezničí.</li>
               <li>Rybu střídmě, nejlépe mořskou a předem zmraženou.</li>
             </ul>
           </div>

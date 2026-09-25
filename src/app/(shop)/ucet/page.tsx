@@ -7,7 +7,7 @@ import { getCustomerUser } from "@/lib/customer";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { customerLogout } from "./actions";
+import { customerLogout, deletePet, type PetRow } from "./actions";
 
 export const metadata: Metadata = { title: "Můj účet", robots: { index: false } };
 
@@ -15,15 +15,17 @@ export default async function AccountPage() {
   const user = await getCustomerUser();
   if (!user) redirect("/ucet/prihlaseni");
   const db = await getAuthSupabase();
-  const [{ data: customer }, { data: orders }, { data: loyalty }, settings] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: pets }, settings] = await Promise.all([
     db.from("customers").select("*").eq("email", user.email).maybeSingle(),
     db.from("orders").select("*").eq("customer_email", user.email).order("created_at", { ascending: false }).limit(50),
     db.from("loyalty_transactions").select("id, points, reason, created_at").order("created_at", { ascending: false }).limit(20),
+    db.from("pets").select("id, name, data, updated_at").order("updated_at", { ascending: false }),
     getSettings(),
   ]);
   const c = customer as CustomerRow | null;
   const list = (orders ?? []) as OrderRow[];
   const points = (loyalty ?? []) as LoyaltyRow[];
+  const petList = (pets ?? []) as PetRow[];
   const { loyalty: L } = settings;
 
   return (
@@ -100,6 +102,42 @@ export default async function AccountPage() {
                 <span className="font-display font-semibold">{formatPrice(o.total_czk)}</span>
                 <StatusBadge status={o.status} />
               </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h2 className="mt-8 mb-3 text-[22px]">Moje zvířata</h2>
+      {petList.length === 0 ? (
+        <p className="text-muted">
+          Zatím žádný profil. Spočítejte dávku v{" "}
+          <Link href="/kalkulacka" className="text-green underline">
+            kalkulačce
+          </Link>{" "}
+          a uložte ji k účtu.
+        </p>
+      ) : (
+        <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+          {petList.map((p) => (
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+              <span>
+                <strong>{p.name}</strong>
+                <span className="text-muted">
+                  {" "}
+                  · {p.data.species === "kocka" ? "kočka" : "pes"}, {String(p.data.weightKg ?? "?")} kg · {formatDate(p.updated_at)}
+                </span>
+              </span>
+              <span className="flex items-center gap-3">
+                <Link href="/kalkulacka" className="text-green underline">
+                  Přepočítat
+                </Link>
+                <form action={deletePet}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button type="submit" className="text-xs text-brick-text hover:underline">
+                    Smazat
+                  </button>
+                </form>
+              </span>
             </li>
           ))}
         </ul>

@@ -1,4 +1,4 @@
-import type { Animal, LineSlug, Storage } from "@/lib/catalog";
+import type { Animal, BoneClass, LineSlug, Storage } from "@/lib/catalog";
 
 /** Objednávka tak, jak leží v Supabase. */
 export type OrderRow = {
@@ -123,6 +123,14 @@ export type ProductRow = {
   /** null = množství se neeviduje */
   stock_qty: number | null;
   low_stock_threshold: number;
+  /** Údaje z etikety pro kalkulačku, null = neuvedeno. */
+  kcal_per_100g: number | null;
+  bone_pct: number | null;
+  organ_pct: number | null;
+  liver_pct: number | null;
+  taurine_mg_per_kg: number | null;
+  bone_class: BoneClass | null;
+  is_complete: boolean;
   updated_at: string;
 };
 
