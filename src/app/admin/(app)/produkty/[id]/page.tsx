@@ -8,18 +8,20 @@ import { getAuthSupabase } from "@/lib/supabase/auth";
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = await getAuthSupabase();
-  const [{ data }, { data: batches }] = await Promise.all([
+  const [{ data }, { data: batches }, { data: all }] = await Promise.all([
     db.from("products").select("*").eq("id", id).maybeSingle(),
     db.from("stock_batches").select("id, batch_no, expires_on, qty, note").eq("product_id", id).order("expires_on"),
+    db.from("products").select("slug, line, variant").neq("id", id).order("line").order("variant"),
   ]);
   if (!data) notFound();
   const product = data as ProductRow;
+  const others = ((all ?? []) as Pick<ProductRow, "slug" | "line" | "variant">[]).map((p) => ({ slug: p.slug, name: productName(p) }));
 
   return (
     <>
       <h1>{productName(product)}</h1>
       <div className="mt-5">
-        <ProductForm product={product} />
+        <ProductForm product={product} others={others} />
       </div>
       {(product.storage === "mrazene" || product.storage === "chlazene") && (
         <div className="mt-6 max-w-3xl">

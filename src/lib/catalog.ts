@@ -91,6 +91,10 @@ export type Product = {
   isNew?: boolean;
   /** Obrázek 1:1, viz BRAND.md. Zatím null, zobrazí se zástupná plocha. */
   image: string | null;
+  /** Upsell: lepší nebo větší varianta (slugy). */
+  upsell?: string[];
+  /** Cross-sell: hodí se k tomu (slugy). */
+  crosssell?: string[];
 };
 
 export function productName(p: Pick<Product, "line" | "variant">) {

@@ -50,6 +50,8 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     storage_note: String(formData.get("storage_note") ?? "").trim(),
     dosage: String(formData.get("dosage") ?? "").trim(),
     image_url: String(formData.get("image_url") ?? "").trim() || null,
+    upsell_slugs: formData.getAll("upsell").map(String).filter(Boolean),
+    crosssell_slugs: formData.getAll("crosssell").map(String).filter(Boolean),
     sort_order: Math.round(num(formData.get("sort_order")) || 0),
     stock_qty: String(formData.get("stock_qty") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("stock_qty")))),
     low_stock_threshold: Math.max(0, Math.round(num(formData.get("low_stock_threshold")) || 0)),

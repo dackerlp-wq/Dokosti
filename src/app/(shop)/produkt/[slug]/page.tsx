@@ -36,8 +36,12 @@ export default async function ProductPage({ params }: Props) {
 
   const line = LINE_INFO[product.line];
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
+  const all = await getProducts();
+  const bySlug = (slugs: string[] = []) => slugs.map((s) => all.find((p) => p.slug === s)).filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const upsell = bySlug(product.upsell);
+  const crosssell = bySlug(product.crosssell);
   const related = (await getProductsByLine(product.line))
-    .filter((p) => p.slug !== product.slug)
+    .filter((p) => p.slug !== product.slug && !upsell.some((u) => u.slug === p.slug) && !crosssell.some((c) => c.slug === p.slug))
     .slice(0, 4);
 
   const jsonLd = {
@@ -128,6 +132,20 @@ export default async function ProductPage({ params }: Props) {
         </div>
       </div>
 
+      {upsell.length > 0 && (
+        <section className="mt-12">
+          <p className="label mb-1 text-[11px] text-brick-text">Lepší volba</p>
+          <h2 className="mb-4">Vyplatí se víc</h2>
+          <ProductGrid products={upsell} />
+        </section>
+      )}
+      {crosssell.length > 0 && (
+        <section className="mt-12">
+          <p className="label mb-1 text-[11px] text-brick-text">Hodí se k tomu</p>
+          <h2 className="mb-4">Zákazníci k tomu přidávají</h2>
+          <ProductGrid products={crosssell} />
+        </section>
+      )}
       {related.length > 0 && (
         <section className="mt-12">
           <h2 className="mb-4">Další z řady {line.name}</h2>

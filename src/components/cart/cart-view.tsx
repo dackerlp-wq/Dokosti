@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useCart } from "@/components/cart/cart-context";
 import { ProductImage } from "@/components/product/product-image";
 import { ButtonLink } from "@/components/ui/button";
-import { productName } from "@/lib/catalog";
+import { productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
 
-export function CartView({ freeDeliveryFromCzk }: { freeDeliveryFromCzk: number | null }) {
-  const { items, subtotalCzk, setQty, remove, ready } = useCart();
+export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk: number | null; catalog: Product[] }) {
+  const { items, subtotalCzk, setQty, remove, ready, add } = useCart();
+  const inCart = new Set(items.map((i) => i.product.slug));
+  const suggestions = catalog
+    .filter((p) => p.inStock && !inCart.has(p.slug) && items.some((i) => i.product.crosssell?.includes(p.slug)))
+    .slice(0, 4);
 
   if (!ready) return <p className="text-muted">Načítám košík…</p>;
 
@@ -97,6 +101,32 @@ export function CartView({ freeDeliveryFromCzk }: { freeDeliveryFromCzk: number 
           </Link>
         </p>
       </aside>
+
+      {suggestions.length > 0 && (
+        <section className="lg:col-span-2">
+          <p className="label mb-1 text-[11px] text-brick-text">Hodí se k tomu</p>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {suggestions.map((p) => (
+              <li key={p.slug} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-3">
+                <div className="w-16 shrink-0">
+                  <ProductImage product={p} sizes="64px" />
+                </div>
+                <div className="min-w-0 flex-1 text-sm">
+                  <Link href={`/produkt/${p.slug}`} className="font-semibold hover:underline">
+                    {productName(p)}
+                  </Link>
+                  <p className="text-muted">
+                    {formatWeight(p.weightGrams)} · {formatPrice(p.priceCzk)}
+                  </p>
+                  <button type="button" onClick={() => add(p.slug)} className="label mt-1 text-[11px] text-green hover:underline">
+                    Přidat
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

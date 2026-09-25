@@ -65,6 +65,7 @@ do tabulky `admins`.
 - `/rada/zaklad`, `/rada/kosti`, `/rada/navic`, `/rada/mlsky`, `/rada/granule` výpis řady, filtr `?zvire=pes|kocka`
 - `/produkt/[slug]` detail produktu
 - `/kosik`, `/pokladna` košík a objednávka
+- `/ucet` zákaznický účet (Kostičky, objednávky, historie), `/ucet/prihlaseni` přihlášení a registrace, `/ucet/nove-heslo` nové heslo
 - `/jak-zacit-s-barfem` průvodce pro začátečníky s kalkulačkou dávky a poradnou (`/jak-zacit` přesměruje), `/hledat?q=` vyhledávání
 - `/doprava`, `/o-nas`, `/kontakt`, `/obchodni-podminky`, `/ochrana-udaju`
 - `/sitemap.xml`, `/robots.txt`; detail produktu má JSON-LD Product, úvod PetStore
@@ -73,6 +74,17 @@ Kalkulačka dávky (`components/barf/barf-calculator.tsx`, výpočet v `lib/barf
 nabídky a umí ho vložit do košíku. Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startovaci-…`.
 Dotazy z poradny jdou do tabulky `inquiries`, e-mailem prodejně a do adminu (Poradna). Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
 Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
+
+## Zákaznické účty, hledání, upsell
+
+Hlavička má dva řádky: nahoře logo, hledání s našeptávačem (`components/layout/search-box.tsx`), odkazy na ostatní
+stránky, účet a košík; pod tím lišta s řadami produktů (`CATEGORY_NAV` a `PAGE_NAV` v `src/lib/site.ts`).
+Zákaznické účty používají Supabase Auth (registrace, přihlášení, obnova hesla přes `/auth/callback`).
+Zákazník vidí své objednávky a Kostičky podle e-mailu (RLS v migraci `0013`), pokladna se předvyplní z účtu.
+Aby chodily potvrzovací a resetovací e-maily, nastavte v Supabase Authentication → URL Configuration
+Site URL `https://dokosti.vercel.app` a Redirect URL `https://dokosti.vercel.app/auth/callback`.
+Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
+`crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 
 ## Co je placeholder
 

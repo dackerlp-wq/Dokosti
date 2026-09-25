@@ -118,6 +118,8 @@ export type ProductRow = {
   image_url: string | null;
   sort_order: number;
   is_published: boolean;
+  upsell_slugs: string[];
+  crosssell_slugs: string[];
   /** null = množství se neeviduje */
   stock_qty: number | null;
   low_stock_threshold: number;

@@ -16,11 +16,13 @@ type Props = {
   deliveryDays: string[];
   deliveryWindow: string;
   loyalty: Settings["loyalty"];
+  /** Údaje z účtu přihlášeného zákazníka. */
+  prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, prefill }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");
   const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
@@ -29,7 +31,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
   const [done, setDone] = useState<{ number: string; total: number; points: number } | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<CouponPreview | null>(null);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefill?.email ?? "");
   const [balance, setBalance] = useState<number | null>(null);
   const [redeemSteps, setRedeemSteps] = useState(0);
   const [pending, startTransition] = useTransition();
@@ -191,8 +193,8 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         <fieldset>
           <legend className="mb-3 text-[20px] font-display font-semibold">Kontakt</legend>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Jméno a příjmení" name="name" autoComplete="name" required />
-            <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required />
+            <Field label="Jméno a příjmení" name="name" autoComplete="name" required defaultValue={prefill?.name} />
+            <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required defaultValue={prefill?.phone} />
             <Field
               label="E-mail"
               name="email"
@@ -214,9 +216,9 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
           <fieldset>
             <legend className="mb-3 text-[20px] font-display font-semibold">Adresa doručení</legend>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" />
-              <Field label="Město" name="city" autoComplete="address-level2" required />
-              <Field label="PSČ" name="zip" autoComplete="postal-code" required />
+              <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" defaultValue={prefill?.street} />
+              <Field label="Město" name="city" autoComplete="address-level2" required defaultValue={prefill?.city} />
+              <Field label="PSČ" name="zip" autoComplete="postal-code" required defaultValue={prefill?.zip} />
             </div>
           </fieldset>
         )}

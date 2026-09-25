@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
 import { ANIMAL_LABEL, LINES, LINE_INFO, STORAGE_LABEL } from "@/lib/catalog";
 
-export function ProductForm({ product }: { product?: ProductRow }) {
+export function ProductForm({ product, others = [] }: { product?: ProductRow; others?: { slug: string; name: string }[] }) {
   const [state, action, pending] = useActionState(saveProduct, null);
   const p = product;
 
@@ -95,6 +95,12 @@ export function ProductForm({ product }: { product?: ProductRow }) {
       </div>
 
       <div className="space-y-4">
+        <Fieldset title="Doporučení">
+          <p className="mb-2 text-xs text-muted">Zobrazí se na detailu produktu. Upsell jako „Lepší volba“, cross-sell jako „Hodí se k tomu“ (i v košíku).</p>
+          <Picker name="upsell" label="Upsell (větší balení, vyšší řada)" options={others} selected={p?.upsell_slugs ?? []} />
+          <Picker name="crosssell" label="Cross-sell (doplňky, pamlsky, olej)" options={others} selected={p?.crosssell_slugs ?? []} />
+        </Fieldset>
+
         <Fieldset title="Fotka">
           <ImageUpload name="image_url" initialUrl={p?.image_url ?? null} slug={p?.slug ?? "novy"} />
         </Fieldset>
@@ -178,6 +184,22 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
     <label className="flex items-center gap-2">
       <input type="checkbox" name={name} defaultChecked={defaultChecked} className="h-4 w-4 min-h-0 w-auto accent-green" />
       {label}
+    </label>
+  );
+}
+
+function Picker({ name, label, options, selected }: { name: string; label: string; options: { slug: string; name: string }[]; selected: string[] }) {
+  return (
+    <label className="mt-2 block">
+      <span className="label mb-1 block text-[11px] text-muted">{label}</span>
+      <select name={name} multiple size={Math.min(6, Math.max(3, options.length))} defaultValue={selected} className="min-h-0 py-1 text-sm">
+        {options.map((o) => (
+          <option key={o.slug} value={o.slug}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+      <span className="mt-1 block text-[11px] text-muted">Více položek vyberete s Ctrl (Cmd).</span>
     </label>
   );
 }

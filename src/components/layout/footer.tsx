@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { getSettings } from "@/lib/settings";
-import { NAV, SITE } from "@/lib/site";
+import { CATEGORY_NAV, SITE } from "@/lib/site";
 
 export async function Footer() {
   const { shop } = await getSettings();
@@ -16,7 +16,7 @@ export async function Footer() {
         </div>
 
         <FooterCol title="Nabídka">
-          {NAV.slice(0, 5).map((i) => (
+          {CATEGORY_NAV.map((i) => (
             <FooterLink key={i.href} href={i.href}>
               {i.label}
             </FooterLink>

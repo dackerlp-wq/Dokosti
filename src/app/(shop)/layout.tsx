@@ -10,7 +10,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   const products = await getProducts();
   return (
     <CartProvider products={products}>
-      <Header />
+      <Header products={products} />
       <main className="flex-1">{children}</main>
       <Footer />
     </CartProvider>
