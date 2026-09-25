@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { DoseCalculator } from "@/components/product/dose-calculator";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_URL } from "@/lib/seo";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/product/product-image";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return {};
-  return { title: productName(product), description: product.intro };
+  return {
+    title: productName(product),
+    description: product.intro,
+    alternates: { canonical: `${SITE_URL}/produkt/${product.slug}` },
+    openGraph: { title: productName(product), description: product.intro, images: product.image ? [product.image] : undefined },
+  };
 }
 
 export default async function ProductPage({ params }: Props) {
@@ -33,8 +41,27 @@ export default async function ProductPage({ params }: Props) {
     .filter((p) => p.slug !== product.slug)
     .slice(0, 4);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: productName(product),
+    description: product.intro,
+    image: product.image ?? undefined,
+    brand: product.producer && !product.producer.startsWith("[") ? { "@type": "Brand", name: product.producer } : undefined,
+    category: line.name,
+    offers: {
+      "@type": "Offer",
+      url: `${SITE_URL}/produkt/${product.slug}`,
+      priceCurrency: "CZK",
+      price: product.priceCzk,
+      availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+    },
+  };
+
   return (
     <div className="container-dk py-6 md:py-10">
+      <JsonLd data={jsonLd} />
       <nav aria-label="Drobečková navigace" className="label mb-4 flex flex-wrap gap-2 text-[11px] text-muted">
         <Link href="/" className="hover:text-green hover:underline">
           Úvod
@@ -84,6 +111,12 @@ export default async function ProductPage({ params }: Props) {
           <div className="mt-5">
             <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-48" />
           </div>
+
+          {(product.line === "zaklad" || product.line === "granule") && (
+            <div className="mt-6">
+              <DoseCalculator weightGrams={product.weightGrams} priceCzk={product.priceCzk} />
+            </div>
+          )}
 
           <dl className="mt-8 divide-y divide-line border-y border-line text-sm">
             <Row term="Složení">{product.composition}</Row>

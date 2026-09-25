@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, Archivo_Narrow, Fraunces } from "next/font/google";
+import { CookieConsent } from "@/components/layout/cookie-consent";
+import { SITE_URL } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -22,6 +24,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: `${SITE.name} · Syrové krmivo pro psy a kočky`,
     template: `%s · ${SITE.name}`,
@@ -44,7 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="cs"
       className={`${fraunces.variable} ${archivoNarrow.variable} ${archivo.variable} h-full`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <CookieConsent />
+      </body>
     </html>
   );
 }

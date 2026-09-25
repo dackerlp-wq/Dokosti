@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { SearchForm } from "@/components/layout/search-form";
 import { NAV } from "@/lib/site";
 
 export function MobileNav() {
@@ -27,6 +28,9 @@ export function MobileNav() {
           aria-label="Hlavní"
           className="absolute inset-x-0 z-20 border-t border-line bg-paper"
         >
+          <div className="container-dk pt-3">
+            <SearchForm />
+          </div>
           <ul className="container-dk flex flex-col py-2">
             {NAV.map((item) => (
               <li key={item.href}>

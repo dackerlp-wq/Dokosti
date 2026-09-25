@@ -7,14 +7,28 @@ import { Logo } from "@/components/ui/logo";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { LINES, LINE_INFO } from "@/lib/catalog";
 import { getProducts } from "@/lib/products";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_URL } from "@/lib/seo";
+import { getSettings } from "@/lib/settings";
 
 export default async function HomePage() {
-  const products = await getProducts();
+  const [products, { shop }] = await Promise.all([getProducts(), getSettings()]);
+  const business = {
+    "@context": "https://schema.org",
+    "@type": "PetStore",
+    name: shop.name,
+    url: SITE_URL,
+    logo: `${SITE_URL}/brand/dokosti-profilovka.png`,
+    telephone: shop.phone.startsWith("[") ? undefined : shop.phone,
+    email: shop.email.includes("@") ? shop.email : undefined,
+    address: shop.address.startsWith("[") ? undefined : { "@type": "PostalAddress", streetAddress: shop.address, addressLocality: shop.city, addressCountry: "CZ" },
+  };
   const hero = pickHeroProduct(products);
   const featured = products.filter((p) => p.inStock && p.slug !== hero?.slug).slice(0, 8);
 
   return (
     <>
+      <JsonLd data={business} />
       {/* Hero: jediná zelená sekce na stránce (kromě hlavičky a patičky). */}
       <section className="bg-green text-cream">
         <div className="container-dk grid items-center gap-8 py-10 md:grid-cols-[1.2fr_1fr] md:py-14">
@@ -98,7 +112,8 @@ export default async function HomePage() {
               BARF krmíme vlastní zvířata a víme, že začátky bývají zmatek. Proto v
               prodejně poradíme, spočítáme dávku a nepřemlouváme. BARF není pro každého, a to je v pořádku.
             </p>
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ButtonLink href="/jak-zacit">Jak začít s BARFem</ButtonLink>
               <ButtonLink href="/o-nas" variant="secondary">
                 Víc o prodejně
               </ButtonLink>

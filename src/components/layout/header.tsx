@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CartLink } from "@/components/cart/cart-link";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { SearchForm } from "@/components/layout/search-form";
+import { Search } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { NAV } from "@/lib/site";
 
@@ -18,12 +20,12 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Hlavní">
+        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hlavní">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="label inline-flex min-h-10 items-center rounded-[var(--radius-control)] px-3 text-green hover:bg-cream"
+              className="label inline-flex min-h-10 items-center whitespace-nowrap rounded-[var(--radius-control)] px-2 text-green hover:bg-cream"
             >
               {item.label}
             </Link>
@@ -31,6 +33,10 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <SearchForm className="hidden w-44 xl:block" />
+          <Link href="/hledat" aria-label="Hledat" className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-[var(--radius-control)] text-green hover:bg-cream xl:hidden">
+            <Search strokeWidth={1.75} className="h-5 w-5" />
+          </Link>
           <CartLink />
           <MobileNav />
         </div>

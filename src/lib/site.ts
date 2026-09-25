@@ -11,6 +11,7 @@ export const NAV = [
   { href: "/rada/navic", label: "Navíc" },
   { href: "/rada/mlsky", label: "Mlsky" },
   { href: "/rada/granule", label: "Granule" },
+  { href: "/jak-zacit", label: "Jak začít" },
   { href: "/doprava", label: "Doprava" },
   { href: "/o-nas", label: "O nás" },
 ] as const;

@@ -65,7 +65,13 @@ do tabulky `admins`.
 - `/rada/zaklad`, `/rada/kosti`, `/rada/navic`, `/rada/mlsky`, `/rada/granule` výpis řady, filtr `?zvire=pes|kocka`
 - `/produkt/[slug]` detail produktu
 - `/kosik`, `/pokladna` košík a objednávka
+- `/jak-zacit` návod pro začátečníky, `/hledat?q=` vyhledávání
 - `/doprava`, `/o-nas`, `/kontakt`, `/obchodni-podminky`, `/ochrana-udaju`
+- `/sitemap.xml`, `/robots.txt`; detail produktu má JSON-LD Product, úvod PetStore
+
+Kalkulačka denní dávky (`components/product/dose-calculator.tsx`) je u řad Základ a Granule, procenta jsou
+orientační. Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
+Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
 
 ## Co je placeholder
 

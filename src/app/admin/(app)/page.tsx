@@ -8,14 +8,20 @@ import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export default async function AdminHome() {
   const db = await getAuthSupabase();
-  const [{ data: open }, { count: productCount }, { count: unpublished }, { data: stock }] = await Promise.all([
+  const soon = new Date();
+  soon.setDate(soon.getDate() + 14);
+  const soonIso = soon.toISOString().slice(0, 10);
+  const [{ data: open }, { count: productCount }, { count: unpublished }, { data: stock }, { data: expiring }] = await Promise.all([
     db.from("orders").select("*").in("status", ["nova", "potvrzena", "pripravena"]).order("created_at", { ascending: false }).limit(10),
     db.from("products").select("id", { count: "exact", head: true }),
     db.from("products").select("id", { count: "exact", head: true }).eq("is_published", false),
     db.from("products").select("*").not("stock_qty", "is", null).order("stock_qty"),
+    db.from("stock_batches").select("id, product_id, batch_no, expires_on, qty, products(slug, line, variant)").gt("qty", 0).lte("expires_on", soonIso).order("expires_on"),
   ]);
   const orders = (open ?? []) as OrderRow[];
   const low = ((stock ?? []) as ProductRow[]).filter((p) => p.stock_qty !== null && p.stock_qty <= p.low_stock_threshold);
+  type Exp = { id: string; product_id: string; batch_no: string; expires_on: string; qty: number; products: { slug: string; line: ProductRow["line"]; variant: string } | null };
+  const exp = (expiring ?? []) as unknown as Exp[];
 
   return (
     <>
@@ -37,6 +43,24 @@ export default async function AdminHome() {
                   {productName(p)}
                 </Link>{" "}
                 <span className="text-muted">{p.stock_qty} ks</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {exp.length > 0 && (
+        <div className="mt-4 rounded-[var(--radius-card)] border border-brick bg-paper p-4 text-sm">
+          <p className="label mb-2 text-[11px] text-brick-text">Expirace do 14 dnů</p>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1">
+            {exp.map((b) => (
+              <li key={b.id}>
+                <Link href={`/admin/produkty/${b.product_id}`} className="hover:underline">
+                  {b.products ? productName(b.products) : "produkt"}
+                </Link>{" "}
+                <span className="text-muted">
+                  {b.batch_no && `${b.batch_no} · `}{formatDay(b.expires_on)} · {b.qty} ks
+                </span>
               </li>
             ))}
           </ul>
