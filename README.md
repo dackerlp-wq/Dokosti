@@ -74,7 +74,7 @@ Kalkulačka dávky (`/kalkulacka`, komponenta `components/barf/barf-calculator.t
 energie podle FEDIAF/NRC (kg^0,75 pes, kg^0,67 kočka; růstová rovnice pro štěňata, vzorce pro březost a laktaci, tabulka pro
 koťata) a převádí ji na gramy podle energie mixu z etikety (`products.kcal_per_100g`); bez ní počítá s referenční hustotou
 150 kcal/100 g a výsledek označí jako orientační. Dělá bilanci kosti (cíl 8 % pes, 6 % kočka, 15 % štěně) z podílu kosti v mixu
-a v Kostech (`bone_pct`, `bone_class`), doporučí produkty na 7/14/28 dní, cenu za den, výdrž balení, umí více zvířat najednou,
+a v Kostech (`bone_pct`, `bone_class`), doporučí produkty na 7/14/30 dní (jeden nákup s vyřazením a náhradou druhu), cenu za den,
 podíl granulí u štěňat a při přechodu, a profil zvířete uloží k účtu (tabulka `pets`) nebo do prohlížeče. Údaje z etikety se
 zadávají u produktu v adminu a nikdy se nedopočítávají. Rešerše a odůvodnění modelu: `reports/BARF krmení pro kalkulačku.md`.
 Zákazník může doplňky (Kosti, rybí den, olej, zelenina, kost na okusování, granule) vypnout, vyřadit druhy masa, které zvíře

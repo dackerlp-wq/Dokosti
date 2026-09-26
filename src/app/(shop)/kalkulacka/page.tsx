@@ -48,8 +48,8 @@ export default async function CalculatorPage({ searchParams }: { searchParams: P
         <h1 className="max-w-3xl">Kolik syrové stravy denně? Spočítáme to za vás.</h1>
         <p className="mt-3 max-w-2xl text-muted">
           Zadejte hmotnost, věk, aktivitu a kondici. Kalkulačka spočítá denní dávku, rozdělí ji na maso, kost a vnitřnosti, doporučí
-          produkty z naší aktuální nabídky a sečte nákup na týden, čtrnáct dní nebo měsíc. Umí štěňata, koťata, seniory, březí a
-          kojící zvířata i více zvířat najednou.
+          produkty z naší aktuální nabídky a sečte nákup na týden, čtrnáct dní nebo měsíc. Umí štěňata, koťata, seniory i březí a
+          kojící zvířata.
         </p>
       </div>
 

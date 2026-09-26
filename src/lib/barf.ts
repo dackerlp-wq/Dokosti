@@ -49,6 +49,8 @@ export type AnimalInput = {
   addons: Record<AddonKey, boolean>;
   /** Konkrétní produkty, které zákazník z doporučení vyřadil (slugy). */
   removed: string[];
+  /** Náhrady druhu: původní slug → zvolený slug (mixy Základ a Kosti). */
+  swaps: Record<string, string>;
 };
 
 export type MeatKey = "kureci" | "kruti" | "kachni" | "hovezi" | "jehneci" | "veprove" | "kralici" | "ryby";
@@ -369,6 +371,8 @@ export type Plan = {
   /** Bilance kosti: kolik % dávky pokryje mix, kolik doplní Kosti. */
   bone: { target: number; fromMix: number | null; fromBones: number };
   notes: Note[];
+  /** Produkty, ze kterých se vybíralo (pro náhradu druhu). */
+  pool: Product[];
 };
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -424,7 +428,10 @@ export function mixesKcal(mixes: Product[]) {
  */
 export function buildPlan(products: Product[], i: AnimalInput, days: number): Plan {
   const pool = products.filter((p) => p.inStock && p.animals.includes(i.species) && !i.removed.includes(p.slug) && !containsMeat(p, i.exclude));
-  const { mixes, fish: fishFound } = pickMixes(pool, i);
+  const swap = (p: Product) => (i.swaps?.[p.slug] && pool.find((x) => x.slug === i.swaps[p.slug] && x.line === p.line)) || p;
+  const picked = pickMixes(pool, i);
+  const mixes = picked.mixes.map(swap).filter((m, idx, arr) => arr.findIndex((x) => x.slug === m.slug) === idx);
+  const fishFound = picked.fish;
   const fish = i.addons.ryba ? fishFound : null;
   const kibble = i.rawShare < 100 && i.addons.granule ? pool.find((p) => p.line === "granule" && (i.stage !== "mlade" || has(p, "štěň", "puppy", "junior"))) ?? pool.find((p) => p.line === "granule") ?? null : null;
   const result = calculate(i, mixesKcal(mixes), kibble?.nutrition?.kcalPer100g ?? null);
@@ -441,7 +448,8 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Bilance kosti: kost v mixu z etikety, jinak neznámá.
   const mixBonePcts = mixes.map((m) => m.nutrition?.bonePct);
   const fromMix = mixes.length && mixBonePcts.every((b) => b != null) ? (mixBonePcts as number[]).reduce((a, b) => a + b, 0) / mixes.length : null;
-  const bone = i.addons.kosti ? pickBone(pool, i, adultKg) : null;
+  const bone0 = i.addons.kosti ? pickBone(pool, i, adultKg) : null;
+  const bone = bone0 ? swap(bone0) : null;
   const rmbBonePct = bone?.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT;
 
   // Kolik dávky připadá na masité kosti (jako náhrada části mixu).
@@ -537,19 +545,8 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     perDayCzk: Math.round(totalCzk / days),
     bone: { target: comp.bone, fromMix: fromMix == null ? null : Math.round(mixShare * fromMix * 10) / 10, fromBones: Math.round(rmbShare * rmbBonePct * 10) / 10 },
     notes: [...result.notes, ...notes],
+    pool,
   };
-}
-
-/** Sloučí položky více plánů do jednoho nákupu (součet kusů podle slugu). */
-export function mergeItems(plans: Plan[]) {
-  const map = new Map<string, { product: Product; qty: number }>();
-  plans.forEach((pl) =>
-    pl.items.forEach((r) => {
-      const cur = map.get(r.product.slug);
-      map.set(r.product.slug, { product: r.product, qty: (cur?.qty ?? 0) + r.qty });
-    }),
-  );
-  return [...map.values()];
 }
 
 /** Orientační dospělé hmotnosti běžných plemen (FCI standardy, střed rozpětí). Pro předvýběr. */
@@ -589,6 +586,7 @@ export function newAnimal(species: Species = "pes"): AnimalInput {
     exclude: [],
     addons: { ...DEFAULT_ADDONS },
     removed: [],
+    swaps: {},
   };
 }
 
