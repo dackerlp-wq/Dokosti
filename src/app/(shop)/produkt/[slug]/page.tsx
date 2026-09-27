@@ -9,6 +9,7 @@ import { ProductImage } from "@/components/product/product-image";
 import { Badge } from "@/components/ui/badge";
 import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, productName } from "@/lib/catalog";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
+import { stockLabel } from "@/lib/stock";
 import { formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -35,6 +36,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const line = LINE_INFO[product.line];
+  const stock = stockLabel(product);
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
   const all = await getProducts();
   const bySlug = (slugs: string[] = []) => slugs.map((s) => all.find((p) => p.slug === s)).filter((p): p is NonNullable<typeof p> => Boolean(p));
@@ -84,9 +86,7 @@ export default async function ProductPage({ params }: Props) {
 
         <div>
           <div className="mb-3 flex flex-wrap gap-1.5">
-            <Badge kind={product.inStock ? "skladem" : "neutral"}>
-              {product.inStock ? "Skladem" : "Momentálně není"}
-            </Badge>
+            <Badge kind={stock.kind === "neni" ? "neutral" : stock.kind}>{stock.text}</Badge>
             {product.isNew && <Badge kind="novinka">Novinka</Badge>}
             {onSale && <Badge kind="sleva">Sleva</Badge>}
             <Badge>{STORAGE_LABEL[product.storage]}</Badge>

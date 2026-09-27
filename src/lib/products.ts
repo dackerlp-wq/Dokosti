@@ -18,6 +18,7 @@ type ProductRow = {
   storage_note: string;
   dosage: string;
   in_stock: boolean;
+  stock_qty: number | string | null;
   is_new: boolean;
   image_url: string | null;
   upsell_slugs: string[] | null;
@@ -61,6 +62,7 @@ function fromRow(r: ProductRow): Product {
     storageNote: r.storage_note,
     dosage: r.dosage,
     inStock: r.in_stock,
+    stockQty: r.stock_qty === null || r.stock_qty === undefined ? null : Number(r.stock_qty),
     isNew: r.is_new,
     image: r.image_url,
     upsell: r.upsell_slugs ?? [],
@@ -81,7 +83,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   const { data, error } = await db
     .from("products")
     .select(
-      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit",
+      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty",
     )
     .eq("is_published", true)
     .order("sort_order")

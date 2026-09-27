@@ -1,9 +1,10 @@
-type Kind = "novinka" | "sleva" | "skladem" | "neutral";
+type Kind = "novinka" | "sleva" | "skladem" | "posledni" | "neutral";
 
 const styles: Record<Kind, string> = {
   novinka: "bg-ochre-badge text-ink",
   sleva: "bg-brick text-cream",
   skladem: "bg-green text-cream",
+  posledni: "bg-ochre-badge text-ink",
   neutral: "bg-paper text-muted border border-line",
 };
 

@@ -4,10 +4,12 @@ import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { ProductImage } from "@/components/product/product-image";
 import { STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
+import { stockLabel } from "@/lib/stock";
 
 export function ProductCard({ product }: { product: Product }) {
   const href = `/produkt/${product.slug}`;
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
+  const stock = stockLabel(product);
 
   return (
     <article className="flex flex-col rounded-[var(--radius-card)] border border-line bg-paper p-2.5">
@@ -28,7 +30,10 @@ export function ProductCard({ product }: { product: Product }) {
             {productName(product)}
           </Link>
         </h3>
-        <p className="text-xs text-muted">{product.unit === "kg" ? "na váhu, jen v prodejně" : formatWeight(product.weightGrams)}</p>
+        <p className="text-xs text-muted">
+          {product.unit === "kg" ? "na váhu, jen v prodejně" : formatWeight(product.weightGrams)}
+          <span className={`ml-2 ${stock.kind === "skladem" ? "text-green" : stock.kind === "posledni" ? "text-brick-text" : "text-muted"}`}>· {stock.text}</span>
+        </p>
         <p className="mt-auto pt-2 font-display text-[18px] font-semibold">
           {onSale && (
             <span className="mr-2 text-sm font-normal text-muted line-through">

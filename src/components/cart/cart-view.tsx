@@ -7,6 +7,7 @@ import { ProductImage } from "@/components/product/product-image";
 import { ButtonLink } from "@/components/ui/button";
 import { productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
+import { maxQty } from "@/lib/stock";
 
 export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk: number | null; catalog: Product[] }) {
   const { items, subtotalCzk, setQty, remove, ready, add } = useCart();
@@ -33,7 +34,9 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper">
-        {items.map(({ product, qty }) => (
+        {items.map(({ product, qty }) => {
+          const limit = maxQty(product);
+          return (
           <li key={product.slug} className="grid grid-cols-[80px_1fr] gap-4 p-4 sm:grid-cols-[96px_1fr_auto]">
             <Link href={`/produkt/${product.slug}`}>
               <ProductImage product={product} sizes="96px" />
@@ -54,7 +57,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
                 <span className="w-8 text-center font-display font-semibold" aria-live="polite">
                   {qty}
                 </span>
-                <QtyButton label="Přidat" onClick={() => setQty(product.slug, qty + 1)}>
+                <QtyButton label="Přidat" onClick={() => setQty(product.slug, Math.min(qty + 1, limit === Infinity ? qty + 1 : limit))} disabled={qty >= limit}>
                   <Plus strokeWidth={1.75} className="h-4 w-4" />
                 </QtyButton>
                 <button
@@ -66,11 +69,26 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
                 </button>
               </div>
             </div>
+            {limit === 0 ? (
+              <p role="alert" className="col-start-2 text-sm text-brick-text">
+                Momentálně není skladem, před objednávkou ho prosím odeberte.
+              </p>
+            ) : qty > limit ? (
+              <p role="alert" className="col-start-2 text-sm text-brick-text">
+                Skladem je jen {limit} ks.{" "}
+                <button type="button" onClick={() => setQty(product.slug, limit)} className="underline">
+                  Upravit na {limit}
+                </button>
+              </p>
+            ) : qty === limit ? (
+              <p className="col-start-2 text-xs text-muted">Víc kusů teď skladem není.</p>
+            ) : null}
             <p className="col-start-2 font-display text-[17px] font-semibold sm:col-start-3 sm:text-right">
               {formatPrice(product.priceCzk * qty)}
             </p>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5">
@@ -131,13 +149,14 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
   );
 }
 
-function QtyButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+function QtyButton({ label, onClick, disabled = false, children }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line bg-cream text-green hover:border-green"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line bg-cream text-green hover:border-green disabled:opacity-40"
     >
       {children}
     </button>

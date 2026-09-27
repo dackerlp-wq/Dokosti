@@ -1,5 +1,6 @@
 "use server";
 
+import { productName } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
@@ -119,6 +120,17 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   if (error || !data) {
     console.error("create_order", error);
     const known = DB_ERRORS.find(([k]) => error?.message?.includes(k));
+    // „out of stock: slug“ a „unavailable: slug“: říct, o který produkt jde a kolik je skladem.
+    const m = /^(out of stock|unavailable): (\S+)/.exec(error?.message ?? "");
+    if (m) {
+      const p = await getProduct(m[2]);
+      const name = p ? productName(p) : m[2];
+      if (m[1] === "out of stock") {
+        const qty = p?.stockQty ?? null;
+        return { ok: false, error: `${name}: skladem ${qty === null ? "není požadované množství" : qty <= 0 ? "teď není" : `jen ${Math.floor(qty)} ks`}. Upravte prosím množství v košíku.` };
+      }
+      return { ok: false, error: `${name} už není v nabídce. Odeberte ho prosím z košíku.` };
+    }
     return { ok: false, error: known?.[1] ?? "Objednávku se nepodařilo uložit. Zkuste to znovu nebo zavolejte." };
   }
   const r = data as { order_number: string; total_czk: number; points_earned: number };
