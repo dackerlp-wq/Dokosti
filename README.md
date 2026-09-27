@@ -126,7 +126,9 @@ zákaznická karta (`customers.card_code`; neznámý kód se při prvním načte
 Zboží na váhu se zadává v gramech. Účtenka: zákazník (volitelně), slevový kód, uplatnění Kostiček, ruční sleva (jen správce),
 odložení účtu (localStorage), platba hotově (vrácení), kartou (terminál je samostatný) nebo QR platbou (SPD kód z čísla účtu
 v Nastavení → Platba). RPC `pos_checkout` počítá ceny na serveru, zapisuje `pos_sales` (číselná řada U+rok+pořadí),
-`pos_sale_items`, pohyby skladu `prodej_kasa` a Kostičky; `pos_cancel_sale` (storno, jen správce) vrací sklad i body.
+`pos_sale_items`, pohyby skladu `prodej_kasa` a Kostičky; `pos_cancel_sale` (storno: správce kdykoli, obsluha vlastní účtenku
+do 10 minut) vrací sklad i body. U zákazníka v adminu je kód karty s čárovým kódem Code 128 (`src/lib/barcode.ts`) a seznam
+nákupů v prodejně.
 Záložka K výdeji vydává webové objednávky k osobnímu odběru (`pos_settle_order` označí objednávku jako doručenou a u dobírky
 vezme hotovost). Účtenka pro 80 mm tiskárnu je na `/admin/kasa/uctenka/[id]` (`?tisk=1` otevře tisk). Po zaplacení se kasa
 zeptá „Tisk účtenky“ / „Bez účtenky“; automatický tisk po každém prodeji lze zapnout v Nastavení → Kasa. Uzávěrka: vklady a výběry (`pos_cash_moves`), napočítaná hotovost a rozdíl (`pos_close_shift`).

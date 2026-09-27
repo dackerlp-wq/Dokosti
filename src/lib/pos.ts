@@ -40,6 +40,7 @@ export type PosSaleRow = {
   note: string;
   created_at: string;
   cancel_reason: string | null;
+  cashier: string | null;
 };
 
 export type PosSaleItemRow = { id: string; name: string; qty: number; unit: ProductUnit; unit_price_czk: number; line_total_czk: number };

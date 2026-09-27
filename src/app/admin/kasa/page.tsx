@@ -21,6 +21,7 @@ export default async function PosPage() {
     <Pos
       products={list}
       manager={admin?.isManager ?? false}
+      userId={admin?.id ?? ""}
       userEmail={admin?.email ?? ""}
       loyalty={settings.loyalty}
       pos={settings.pos}

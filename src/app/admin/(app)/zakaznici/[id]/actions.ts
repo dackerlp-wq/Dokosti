@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 export async function saveCustomerNote(formData: FormData) {
@@ -25,4 +26,17 @@ export async function adjustPoints(formData: FormData) {
   await db.from("customers").update({ points: next }).eq("id", id);
   await db.from("loyalty_transactions").insert({ customer_id: id, points: next - (data?.points ?? 0), reason });
   revalidatePath(`/admin/zakaznici/${id}`);
+}
+
+/** Kód zákaznické karty (čárový kód Code 128). Prázdný kód kartu odebere. */
+export async function saveCardCode(formData: FormData) {
+  if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");
+  const id = String(formData.get("id") ?? "");
+  const code = String(formData.get("card_code") ?? "").trim().toUpperCase();
+  if (!id) return;
+  if (code && (code.length < 4 || /[^\x20-\x7e]/.test(code))) return;
+  const db = await getAuthSupabase();
+  const { error } = await db.from("customers").update({ card_code: code || null }).eq("id", id);
+  revalidatePath(`/admin/zakaznici/${id}`);
+  if (error) redirect(`/admin/zakaznici/${id}?karta=obsazena`);
 }

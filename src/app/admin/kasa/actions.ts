@@ -16,6 +16,7 @@ const ERRORS: [string, string][] = [
   ["cash short", "Přijatá hotovost je nižší než cena."],
   ["card taken", "Tato karta už je přiřazená jinému zákazníkovi."],
   ["order closed", "Objednávka je už vyřízená nebo zrušená."],
+  ["storno not allowed", "Obsluha může stornovat jen vlastní účtenku do 10 minut. Zavolejte správce."],
   ["unknown product", "Některý produkt už neexistuje."],
 ];
 const explain = (msg: string | undefined, fallback: string) => ERRORS.find(([k]) => msg?.includes(k))?.[1] ?? fallback;

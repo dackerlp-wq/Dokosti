@@ -50,6 +50,7 @@ const fmtQty = (qty: number, unit: "ks" | "kg") => (unit === "kg" ? `${qty.toLoc
 export function Pos({
   products,
   manager,
+  userId,
   userEmail,
   loyalty,
   pos,
@@ -60,6 +61,7 @@ export function Pos({
 }: {
   products: PosProduct[];
   manager: boolean;
+  userId: string;
   userEmail: string;
   loyalty: Settings["loyalty"];
   pos: Settings["pos"];
@@ -470,7 +472,7 @@ export function Pos({
         </section>
       )}
 
-      {tab === "dnes" && <TodayTab manager={manager} onStorno={(s) => setModal({ kind: "storno", sale: s })} refreshKey={modal === null ? 1 : 0} />}
+      {tab === "dnes" && <TodayTab manager={manager} userId={userId} onStorno={(s) => setModal({ kind: "storno", sale: s })} refreshKey={modal === null ? 1 : 0} />}
 
       {tab === "uzaverka" && <ShiftTab shift={shift} onChange={setShift} say={say} />}
 
@@ -895,7 +897,14 @@ function StornoForm({ onSubmit }: { onSubmit: (reason: string) => void }) {
   );
 }
 
-function TodayTab({ manager, onStorno, refreshKey }: { manager: boolean; onStorno: (s: PosSaleRow) => void; refreshKey: number }) {
+/** Obsluha smí stornovat jen vlastní účtenku do 10 minut od prodeje, správce kdykoli (hlídá i databáze). */
+function canStorno(s: PosSaleRow, manager: boolean, userId: string) {
+  if (s.status !== "zaplaceno") return false;
+  if (manager) return true;
+  return s.cashier === userId && Date.now() - new Date(s.created_at).getTime() < 10 * 60 * 1000;
+}
+
+function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean; userId: string; onStorno: (s: PosSaleRow) => void; refreshKey: number }) {
   const [sales, setSales] = useState<(PosSaleRow & { customers: { name: string } | null })[]>([]);
   const [open, setOpen] = useState<string | null>(null);
   const [items, setItems] = useState<Record<string, PosSaleItemRow[]>>({});
@@ -930,7 +939,7 @@ function TodayTab({ manager, onStorno, refreshKey }: { manager: boolean; onStorn
                 <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="text-xs text-green underline">
                   účtenka
                 </a>
-                {s.status === "zaplaceno" && manager && (
+                {canStorno(s, manager, userId) && (
                   <button type="button" onClick={() => onStorno(s)} className="text-xs text-brick-text underline">
                     storno
                   </button>

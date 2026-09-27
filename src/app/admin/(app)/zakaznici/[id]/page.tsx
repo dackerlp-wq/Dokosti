@@ -4,22 +4,27 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { Button } from "@/components/ui/button";
 import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow } from "@/lib/admin";
+import { code128Svg, newCardCode } from "@/lib/barcode";
 import { formatPrice } from "@/lib/format";
+import { POS_PAYMENT_LABEL, type PosSaleRow } from "@/lib/pos";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { adjustPoints, saveCustomerNote } from "./actions";
+import { adjustPoints, saveCardCode, saveCustomerNote } from "./actions";
 
-export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function CustomerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ karta?: string }> }) {
+  const [{ id }, { karta }] = await Promise.all([params, searchParams]);
   const db = await getAuthSupabase();
-  const [{ data: customer }, { data: orders }, { data: loyalty }] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: sales }] = await Promise.all([
     db.from("customers").select("*").eq("id", id).maybeSingle(),
     db.from("orders").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
     db.from("loyalty_transactions").select("id, points, reason, created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(50),
+    db.from("pos_sales").select("*").eq("customer_id", id).is("order_id", null).order("created_at", { ascending: false }).limit(50),
   ]);
   if (!customer) notFound();
   const c = customer as CustomerRow;
   const list = (orders ?? []) as OrderRow[];
   const points = (loyalty ?? []) as LoyaltyRow[];
+  const pos = (sales ?? []) as PosSaleRow[];
+  const barcode = c.card_code ? code128Svg(c.card_code) : null;
 
   return (
     <>
@@ -80,9 +85,48 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               ))}
             </Table>
           )}
+
+          <h2 className="text-[20px]">Nákupy v prodejně</h2>
+          {pos.length === 0 ? (
+            <p className="text-muted">Zatím žádné.</p>
+          ) : (
+            <Table head={["Účtenka", "Datum", "Platba", "Celkem", "Stav"]}>
+              {pos.map((s) => (
+                <tr key={s.id}>
+                  <Td>
+                    <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="font-semibold text-green hover:underline">
+                      {s.number}
+                    </a>
+                  </Td>
+                  <Td>{formatDate(s.created_at)}</Td>
+                  <Td>{POS_PAYMENT_LABEL[s.payment]}</Td>
+                  <Td className={s.status === "storno" ? "line-through text-muted" : ""}>{formatPrice(s.total_czk)}</Td>
+                  <Td>{s.status === "storno" ? <span className="label text-[10px] text-brick-text">storno</span> : <span className="label text-[10px] text-green">zaplaceno</span>}</Td>
+                </tr>
+              ))}
+            </Table>
+          )}
         </div>
 
         <div className="space-y-4">
+        <form action={saveCardCode} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <input type="hidden" name="id" value={c.id} />
+          <p className="label mb-2 text-[11px] text-muted">Zákaznická karta</p>
+          {barcode ? (
+            <div className="mb-3 overflow-x-auto rounded-[var(--radius-control)] border border-line bg-white p-2" dangerouslySetInnerHTML={{ __html: barcode }} />
+          ) : (
+            <p className="mb-3 text-sm text-muted">Bez karty. Kartu přiřadí kasa při prvním načtení, nebo zapište kód zde.</p>
+          )}
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <input name="card_code" defaultValue={c.card_code ?? ""} placeholder={newCardCode()} aria-label="Kód karty" className="uppercase" />
+            <Button type="submit" variant="secondary">
+              Uložit
+            </Button>
+          </div>
+          {karta === "obsazena" && <p className="mt-2 text-sm text-brick-text">Tento kód už má jiný zákazník.</p>}
+          <p className="mt-2 text-xs text-muted">Kód z čárového kódu na kartě (Code 128). Prázdné pole kartu odebere. Tisk štítku: pravým tlačítkem na kód → uložit obrázek.</p>
+        </form>
+
         <form action={saveCustomerNote} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <input type="hidden" name="id" value={c.id} />
           <label htmlFor="note" className="label mb-1 block text-[11px] text-muted">
