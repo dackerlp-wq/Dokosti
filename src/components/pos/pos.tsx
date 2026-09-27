@@ -3,6 +3,7 @@
 import { Banknote, CreditCard, Minus, Pause, Plus, QrCode, Search, Trash2, User, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { logout } from "@/app/admin/login/actions";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
@@ -242,6 +243,11 @@ export function Pos({
           ))}
         </nav>
         <span className="ml-auto truncate text-xs text-muted">{userEmail}</span>
+        <form action={logout}>
+          <button type="submit" className="label min-h-10 rounded-[var(--radius-control)] px-2 text-[11px] text-brick-text hover:bg-cream">
+            Odhlásit
+          </button>
+        </form>
         {toast && (
           <span role="status" className="rounded-[var(--radius-control)] bg-green px-3 py-1 text-sm text-cream">
             {toast}
