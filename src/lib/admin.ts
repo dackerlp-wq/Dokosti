@@ -26,6 +26,9 @@ export type OrderRow = {
   points_earned: number;
   invoice_number: string | null;
   invoice_issued_at: string | null;
+  paid_at: string | null;
+  discount_note: string;
+  created_by: string | null;
   created_at: string;
 };
 

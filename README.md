@@ -117,6 +117,14 @@ pohyby, šarže s expirací, nákupní cena), seznam příjemek a pohybů; u pro
 `order_items.unit_cost_czk` drží nákupní cenu v době prodeje, statistiky z ní počítají hrubý zisk. Role v `admins.role`:
 `spravce` (vše) a `obsluha` (bez nastavení, slev, e-mailů, statistik, předplatného a nákupních cen; RLS pro nastavení a kódy).
 
+## Objednávka z adminu
+
+Admin → Objednávky → Nová objednávka založí objednávku za zákazníka (telefon, pult): stávající zákazník podle jména,
+telefonu nebo karty, nebo nový bez e-mailu. RPC `admin_create_order` počítá ceny jako `create_order` (bez minimální
+objednávky), umí slevový kód, Kostičky, ruční slevu (jen správce, `orders.discount_note`) a příznak `orders.paid_at`
+(zaplaceno předem; jde přepnout i v detailu objednávky). `orders.created_by` odlišuje objednávky z adminu od webu.
+Potvrzení e-mailem se pošle jen s e-mailem zákazníka (`src/lib/order-emails.ts`, sdílené s webovou pokladnou).
+
 ## Kasa (prodejna)
 
 `/admin/kasa` je celoobrazovková pokladna pro tablet nebo notebook, instalovatelná jako PWA (manifest na

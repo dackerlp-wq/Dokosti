@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { formatDate, isOrderStatus, ORDER_STATUS_LABEL, ORDER_STATUSES, SHIPPING_LABEL, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
+import { buttonClass } from "@/components/ui/button";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ stav?: string }> }) {
@@ -16,7 +17,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <h1>Objednávky</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1>Objednávky</h1>
+        <Link href="/admin/objednavky/nova" className={buttonClass("primary")}>
+          Nová objednávka
+        </Link>
+      </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <Filter href="/admin/objednavky" active={!status}>
           Vše
@@ -43,7 +49,10 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                 <Td>{o.customer_name}</Td>
                 <Td>{o.customer_phone}</Td>
                 <Td>{SHIPPING_LABEL[o.shipping_method]}</Td>
-                <Td>{formatPrice(o.total_czk)}</Td>
+                <Td>
+                  {formatPrice(o.total_czk)}
+                  {o.paid_at && <span className="ml-2 label text-[10px] text-green">zaplaceno</span>}
+                </Td>
                 <Td>
                   <StatusBadge status={o.status} />
                 </Td>

@@ -25,6 +25,7 @@ export type OrderForEmail = {
   discount_czk: number;
   points_discount_czk: number;
   points_earned: number;
+  paid_at?: string | null;
   created_at: string;
   items: { name: string; qty: number; unit_price_czk: number }[];
 };
@@ -93,6 +94,7 @@ function deliveryInfo(o: OrderForEmail, s: Settings) {
 }
 
 function paymentInfo(o: OrderForEmail, s: Settings) {
+  if (o.paid_at) return `Zaplaceno, ${formatPrice(o.total_czk)}. Děkujeme.`;
   switch (o.payment_method) {
     case "prevod":
       return s.payment.prevod.bankAccount

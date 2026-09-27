@@ -6,7 +6,7 @@ import { Button, buttonClass } from "@/components/ui/button";
 import { formatDate, formatDay, ORDER_STATUS_LABEL, ORDER_STATUSES, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase } from "@/lib/supabase/auth";
-import { issueInvoice, setOrderStatus } from "./actions";
+import { issueInvoice, setOrderPaid, setOrderStatus } from "./actions";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,6 +30,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="flex flex-wrap items-center gap-3">
         <h1>{o.order_number}</h1>
         <StatusBadge status={o.status} />
+        {o.paid_at && <span className="label rounded-[var(--radius-control)] bg-green px-2 py-1 text-[10px] text-cream">Zaplaceno</span>}
+        {o.created_by && <span className="label text-[10px] text-muted">založeno v adminu</span>}
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -45,7 +47,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             ))}
             {o.discount_czk > 0 && (
               <tr>
-                <Td className="text-brick-text">Sleva · kód {o.coupon_code}</Td>
+                <Td className="text-brick-text">Sleva{o.coupon_code ? ` · kód ${o.coupon_code}` : ""}{o.discount_note ? ` · ${o.discount_note}` : ""}</Td>
                 <Td>{""}</Td>
                 <Td>{""}</Td>
                 <Td className="text-brick-text">−{formatPrice(o.discount_czk)}</Td>
@@ -94,6 +96,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <Box title="Dodání a platba">
               {SHIPPING_LABEL[o.shipping_method]}
               {o.delivery_date && <> · {formatDay(o.delivery_date)}</>} · {PAYMENT_LABEL[o.payment_method]}
+              {o.paid_at ? ` · zaplaceno ${formatDate(o.paid_at)}` : ""}
               {o.street && (
                 <>
                   <br />
@@ -109,6 +112,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
+        <div className="space-y-4">
         <form action={setOrderStatus} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <input type="hidden" name="id" value={o.id} />
           <label htmlFor="status" className="label mb-1 block text-[11px] text-muted">
@@ -134,7 +138,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </form>
 
-        <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4 lg:col-start-2">
+        <form action={setOrderPaid} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <input type="hidden" name="id" value={o.id} />
+          <input type="hidden" name="paid" value={o.paid_at ? "0" : "1"} />
+          <p className="label mb-1 text-[11px] text-muted">Platba</p>
+          <p className="text-sm">{o.paid_at ? `Zaplaceno ${formatDate(o.paid_at)}` : `Nezaplaceno · ${PAYMENT_LABEL[o.payment_method]}`}</p>
+          <Button type="submit" variant="secondary" className="mt-3 w-full">
+            {o.paid_at ? "Zrušit označení zaplaceno" : "Označit jako zaplaceno"}
+          </Button>
+        </form>
+
+        <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <p className="label mb-1 text-[11px] text-muted">Doklad</p>
           {o.invoice_number ? (
             <>
@@ -154,6 +168,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </Button>
             </form>
           )}
+        </div>
         </div>
       </div>
     </>

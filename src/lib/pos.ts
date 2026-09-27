@@ -67,6 +67,7 @@ export type PickupOrder = {
   customer_name: string;
   customer_phone: string;
   payment_method: "karta" | "prevod" | "hotove";
+  paid_at: string | null;
   total_czk: number;
   created_at: string;
   order_items: { name: string; qty: number }[];

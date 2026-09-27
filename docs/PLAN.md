@@ -86,7 +86,7 @@ Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštěn�
 | Změna hesla správce | hotovo | Výchozí heslo je nutné změnit. |
 | Role: partner s plnými právy | doladit | Tabulka `admins`, druhý účet se přidá ručně v Supabase. |
 | Hromadná úprava cen a stavu skladu | nápad | Např. + 5 % u celé řady. |
-| Objednávka za zákazníka z adminu (telefonická) | nápad | |
+| Objednávka za zákazníka z adminu (telefonická) | hotovo | Admin → Objednávky → Nová objednávka (správce i obsluha). E-mail nepovinný, slevový kód, Kostičky, ruční sleva jen správce, „už zaplaceno“. Migrace 0020. |
 | Propojení s účetnictvím (Pohoda, iDoklad) | nápad | Dnes CSV export. |
 | Skladové příjemky od dodavatele | nápad | |
 

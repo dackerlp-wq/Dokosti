@@ -4,7 +4,8 @@ import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
 import { sendEmail } from "@/lib/email/send";
-import { orderConfirmation, orderNotification, subscriptionCreated, type OrderForEmail } from "@/lib/email/templates";
+import { subscriptionCreated } from "@/lib/email/templates";
+import { sendNewOrderEmails } from "@/lib/order-emails";
 import { SITE_URL } from "@/lib/seo";
 import { getSupabase } from "@/lib/supabase/server";
 
@@ -136,28 +137,20 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     }
   }
 
-  // E-maily: zákazníkovi potvrzení, prodejně upozornění. Chyba e-mailu objednávku nezruší.
-  try {
-    const { data: full } = await db.rpc("order_for_email", { p_order_number: r.order_number });
-    if (full) {
-      const o = full as OrderForEmail;
-      const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dokosti.vercel.app";
-      await sendEmail(db, o.customer_email, orderConfirmation(o, settings), "potvrzeni", o.id);
-      if (settings.shop.email.includes("@")) {
-        await sendEmail(db, settings.shop.email, orderNotification(o, settings, `${base}/admin/objednavky/${o.id}`), "upozorneni", o.id);
-      }
-      if (subscriptionResult && subscribe) {
-        await sendEmail(
-          db,
-          o.customer_email,
-          subscriptionCreated(o, settings, { intervalDays: subscribe.intervalDays, weekday: subscribe.weekday, nextDate: subscriptionResult.nextDate, manageUrl: `${SITE_URL}/predplatne/${subscriptionResult.token}` }),
-          "predplatne-zalozeno",
-          o.id,
-        );
-      }
+  // E-maily: zákazníkovi potvrzení, prodejně upozornění, případně předplatné. Chyba e-mailu objednávku nezruší.
+  const o = await sendNewOrderEmails(db, r.order_number, settings);
+  if (o && subscriptionResult && subscribe) {
+    try {
+      await sendEmail(
+        db,
+        o.customer_email,
+        subscriptionCreated(o, settings, { intervalDays: subscribe.intervalDays, weekday: subscribe.weekday, nextDate: subscriptionResult.nextDate, manageUrl: `${SITE_URL}/predplatne/${subscriptionResult.token}` }),
+        "predplatne-zalozeno",
+        o.id,
+      );
+    } catch (e) {
+      console.error("subscription e-mail", e);
     }
-  } catch (e) {
-    console.error("order e-mail", e);
   }
 
   return { ok: true, orderNumber: r.order_number, totalCzk: r.total_czk, pointsEarned: r.points_earned, subscription: subscriptionResult };

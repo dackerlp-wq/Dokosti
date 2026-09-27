@@ -45,3 +45,16 @@ export async function setOrderStatus(formData: FormData) {
   revalidatePath("/admin/objednavky");
   revalidatePath(`/admin/objednavky/${id}`);
 }
+
+/** Označí objednávku jako zaplacenou (převod připsán, zaplaceno u pultu), nebo označení zruší. */
+export async function setOrderPaid(formData: FormData) {
+  if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");
+  const id = String(formData.get("id") ?? "");
+  const paid = formData.get("paid") === "1";
+  if (!id) return;
+  const db = await getAuthSupabase();
+  const { error } = await db.from("orders").update({ paid_at: paid ? new Date().toISOString() : null }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/objednavky");
+  revalidatePath(`/admin/objednavky/${id}`);
+}

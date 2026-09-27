@@ -421,7 +421,7 @@ export function Pos({
                     <span className="text-xs text-muted">{o.order_number}</span>
                   </div>
                   <p className="text-xs text-muted">
-                    {formatDate(o.created_at)} · {PAYMENT_LABEL[o.payment_method]}
+                    {formatDate(o.created_at)} · {o.paid_at ? "zaplaceno" : PAYMENT_LABEL[o.payment_method]}
                     {o.customer_phone ? ` · ${o.customer_phone}` : ""}
                   </p>
                   <ul className="mt-2 text-sm">
@@ -434,7 +434,7 @@ export function Pos({
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-display text-[20px] font-semibold text-green">{formatPrice(o.total_czk)}</span>
                     <Button type="button" onClick={() => (noShift ? setTab("uzaverka") : setModal({ kind: "settle", order: o }))} className="min-h-10">
-                      {o.payment_method === "hotove" ? "Vydat a zaplatit" : "Vydat"}
+                      {o.payment_method === "hotove" && !o.paid_at ? "Vydat a zaplatit" : "Vydat"}
                     </Button>
                   </div>
                 </li>
@@ -511,7 +511,7 @@ export function Pos({
       )}
       {modal?.kind === "settle" && (
         <Modal title={`Výdej ${modal.order.order_number} · ${formatPrice(modal.order.total_czk)}`} onClose={() => setModal(null)} wide>
-          {modal.order.payment_method === "hotove" ? (
+          {modal.order.payment_method === "hotove" && !modal.order.paid_at ? (
             <PayPanel
               total={modal.order.total_czk}
               iban={iban}
@@ -530,7 +530,7 @@ export function Pos({
             />
           ) : (
             <div>
-              <p className="text-sm text-muted">Objednávka je zaplacená předem ({PAYMENT_LABEL[modal.order.payment_method]}). Potvrďte vydání zboží.</p>
+              <p className="text-sm text-muted">Objednávka je zaplacená předem{modal.order.paid_at ? "" : ` (${PAYMENT_LABEL[modal.order.payment_method]})`}. Potvrďte vydání zboží.</p>
               <Button
                 type="button"
                 className="mt-4 min-h-12 w-full"

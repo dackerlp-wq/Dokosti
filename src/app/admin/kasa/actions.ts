@@ -147,7 +147,7 @@ export async function posPickupOrders(): Promise<PickupOrder[]> {
   const db = await getAuthSupabase();
   const { data } = await db
     .from("orders")
-    .select("id, order_number, status, customer_name, customer_phone, payment_method, total_czk, created_at, order_items(name, qty)")
+    .select("id, order_number, status, customer_name, customer_phone, payment_method, paid_at, total_czk, created_at, order_items(name, qty)")
     .eq("shipping_method", "odber")
     .in("status", ["nova", "potvrzena", "pripravena"])
     .order("created_at");
