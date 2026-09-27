@@ -130,7 +130,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
   subscription: { enabled: true, discountPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
-  pos: { autoPrint: true, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
+  pos: { autoPrint: false, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
 };
 
 export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos"] as const satisfies readonly (keyof Settings)[];

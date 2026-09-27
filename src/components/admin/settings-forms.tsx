@@ -317,7 +317,7 @@ function PosForm({ s }: { s: Settings["pos"] }) {
   return (
     <SectionForm section="pos">
       <Card title="Kasa v prodejně">
-        <Check name="autoPrint" label="Po zaplacení rovnou otevřít tisk účtenky (80 mm)" defaultChecked={s.autoPrint} />
+        <Check name="autoPrint" label="Tisknout účtenku automaticky po každém zaplacení (jinak se kasa zeptá)" defaultChecked={s.autoPrint} />
         <div className="mt-3">
           <Field label="Text na konci účtenky">
             <input name="receiptFooter" defaultValue={s.receiptFooter} />

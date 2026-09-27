@@ -558,12 +558,13 @@ export function Pos({
             </p>
           )}
           {modal.points > 0 && <p className="mt-1 text-sm text-muted">Zákazníkovi přibylo {modal.points} Kostiček.</p>}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <a href={`/admin/kasa/uctenka/${modal.id}?tisk=1`} target="_blank" rel="noopener" className="label inline-flex min-h-11 items-center rounded-[var(--radius-control)] border-2 border-green px-4 text-[12px] text-green">
+          {!pos.autoPrint && <p className="mt-3 text-sm text-muted">Chce zákazník účtenku?</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <a href={`/admin/kasa/uctenka/${modal.id}?tisk=1`} target="_blank" rel="noopener" onClick={clearSale} className="label inline-flex min-h-11 items-center rounded-[var(--radius-control)] border-2 border-green px-4 text-[12px] text-green">
               Tisk účtenky
             </a>
             <Button type="button" variant="action" onClick={clearSale} className="min-h-11">
-              Nový prodej
+              {pos.autoPrint ? "Nový prodej" : "Bez účtenky"}
             </Button>
           </div>
         </Modal>

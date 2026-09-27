@@ -128,8 +128,8 @@ odložení účtu (localStorage), platba hotově (vrácení), kartou (terminál 
 v Nastavení → Platba). RPC `pos_checkout` počítá ceny na serveru, zapisuje `pos_sales` (číselná řada U+rok+pořadí),
 `pos_sale_items`, pohyby skladu `prodej_kasa` a Kostičky; `pos_cancel_sale` (storno, jen správce) vrací sklad i body.
 Záložka K výdeji vydává webové objednávky k osobnímu odběru (`pos_settle_order` označí objednávku jako doručenou a u dobírky
-vezme hotovost). Účtenka pro 80 mm tiskárnu je na `/admin/kasa/uctenka/[id]` (`?tisk=1` otevře tisk, automatický tisk se
-zapíná v Nastavení → Kasa). Uzávěrka: vklady a výběry (`pos_cash_moves`), napočítaná hotovost a rozdíl (`pos_close_shift`).
+vezme hotovost). Účtenka pro 80 mm tiskárnu je na `/admin/kasa/uctenka/[id]` (`?tisk=1` otevře tisk). Po zaplacení se kasa
+zeptá „Tisk účtenky“ / „Bez účtenky“; automatický tisk po každém prodeji lze zapnout v Nastavení → Kasa. Uzávěrka: vklady a výběry (`pos_cash_moves`), napočítaná hotovost a rozdíl (`pos_close_shift`).
 
 ## Testovací produkty
 
