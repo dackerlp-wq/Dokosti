@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import type { Product } from "@/lib/catalog";
 
 export type CartLine = { slug: string; qty: number };
@@ -105,6 +105,16 @@ export function CartProvider({ products, children }: { products: Product[]; chil
       ready,
     };
   }, [current, ready, products]);
+
+  // Zboží, které mezitím zmizelo z nabídky, z košíku vyřadit, aby nezablokovalo objednávku.
+  useEffect(() => {
+    if (!ready || products.length === 0) return;
+    const stale = current.filter((l) => !products.some((p) => p.slug === l.slug));
+    if (stale.length) {
+      const t = setTimeout(() => write(current.filter((l) => products.some((p) => p.slug === l.slug))), 0);
+      return () => clearTimeout(t);
+    }
+  }, [current, products, ready]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

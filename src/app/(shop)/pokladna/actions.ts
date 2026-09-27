@@ -1,6 +1,6 @@
 "use server";
 
-import { productName } from "@/lib/catalog";
+import { productName, type Product } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, paymentMethods, shippingMethods, shippingPrice, type PaymentId, type ShippingId } from "@/lib/shipping";
@@ -124,7 +124,11 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     const m = /^(out of stock|unavailable): (\S+)/.exec(error?.message ?? "");
     if (m) {
       const p = await getProduct(m[2]);
-      const name = p ? productName(p) : m[2];
+      let name = p ? productName(p) : m[2];
+      if (!p) {
+        const { data: row } = await db.from("products").select("line, variant").eq("slug", m[2]).maybeSingle();
+        if (row) name = productName(row as { line: Product["line"]; variant: string });
+      }
       if (m[1] === "out of stock") {
         const qty = p?.stockQty ?? null;
         return { ok: false, error: `${name}: skladem ${qty === null ? "není požadované množství" : qty <= 0 ? "teď není" : `jen ${Math.floor(qty)} ks`}. Upravte prosím množství v košíku.` };

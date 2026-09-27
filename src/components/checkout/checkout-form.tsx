@@ -120,7 +120,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
     const fd = new FormData(e.currentTarget);
     const get = (k: string) => String(fd.get(k) ?? "");
     const input: CheckoutInput = {
-      lines: cart.lines,
+      lines: cart.items.map((i) => ({ slug: i.product.slug, qty: i.qty })),
       shipping,
       payment,
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,

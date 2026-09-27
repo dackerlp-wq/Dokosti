@@ -295,7 +295,10 @@ export function Pos({
                   disabled={!p.in_stock}
                   className={`flex min-h-[88px] flex-col justify-between rounded-[var(--radius-card)] p-3 text-left ${LINE_TILE[p.line]} disabled:opacity-40`}
                 >
-                  <span className="text-[15px] font-semibold leading-tight">{p.variant}</span>
+                  <span className="text-[15px] font-semibold leading-tight">
+                    {p.variant}
+                    {!p.is_published && <span className="label ml-1 text-[9px] opacity-70">jen prodejna</span>}
+                  </span>
                   <span className="mt-2 flex items-baseline justify-between gap-2 text-sm">
                     <span className="font-display text-[17px] font-semibold">
                       {formatPrice(p.price_czk)}
