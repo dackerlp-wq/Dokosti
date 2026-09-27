@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarfCalculator, type SavedPet } from "@/components/barf/barf-calculator";
+import { BarfCalculator } from "@/components/barf/barf-calculator";
 import { InquiryForm } from "@/components/barf/inquiry-form";
 import { ProductGrid } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { getCustomerUser } from "@/lib/customer";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
-import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Jak začít s BARFem: průvodce pro psy i kočky",
@@ -31,13 +29,7 @@ const FAQ = [
 ] as const;
 
 export default async function HowToStartPage() {
-  const [products, { shop }, user] = await Promise.all([getProducts(), getSettings(), getCustomerUser()]);
-  let savedPets: SavedPet[] = [];
-  if (user) {
-    const db = await getAuthSupabase();
-    const { data } = await db.from("pets").select("id, name, data").order("updated_at", { ascending: false }).limit(10);
-    savedPets = (data ?? []) as SavedPet[];
-  }
+  const [products, { shop }] = await Promise.all([getProducts(), getSettings()]);
   // Startovací balíčky: produkty se slugem začínajícím „startovaci-“, dokud nejsou, ukáže se obecný text.
   const packs = products.filter((p) => p.slug.startsWith("startovaci-"));
   const faqLd = {
@@ -167,7 +159,7 @@ export default async function HowToStartPage() {
           Nejlepším ukazatelem je postava. Žebra byste měli nahmatat, ale ne vidět. Když mazlíček přibírá, dávku o kousek snižte,
           když hubne, přidejte.
         </p>
-        <BarfCalculator products={products} user={user} savedPets={savedPets} />
+        <BarfCalculator products={products} />
       </Section>
 
       {/* 6. Přechod krok za krokem */}

@@ -163,3 +163,14 @@ export async function updateProfile(_prev: AuthState, fd: FormData): Promise<Aut
   revalidatePath("/pokladna");
   return { info: "Uloženo." };
 }
+
+/** Přihlášený uživatel a jeho uložené profily zvířat pro kalkulačku (načítá se v prohlížeči, stránka může být statická). */
+export async function loadProfiles(): Promise<{ user: { email: string } | null; pets: { id: string; name: string; data: Record<string, unknown> }[] }> {
+  const db = await getAuthSupabase();
+  const {
+    data: { user },
+  } = await db.auth.getUser();
+  if (!user) return { user: null, pets: [] };
+  const { data } = await db.from("pets").select("id, name, data").order("updated_at", { ascending: false }).limit(10);
+  return { user: { email: (user.email ?? "").toLowerCase() }, pets: (data ?? []) as { id: string; name: string; data: Record<string, unknown> }[] };
+}

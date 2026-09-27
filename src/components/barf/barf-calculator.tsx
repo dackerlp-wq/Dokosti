@@ -3,9 +3,9 @@
 import { FileDown, Mail, Printer, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { emailPlan } from "@/app/(shop)/kalkulacka/actions";
-import { savePet } from "@/app/(shop)/ucet/actions";
+import { loadProfiles, savePet } from "@/app/(shop)/ucet/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
@@ -30,6 +30,7 @@ import {
   type Stage,
 } from "@/lib/barf";
 import { productName, type Product } from "@/lib/catalog";
+import { decodePlanRequest } from "@/lib/pdf/request";
 import { formatPrice, formatWeight } from "@/lib/format";
 
 /**
@@ -86,18 +87,28 @@ const round5 = (g: number) => Math.max(5, Math.round(g / 5) * 5);
 
 export function BarfCalculator({
   products,
-  user,
-  savedPets = [],
   compact = false,
-  initial,
 }: {
   products: Product[];
-  user: { email: string } | null;
-  savedPets?: SavedPet[];
   compact?: boolean;
-  /** Předvyplnění z odkazu v e-mailu s plánem. */
-  initial?: { animals: AnimalInput[]; days: number } | null;
 }) {
+  // Přihlášení a uložené profily se načtou až v prohlížeči, stránka tak může jít z CDN.
+  const [profiles, setProfiles] = useState<{ user: { email: string } | null; pets: SavedPet[] }>({ user: null, pets: [] });
+  useEffect(() => {
+    let live = true;
+    loadProfiles().then((r) => live && setProfiles({ user: r.user, pets: r.pets as SavedPet[] }));
+    return () => {
+      live = false;
+    };
+  }, []);
+  const user = profiles.user;
+  const savedPets = profiles.pets;
+  // Předvyplnění z odkazu v e-mailu s plánem (?d=…), čte se až v prohlížeči.
+  const [initial, setInitial] = useState<{ animals: AnimalInput[]; days: number } | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => setInitial(decodePlanRequest(new URLSearchParams(window.location.search).get("d"))), 0);
+    return () => clearTimeout(t);
+  }, []);
   const cart = useCart();
   const router = useRouter();
   const stored = useSyncExternalStore(noop, readStored, () => null);
