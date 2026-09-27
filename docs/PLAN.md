@@ -131,8 +131,8 @@ terminál je samostatná krabička, propojí se později. EET neexistuje.
 
 | Krok | Položka | Stav | Poznámka |
 |---|---|---|---|
-| 1 | Datový základ: jednotka ks/kg, cena za kg, role správce/obsluha, pohyby skladu, nákupní ceny | nápad | Nejdřív, protože mění model. |
-| 2 | Příjemky, odpisy, inventura, historie pohybů u produktu | nápad | Šarže a expirace už existují. |
+| 1 | Datový základ: jednotka ks/kg, cena za kg, EAN, role správce/obsluha, pohyby skladu, nákupní ceny a marže | hotovo | Migrace 0016. Roli druhému účtu nastaví správce v Supabase (`admins.role`). |
+| 2 | Příjemky, odpisy, inventura, historie pohybů u produktu, hrubý zisk ve statistikách | hotovo | Admin → Sklad; odpis a inventura u produktu. Šarže vznikají z příjemky. |
 | 3 | Kasa: dlaždice, čtečka, zákazník a Kostičky, sleva, hotově/kartou, účtenka 80 mm, storno, výdej webových objednávek | nápad | PWA na /admin/kasa. |
 | 4 | Denní uzávěrka, účtenky v číselné řadě, statistiky web vs. prodejna | nápad | |
 | 5 | Terminál, Bluetooth tiskárna, nativní obálka pro Android | nápad | Až bude důvod. |

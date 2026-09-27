@@ -23,9 +23,13 @@ function optNum(v: FormDataEntryValue | null, max = Infinity) {
 
 /** Uloží produkt (nový nebo úprava). Vrací chybu, nebo přesměruje na seznam. */
 export async function saveProduct(_prev: ProductFormState, formData: FormData): Promise<ProductFormState> {
-  if (!(await getAdmin())) return { error: "Nejste přihlášeni." };
+  const admin = await getAdmin();
+  if (!admin) return { error: "Nejste přihlášeni." };
 
   const id = String(formData.get("id") ?? "");
+  const unit = String(formData.get("unit") ?? "ks") === "kg" ? "kg" : "ks";
+  const ean = String(formData.get("ean") ?? "").replace(/\s+/g, "");
+  if (ean && !/^\d{8,14}$/.test(ean)) return { error: "EAN musí mít 8 až 14 číslic." };
   const line = String(formData.get("line") ?? "");
   const variant = String(formData.get("variant") ?? "").trim();
   const storage = String(formData.get("storage") ?? "") as Storage;
@@ -71,7 +75,12 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     upsell_slugs: formData.getAll("upsell").map(String).filter(Boolean),
     crosssell_slugs: formData.getAll("crosssell").map(String).filter(Boolean),
     sort_order: Math.round(num(formData.get("sort_order")) || 0),
-    stock_qty: String(formData.get("stock_qty") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("stock_qty")))),
+    stock_qty: String(formData.get("stock_qty") ?? "").trim() === "" ? null : Math.max(0, unit === "kg" ? Math.round(num(formData.get("stock_qty")) * 1000) / 1000 : Math.round(num(formData.get("stock_qty")))),
+    unit,
+    ean: ean || null,
+    ...(admin.isManager && formData.has("purchase_price_czk")
+      ? { purchase_price_czk: String(formData.get("purchase_price_czk") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("purchase_price_czk")) * 100) / 100) }
+      : {}),
     low_stock_threshold: Math.max(0, Math.round(num(formData.get("low_stock_threshold")) || 0)),
     in_stock: formData.get("in_stock") === "on",
     is_new: formData.get("is_new") === "on",
@@ -88,7 +97,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     ? await db.from("products").update(row).eq("id", id)
     : await db.from("products").insert(row);
   if (error) {
-    if (error.code === "23505") return { error: `Adresa (slug) „${row.slug}“ už existuje. Zvolte jinou.` };
+    if (error.code === "23505") return { error: error.message.includes("ean") ? `EAN ${ean} už má jiný produkt.` : `Adresa (slug) „${row.slug}“ už existuje. Zvolte jinou.` };
     return { error: error.message };
   }
 

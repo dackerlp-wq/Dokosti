@@ -18,9 +18,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="flex shrink-0 flex-col border-b border-line bg-paper md:w-56 md:border-b-0 md:border-r">
         <div className="flex items-center justify-between px-4 py-3 md:block md:py-5">
           <Logo variant="napis" width={100} />
-          <span className="label mt-1 hidden text-[10px] text-muted md:block">Administrace</span>
+          <span className="label mt-1 hidden text-[10px] text-muted md:block">{admin.isManager ? "Administrace" : "Obsluha"}</span>
         </div>
-        <AdminNav />
+        <AdminNav manager={admin.isManager} />
         <form action={logout} className="mt-auto hidden border-t border-line px-4 py-3 text-xs text-muted md:block">
           <Link href="/admin/ucet" className="block truncate hover:underline" title={admin.email}>
             {admin.email}

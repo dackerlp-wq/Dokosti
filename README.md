@@ -107,6 +107,16 @@ Site URL `https://dokosti.vercel.app` a Redirect URL `https://dokosti.vercel.app
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 
+## Prodejna: sklad, role, marže
+
+Produkt má prodejní jednotku `unit` (ks, nebo kg = na váhu jen v prodejně, cena za kg, na webu bez košíku), EAN pro čtečku a
+poslední nákupní cenu `purchase_price_czk` (jen správce; marže v seznamu produktů a u formuláře). Stav skladu mění výhradně
+tabulka `stock_movements` (příjem, prodej web, prodej kasa, storno, odpis, inventura, oprava) přes trigger; `create_order`
+a storno zapisují pohyby, ruční změna v adminu se zapíše jako oprava. Admin → Sklad: příjemka (RPC `post_receipt`: položky,
+pohyby, šarže s expirací, nákupní cena), seznam příjemek a pohybů; u produktu odpis a inventura (RPC `adjust_stock`) a historie.
+`order_items.unit_cost_czk` drží nákupní cenu v době prodeje, statistiky z ní počítají hrubý zisk. Role v `admins.role`:
+`spravce` (vše) a `obsluha` (bez nastavení, slev, e-mailů, statistik, předplatného a nákupních cen; RLS pro nastavení a kódy).
+
 ## Testovací produkty
 
 V Supabase jsou zveřejněné produkty českého výrobce Yoggies (yoggies.cz, výroba u Slaného, B2B portál b2b.yoggies.cz) s doslovným

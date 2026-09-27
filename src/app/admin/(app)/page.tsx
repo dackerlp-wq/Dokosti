@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
-import { formatDate, formatDay, SHIPPING_LABEL, type OrderRow, type ProductRow } from "@/lib/admin";
+import { formatDate, formatDay, formatQty, SHIPPING_LABEL, type OrderRow, type ProductRow } from "@/lib/admin";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase } from "@/lib/supabase/auth";
@@ -20,7 +20,7 @@ export default async function AdminHome() {
     db.from("stock_batches").select("id, product_id, batch_no, expires_on, qty, products(slug, line, variant)").gt("qty", 0).lte("expires_on", soonIso).order("expires_on"),
   ]);
   const orders = (open ?? []) as OrderRow[];
-  const low = ((stock ?? []) as ProductRow[]).filter((p) => p.stock_qty !== null && p.stock_qty <= p.low_stock_threshold);
+  const low = ((stock ?? []) as ProductRow[]).filter((p) => p.stock_qty !== null && Number(p.stock_qty) <= p.low_stock_threshold);
   type Exp = { id: string; product_id: string; batch_no: string; expires_on: string; qty: number; products: { slug: string; line: ProductRow["line"]; variant: string } | null };
   const exp = (expiring ?? []) as unknown as Exp[];
 
@@ -44,7 +44,7 @@ export default async function AdminHome() {
                 <Link href={`/admin/produkty/${p.id}`} className="hover:underline">
                   {productName(p)}
                 </Link>{" "}
-                <span className="text-muted">{p.stock_qty} ks</span>
+                <span className="text-muted">{formatQty(p.stock_qty, p.unit)}</span>
               </li>
             ))}
           </ul>

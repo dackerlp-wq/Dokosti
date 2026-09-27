@@ -7,7 +7,7 @@ import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Statistiky" };
 
-type DayRow = { day: string; orders: number; revenue_czk: number; odber: number; rozvoz: number; prepravce: number };
+type DayRow = { day: string; orders: number; revenue_czk: number; odber: number; rozvoz: number; prepravce: number; cost_czk: number };
 type ProductRow = { product_slug: string; name: string; qty: number; revenue_czk: number; last_sold_at: string };
 
 const PERIODS = [
@@ -37,6 +37,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const rows = (days ?? []) as DayRow[];
   const orders = rows.reduce((n, r) => n + Number(r.orders), 0);
   const revenue = rows.reduce((n, r) => n + Number(r.revenue_czk), 0);
+  const cost = rows.reduce((n, r) => n + Number(r.cost_czk ?? 0), 0);
   const byMethod = {
     odber: rows.reduce((n, r) => n + Number(r.odber), 0),
     rozvoz: rows.reduce((n, r) => n + Number(r.rozvoz), 0),
@@ -78,7 +79,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <Stat label="Objednávek" value={String(orders)} />
         <Stat label="Průměrná objednávka" value={orders ? formatPrice(Math.round(revenue / orders)) : "—"} />
         <Stat label="Odběr / rozvoz / přepravce" value={`${byMethod.odber} / ${byMethod.rozvoz} / ${byMethod.prepravce}`} />
+        <Stat label="Hrubý zisk" value={cost > 0 ? `${formatPrice(Math.round(revenue - cost))} (${Math.round(((revenue - cost) / revenue) * 100)} %)` : "—"} />
       </div>
+      {cost === 0 && <p className="mt-2 text-xs text-muted">Hrubý zisk se počítá z nákupních cen zapsaných při příjmu zboží. Zatím žádná příjemka s cenou.</p>}
 
       <p className="mt-3 text-sm text-muted">
         Zrušené objednávky se nepočítají.{" "}

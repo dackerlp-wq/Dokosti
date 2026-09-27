@@ -12,7 +12,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
   const { items, subtotalCzk, setQty, remove, ready, add } = useCart();
   const inCart = new Set(items.map((i) => i.product.slug));
   const suggestions = catalog
-    .filter((p) => p.inStock && !inCart.has(p.slug) && items.some((i) => i.product.crosssell?.includes(p.slug)))
+    .filter((p) => p.inStock && p.unit !== "kg" && !inCart.has(p.slug) && items.some((i) => i.product.crosssell?.includes(p.slug)))
     .slice(0, 4);
 
   if (!ready) return <p className="text-muted">Načítám košík…</p>;

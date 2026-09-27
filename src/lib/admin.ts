@@ -1,4 +1,4 @@
-import type { Animal, BoneClass, LineSlug, Storage } from "@/lib/catalog";
+import type { Animal, BoneClass, LineSlug, ProductUnit, Storage } from "@/lib/catalog";
 
 /** Objednávka tak, jak leží v Supabase. */
 export type OrderRow = {
@@ -131,8 +131,45 @@ export type ProductRow = {
   taurine_mg_per_kg: number | null;
   bone_class: BoneClass | null;
   is_complete: boolean;
+  /** Prodejní jednotka; u kg je cena za kilogram a sklad v kg. */
+  unit: ProductUnit;
+  /** Poslední nákupní cena z příjemky, pro marži. Vidí jen správce. */
+  purchase_price_czk: number | null;
+  ean: string | null;
   updated_at: string;
 };
+
+export type AdminRole = "spravce" | "obsluha";
+export const ADMIN_ROLE_LABEL: Record<AdminRole, string> = { spravce: "Správce", obsluha: "Obsluha" };
+
+export type StockKind = "prijem" | "prodej_web" | "prodej_kasa" | "storno" | "odpis" | "inventura" | "oprava";
+export const STOCK_KIND_LABEL: Record<StockKind, string> = {
+  prijem: "Příjem",
+  prodej_web: "Prodej web",
+  prodej_kasa: "Prodej kasa",
+  storno: "Storno",
+  odpis: "Odpis",
+  inventura: "Inventura",
+  oprava: "Oprava",
+};
+export type StockMovementRow = {
+  id: string;
+  product_id: string;
+  kind: StockKind;
+  qty: number;
+  unit_cost_czk: number | null;
+  order_id: string | null;
+  receipt_id: string | null;
+  note: string;
+  created_at: string;
+};
+
+/** Množství se jednotkou: kusy celé, kilogramy na tři desetinná místa. */
+export function formatQty(qty: number | string | null, unit: ProductUnit) {
+  if (qty === null) return "";
+  const n = Number(qty);
+  return unit === "kg" ? `${n.toLocaleString("cs-CZ", { maximumFractionDigits: 3 })} kg` : `${Math.round(n)} ks`;
+}
 
 export function isOrderStatus(v: string): v is OrderStatus {
   return (ORDER_STATUSES as readonly string[]).includes(v);

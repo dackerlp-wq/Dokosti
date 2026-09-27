@@ -106,13 +106,16 @@ export default async function ProductPage({ params }: Props) {
               <span className="text-muted line-through">{formatPrice(product.originalPriceCzk!)}</span>
             )}
             <span className="text-sm text-muted">
-              {formatWeight(product.weightGrams)} · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}
-              /kg
+              {product.unit === "kg" ? "cena za kilogram, prodáváme na váhu v prodejně" : `${formatWeight(product.weightGrams)} · ${formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}/kg`}
             </span>
           </div>
 
           <div className="mt-5">
-            <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-48" />
+            {product.unit === "kg" ? (
+              <p className="text-sm text-muted">Toto zboží vážíme na místě, přes e-shop ho zatím objednat nejde. Stavte se, nebo napište, kolik chcete připravit.</p>
+            ) : (
+              <AddToCartButton product={product} className="w-full sm:w-auto sm:min-w-48" />
+            )}
           </div>
 
           <dl className="mt-8 divide-y divide-line border-y border-line text-sm">

@@ -54,6 +54,9 @@ export const LINE_INFO: Record<LineSlug, Line> = {
 
 export type Animal = "pes" | "kocka";
 export type Storage = "mrazene" | "chlazene" | "suche";
+/** Prodejní jednotka: balení po kusech, nebo na váhu (cena za kg, jen v prodejně). */
+export type ProductUnit = "ks" | "kg";
+export const UNIT_LABEL: Record<ProductUnit, string> = { ks: "kus", kg: "na váhu (kg)" };
 
 export const ANIMAL_LABEL: Record<Animal, string> = {
   pes: "Pro psy",
@@ -73,10 +76,12 @@ export type Product = {
   variant: string;
   animals: Animal[];
   storage: Storage;
-  /** Hmotnost balení v gramech. */
+  /** Hmotnost balení v gramech (u zboží na váhu orientační porce). */
   weightGrams: number;
-  /** Cena v Kč za balení. */
+  /** Cena v Kč za jednotku: za balení, nebo za kg. */
   priceCzk: number;
+  /** Výchozí "ks". Zboží na váhu se na webu neprodává, jen v prodejně. */
+  unit?: ProductUnit;
   /** Původní cena, pokud je produkt ve slevě. */
   originalPriceCzk?: number;
   /** Značka výrobce, uvádí se v popisu a na etiketě, ne v názvu. */

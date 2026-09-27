@@ -427,7 +427,7 @@ export function mixesKcal(mixes: Product[]) {
  * podle bilance, olej, zelenina, u štěňat granule. Množství zaokrouhluje na celá balení.
  */
 export function buildPlan(products: Product[], i: AnimalInput, days: number): Plan {
-  const pool = products.filter((p) => p.inStock && p.animals.includes(i.species) && !i.removed.includes(p.slug) && !containsMeat(p, i.exclude));
+  const pool = products.filter((p) => p.inStock && p.unit !== "kg" && p.animals.includes(i.species) && !i.removed.includes(p.slug) && !containsMeat(p, i.exclude));
   const swap = (p: Product) => (i.swaps?.[p.slug] && pool.find((x) => x.slug === i.swaps[p.slug] && x.line === p.line)) || p;
   const picked = pickMixes(pool, i);
   const mixes = picked.mixes.map(swap).filter((m, idx, arr) => arr.findIndex((x) => x.slug === m.slug) === idx);

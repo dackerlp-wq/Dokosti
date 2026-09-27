@@ -1,29 +1,31 @@
 "use client";
 
-import { BarChart3, Boxes, LayoutDashboard, LogOut, Mail, MessageCircleQuestion, Repeat, Settings, ShoppingBag, Tag, Truck, Users } from "lucide-react";
+import { BarChart3, Boxes, LayoutDashboard, LogOut, Mail, MessageCircleQuestion, Repeat, Settings, ShoppingBag, Tag, Truck, Users, Warehouse } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
 
+/** Položky jen pro správce mají manager: true; obsluha vidí zbytek. */
 const ITEMS = [
   { href: "/admin", label: "Přehled", icon: LayoutDashboard, exact: true },
   { href: "/admin/objednavky", label: "Objednávky", icon: ShoppingBag },
   { href: "/admin/rozvoz", label: "Rozvoz a odběry", icon: Truck },
-  { href: "/admin/predplatne", label: "Předplatné", icon: Repeat },
-  { href: "/admin/produkty", label: "Produkty a sklad", icon: Boxes },
+  { href: "/admin/predplatne", label: "Předplatné", icon: Repeat, manager: true },
+  { href: "/admin/produkty", label: "Produkty", icon: Boxes },
+  { href: "/admin/sklad", label: "Sklad", icon: Warehouse },
   { href: "/admin/zakaznici", label: "Zákazníci", icon: Users },
-  { href: "/admin/slevy", label: "Slevové kódy", icon: Tag },
-  { href: "/admin/emaily", label: "E-maily", icon: Mail },
+  { href: "/admin/slevy", label: "Slevové kódy", icon: Tag, manager: true },
+  { href: "/admin/emaily", label: "E-maily", icon: Mail, manager: true },
   { href: "/admin/poradna", label: "Poradna", icon: MessageCircleQuestion },
-  { href: "/admin/statistiky", label: "Statistiky", icon: BarChart3 },
-  { href: "/admin/nastaveni", label: "Nastavení", icon: Settings },
+  { href: "/admin/statistiky", label: "Statistiky", icon: BarChart3, manager: true },
+  { href: "/admin/nastaveni", label: "Nastavení", icon: Settings, manager: true },
 ];
 
-export function AdminNav() {
+export function AdminNav({ manager = true }: { manager?: boolean }) {
   const path = usePathname();
   return (
     <nav aria-label="Administrace" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:px-2 md:pb-0">
-      {ITEMS.map(({ href, label, icon: Icon, exact }) => {
+      {ITEMS.filter((i) => manager || !i.manager).map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? path === href : path.startsWith(href);
         return (
           <Link

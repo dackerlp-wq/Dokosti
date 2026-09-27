@@ -29,6 +29,8 @@ export const getAdmin = cache(async () => {
     data: { user },
   } = await db.auth.getUser();
   if (!user) return null;
-  const { data } = await db.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
-  return data ? { id: user.id, email: user.email ?? "" } : null;
+  const { data } = await db.from("admins").select("user_id, role").eq("user_id", user.id).maybeSingle();
+  if (!data) return null;
+  const role = (data.role === "obsluha" ? "obsluha" : "spravce") as "spravce" | "obsluha";
+  return { id: user.id, email: user.email ?? "", role, isManager: role === "spravce" };
 });

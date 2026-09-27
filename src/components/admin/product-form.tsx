@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
-import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, STORAGE_LABEL } from "@/lib/catalog";
+import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
-export function ProductForm({ product, others = [] }: { product?: ProductRow; others?: { slug: string; name: string }[] }) {
+export function ProductForm({ product, others = [], manager = true }: { product?: ProductRow; others?: { slug: string; name: string }[]; manager?: boolean }) {
   const [state, action, pending] = useActionState(saveProduct, null);
   const p = product;
+  const [unit, setUnit] = useState<"ks" | "kg">(p?.unit ?? "ks");
+  const margin = p?.purchase_price_czk && p.price_czk > 0 ? Math.round(((p.price_czk - p.purchase_price_czk) / p.price_czk) * 1000) / 10 : null;
 
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -42,10 +44,19 @@ export function ProductForm({ product, others = [] }: { product?: ProductRow; ot
 
         <Fieldset title="Balení a cena">
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Hmotnost (g)">
-              <input name="weight_grams" type="number" min={1} defaultValue={p?.weight_grams} required />
+            <Field label="Prodejní jednotka">
+              <select name="unit" value={unit} onChange={(e) => setUnit(e.target.value as "ks" | "kg")}>
+                {(Object.keys(UNIT_LABEL) as ("ks" | "kg")[]).map((u) => (
+                  <option key={u} value={u}>
+                    {UNIT_LABEL[u]}
+                  </option>
+                ))}
+              </select>
             </Field>
-            <Field label="Cena (Kč)">
+            <Field label={unit === "kg" ? "Orientační porce (g)" : "Hmotnost (g)"} hint={unit === "kg" ? "jen pro zobrazení" : undefined}>
+              <input name="weight_grams" type="number" min={1} defaultValue={p?.weight_grams ?? (unit === "kg" ? 1000 : undefined)} required />
+            </Field>
+            <Field label={unit === "kg" ? "Cena za kg (Kč)" : "Cena (Kč)"}>
               <input name="price_czk" type="number" min={0} defaultValue={p?.price_czk} required />
             </Field>
             <Field label="Původní cena (Kč)" hint="jen při slevě">
@@ -73,7 +84,16 @@ export function ProductForm({ product, others = [] }: { product?: ProductRow; ot
             <Field label="Pořadí" hint="menší číslo = výš">
               <input name="sort_order" type="number" defaultValue={p?.sort_order ?? 0} />
             </Field>
+            <Field label="EAN" hint="čárový kód pro kasu">
+              <input name="ean" inputMode="numeric" defaultValue={p?.ean ?? ""} placeholder="8590…" />
+            </Field>
+            {manager && (
+              <Field label="Nákupní cena (Kč)" hint={margin !== null ? `marže ${margin} %` : "z poslední příjemky"}>
+                <input name="purchase_price_czk" type="number" min={0} step="0.01" defaultValue={p?.purchase_price_czk ?? ""} />
+              </Field>
+            )}
           </div>
+          {unit === "kg" && <p className="mt-2 text-xs text-muted">Zboží na váhu se prodává jen v prodejně. Na webu se zobrazí s cenou za kg a bez košíku.</p>}
         </Fieldset>
 
         <Fieldset title="Popis">
@@ -144,14 +164,14 @@ export function ProductForm({ product, others = [] }: { product?: ProductRow; ot
 
         <Fieldset title="Sklad">
           <div className="grid gap-3 grid-cols-2">
-            <Field label="Kusů skladem" hint="prázdné = neevidovat">
-              <input name="stock_qty" type="number" min={0} defaultValue={p?.stock_qty ?? ""} />
+            <Field label={unit === "kg" ? "Skladem (kg)" : "Kusů skladem"} hint="prázdné = neevidovat">
+              <input name="stock_qty" type="number" min={0} step={unit === "kg" ? "0.001" : "1"} defaultValue={p?.stock_qty ?? ""} />
             </Field>
             <Field label="Hlásit od" hint="kusů">
               <input name="low_stock_threshold" type="number" min={0} defaultValue={p?.low_stock_threshold ?? 3} />
             </Field>
           </div>
-          <p className="mt-2 text-xs text-muted">Když se množství eviduje, při nule se produkt sám označí „Momentálně není“ a objednávka nad stav se nepřijme.</p>
+          <p className="mt-2 text-xs text-muted">Když se množství eviduje, při nule se produkt sám označí „Momentálně není“ a objednávka nad stav se nepřijme. Ruční změna tady se zapíše do pohybů jako oprava; příjem, odpis a inventura mají vlastní formuláře níže.</p>
         </Fieldset>
 
         <Fieldset title="Zobrazení">

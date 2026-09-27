@@ -64,7 +64,7 @@ export function Batches({ productId, batches }: { productId: string; batches: Ba
           Přidat
         </Button>
       </form>
-      <p className="mt-2 text-xs text-muted">Šarže s expirací do 14 dnů svítí na Přehledu. Celkový sklad nahoře se šaržemi nepočítá, upravte ho zvlášť.</p>
+      <p className="mt-2 text-xs text-muted">Šarže s expirací do 14 dnů svítí na Přehledu. Příjemka šarži založí sama; ručně přidaná šarže celkový sklad nemění.</p>
     </fieldset>
   );
 }

@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
             {productName(product)}
           </Link>
         </h3>
-        <p className="text-xs text-muted">{formatWeight(product.weightGrams)}</p>
+        <p className="text-xs text-muted">{product.unit === "kg" ? "na váhu, jen v prodejně" : formatWeight(product.weightGrams)}</p>
         <p className="mt-auto pt-2 font-display text-[18px] font-semibold">
           {onSale && (
             <span className="mr-2 text-sm font-normal text-muted line-through">
@@ -36,9 +36,14 @@ export function ProductCard({ product }: { product: Product }) {
             </span>
           )}
           <span className={onSale ? "text-brick-text" : ""}>{formatPrice(product.priceCzk)}</span>
+          {product.unit === "kg" && <span className="text-sm font-normal text-muted">/kg</span>}
         </p>
         <div className="pt-2">
-          <AddToCartButton product={product} className="w-full" />
+          {product.unit === "kg" ? (
+            <p className="label inline-flex min-h-10 w-full items-center justify-center rounded-[var(--radius-control)] border border-line text-[11px] text-muted">V prodejně na váhu</p>
+          ) : (
+            <AddToCartButton product={product} className="w-full" />
+          )}
         </div>
       </div>
     </article>
