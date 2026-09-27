@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { customerLogin, customerRegister, requestPasswordReset, setNewPassword, type AuthState } from "@/app/(shop)/ucet/actions";
+import Link from "next/link";
+import { customerLogin, requestMagicLink, requestPasswordReset, setNewPassword, type AuthState } from "@/app/(shop)/ucet/actions";
 import { Button } from "@/components/ui/button";
 
-type Mode = "login" | "register" | "reset";
+type Mode = "login" | "link" | "reset";
 
 export function AuthForms({ next }: { next?: string }) {
   const [mode, setMode] = useState<Mode>("login");
@@ -14,13 +15,20 @@ export function AuthForms({ next }: { next?: string }) {
         <Tab active={mode === "login"} onClick={() => setMode("login")}>
           Přihlášení
         </Tab>
-        <Tab active={mode === "register"} onClick={() => setMode("register")}>
-          Nový účet
+        <Tab active={mode === "link"} onClick={() => setMode("link")}>
+          Odkazem e-mailem
         </Tab>
       </div>
       {mode === "login" && <LoginForm next={next} onReset={() => setMode("reset")} />}
-      {mode === "register" && <RegisterForm />}
+      {mode === "link" && <MagicLinkForm next={next} />}
       {mode === "reset" && <ResetForm onBack={() => setMode("login")} />}
+      <p className="mt-4 border-t border-line pt-3 text-sm text-muted">
+        Nemáte účet?{" "}
+        <Link href="/registrace" className="text-green underline">
+          Registrace do klubu DoKosti
+        </Link>{" "}
+        · Kostičky, věrnostní karta a doporučení pro vašeho psa nebo kočku.
+      </p>
     </div>
   );
 }
@@ -68,16 +76,16 @@ function LoginForm({ next, onReset }: { next?: string; onReset: () => void }) {
   );
 }
 
-function RegisterForm() {
-  const [state, action, pending] = useActionState<AuthState, FormData>(customerRegister, null);
+function MagicLinkForm({ next }: { next?: string }) {
+  const [state, action, pending] = useActionState<AuthState, FormData>(requestMagicLink, null);
   return (
     <form action={action} className="space-y-3">
-      <p className="text-sm text-muted">S účtem vidíte historii objednávek a stav Kostiček. Objednávky spojíme podle e-mailu, i ty starší.</p>
+      <input type="hidden" name="next" value={next ?? ""} />
+      <p className="text-sm text-muted">Bez hesla: pošleme vám odkaz, kliknutím jste přihlášeni.</p>
       <Field label="E-mail" name="email" type="email" autoComplete="email" required />
-      <Field label="Heslo" name="password" type="password" autoComplete="new-password" required minLength={8} hint="aspoň 8 znaků" />
       <Msg state={state} />
       <Button type="submit" className="w-full" disabled={pending || Boolean(state?.info)}>
-        {pending ? "Zakládám…" : "Založit účet"}
+        {pending ? "Odesílám…" : "Poslat přihlašovací odkaz"}
       </Button>
     </form>
   );

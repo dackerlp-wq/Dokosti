@@ -27,6 +27,8 @@ import { formatDate, PAYMENT_LABEL } from "@/lib/admin";
 import { LINE_INFO, LINES, productName, type LineSlug } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, spdString, type CartLine, type PickupOrder, type PosCustomer, type PosPayment, type PosProduct, type PosSaleItemRow, type PosSaleRow } from "@/lib/pos";
+import { petSummary } from "@/lib/club";
+import { MEAT_LABEL } from "@/lib/barf";
 import type { Settings } from "@/lib/settings";
 
 type Tab = "prodej" | "vydej" | "odlozene" | "dnes" | "uzaverka";
@@ -307,9 +309,14 @@ export function Pos({
               <button type="button" onClick={() => setModal({ kind: "customer" })} className="flex min-h-10 flex-1 items-center gap-2 rounded-[var(--radius-control)] border border-line px-3 text-left text-sm hover:border-green">
                 <User strokeWidth={1.75} className="h-4 w-4 text-green" />
                 {customer ? (
-                  <span className="truncate">
-                    <strong>{customer.name}</strong>
-                    {loyalty.enabled && <span className="text-muted"> · {customer.points} Kostiček</span>}
+                  <span className="min-w-0">
+                    <span className="block truncate">
+                      <strong>{customer.name}</strong>
+                      {loyalty.enabled && <span className="text-muted"> · {customer.points} Kostiček</span>}
+                    </span>
+                    {customer.pets && customer.pets.length > 0 && (
+                      <span className="block truncate text-xs text-muted">{customer.pets.map((p) => `${p.name} (${petSummary(p, MEAT_LABEL)})`).join(" · ")}</span>
+                    )}
                   </span>
                 ) : (
                   <span className="text-muted">Zákazník (volitelně)</span>
@@ -730,6 +737,13 @@ function CardAssign({ code, onDone }: { code: string; onDone: (c: PosCustomer) =
   return (
     <div>
       <p className="text-sm text-muted">Tento kód zatím nikomu nepatří. Komu kartu přiřadit?</p>
+      <p className="mt-1 text-xs text-muted">
+        Zákazník se může i sám zaregistrovat na tabletu:{" "}
+        <a href={`/registrace?kiosk=1&karta=${encodeURIComponent(code)}`} target="_blank" rel="noopener" className="text-green underline">
+          otevřít registraci s touto kartou
+        </a>
+        .
+      </p>
       <div className="mt-2 flex gap-2">
         <button type="button" onClick={() => setMode("existing")} aria-pressed={mode === "existing"} className={`rounded-[var(--radius-control)] border px-3 py-1 text-sm ${mode === "existing" ? "border-green bg-green text-cream" : "border-line"}`}>
           Stávající zákazník

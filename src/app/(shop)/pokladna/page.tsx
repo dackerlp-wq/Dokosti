@@ -12,7 +12,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   let prefill: { name: string; email: string; phone: string; street: string; city: string; zip: string } | undefined;
   if (user) {
     const db = await getAuthSupabase();
-    const { data } = await db.from("customers").select("name, phone, street, city, zip").eq("email", user.email).maybeSingle();
+    const { data } = await db.from("customers").select("name, phone, street, city, zip").or(`user_id.eq.${user.id},email.eq.${user.email}`).limit(1).maybeSingle();
     prefill = { email: user.email, name: data?.name ?? "", phone: data?.phone ?? "", street: data?.street ?? "", city: data?.city ?? "", zip: data?.zip ?? "" };
   }
   return (

@@ -163,7 +163,7 @@ export async function posFindCustomers(query: string): Promise<PosCustomer[]> {
   const safe = q.replace(/[,%()]/g, " ");
   const { data } = await db
     .from("customers")
-    .select("id, name, email, phone, points, card_code")
+    .select("id, name, email, phone, points, card_code, pets(name, species, weight_kg, born_on, exclude)")
     .or(`name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%,card_code.eq.${safe.toUpperCase()}`)
     .order("name")
     .limit(12);
@@ -173,7 +173,7 @@ export async function posFindCustomers(query: string): Promise<PosCustomer[]> {
 export async function posCustomerByCard(code: string): Promise<PosCustomer | null> {
   await requireAdmin();
   const db = await getAuthSupabase();
-  const { data } = await db.from("customers").select("id, name, email, phone, points, card_code").eq("card_code", code.trim().toUpperCase()).maybeSingle();
+  const { data } = await db.from("customers").select("id, name, email, phone, points, card_code, pets(name, species, weight_kg, born_on, exclude)").eq("card_code", code.trim().toUpperCase()).maybeSingle();
   return (data as PosCustomer | null) ?? null;
 }
 

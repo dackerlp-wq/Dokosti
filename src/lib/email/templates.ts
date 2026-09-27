@@ -1,5 +1,6 @@
 import { PAYMENT_LABEL, SHIPPING_LABEL } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
+import { SITE_URL } from "@/lib/seo";
 import { DAY_NAMES, type Settings } from "@/lib/settings";
 import { INTERVAL_LABEL } from "@/lib/shipping";
 
@@ -239,5 +240,19 @@ export function subscriptionFailed(sub: { customer_name: string; customer_email:
 <p>Předplatné jsme pozastavili. Domluvte se se zákazníkem a v administraci ho obnovte.</p>
 <p><a href="${esc(adminUrl)}" style="color:#1f3a2d">Otevřít předplatné v administraci</a></p>`;
   const text = `Dodávku ${fmtDay(sub.next_date)} pro ${sub.customer_name} (${sub.customer_email}) se nepodařilo objednat: ${error}. Předplatné je pozastavené.\n${adminUrl}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}
+
+/** Uvítání v klubu po registraci. */
+export function clubWelcome(name: string, awardedPoints: number, s: Settings): EmailMessage {
+  const title = "Vítejte v klubu DoKosti";
+  const first = name.split(" ")[0] || "";
+  const pts = awardedPoints > 0 ? `<p>Připsali jsme vám <strong>${awardedPoints} Kostiček</strong>. Uplatníte je v pokladně na webu i u nás v prodejně.</p>` : "";
+  const body = `<p>Dobrý den${first ? `, ${esc(first)}` : ""},</p>
+<p>máte hotový účet pro e-shop i věrnostní kartu. V účtu najdete objednávky, Kostičky, profily svých zvířat a doporučení, co a kolik krmit.</p>
+${pts}
+<p><a href="${SITE_URL}/ucet" style="color:#1f3a2d">Otevřít můj účet</a></p>
+<p>Kdykoli se ozvěte, rádi poradíme.</p>`;
+  const text = `Dobrý den${first ? `, ${first}` : ""},\n\nmáte hotový účet pro e-shop i věrnostní kartu. V účtu najdete objednávky, Kostičky, profily svých zvířat a doporučení.${awardedPoints > 0 ? `\n\nPřipsali jsme vám ${awardedPoints} Kostiček.` : ""}\n\nMůj účet: ${SITE_URL}/ucet\n\n${s.shop.name}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }

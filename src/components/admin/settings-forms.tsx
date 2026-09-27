@@ -13,6 +13,7 @@ const TABS = [
   { id: "loyalty", label: "Kostičky" },
   { id: "subscription", label: "Předplatné" },
   { id: "pos", label: "Kasa" },
+  { id: "club", label: "Klub" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -42,6 +43,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "loyalty" && <LoyaltyForm s={settings.loyalty} />}
         {tab === "subscription" && <SubscriptionForm s={settings.subscription} />}
         {tab === "pos" && <PosForm s={settings.pos} />}
+        {tab === "club" && <ClubForm s={settings.club} />}
       </div>
     </div>
   );
@@ -325,6 +327,35 @@ function PosForm({ s }: { s: Settings["pos"] }) {
         </div>
         <p className="mt-3 text-xs text-muted">
           Kasa je na adrese /admin/kasa a jde přidat na plochu tabletu jako aplikace. QR platba používá číslo účtu z karty Platba. Účtenky mají řadu U + rok + pořadí.
+        </p>
+      </Card>
+    </SectionForm>
+  );
+}
+
+function ClubForm({ s }: { s: Settings["club"] }) {
+  return (
+    <SectionForm section="club">
+      <Card title="Klub DoKosti (registrace a věrnostní karta)">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label="Kostičky za registraci">
+            <input name="registrationPoints" type="number" min={0} defaultValue={s.registrationPoints} />
+          </Field>
+          <Field label="Kostičky za profil zvířete" hint="jen úplný profil">
+            <input name="petPoints" type="number" min={0} defaultValue={s.petPoints} />
+          </Field>
+          <Field label="Odměněných profilů nejvýš">
+            <input name="petPointsMax" type="number" min={0} defaultValue={s.petPointsMax} />
+          </Field>
+        </div>
+        <div className="mt-3 max-w-xs">
+          <Field label="Verze podmínek" hint="zapisuje se k souhlasu">
+            <input name="termsVersion" defaultValue={s.termsVersion} />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Registrace je na /registrace, pro tablet v prodejně /registrace?kiosk=1 (po dokončení se odhlásí). Karta s QR kódem vede na /registrace?karta=KÓD.
+          Úplný profil zvířete = druh, jméno, váha a datum narození. Odměna se připíše po potvrzení e-mailu a prvním přihlášení.
         </p>
       </Card>
     </SectionForm>

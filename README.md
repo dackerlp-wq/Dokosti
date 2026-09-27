@@ -117,6 +117,24 @@ pohyby, šarže s expirací, nákupní cena), seznam příjemek a pohybů; u pro
 `order_items.unit_cost_czk` drží nákupní cenu v době prodeje, statistiky z ní počítají hrubý zisk. Role v `admins.role`:
 `spravce` (vše) a `obsluha` (bez nastavení, slev, e-mailů, statistik, předplatného a nákupních cen; RLS pro nastavení a kódy).
 
+## Klub DoKosti (registrace, účet, karta, zvířata)
+
+Návrh v `docs/KLUB.md`. Zákazník (`customers`) je střed: `user_id` (účet Supabase Auth), `card_code` (věrnostní karta),
+objednávky, předplatné, Kostičky, zvířata (`pets.customer_id`) a souhlasy (`consent_marketing_email_at`,
+`consent_marketing_sms_at`, `terms_accepted_at`, doklad v `consent_log`). Veřejná registrace `/registrace` má tři kroky
+(vy, zvířata, souhlasy); `?karta=KÓD` předvyplní kartu (QR na kartě), `?kiosk=1` je režim pro tablet v prodejně (po
+dokončení se zařízení odhlásí a vrátí na začátek). Průběh: `signUp` → `club_register_pending` (rozpracovaná registrace
+k účtu) → po přihlášení `club_complete_registration` (spojí účet se zákazníkem podle e-mailu, karty nebo telefonu, uloží
+souhlasy a zvířata, připíše uvítací Kostičky). Účet (`/ucet`) volá dokončení při každém otevření, takže funguje i po
+potvrzení e-mailu. Odměny v Nastavení → Klub (`settings.club`): za registraci a za úplný profil zvířete
+(`club_reward_pet`, jméno + váha + datum narození, nejvýš N profilů). V účtu jde upravit kontakt, adresu a souhlasy
+(`club_update_profile`) a přidávat zvířata (`src/components/account/pet-form.tsx`, sdílené s registrací; profil se uloží
+i jako vstup kalkulačky v `pets.data`). Přihlášení heslem nebo odkazem e-mailem (`signInWithOtp`). Kasa u zákazníka
+ukazuje zvířata, admin má u zákazníka klub, souhlasy a zvířata a v seznamu filtry S účtem / S kartou / Newsletter.
+
+Pozor: registrace posílá potvrzovací e-mail přes Supabase Auth. Vestavěný SMTP má limit pár e-mailů za hodinu, před
+spuštěním nastavit vlastní SMTP (Resend) v Supabase → Authentication → SMTP a Site URL na doménu.
+
 ## Objednávka z adminu
 
 Admin → Objednávky → Nová objednávka založí objednávku za zákazníka (telefon, pult): stávající zákazník podle jména,

@@ -53,12 +53,23 @@ Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštěn�
 
 ## 4. Zákaznický účet
 
+Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i věrnostní kartu, tablet v prodejně (`?kiosk=1`), QR na kartě (`?karta=KÓD`). Zákazník je střed: účet, karta, objednávky, Kostičky, zvířata a souhlasy. Migrace 0021.
+
+| Položka | Stav | Poznámka |
+|---|---|---|
+| Registrace do klubu (3 kroky: vy, zvířata, souhlasy), propojení podle e-mailu, karty a telefonu | hotovo | Odměna 50 Kostiček za registraci a 150 za úplný profil zvířete (nejvýš 3), v Nastavení → Klub. |
+| Profily zvířat strukturovaně (druh, plemeno, narození, váha, kastrace, aktivita, kondice, krmení, vyloučená masa) | hotovo | Sdílené s kalkulačkou, vidí je kasa i admin. |
+| Přihlášení odkazem e-mailem | hotovo | Vyžaduje odesílání e-mailů (Supabase Auth SMTP nebo vlastní). |
+| Newsletter: segmenty podle zvířat, rozesílka, odhlášení odkazem | nápad | Souhlasy a filtr zákazníků už jsou. |
+| Automatické e-maily: převážení štěněte, narozeniny zvířete s kódem | nápad | Z profilů zvířat. |
+| Smazání účtu (GDPR) | nápad | Anonymizace objednávek. |
+
 | Položka | Stav | Poznámka |
 |---|---|---|
 | Registrace, přihlášení, obnova hesla | hotovo | V Supabase je nutné nastavit Site URL a Redirect URL. |
 | Přehled objednávek, Kostiček, profilů zvířat, předplatného | hotovo | |
 | Předvyplnění pokladny z účtu | hotovo | |
-| Úprava kontaktních údajů a adresy v účtu | nápad | Dnes se berou z poslední objednávky. |
+| Úprava kontaktních údajů a adresy v účtu | hotovo | V účtu, včetně souhlasů (newsletter, SMS). |
 | Opakovat objednávku jedním kliknutím | nápad | |
 | Smazání účtu (GDPR) | nápad | |
 

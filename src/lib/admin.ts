@@ -67,7 +67,35 @@ export type CustomerRow = {
   orders_count: number;
   total_spent_czk: number;
   points: number;
+  user_id: string | null;
+  source: string;
+  registered_at: string | null;
+  terms_accepted_at: string | null;
+  consent_marketing_email_at: string | null;
+  consent_marketing_sms_at: string | null;
+  heard_from: string;
   created_at: string;
+};
+
+/** Zvíře zákazníka (tabulka pets), strukturovaná část. */
+export type PetDbRow = {
+  id: string;
+  customer_id: string | null;
+  name: string;
+  species: string | null;
+  breed: string;
+  born_on: string | null;
+  weight_kg: number | string | null;
+  neutered: boolean | null;
+  activity: string | null;
+  condition: string | null;
+  feeding_now: string;
+  current_food: string;
+  exclude: string[];
+  note: string;
+  rewarded_at: string | null;
+  data: Record<string, unknown>;
+  updated_at: string;
 };
 
 export type OrderItemRow = {

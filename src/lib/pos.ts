@@ -15,7 +15,8 @@ export type PosProduct = {
   is_published: boolean;
 };
 
-export type PosCustomer = { id: string; name: string; email: string | null; phone: string; points: number; card_code: string | null };
+export type PosPet = { name: string; species: string | null; weight_kg: number | string | null; born_on: string | null; exclude: string[] | null };
+export type PosCustomer = { id: string; name: string; email: string | null; phone: string; points: number; card_code: string | null; pets?: PosPet[] };
 
 export type PosPayment = "hotove" | "karta" | "qr" | "prevod";
 export const POS_PAYMENT_LABEL: Record<PosPayment, string> = { hotove: "Hotově", karta: "Kartou", qr: "QR platba", prevod: "Zaplaceno předem" };

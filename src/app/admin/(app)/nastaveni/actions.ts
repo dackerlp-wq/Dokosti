@@ -87,6 +87,14 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
     case "pos":
       value = { autoPrint: bool(fd, "autoPrint"), receiptFooter: str(fd, "receiptFooter").slice(0, 200) };
       break;
+    case "club":
+      value = {
+        registrationPoints: Math.max(0, Math.round(num(fd, "registrationPoints"))),
+        petPoints: Math.max(0, Math.round(num(fd, "petPoints"))),
+        petPointsMax: Math.max(0, Math.round(num(fd, "petPointsMax"))),
+        termsVersion: str(fd, "termsVersion").slice(0, 40) || DEFAULT_SETTINGS.club.termsVersion,
+      };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

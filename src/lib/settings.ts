@@ -60,6 +60,15 @@ export type Settings = {
     autoPrint: boolean;
     receiptFooter: string;
   };
+  club: {
+    /** Kostičky za dokončenou registraci. */
+    registrationPoints: number;
+    /** Kostičky za úplný profil zvířete a kolik profilů se odmění. */
+    petPoints: number;
+    petPointsMax: number;
+    /** Verze podmínek, zapisuje se k souhlasu. */
+    termsVersion: string;
+  };
   subscription: {
     enabled: boolean;
     /** Sleva na zboží při pravidelném odběru, %. 0 = bez slevy. */
@@ -131,9 +140,10 @@ export const DEFAULT_SETTINGS: Settings = {
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
   subscription: { enabled: true, discountPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
   pos: { autoPrint: false, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
+  club: { registrationPoints: 50, petPoints: 150, petPointsMax: 3, termsVersion: "2026-09" },
 };
 
-export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos"] as const satisfies readonly (keyof Settings)[];
+export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos", "club"] as const satisfies readonly (keyof Settings)[];
 
 /** Hluboké sloučení výchozích hodnot s uloženými (nové klíče dostanou výchozí hodnotu). */
 function merge<T>(base: T, over: unknown): T {

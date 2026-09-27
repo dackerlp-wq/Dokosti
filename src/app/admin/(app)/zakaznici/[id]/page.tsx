@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
 import { Button } from "@/components/ui/button";
-import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow } from "@/lib/admin";
+import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow, type PetDbRow } from "@/lib/admin";
+import { MEAT_LABEL } from "@/lib/barf";
+import { FEEDING_LABEL, type FeedingNow, petSummary } from "@/lib/club";
 import { code128Svg, newCardCode } from "@/lib/barcode";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, type PosSaleRow } from "@/lib/pos";
@@ -13,12 +15,14 @@ import { adjustPoints, saveCardCode, saveCustomerNote } from "./actions";
 export default async function CustomerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ karta?: string }> }) {
   const [{ id }, { karta }] = await Promise.all([params, searchParams]);
   const db = await getAuthSupabase();
-  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: sales }] = await Promise.all([
+  const [{ data: customer }, { data: orders }, { data: loyalty }, { data: sales }, { data: pets }] = await Promise.all([
     db.from("customers").select("*").eq("id", id).maybeSingle(),
     db.from("orders").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
     db.from("loyalty_transactions").select("id, points, reason, created_at").eq("customer_id", id).order("created_at", { ascending: false }).limit(50),
     db.from("pos_sales").select("*").eq("customer_id", id).is("order_id", null).order("created_at", { ascending: false }).limit(50),
+    db.from("pets").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
   ]);
+  const petList = (pets ?? []) as PetDbRow[];
   if (!customer) notFound();
   const c = customer as CustomerRow;
   const list = (orders ?? []) as OrderRow[];
@@ -61,7 +65,35 @@ export default async function CustomerPage({ params, searchParams }: { params: P
               <p className="text-muted">Zákazník od {formatDate(c.created_at)}</p>
               <p className="mt-2 font-display text-[22px] font-semibold">{c.points} Kostiček</p>
             </div>
+            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm sm:col-span-2">
+              <p className="label mb-1 text-[11px] text-muted">Klub</p>
+              <p>
+                {c.user_id ? `Účet registrovaný ${c.registered_at ? formatDate(c.registered_at) : ""}` : "Bez účtu"} · zdroj {c.source}
+                {c.heard_from ? ` · ví o nás z: ${c.heard_from}` : ""}
+              </p>
+              <p className="text-muted">
+                Newsletter e-mailem: {c.consent_marketing_email_at ? `ano (${formatDate(c.consent_marketing_email_at)})` : "ne"} · SMS: {c.consent_marketing_sms_at ? "ano" : "ne"}
+                {c.terms_accepted_at ? ` · podmínky ${formatDate(c.terms_accepted_at)}` : ""}
+              </p>
+            </div>
           </div>
+
+          <h2 className="text-[20px]">Zvířata</h2>
+          {petList.length === 0 ? (
+            <p className="text-muted">Zatím žádná.</p>
+          ) : (
+            <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+              {petList.map((p) => (
+                <li key={p.id} className="p-3">
+                  <strong>{p.name}</strong> <span className="text-muted">· {petSummary(p, MEAT_LABEL)}</span>
+                  <p className="text-xs text-muted">
+                    {[p.breed, p.feeding_now ? FEEDING_LABEL[p.feeding_now as Exclude<FeedingNow, "">] : "", p.current_food, p.note].filter(Boolean).join(" · ") || "bez dalších údajů"}
+                    {p.rewarded_at ? " · odměněno" : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <h2 className="text-[20px]">Objednávky</h2>
           {list.length === 0 ? (

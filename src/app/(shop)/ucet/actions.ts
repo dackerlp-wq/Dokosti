@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { type PetProfile, petToAnimal } from "@/lib/club";
 import { SITE_URL } from "@/lib/seo";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 
@@ -30,6 +31,17 @@ export async function customerRegister(_prev: AuthState, fd: FormData): Promise<
   if (error) return { error: error.message.includes("already") ? "Tento e-mail už účet má. Zkuste se přihlásit." : "Registrace se nepovedla. Zkuste to znovu." };
   if (!data.session) return { info: "Poslali jsme vám e-mail s potvrzovacím odkazem. Po kliknutí budete přihlášeni." };
   redirect("/ucet");
+}
+
+/** Přihlášení odkazem e-mailem (bez hesla). Jen pro existující účty. */
+export async function requestMagicLink(_prev: AuthState, fd: FormData): Promise<AuthState> {
+  const email = str(fd, "email");
+  if (!email.includes("@")) return { error: "Zadejte platný e-mail." };
+  const next = str(fd, "next") || "/ucet";
+  const db = await getAuthSupabase();
+  const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next.startsWith("/") ? next : "/ucet")}` } });
+  if (error && !error.message.toLowerCase().includes("signups not allowed")) return { error: "Odkaz se nepodařilo poslat. Zkuste to za chvíli." };
+  return { info: "Pokud e-mail známe, poslali jsme na něj přihlašovací odkaz. Platí několik minut." };
 }
 
 export async function customerLogout() {
@@ -65,7 +77,21 @@ export async function savePet(name: string, data: Record<string, unknown>, id?: 
     data: { user },
   } = await db.auth.getUser();
   if (!user) return { ok: false, error: "Pro uložení profilu se přihlaste." };
-  const row = { user_id: user.id, name: name.trim().slice(0, 60) || "Bez jména", data, updated_at: new Date().toISOString() };
+  const { data: cust } = await db.from("customers").select("id").eq("user_id", user.id).maybeSingle();
+  const d = data as { species?: string; weightKg?: number; neutered?: boolean; activity?: string; condition?: string; exclude?: string[] };
+  const row = {
+    user_id: user.id,
+    customer_id: cust?.id ?? null,
+    name: name.trim().slice(0, 60) || "Bez jména",
+    data,
+    species: d.species ?? null,
+    weight_kg: d.weightKg && d.weightKg > 0 ? d.weightKg : null,
+    neutered: d.neutered ?? null,
+    activity: d.activity ?? null,
+    condition: d.condition ?? null,
+    exclude: d.exclude ?? [],
+    updated_at: new Date().toISOString(),
+  };
   const q = id ? db.from("pets").update(row).eq("id", id).select("id").single() : db.from("pets").insert(row).select("id").single();
   const { data: saved, error } = await q;
   if (error || !saved) return { ok: false, error: "Profil se nepodařilo uložit." };
@@ -80,4 +106,60 @@ export async function deletePet(formData: FormData) {
   await db.from("pets").delete().eq("id", id);
   revalidatePath("/ucet");
   revalidatePath("/kalkulacka");
+}
+
+/** Profil zvířete z účtu (strukturovaně). Za úplný profil se připíšou Kostičky (`club_reward_pet`). */
+export async function savePetProfile(p: PetProfile, id?: string): Promise<{ ok: true; id: string; awarded: number } | { ok: false; error: string }> {
+  const db = await getAuthSupabase();
+  const {
+    data: { user },
+  } = await db.auth.getUser();
+  if (!user) return { ok: false, error: "Pro uložení profilu se přihlaste." };
+  if (!p.name.trim()) return { ok: false, error: "Doplňte jméno zvířete." };
+  const { data: cust } = await db.from("customers").select("id").eq("user_id", user.id).maybeSingle();
+  const row = {
+    user_id: user.id,
+    customer_id: cust?.id ?? null,
+    name: p.name.trim().slice(0, 60),
+    data: petToAnimal(p),
+    species: p.species,
+    breed: p.breed.trim().slice(0, 80),
+    born_on: /^\d{4}-\d{2}-\d{2}$/.test(p.bornOn) ? p.bornOn : null,
+    weight_kg: p.weightKg > 0 ? p.weightKg : null,
+    neutered: p.neutered,
+    activity: p.activity,
+    condition: p.condition,
+    feeding_now: p.feedingNow,
+    current_food: p.currentFood.trim().slice(0, 120),
+    exclude: p.exclude,
+    note: p.note.trim().slice(0, 300),
+    updated_at: new Date().toISOString(),
+  };
+  const q = id ? db.from("pets").update(row).eq("id", id).select("id").single() : db.from("pets").insert(row).select("id").single();
+  const { data: saved, error } = await q;
+  if (error || !saved) return { ok: false, error: "Profil se nepodařilo uložit." };
+  const { data: awarded } = await db.rpc("club_reward_pet", { p_pet_id: saved.id });
+  revalidatePath("/ucet");
+  revalidatePath("/kalkulacka");
+  return { ok: true, id: saved.id as string, awarded: typeof awarded === "number" ? awarded : 0 };
+}
+
+/** Kontakt, adresa a souhlasy v účtu (`club_update_profile`). */
+export async function updateProfile(_prev: AuthState, fd: FormData): Promise<AuthState> {
+  const db = await getAuthSupabase();
+  const { error } = await db.rpc("club_update_profile", {
+    p: {
+      name: str(fd, "name"),
+      phone: str(fd, "phone"),
+      street: str(fd, "street"),
+      city: str(fd, "city"),
+      zip: str(fd, "zip"),
+      marketing_email: fd.get("marketing_email") === "on",
+      marketing_sms: fd.get("marketing_sms") === "on",
+    },
+  });
+  if (error) return { error: "Uložení se nepovedlo. Zkuste to znovu." };
+  revalidatePath("/ucet");
+  revalidatePath("/pokladna");
+  return { info: "Uloženo." };
 }
