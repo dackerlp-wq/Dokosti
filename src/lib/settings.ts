@@ -55,6 +55,11 @@ export type Settings = {
     /** Kolik Kč je jeden krok. */
     redeemValueCzk: number;
   };
+  pos: {
+    /** Po zaplacení rovnou otevřít tisk účtenky. */
+    autoPrint: boolean;
+    receiptFooter: string;
+  };
   subscription: {
     enabled: boolean;
     /** Sleva na zboží při pravidelném odběru, %. 0 = bez slevy. */
@@ -125,9 +130,10 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
   subscription: { enabled: true, discountPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
+  pos: { autoPrint: true, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
 };
 
-export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription"] as const satisfies readonly (keyof Settings)[];
+export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos"] as const satisfies readonly (keyof Settings)[];
 
 /** Hluboké sloučení výchozích hodnot s uloženými (nové klíče dostanou výchozí hodnotu). */
 function merge<T>(base: T, over: unknown): T {

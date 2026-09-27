@@ -12,6 +12,7 @@ const TABS = [
   { id: "pages", label: "Texty stránek" },
   { id: "loyalty", label: "Kostičky" },
   { id: "subscription", label: "Předplatné" },
+  { id: "pos", label: "Kasa" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -40,6 +41,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "pages" && <PagesForm s={settings.pages} />}
         {tab === "loyalty" && <LoyaltyForm s={settings.loyalty} />}
         {tab === "subscription" && <SubscriptionForm s={settings.subscription} />}
+        {tab === "pos" && <PosForm s={settings.pos} />}
       </div>
     </div>
   );
@@ -305,6 +307,24 @@ function SubscriptionForm({ s }: { s: Settings["subscription"] }) {
           {s.cutoffDaysBefore === 1 ? "den" : "dny"} před dodáním vznikne objednávka a objeví se v Objednávkách i v plánu rozvozu. Platí se za každou
           objednávku zvlášť (převodem nebo při převzetí). Když se objednávku nepodaří vytvořit (zboží není skladem), předplatné se pozastaví a
           přijde vám e-mail.
+        </p>
+      </Card>
+    </SectionForm>
+  );
+}
+
+function PosForm({ s }: { s: Settings["pos"] }) {
+  return (
+    <SectionForm section="pos">
+      <Card title="Kasa v prodejně">
+        <Check name="autoPrint" label="Po zaplacení rovnou otevřít tisk účtenky (80 mm)" defaultChecked={s.autoPrint} />
+        <div className="mt-3">
+          <Field label="Text na konci účtenky">
+            <input name="receiptFooter" defaultValue={s.receiptFooter} />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Kasa je na adrese /admin/kasa a jde přidat na plochu tabletu jako aplikace. QR platba používá číslo účtu z karty Platba. Účtenky mají řadu U + rok + pořadí.
         </p>
       </Card>
     </SectionForm>

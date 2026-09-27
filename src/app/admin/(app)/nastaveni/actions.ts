@@ -84,6 +84,9 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
       };
       if (value.cutoffDaysBefore >= value.reminderDaysBefore) return { error: "E-mail musí chodit dřív, než vzniká objednávka." };
       break;
+    case "pos":
+      value = { autoPrint: bool(fd, "autoPrint"), receiptFooter: str(fd, "receiptFooter").slice(0, 200) };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

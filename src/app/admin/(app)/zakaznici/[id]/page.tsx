@@ -28,7 +28,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
           Zákazníci
         </Link>
       </p>
-      <h1>{c.name || c.email}</h1>
+      <h1>{c.name || c.email || "Zákazník bez jména"}</h1>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">

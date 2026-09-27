@@ -117,6 +117,20 @@ pohyby, šarže s expirací, nákupní cena), seznam příjemek a pohybů; u pro
 `order_items.unit_cost_czk` drží nákupní cenu v době prodeje, statistiky z ní počítají hrubý zisk. Role v `admins.role`:
 `spravce` (vše) a `obsluha` (bez nastavení, slev, e-mailů, statistik, předplatného a nákupních cen; RLS pro nastavení a kódy).
 
+## Kasa (prodejna)
+
+`/admin/kasa` je celoobrazovková pokladna pro tablet nebo notebook, instalovatelná jako PWA (manifest na
+`/admin/kasa/manifest.webmanifest`, ikony v `public/brand`). Bez otevřené směny (`pos_shifts`, počáteční hotovost) nejde
+prodávat. Vlevo dlaždice produktů podle řad, vyhledávání slouží i jako čtečka: EAN přidá produkt, jiný kód se bere jako
+zákaznická karta (`customers.card_code`; neznámý kód se při prvním načtení přiřadí stávajícímu nebo novému zákazníkovi).
+Zboží na váhu se zadává v gramech. Účtenka: zákazník (volitelně), slevový kód, uplatnění Kostiček, ruční sleva (jen správce),
+odložení účtu (localStorage), platba hotově (vrácení), kartou (terminál je samostatný) nebo QR platbou (SPD kód z čísla účtu
+v Nastavení → Platba). RPC `pos_checkout` počítá ceny na serveru, zapisuje `pos_sales` (číselná řada U+rok+pořadí),
+`pos_sale_items`, pohyby skladu `prodej_kasa` a Kostičky; `pos_cancel_sale` (storno, jen správce) vrací sklad i body.
+Záložka K výdeji vydává webové objednávky k osobnímu odběru (`pos_settle_order` označí objednávku jako doručenou a u dobírky
+vezme hotovost). Účtenka pro 80 mm tiskárnu je na `/admin/kasa/uctenka/[id]` (`?tisk=1` otevře tisk, automatický tisk se
+zapíná v Nastavení → Kasa). Uzávěrka: vklady a výběry (`pos_cash_moves`), napočítaná hotovost a rozdíl (`pos_close_shift`).
+
 ## Testovací produkty
 
 V Supabase jsou zveřejněné produkty českého výrobce Yoggies (yoggies.cz, výroba u Slaného, B2B portál b2b.yoggies.cz) s doslovným

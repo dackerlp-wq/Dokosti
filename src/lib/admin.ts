@@ -53,7 +53,8 @@ export type LoyaltyRow = {
 
 export type CustomerRow = {
   id: string;
-  email: string;
+  email: string | null;
+  card_code: string | null;
   name: string;
   phone: string;
   street: string;
