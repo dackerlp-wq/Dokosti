@@ -1,23 +1,27 @@
 # Plán vývoje e-shopu DoKosti
 
 Živý dokument. Každá položka má stav: **hotovo** (nasazeno na dokosti.vercel.app), **doladit** (funguje, ale
-čeká na data nebo rozhodnutí), **nápad** (zatím nic v kódu). Postup u každé položky: nejdřív otázky a doporučení,
+chce dotáhnout), **nápad** (zatím nic v kódu), **čeká** (závisí na firmě, dodavateli, prodejně nebo doméně). Postup u každé položky: nejdřív otázky a doporučení,
 pak teprve kód, pak ověření v prohlížeči a nasazení do `main`.
 
-Pořadí kategorií odpovídá tomu, co brání spuštění: nejdřív obsah a provoz, pak prodej, pak růst.
+**Stav projektu:** ve fázi příprav. Zatím není dodavatel, živnost ani prodejna. Web je proto prototyp, na kterém
+ladíme funkce a vzhled; produkty Yoggies slouží jako realistická testovací data, ne jako nabídka. Vše, co vyžaduje
+smlouvu, doménu nebo firmu, je v kategorii 9 jako checklist ke spuštění a do té doby se neřeší.
+
+Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštění.
 
 ---
 
-## 1. Obsah a data (bez toho nejde spustit)
+## 1. Obsah a data (až bude dodavatel)
 
 | Položka | Stav | Poznámka |
 |---|---|---|
-| Produkty od skutečného dodavatele | doladit | 19 produktů Yoggies s reálným složením a energií, ceny maloobchodní. Chybí velkoobchodní ceny, fotky, rozhodnutí o sortimentu. |
-| Fotky produktů | nápad | Bucket `product-images` je připravený, žádná fotka. Formát 1:1, jednotné pozadí. |
-| Údaje prodejny v Nastavení | doladit | Adresa, telefon, e-mail, IČO, otevírací doba jsou placeholdery. Bez e-mailu prodejny nechodí upozornění na objednávky. |
-| Texty právních stránek | doladit | Obchodní podmínky a Ochrana údajů jsou prázdné šablony. |
-| Startovací balíčky | nápad | Stránka Jak začít je na ně připravená (slug `startovaci-…`), produkty neexistují. |
-| Výživové údaje u produktů | doladit | Pole v adminu jsou; u Yoggies chybí podíl kosti a u kočičích mixů energie. Ověřit taurin u koček. |
+| Testovací produkty | hotovo | 19 produktů Yoggies s reálným složením a energií, maloobchodní ceny. Slouží k ladění, ne k prodeji. |
+| Skutečný sortiment a velkoobchodní ceny | čeká | Až bude dodavatel. Admin i seed SQL jsou připravené. |
+| Fotky produktů | čeká | Bucket `product-images` je připravený. Formát 1:1, jednotné pozadí. |
+| Údaje prodejny v Nastavení | čeká | Placeholdery, dokud není adresa, telefon, IČO. |
+| Texty právních stránek | čeká | Obchodní podmínky a Ochrana údajů potřebují IČO a právní formu. |
+| Startovací balíčky | nápad | Stránka Jak začít je na ně připravená (slug `startovaci-…`). |
 
 ## 2. Katalog a nákup
 
@@ -29,7 +33,7 @@ Pořadí kategorií odpovídá tomu, co brání spuštění: nejdřív obsah a p
 | Košík s cross-sell návrhy | hotovo | |
 | Pokladna: odběr, rozvoz (dny), přepravce, platba převodem a na místě | hotovo | |
 | Slevové kódy, Kostičky | hotovo | Kostičky 1 za 10 Kč, 100 = 50 Kč. |
-| Platební brána (karta online, opakovaná platba) | nápad | Comgate nebo GoPay, potřebuje účet u brány a doménu. |
+| Platební brána (karta online, opakovaná platba) | čeká | Comgate nebo GoPay vyžadují firmu, účet a doménu. Do kódu se dá připravit rozhraní. |
 | Varianty balení jednoho produktu (700 g / 1,3 kg / 12×150 g) | nápad | Dnes je každé balení samostatný produkt. Yoggies má tři velikosti u každého mixu. |
 | Hodnocení a recenze produktů | nápad | Až budou zákazníci. |
 | Dárkové poukazy | nápad | |
@@ -91,7 +95,7 @@ Pořadí kategorií odpovídá tomu, co brání spuštění: nejdřív obsah a p
 | Položka | Stav | Poznámka |
 |---|---|---|
 | Šablony: potvrzení, upozornění prodejně, změny stavu, plán, předplatné | hotovo | |
-| Odesílání přes Resend | doladit | Čeká na doménu a klíč; do té doby fronta v adminu. |
+| Odesílání přes Resend | čeká | Vyžaduje doménu; do té doby fronta v adminu, kde se dají e-maily prohlédnout. |
 | SMS před rozvozem | nápad | |
 | Newsletter | nápad | Souhlas, odhlášení, šablona. |
 
@@ -105,13 +109,17 @@ Pořadí kategorií odpovídá tomu, co brání spuštění: nejdřív obsah a p
 | Sociální sítě a sdílení produktů | nápad | Open Graph obrázky. |
 | Google Business, Mapy | nápad | Mimo kód. |
 
-## 9. Infrastruktura a spuštění
+## 9. Spuštění (checklist, až bude firma a dodavatel)
 
 | Položka | Stav | Poznámka |
 |---|---|---|
 | Supabase (migrace 0001–0015), Vercel, auto-deploy z main | hotovo | |
-| Doména | nápad | Rozhoduje o Resend, Supabase Auth URL, SEO. |
-| Zálohy a obnova databáze | nápad | Supabase má denní zálohy v placeném plánu. |
+| Živnost / firma, IČO, případně DPH | čeká | Rozhoduje o dokladech, právních textech a bráně. |
+| Dodavatel a smlouva | čeká | Yoggies má B2B portál a je 15 km od Kladna; rozhodnutí je na vás. |
+| Prodejna nebo výdejní místo, mrazicí kapacita | čeká | Bez prodejny dává smysl začít jen rozvozem a přepravcem. |
+| Doména | čeká | Rozhoduje o Resend, Supabase Auth URL, SEO. |
+| Platební brána | čeká | Viz kategorie 2. |
+| Zálohy databáze | nápad | Supabase má denní zálohy v placeném plánu. |
 | Právní kontrola textů a tvrzení (nařízení 767/2009) | nápad | Jedna kontrola před spuštěním. |
 | Testovací provoz s pár zákazníky | nápad | |
 
