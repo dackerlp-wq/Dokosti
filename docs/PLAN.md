@@ -123,6 +123,20 @@ Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštěn�
 | Právní kontrola textů a tvrzení (nařízení 767/2009) | nápad | Jedna kontrola před spuštěním. |
 | Testovací provoz s pár zákazníky | nápad | |
 
+## 10. Prodejna (POS a sklad)
+
+E-shop je zároveň systém pro prodejnu: stejné produkty, sklad, zákazníci, Kostičky a doklady. Kasa běží v prohlížeči na
+tabletu nebo notebooku jako instalovatelná webová aplikace (PWA), bez offline režimu (v prodejně záložní LTE). Platební
+terminál je samostatná krabička, propojí se později. EET neexistuje.
+
+| Krok | Položka | Stav | Poznámka |
+|---|---|---|---|
+| 1 | Datový základ: jednotka ks/kg, cena za kg, role správce/obsluha, pohyby skladu, nákupní ceny | nápad | Nejdřív, protože mění model. |
+| 2 | Příjemky, odpisy, inventura, historie pohybů u produktu | nápad | Šarže a expirace už existují. |
+| 3 | Kasa: dlaždice, čtečka, zákazník a Kostičky, sleva, hotově/kartou, účtenka 80 mm, storno, výdej webových objednávek | nápad | PWA na /admin/kasa. |
+| 4 | Denní uzávěrka, účtenky v číselné řadě, statistiky web vs. prodejna | nápad | |
+| 5 | Terminál, Bluetooth tiskárna, nativní obálka pro Android | nápad | Až bude důvod. |
+
 ---
 
 ## Jak postupujeme
