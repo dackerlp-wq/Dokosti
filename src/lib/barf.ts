@@ -417,6 +417,16 @@ export function mixesKcal(mixes: Product[]) {
 }
 
 /**
+ * Orientační trvanlivost balení ve dnech: mražené zhruba 3 měsíce v mrazáku, chlazené pár dní,
+ * suché (olej po otevření) 3 měsíce, granule po otevření 4 měsíce. Delší výdrž nemá smysl objednávat.
+ */
+export function shelfDays(p: { line: string; storage: string }): number {
+  if (p.storage === "chlazene") return 7;
+  if (p.line === "granule") return 120;
+  return 90;
+}
+
+/**
  * Sestaví nákupní plán na `days` dní: BARF mixy, případně rybí den, doplnění kosti
  * podle bilance, olej, zelenina, u štěňat granule. Množství zaokrouhluje na celá balení.
  */

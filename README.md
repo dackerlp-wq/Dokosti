@@ -120,7 +120,9 @@ kalkulačka: `petToAnimal` → `buildPlan`) → interval každé 2 nebo 4 týdny
 (registrace do klubu) → profil zvířete se uloží do účtu (`savePetProfile`) a pokladna dostane košík s předplatným
 (`/pokladna?predplatne=14&dodani=rozvoz&obcas=slug:6,…`; `predplatne=0` je jednorázová objednávka bez předplatného).
 U granulí nebo mixu se ptá na podíl syrového (100/75/50/25 %), plán pak ukazuje „X g syrového a Y g granulí denně“ a jde
-přidat naše granule. Položka, která vydrží aspoň dvojnásobek období, dostane `every_nth` = floor(vydrží / období) (max 12). Dodávky z předplatného dostávají Kostičky navíc v hodnotě
+přidat naše granule. Položka, která vydrží aspoň dvojnásobek období, dostane `every_nth` = floor(vydrží / období) (max 12), přičemž
+„vydrží“ je omezené trvanlivostí balení (`shelfDays`: mražené 90 dní, granule 120, chlazené 7); u takové položky
+průvodce ukáže, kolik procent balení zákazník stihne využít. Dodávky z předplatného dostávají Kostičky navíc v hodnotě
 `subscription.pointsBonusPct` % z ceny zboží (migrace `0024`, v `create_order` i pro první objednávku z pokladny); sleva
 `discountPct` je 0. Odkazy z e-mailů Supabase (`/auth/callback`) se ověřují až tlačítkem, protože skenery odkazů v poště
 je jinak spotřebují dřív než zákazník. Když zákazník místo kódu klikne na odkaz, průvodce pokračuje u plánu

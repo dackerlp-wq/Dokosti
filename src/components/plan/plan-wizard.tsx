@@ -9,7 +9,7 @@ import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { savePetProfile } from "@/app/(shop)/ucet/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
-import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
+import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -136,14 +136,18 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     return buildPlan(products, input, days);
   }, [step, pet, removed, swaps, products, days, rawShare, addKibble]);
 
-  /** Položky, které vydrží déle než interval (olej, kosti navíc): v dalších dodávkách jen každou N. */
+  /**
+   * Položky, které vydrží déle než interval (olej, kosti navíc): v dalších dodávkách jen každou N.
+   * Strop je trvanlivost balení (`shelfDays`): co by vydrželo déle, stejně musí zákazník spotřebovat dřív.
+   */
   const everyNth = useMemo(() => {
     const out: Record<string, number> = {};
     if (!plan) return out;
     for (const i of plan.items) {
       if (i.gramsPerDay <= 0) continue;
       const lasts = (i.qty * i.product.weightGrams) / i.gramsPerDay;
-      if (lasts >= days * 2) out[i.product.slug] = Math.min(12, Math.floor(lasts / days));
+      const usable = Math.min(lasts, shelfDays(i.product));
+      if (usable >= days * 2) out[i.product.slug] = Math.min(12, Math.floor(usable / days));
     }
     return out;
   }, [plan, days]);
@@ -583,7 +587,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                 <div>
                   <h2 className="text-[22px]">Opište kód z e-mailu</h2>
                   <p className="mt-1 text-sm">
-                    Na <strong>{owner.email}</strong> jsme poslali šestimístný kód. Platí několik minut.
+                    Na <strong>{owner.email}</strong> jsme poslali šestimístný kód, platí několik minut. Když je v e-mailu jen tlačítko, klikněte na něj a vrátíme vás k plánu.
                   </p>
                 </div>
               </div>
@@ -706,9 +710,7 @@ function PlanStep({
                   </div>
                   <span className="text-xs text-muted">
                     {i.gramsPerDay > 0 ? `${Math.round(i.gramsPerDay)} g/den` : ""}
-                    {everyNth[i.product.slug] && (
-                      <span className="block text-brick-text">vydrží ~{Math.round((i.qty * i.product.weightGrams) / i.gramsPerDay)} dní{!oneTime ? `, pak jen každou ${everyNth[i.product.slug]}. dodávku` : ""}</span>
-                    )}
+                    {everyNth[i.product.slug] && <Durability item={i} every={everyNth[i.product.slug]} oneTime={oneTime} />}
                   </span>
                   <span className="w-12 text-right font-semibold">{i.qty} ks</span>
                   <span className="flex items-center gap-2 text-xs">
@@ -803,5 +805,30 @@ function PlanStep({
         </p>
       </aside>
     </div>
+  );
+}
+
+/**
+ * Poznámka k položce, která vydrží déle než dodávka: kolik dní, případně že balení nestihne spotřebovat
+ * před koncem trvanlivosti (a kolik z něj využije), a že do dalších dodávek jde jen občas.
+ */
+function Durability({ item, every, oneTime }: { item: Reco; every: number; oneTime: boolean }) {
+  const lasts = Math.round((item.qty * item.product.weightGrams) / item.gramsPerDay);
+  const shelf = shelfDays(item.product);
+  const usedPct = Math.min(100, Math.round((shelf / lasts) * 100));
+  const frozen = item.product.storage === "mrazene";
+  return (
+    <span className="block text-brick-text">
+      {lasts > shelf ? (
+        <>
+          vydrží ~{lasts} dní, ale {frozen ? "zmrazené" : "po otevření"} spotřebujte do ~{shelf} dní (využijete asi {usedPct} % balení)
+          {!oneTime ? `, proto jen každou ${every}. dodávku` : ""}
+        </>
+      ) : (
+        <>
+          vydrží ~{lasts} dní{!oneTime ? `, pak jen každou ${every}. dodávku` : ""}
+        </>
+      )}
+    </span>
   );
 }
