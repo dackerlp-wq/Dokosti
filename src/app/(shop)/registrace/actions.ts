@@ -1,120 +1,125 @@
 "use server";
 
-import { getSettings } from "@/lib/settings";
-import { type PetProfile, petToAnimal } from "@/lib/club";
+import { normalizeCardCode } from "@/lib/cards";
 import { sendEmail } from "@/lib/email/send";
 import { clubWelcome } from "@/lib/email/templates";
-import { SITE_URL } from "@/lib/seo";
+import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 import { getSupabase } from "@/lib/supabase/server";
 
 export type RegisterInput = {
   name: string;
   email: string;
-  phone: string;
-  password: string;
   cardCode: string;
-  pets: PetProfile[];
   terms: boolean;
   marketingEmail: boolean;
-  marketingSms: boolean;
-  heardFrom: string;
   /** Tablet v prodejně: po registraci se zařízení odhlásí. */
   kiosk: boolean;
 };
 
-export type RegisterResult =
-  | { ok: true; state: "signedIn"; awarded: number }
-  | { ok: true; state: "confirmEmail" }
-  | { ok: false; error: string };
+export type StartResult = { ok: true; state: "code" } | { ok: true; state: "done"; awarded: number } | { ok: false; error: string };
+export type VerifyResult = { ok: true; awarded: number; name: string } | { ok: false; error: string };
 
 const ERRORS: [string, string][] = [
+  ["card blocked", "Tato karta je zablokovaná. Ozvěte se nám v prodejně."],
   ["card conflict", "Tato karta už patří jinému zákazníkovi. Ozvěte se nám, spojíme to ručně."],
   ["email conflict", "Tento e-mail máme u jiného zákazníka. Ozvěte se nám, spojíme to ručně."],
   ["account conflict", "K tomuto zákazníkovi už je připojený jiný účet. Ozvěte se nám."],
 ];
+const explain = (msg: string | undefined, fallback: string) => ERRORS.find(([k]) => msg?.includes(k))?.[1] ?? fallback;
+
+function buildPayload(input: RegisterInput, termsVersion: string) {
+  return {
+    name: input.name.trim(),
+    card_code: normalizeCardCode(input.cardCode),
+    marketing_email: input.marketingEmail,
+    marketing_sms: false,
+    source: input.kiosk ? "prodejna" : "web",
+    terms_version: termsVersion,
+    pets: [],
+  };
+}
 
 /**
- * Registrace do klubu: založí účet (Supabase Auth), uloží rozpracovanou registraci a když má hned
- * session, dokončí ji (`club_complete_registration`). Bez session se dokončí po potvrzení e-mailu.
+ * Krok 1: uloží rozpracovanou registraci podle e-mailu a pošle šestimístný kód (Supabase OTP; účet vznikne
+ * až po ověření kódu). Když je zákazník už přihlášený (Google, nebo účet bez klubu), dokončí registraci rovnou.
  */
-export async function clubRegister(input: RegisterInput): Promise<RegisterResult> {
+export async function clubStart(input: RegisterInput): Promise<StartResult> {
+  const name = input.name.trim();
+  if (!input.terms) return { ok: false, error: "Bez souhlasu s podmínkami registraci nedokončíme." };
+  const card = normalizeCardCode(input.cardCode);
+  if (card && (card.length < 4 || card.length > 32)) return { ok: false, error: "Kód karty nevypadá správně." };
+  const settings = await getSettings();
   const db = await getAuthSupabase();
-  // Už přihlášený účet (Google, nebo e-mail bez dokončené registrace): bez hesla, e-mail z účtu.
+  const anon = getSupabase() ?? db;
+
   const {
     data: { user: current },
   } = await db.auth.getUser();
-  const email = (current?.email ?? input.email).trim().toLowerCase();
-  const name = input.name.trim();
-  if (!name) return { ok: false, error: "Doplňte jméno." };
+  // Jméno je povinné, pokud ho nemáme z karty založené u kasy (dokončení nechá stávající jméno).
+  const needName = !card;
+  if (current?.email) {
+    if (!name && needName) return { ok: false, error: "Doplňte jméno." };
+    await anon.rpc("club_register_pending", { p_user_id: current.id, p_data: buildPayload(input, settings.club.termsVersion) });
+    const done = await complete(current.email, name);
+    if (!done.ok) return done;
+    return { ok: true, state: "done", awarded: done.awarded };
+  }
+
+  const email = input.email.trim().toLowerCase();
+  if (!name && needName) return { ok: false, error: "Doplňte jméno." };
   if (!email.includes("@")) return { ok: false, error: "Zadejte platný e-mail." };
-  if (!current && input.password.length < 8) return { ok: false, error: "Heslo musí mít aspoň 8 znaků." };
-  if (!input.terms) return { ok: false, error: "Bez souhlasu s podmínkami registraci nedokončíme." };
-  const card = input.cardCode.trim().toUpperCase();
-  if (card && (card.length < 4 || /[^\x20-\x7e]/.test(card))) return { ok: false, error: "Kód karty nevypadá správně." };
-  const settings = await getSettings();
-  const pets = input.pets
-    .filter((p) => p.name.trim())
-    .slice(0, 10)
-    .map((p) => ({
-      name: p.name.trim(),
-      species: p.species,
-      breed: p.breed.trim(),
-      born_on: /^\d{4}-\d{2}-\d{2}$/.test(p.bornOn) ? p.bornOn : "",
-      weight_kg: p.weightKg > 0 ? p.weightKg : "",
-      neutered: p.neutered,
-      activity: p.activity,
-      condition: p.condition,
-      feeding_now: p.feedingNow,
-      current_food: p.currentFood.trim(),
-      exclude: p.exclude,
-      note: p.note.trim(),
-      data: petToAnimal(p),
-    }));
-  const payload = {
-    name,
-    phone: input.phone.trim(),
-    card_code: card,
-    marketing_email: input.marketingEmail,
-    marketing_sms: input.marketingSms,
-    heard_from: input.heardFrom.trim().slice(0, 60),
-    source: input.kiosk ? "prodejna" : "web",
-    terms_version: settings.club.termsVersion,
-    pets,
-  };
+  const { error: pendingError } = await anon.rpc("club_register_pending_email", { p_email: email, p_data: buildPayload(input, settings.club.termsVersion) });
+  if (pendingError) {
+    console.error("club_register_pending_email", pendingError.message);
+    return { ok: false, error: "Registraci se nepodařilo uložit. Zkuste to znovu." };
+  }
+  const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { full_name: name } } });
+  if (error) {
+    console.error("signInWithOtp", error.message);
+    if (error.message.toLowerCase().includes("rate")) return { ok: false, error: "Kód jsme posílali před chvílí. Počkejte minutu a zkuste to znovu." };
+    return { ok: false, error: "Kód se nepodařilo poslat. Zkontrolujte e-mail a zkuste to znovu." };
+  }
+  return { ok: true, state: "code" };
+}
 
-  const anon = getSupabase();
-  let userId: string;
-  if (current) {
-    userId = current.id;
-    await (anon ?? db).rpc("club_register_pending", { p_user_id: userId, p_data: payload });
-  } else {
-    const { data, error } = await db.auth.signUp({ email, password: input.password, options: { emailRedirectTo: `${SITE_URL}/auth/callback?next=/ucet?vitejte=1` } });
-    if (error || !data.user) {
-      console.error("signUp", error?.message);
-      return { ok: false, error: error?.message.includes("already") ? "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." : "Registrace se nepovedla. Zkuste to znovu." };
-    }
-    // Supabase u existujícího e-mailu vrátí „uživatele“ bez identit, aby neprozradil, že účet existuje.
-    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-      return { ok: false, error: "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." };
-    }
-    userId = data.user.id;
-    await (anon ?? db).rpc("club_register_pending", { p_user_id: userId, p_data: payload });
-    if (!data.session) return { ok: true, state: "confirmEmail" };
-  }
+/** Krok 2: ověří kód z e-mailu (vznikne session) a dokončí registraci. V kiosku se hned odhlásí. */
+export async function clubVerify(email: string, code: string, kiosk: boolean): Promise<VerifyResult> {
+  const mail = email.trim().toLowerCase();
+  const token = code.replace(/\s+/g, "");
+  if (!/^\d{6}$/.test(token)) return { ok: false, error: "Kód má šest číslic." };
+  const db = await getAuthSupabase();
+  const { error } = await db.auth.verifyOtp({ email: mail, token, type: "email" });
+  if (error) return { ok: false, error: "Kód nesedí nebo už vypršel. Nechte si poslat nový." };
+  const result = await complete(mail);
+  if (kiosk) await db.auth.signOut();
+  return result;
+}
 
-  const { data: done, error: doneError } = await db.rpc("club_complete_registration");
-  if (doneError) {
-    console.error("club_complete_registration", doneError);
-    if (input.kiosk) await db.auth.signOut();
-    return { ok: false, error: ERRORS.find(([k]) => doneError.message.includes(k))?.[1] ?? "Účet vznikl, ale propojení se nepovedlo. Přihlaste se, zkusíme to znovu." };
+/** Přihlášený zákazník s volnou kartou z QR: připojí kartu k účtu. */
+export async function claimCard(code: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = await getAuthSupabase();
+  const { error } = await db.rpc("card_claim", { p_code: normalizeCardCode(code) });
+  if (error) return { ok: false, error: explain(error.message, error.message.includes("has card") ? "K účtu už je připojená jiná karta. Ozvěte se nám v prodejně." : "Kartu se nepodařilo připojit.") };
+  return { ok: true };
+}
+
+async function complete(email: string, fallbackName = ""): Promise<VerifyResult> {
+  const db = await getAuthSupabase();
+  const { data, error } = await db.rpc("club_complete_registration");
+  if (error) {
+    console.error("club_complete_registration", error.message);
+    return { ok: false, error: explain(error.message, "Účet vznikl, ale propojení se nepovedlo. Přihlaste se, zkusíme to znovu.") };
   }
-  const r = (done ?? {}) as { awarded?: number };
-  try {
-    await sendEmail(anon ?? db, email, clubWelcome(name, r.awarded ?? 0, settings), "klub-vitejte", null);
-  } catch (e) {
-    console.error("welcome e-mail", e);
+  const r = (data ?? {}) as { done?: boolean; awarded?: number; name?: string };
+  const name = r.name || fallbackName;
+  if (r.done) {
+    try {
+      const settings = await getSettings();
+      await sendEmail(getSupabase() ?? db, email, clubWelcome(name, r.awarded ?? 0, settings), "klub-vitejte", null);
+    } catch (e) {
+      console.error("welcome e-mail", e);
+    }
   }
-  if (input.kiosk) await db.auth.signOut();
-  return { ok: true, state: "signedIn", awarded: r.awarded ?? 0 };
+  return { ok: true, awarded: r.awarded ?? 0, name };
 }

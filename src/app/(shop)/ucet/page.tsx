@@ -8,6 +8,8 @@ import { formatDate, formatDay, SHIPPING_LABEL, type CustomerRow, type LoyaltyRo
 import { MEAT_LABEL, type Activity, type Condition, type MeatKey } from "@/lib/barf";
 import { type FeedingNow, type PetProfile, petSummary } from "@/lib/club";
 import { getCustomerUser } from "@/lib/customer";
+import { sendEmail } from "@/lib/email/send";
+import { clubWelcome } from "@/lib/email/templates";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import { INTERVAL_LABEL } from "@/lib/shipping";
@@ -17,13 +19,21 @@ import { customerLogout, deletePet } from "./actions";
 
 export const metadata: Metadata = { title: "Můj účet", robots: { index: false } };
 
-export default async function AccountPage({ searchParams }: { searchParams: Promise<{ vitejte?: string }> }) {
-  const [user, { vitejte }] = await Promise.all([getCustomerUser(), searchParams]);
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ vitejte?: string; karta?: string }> }) {
+  const [user, { vitejte, karta }] = await Promise.all([getCustomerUser(), searchParams]);
   if (!user) redirect("/ucet/prihlaseni");
   const db = await getAuthSupabase();
   // Rozpracovaná registrace (po potvrzení e-mailu) se dokončí při prvním otevření účtu.
   const { data: completed } = await db.rpc("club_complete_registration");
-  const justDone = (completed as { done?: boolean; awarded?: number } | null) ?? null;
+  const justDone = (completed as { done?: boolean; awarded?: number; name?: string } | null) ?? null;
+  if (justDone?.done) {
+    // Dokončeno přes odkaz z e-mailu (ne kódem na stránce): uvítací e-mail pošleme odsud.
+    try {
+      await sendEmail(db, user.email, clubWelcome(justDone.name ?? "", justDone.awarded ?? 0, await getSettings()), "klub-vitejte", null);
+    } catch (e) {
+      console.error("welcome e-mail", e);
+    }
+  }
   const [{ data: customer }, { data: orders }, { data: loyalty }, { data: pets }, { data: subs }, settings] = await Promise.all([
     db.from("customers").select("*").or(`user_id.eq.${user.id},email.eq.${user.email}`).limit(1).maybeSingle(),
     db.from("orders").select("*").order("created_at", { ascending: false }).limit(50),
@@ -61,7 +71,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <h1>Můj účet</h1>
           <p className="mt-1 text-sm text-muted">{user.email}</p>
         </div>
-        <form action={customerLogout}>
+        <form action={customerLogout} className="flex items-center gap-4">
+          <Link href="/ucet/nove-heslo" className="label text-[11px] text-green hover:underline">
+            Nastavit heslo
+          </Link>
           <button type="submit" className="label text-[11px] text-brick-text hover:underline">
             Odhlásit se
           </button>
@@ -84,9 +97,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
           <p className="label text-brick-text">Vítejte v klubu</p>
           <p className="mt-1 text-sm">
-            Účet je propojený s Kostičkami{c?.card_code ? " i s vaší kartou" : ""}.
-            {justDone?.awarded ? ` Připsali jsme ${justDone.awarded} Kostiček.` : ""} Kartu z prodejny přiřadíme při prvním načtení u pultu.
+            Účet je propojený s Kostičkami{c?.card_code ? ` i s kartou ${c.card_code}` : ""}.
+            {justDone?.awarded ? ` Připsali jsme ${justDone.awarded} Kostiček.` : ""}
+            {!c?.card_code && " Kartu z prodejny připojíte načtením QR kódu na ní, nebo vám ji přiřadí obsluha u pultu."}
+            {settings.club.petPoints > 0 && ` Přidejte profil psa nebo kočky níže a získáte dalších ${settings.club.petPoints} Kostiček.`}
           </p>
+        </div>
+      )}
+      {karta === "1" && c?.card_code && (
+        <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
+          <p className="label text-brick-text">Karta připojena</p>
+          <p className="mt-1 text-sm">Karta {c.card_code} je připojená k vašemu účtu. Kostičky z prodejny i z webu se sbírají na jednom místě.</p>
         </div>
       )}
 

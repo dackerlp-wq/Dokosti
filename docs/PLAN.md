@@ -68,7 +68,8 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 
 | Položka | Stav | Poznámka |
 |---|---|---|
-| Registrace, přihlášení, obnova hesla | hotovo | V Supabase je nutné nastavit Site URL a Redirect URL. |
+| Registrace, přihlášení, obnova hesla | hotovo | Registrace na jeden krok s kódem z e-mailu, bez hesla; heslo volitelně v účtu. |
+| Věrnostní karty: dávky, QR, /k/KÓD, aktivace z kasy | hotovo | Admin → Karty, docs/KARTY.md. Zbývá: účet z objednávky v pokladně. |
 | Přehled objednávek, Kostiček, profilů zvířat, předplatného | hotovo | |
 | Předvyplnění pokladny z účtu | hotovo | |
 | Úprava kontaktních údajů a adresy v účtu | hotovo | V účtu, včetně souhlasů (newsletter, SMS). |

@@ -7,9 +7,11 @@
 <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;opacity:.85">BARF · krmivo pro psy a kočky</div></td></tr>
 <tr><td style="background:#fbf7ee;padding:24px;border:1px solid #d9cfb8;border-top:0;border-radius:0 0 12px 12px">
 <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 12px">Vítejte v DoKosti</h1>
-<p>Děkujeme za registraci. Ještě potřebujeme ověřit, že je tento e-mail váš. Po kliknutí budete rovnou přihlášeni.</p><p style="margin:20px 0"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:bold">Potvrdit e-mail</a></p>
+<p>Děkujeme za registraci. Ještě potřebujeme ověřit, že je tento e-mail váš.</p><p style="margin:16px 0 6px">Váš kód:</p>
+<p style="margin:0 0 16px;font-family:Georgia,serif;font-size:34px;letter-spacing:0.3em;font-weight:bold;color:#1f3a2d">{{ .Token }}</p>
+<p style="font-size:13px;color:#55645a">Opište ho do stránky, kde jste o něj požádali.</p><p style="margin-top:20px">Nebo klikněte, budete rovnou přihlášeni:</p><p style="margin:20px 0"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:bold">Potvrdit e-mail</a></p>
 <p style="font-size:13px;color:#55645a">Když tlačítko nefunguje, zkopírujte do prohlížeče tuto adresu:<br><span style="word-break:break-all">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}</span></p>
 <p style="margin:24px 0 0;font-size:12px;color:#55645a;border-top:1px solid #d9cfb8;padding-top:12px">
-Pokud jste o tento e-mail nežádali, nic se neděje, klidně ho ignorujte. Odkaz platí jen chvíli a jde použít jednou.<br>
+Pokud jste o tento e-mail nežádali, nic se neděje, klidně ho ignorujte. Kód i odkaz platí jen chvíli a jdou použít jednou.<br>
 <span style="font-family:Georgia,serif">Poctivé do kosti.</span></p>
 </td></tr></table></td></tr></table></body></html>

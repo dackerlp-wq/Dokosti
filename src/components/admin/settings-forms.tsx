@@ -354,8 +354,8 @@ function ClubForm({ s }: { s: Settings["club"] }) {
           </Field>
         </div>
         <p className="mt-3 text-xs text-muted">
-          Registrace je na /registrace, pro tablet v prodejně /registrace?kiosk=1 (po dokončení se odhlásí). Karta s QR kódem vede na /registrace?karta=KÓD.
-          Úplný profil zvířete = druh, jméno, váha a datum narození. Odměna se připíše po potvrzení e-mailu a prvním přihlášení.
+          Registrace je na /registrace (jméno, e-mail, kód z e-mailu), pro tablet v prodejně /registrace?kiosk=1 (po dokončení se odhlásí). QR na kartě vede na /k/KÓD,
+          karty se tvoří v Admin → Karty. Úplný profil zvířete = druh, jméno, váha a datum narození; odměna za něj se připisuje v účtu.
         </p>
       </Card>
     </SectionForm>

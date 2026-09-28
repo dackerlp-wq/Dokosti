@@ -6,13 +6,14 @@ U každé šablony nastavte předmět (Subject) a do těla (Body, Source) vložt
 
 | Šablona v Supabase   | Soubor                     | Předmět                      |
 | -------------------- | -------------------------- | ---------------------------- |
-| Confirm sign up      | `potvrzeni-registrace.html` | Potvrďte svůj e-mail         |
-| Magic Link           | `prihlaseni-odkazem.html`   | Přihlášení do DoKosti        |
+| Confirm sign up      | `potvrzeni-registrace.html` | Váš kód do DoKosti           |
+| Magic Link           | `prihlaseni-odkazem.html`   | Váš přihlašovací kód DoKosti |
 | Reset Password       | `obnova-hesla.html`         | Nastavení nového hesla       |
 | Change Email Address | `zmena-emailu.html`         | Potvrďte změnu e-mailu       |
 | Invite user          | `pozvanka.html`             | Pozvánka do DoKosti          |
 
-Odkaz v šablonách vede na `{{ .SiteURL }}/auth/callback?token_hash=…&type=…&redirect_to={{ .RedirectTo }}`.
+Šablony „Confirm sign up“ a „Magic Link“ obsahují šestimístný kód `{{ .Token }}` (registrace a přihlášení ho opisují
+do stránky, bez odkazu) a pod ním odkaz jako zálohu. Odkaz v šablonách vede na `{{ .SiteURL }}/auth/callback?token_hash=…&type=…&redirect_to={{ .RedirectTo }}`.
 Stránka `/auth/callback` ověří `token_hash` přímo (RPC `verifyOtp`), takže odkaz funguje i v jiném prohlížeči
 nebo na telefonu, a z `redirect_to` si vezme, kam zákazníka poslat (`next`). Výchozí odkaz Supabase
 (`{{ .ConfirmationURL }}`) používá PKCE a funguje jen v prohlížeči, kde se o odkaz požádalo; callback ho umí

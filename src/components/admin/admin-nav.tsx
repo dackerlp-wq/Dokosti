@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Boxes, LayoutDashboard, LogOut, Mail, MessageCircleQuestion, Repeat, Settings, ShoppingBag, Store, Tag, Truck, Users, Warehouse } from "lucide-react";
+import { BarChart3, Boxes, CreditCard, LayoutDashboard, LogOut, Mail, MessageCircleQuestion, Repeat, Settings, ShoppingBag, Store, Tag, Truck, Users, Warehouse } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
@@ -15,6 +15,7 @@ const ITEMS = [
   { href: "/admin/produkty", label: "Produkty", icon: Boxes },
   { href: "/admin/sklad", label: "Sklad", icon: Warehouse },
   { href: "/admin/zakaznici", label: "Zákazníci", icon: Users },
+  { href: "/admin/karty", label: "Karty", icon: CreditCard },
   { href: "/admin/slevy", label: "Slevové kódy", icon: Tag, manager: true },
   { href: "/admin/emaily", label: "E-maily", icon: Mail, manager: true },
   { href: "/admin/poradna", label: "Poradna", icon: MessageCircleQuestion },

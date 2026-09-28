@@ -109,6 +109,17 @@ Přihlášení a registrace přes Google (`components/account/google-button.tsx`
 v Supabase Authentication → Providers → Google zapnutý provider s Client ID a Client Secret z Google Cloud Console
 (OAuth client typu Web application, Authorized redirect URI `https://tpzeltvekvliqluhfrvn.supabase.co/auth/v1/callback`).
 Kdo se přihlásí Googlem bez registrace, dokončí ji na `/registrace` bez hesla (účet je propojený, e-mail pevný).
+
+## Věrnostní karty a registrace na jeden krok
+
+Registrace (`/registrace`, `components/account/register-form.tsx`) je jméno, e-mail a souhlas; potvrzuje se šestimístným
+kódem z e-mailu (Supabase OTP, šablony v `supabase/auth-emaily/` mají `{{ .Token }}`), heslo se nezadává. Rozpracovaná
+registrace se ukládá podle e-mailu (`club_pending`), po ověření kódu ji `club_complete_registration` dokončí. Zvířata
+se přidávají až v účtu za odměnu. Karty (`docs/KARTY.md`): dávky vznikají v Admin → Karty (tabulka `cards`, kód `DK` +
+5 znaků + kontrolní znak, `lib/cards.ts`), tiskárna dostane CSV s adresou do QR `https://dokosti.cz/k/KÓD`. Stránka
+`/k/[kód]` podle stavu karty (RPC `card_state`) nabídne aktivaci (registrace s kartou), doplnění e-mailu ke kartě z kasy,
+přihlášení, nebo připojení karty k účtu (RPC `card_claim`). Kasa čte z QR celou adresu a kód si vytáhne; volnou kartu
+přiřadí a zákazníkovi s e-mailem pošle „Aktivujte kartu“. Ztracená karta se blokuje v Admin → Karty.
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 

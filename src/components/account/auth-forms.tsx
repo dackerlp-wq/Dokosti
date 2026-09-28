@@ -3,7 +3,7 @@
 import { MailCheck } from "lucide-react";
 import { startTransition, useActionState, useState } from "react";
 import Link from "next/link";
-import { customerLogin, requestMagicLink, requestPasswordReset, setNewPassword, type AuthState } from "@/app/(shop)/ucet/actions";
+import { customerLogin, requestMagicLink, requestPasswordReset, setNewPassword, verifyLoginCode, type AuthState } from "@/app/(shop)/ucet/actions";
 import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { Button } from "@/components/ui/button";
 
@@ -87,7 +87,7 @@ function LoginForm({ next, onReset }: { next?: string; onReset: () => void }) {
 /**
  * Obrazovka po odeslání odkazu: místo formuláře řekne, kam se podívat, a nabídne poslat znovu.
  */
-function SentPanel({ email, what, pending, onResend, onBack }: { email: string; what: string; pending: boolean; onResend: () => void; onBack: () => void }) {
+function SentPanel({ email, what, pending, onResend, onBack, children }: { email: string; what: string; pending: boolean; onResend: () => void; onBack: () => void; children?: React.ReactNode }) {
   return (
     <div className="space-y-3" role="status" aria-live="polite">
       <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-line bg-cream p-4">
@@ -100,6 +100,7 @@ function SentPanel({ email, what, pending, onResend, onBack }: { email: string; 
           <p className="mt-2 text-xs text-muted">Odkaz platí několik minut a jde použít jednou. Když nic nepřišlo, zkontrolujte složku spam nebo hromadné.</p>
         </div>
       </div>
+      {children}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="secondary" onClick={onResend} disabled={pending}>
           {pending ? "Odesílám…" : "Poslat znovu"}
@@ -122,17 +123,42 @@ function MagicLinkForm({ next, onBack }: { next?: string; onBack: () => void }) 
       fd.set("next", next ?? "");
       startTransition(() => action(fd));
     };
-    return <SentPanel email={email} what="přihlašovací odkaz" pending={pending} onResend={resend} onBack={onBack} />;
+    return (
+      <SentPanel email={email} what="přihlašovací kód a odkaz" pending={pending} onResend={resend} onBack={onBack}>
+        <CodeForm email={email} next={next} />
+      </SentPanel>
+    );
   }
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="next" value={next ?? ""} />
-      <p className="text-sm text-muted">Bez hesla: pošleme vám odkaz, kliknutím jste přihlášeni.</p>
+      <p className="text-sm text-muted">Bez hesla: pošleme vám kód a odkaz, opíšete kód nebo kliknete a jste přihlášeni.</p>
       <Field label="E-mail" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <Msg state={state} />
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Odesílám…" : "Poslat přihlašovací odkaz"}
+        {pending ? "Odesílám…" : "Poslat kód na e-mail"}
       </Button>
+    </form>
+  );
+}
+
+/** Opsání šestimístného kódu z téhož e-mailu, pro toho, kdo nechce klikat na odkaz. */
+function CodeForm({ email, next }: { email: string; next?: string }) {
+  const [state, action, pending] = useActionState<AuthState, FormData>(verifyLoginCode, null);
+  return (
+    <form action={action} className="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="email" value={email} />
+      <input type="hidden" name="next" value={next ?? ""} />
+      <label className="block">
+        <span className="label mb-1 block text-[11px] text-muted">Kód z e-mailu</span>
+        <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required aria-label="Kód z e-mailu" className="w-36 text-center font-display text-xl tracking-[0.3em]" />
+      </label>
+      <Button type="submit" disabled={pending}>
+        {pending ? "Ověřuji…" : "Přihlásit kódem"}
+      </Button>
+      <div className="w-full">
+        <Msg state={state} />
+      </div>
     </form>
   );
 }

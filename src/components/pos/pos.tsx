@@ -25,6 +25,7 @@ import {
 } from "@/app/admin/kasa/actions";
 import { Button } from "@/components/ui/button";
 import { formatDate, PAYMENT_LABEL } from "@/lib/admin";
+import { normalizeCardCode } from "@/lib/cards";
 import { LINE_INFO, LINES, productName, type LineSlug } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, spdString, type CartLine, type PickupOrder, type PosCustomer, type PosPayment, type PosProduct, type PosSaleItemRow, type PosSaleRow } from "@/lib/pos";
@@ -165,16 +166,17 @@ export function Pos({
       setQuery("");
       return;
     }
-    // neznámý kód: zkusit zákaznickou kartu
-    if (/^[A-Za-z0-9-]{4,32}$/.test(c) && !/\s/.test(c)) {
+    // neznámý kód: zkusit zákaznickou kartu (čtečka z QR pošle celou adresu dokosti.cz/k/KÓD)
+    const card = normalizeCardCode(c);
+    if (/^[A-Z0-9-]{4,32}$/.test(card)) {
       startTransition(async () => {
-        const found = await posCustomerByCard(c);
+        const found = await posCustomerByCard(card);
         if (found) {
           setCustomer(found);
           setPointsRedeem(0);
           setQuery("");
           say(`Zákazník: ${found.name}`);
-        } else setModal({ kind: "card", code: c.toUpperCase() });
+        } else setModal({ kind: "card", code: card });
       });
     }
   }
@@ -747,9 +749,9 @@ function CardAssign({ code, onDone }: { code: string; onDone: (c: PosCustomer) =
     <div>
       <p className="text-sm text-muted">Tento kód zatím nikomu nepatří. Komu kartu přiřadit?</p>
       <p className="mt-1 text-xs text-muted">
-        Zákazník se může i sám zaregistrovat na tabletu:{" "}
-        <a href={`/registrace?kiosk=1&karta=${encodeURIComponent(code)}`} target="_blank" rel="noopener" className="text-green underline">
-          otevřít registraci s touto kartou
+        S e-mailem odejde zákazníkovi „Aktivujte kartu“. Bez e-mailu si kartu aktivuje sám přes QR na kartě, nebo na tabletu:{" "}
+        <a href={`/k/${encodeURIComponent(code)}?kiosk=1`} target="_blank" rel="noopener" className="text-green underline">
+          otevřít aktivaci karty
         </a>
         .
       </p>

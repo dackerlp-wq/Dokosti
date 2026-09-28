@@ -256,3 +256,17 @@ ${pts}
   const text = `Dobrý den${first ? `, ${first}` : ""},\n\nmáte hotový účet pro e-shop i věrnostní kartu. V účtu najdete objednávky, Kostičky, profily svých zvířat a doporučení.${awardedPoints > 0 ? `\n\nPřipsali jsme vám ${awardedPoints} Kostiček.` : ""}\n\nMůj účet: ${SITE_URL}/ucet\n\n${s.shop.name}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }
+
+/** Karta vydaná u kasy: zákazník si doma aktivuje účet přes QR/odkaz. */
+export function cardActivation(name: string, code: string, s: Settings): EmailMessage {
+  const title = "Aktivujte svou kartu DoKosti";
+  const first = name.split(" ")[0] || "";
+  const url = `${SITE_URL}/k/${code}`;
+  const body = `<p>Dobrý den${first ? `, ${esc(first)}` : ""},</p>
+<p>v prodejně jste dostali věrnostní kartu <strong>${esc(code)}</strong>. Kostičky za nákupy se na ni už sbírají. Když si k ní aktivujete účet, uvidíte je i na webu, spolu s objednávkami a doporučením krmiva pro vašeho psa nebo kočku.</p>
+<p>Stačí kliknout, zadat e-mail a opsat kód, který vám pošleme. Bez hesla.</p>
+<p style="margin:20px 0"><a href="${url}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:bold">Aktivovat kartu</a></p>
+<p style="font-size:13px;color:#55645a">Stejně funguje i QR kód na kartě.</p>`;
+  const text = `Dobrý den${first ? `, ${first}` : ""},\n\nv prodejně jste dostali věrnostní kartu ${code}. Kostičky se na ni už sbírají. Účet k ní aktivujete tady: ${url}\n\nStačí e-mail a kód, který vám pošleme. Bez hesla.\n\n${s.shop.name}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}

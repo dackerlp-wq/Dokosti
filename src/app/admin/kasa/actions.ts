@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { normalizeCardCode } from "@/lib/cards";
+import { sendEmail } from "@/lib/email/send";
+import { cardActivation } from "@/lib/email/templates";
 import type { PickupOrder, PosCustomer, PosPayment, PosSaleItemRow, PosSaleRow, ShiftRow } from "@/lib/pos";
+import { getSettings } from "@/lib/settings";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 type Ok<T> = { ok: true } & T;
@@ -180,11 +184,23 @@ export async function posCustomerByCard(code: string): Promise<PosCustomer | nul
 export async function posAssignCard(code: string, customerId: string | null, name?: string, phone?: string, email?: string): Promise<Ok<{ customer: PosCustomer }> | Err> {
   await requireAdmin();
   const db = await getAuthSupabase();
-  const { data, error } = await db.rpc("pos_assign_card", { p_code: code, p_customer_id: customerId, p_name: name ?? null, p_phone: phone ?? null, p_email: email ?? null });
-  if (error || !data) return { ok: false, error: explain(error?.message, error?.message.includes("name") ? "Zadejte jméno zákazníka." : "Kartu se nepodařilo přiřadit.") };
-  const { data: c } = await db.from("customers").select("id, name, email, phone, points, card_code").eq("id", data as string).single();
+  const { data, error } = await db.rpc("pos_assign_card", { p_code: normalizeCardCode(code), p_customer_id: customerId, p_name: name ?? null, p_phone: phone ?? null, p_email: email ?? null });
+  if (error || !data) {
+    const m = error?.message ?? "";
+    return { ok: false, error: explain(m, m.includes("name") ? "Zadejte jméno zákazníka." : m.includes("blocked") ? "Tato karta je zablokovaná." : m.includes("bad code") ? "Kód karty nesedí (kontrolní znak). Zkuste sken znovu." : "Kartu se nepodařilo přiřadit.") };
+  }
+  const { data: c } = await db.from("customers").select("id, name, email, phone, points, card_code, user_id").eq("id", data as string).single();
+  const customer = c as PosCustomer & { user_id: string | null };
+  // Zákazník bez účtu s e-mailem: pošleme „Aktivujte kartu“, doma si účet dokončí kódem z e-mailu.
+  if (customer.email && !customer.user_id) {
+    try {
+      await sendEmail(db, customer.email, cardActivation(customer.name, customer.card_code ?? normalizeCardCode(code), await getSettings()), "karta-aktivace", null);
+    } catch (e) {
+      console.error("card activation e-mail", e);
+    }
+  }
   revalidatePath("/admin/zakaznici");
-  return { ok: true, customer: c as PosCustomer };
+  return { ok: true, customer };
 }
 
 /** Nový zákazník založený u pultu (bez karty). */
