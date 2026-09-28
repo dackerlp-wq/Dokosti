@@ -21,18 +21,20 @@ type Props = {
   weekdays: Record<ShippingId, number[]>;
   /** Předvolený interval z kalkulačky (?predplatne=14). */
   initialInterval?: number;
+  /** Předvolený způsob dodání z průvodce (?dodani=rozvoz). */
+  initialShipping?: ShippingId;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
 
-const INTERVALS = [0, 7, 14, 28] as const;
+const INTERVALS = [0, 14, 28] as const;
 type Interval = (typeof INTERVALS)[number];
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, prefill }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, prefill }: Props) {
   const cart = useCart();
-  const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");
+  const [shipping, setShipping] = useState<ShippingId>(initialShipping && SHIPPING.some((m) => m.id === initialShipping) ? initialShipping : (SHIPPING[0]?.id ?? "odber"));
   const [interval, setInterval] = useState<Interval>(subscription.enabled && (INTERVALS as readonly number[]).includes(initialInterval) ? (initialInterval as Interval) : 0);
   const [weekdayChoice, setWeekdayChoice] = useState<number | null>(null);
   const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
@@ -98,7 +100,10 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
   const maxSteps = balance === null ? 0 : Math.floor(balance / loyalty.redeemStep);
   const pointsCzk = Math.min(redeemSteps * loyalty.redeemValueCzk, cart.subtotalCzk - discountCzk);
   const totalCzk = cart.subtotalCzk - discountCzk - pointsCzk + shippingCzk;
-  const pointsEarned = loyalty.enabled ? Math.floor((cart.subtotalCzk - discountCzk - pointsCzk) / loyalty.czkPerPoint) : 0;
+  const pointsBase = loyalty.enabled ? Math.floor((cart.subtotalCzk - discountCzk - pointsCzk) / loyalty.czkPerPoint) : 0;
+  // Předplatné: Kostičky navíc v hodnotě pointsBonusPct % z ceny zboží (stejný výpočet jako v databázi).
+  const pointsBonus = loyalty.enabled && interval > 0 && subscription.pointsBonusPct > 0 ? Math.round((((cart.subtotalCzk - discountCzk - pointsCzk) * subscription.pointsBonusPct) / 100) * (loyalty.redeemStep / loyalty.redeemValueCzk)) : 0;
+  const pointsEarned = pointsBase + pointsBonus;
 
   async function applyCoupon() {
     if (!couponInput.trim()) return;
@@ -205,7 +210,8 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
           <fieldset>
             <legend className="mb-1 text-[20px] font-display font-semibold">Pravidelně?</legend>
             <p className="mb-3 text-sm text-muted">
-              Stejný nákup vám pošleme znovu{subscription.discountPct > 0 ? ` a dáme ${subscription.discountPct} % slevu na zboží` : ""}. Platíte za každou dodávku zvlášť, kdykoli ji přeskočíte nebo zrušíte.
+              Stejný nákup vám pošleme znovu{subscription.discountPct > 0 ? ` a dáme ${subscription.discountPct} % slevu na zboží` : ""}
+              {subscription.pointsBonusPct > 0 ? ` a za každou dodávku připíšeme Kostičky navíc v hodnotě ${subscription.pointsBonusPct} % nákupu` : ""}. Platíte za každou dodávku zvlášť, kdykoli ji přeskočíte nebo zrušíte.
             </p>
             <div className="flex flex-wrap gap-2">
               {INTERVALS.map((i) => (
@@ -414,7 +420,11 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             <dd>{formatPrice(totalCzk)}</dd>
           </div>
         </dl>
-        {pointsEarned > 0 && <p className="mt-2 text-xs text-muted">Za tuto objednávku získáte {pointsEarned} Kostiček.</p>}
+        {pointsEarned > 0 && (
+          <p className="mt-2 text-xs text-muted">
+            Za tuto objednávku získáte {pointsEarned} Kostiček{pointsBonus > 0 ? `, z toho ${pointsBonus} navíc za pravidelný odběr` : ""}.
+          </p>
+        )}
 
         {belowMin && (
           <p className="mt-4 rounded-[var(--radius-control)] bg-cream p-3 text-sm text-brick-text">

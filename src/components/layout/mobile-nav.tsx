@@ -48,8 +48,8 @@ export function MobileNav({ menu }: { menu: MenuItem[] }) {
                 </li>
               ))}
               <li>
-                <Link href="/kalkulacka" onClick={close} className="label flex min-h-11 items-center text-brick-text hover:bg-cream">
-                  Kalkulačka dávky
+                <Link href="/krmeni-na-miru" onClick={close} className="label flex min-h-11 items-center text-brick-text hover:bg-cream">
+                  Krmení na míru
                 </Link>
               </li>
             </ul>

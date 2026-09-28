@@ -78,6 +78,24 @@ export default async function HomePage() {
         </div>
       </Section>
 
+      <Section tone="cream">
+        <div className="grid items-center gap-6 rounded-[var(--radius-card)] border border-line bg-paper p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
+          <div>
+            <p className="label text-brick-text">Krmení na míru</p>
+            <h2 className="mt-1 text-[26px] md:text-[30px]">Plán pro vašeho psa za dvě minuty</h2>
+            <p className="mt-2 max-w-xl text-muted">Sedm otázek o vašem zvířeti, my spočítáme dávku, složíme dodávku z naší nabídky a řekneme cenu za den. Pošleme pravidelně, nebo jen jednou. Bez závazku.</p>
+          </div>
+          <div className="flex flex-wrap gap-3 md:justify-end">
+            <ButtonLink href="/krmeni-na-miru" variant="action">
+              Sestavit plán
+            </ButtonLink>
+            <ButtonLink href="/kalkulacka" variant="secondary">
+              Jen spočítat dávku
+            </ButtonLink>
+          </div>
+        </div>
+      </Section>
+
       <Section tone="paper">
         <SectionHeading eyebrow="Skladem" title="Z mrazáku rovnou k vám" />
         <ProductGrid products={featured} />

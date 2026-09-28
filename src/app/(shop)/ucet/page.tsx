@@ -179,9 +179,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </ul>
       )}
 
+      <h2 className="mt-8 mb-3 text-[22px]">Můj plán</h2>
+      {subList.length === 0 && (
+        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+          <p>Zatím žádné pravidelné dodávky. Sestavte plán pro {petList.length ? petList.map((p) => p.name).join(" a ") : "svého psa nebo kočku"}: dávka, složení dodávky a cena za den.</p>
+          <Link href="/krmeni-na-miru" className="label mt-3 inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+            Sestavit plán
+          </Link>
+        </div>
+      )}
       {subList.length > 0 && (
         <>
-          <h2 className="mt-8 mb-3 text-[22px]">Pravidelný odběr</h2>
           <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
             {subList.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
@@ -192,9 +200,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                     · {s.status === "aktivni" ? `další ${formatDay(s.next_date)}${s.skip_next ? " (přeskočíme)" : ""}` : SUBSCRIPTION_STATUS_LABEL[s.status].toLowerCase()}
                   </span>
                 </span>
-                <Link href={`/predplatne/${s.token}`} className="text-green underline">
-                  Spravovat
-                </Link>
+                <span className="flex gap-3">
+                  <Link href={`/predplatne/${s.token}`} className="text-green underline">
+                    Spravovat
+                  </Link>
+                  <Link href="/krmeni-na-miru" className="text-green underline">
+                    Přepočítat plán
+                  </Link>
+                </span>
               </li>
             ))}
           </ul>

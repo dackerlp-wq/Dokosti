@@ -110,6 +110,16 @@ v Supabase Authentication → Providers → Google zapnutý provider s Client ID
 (OAuth client typu Web application, Authorized redirect URI `https://tpzeltvekvliqluhfrvn.supabase.co/auth/v1/callback`).
 Kdo se přihlásí Googlem bez registrace, dokončí ji na `/registrace` bez hesla (účet je propojený, e-mail pevný).
 
+## Krmení na míru (průvodce a předplatné)
+
+`/krmeni-na-miru` (`components/plan/plan-wizard.tsx`): sedm otázek o zvířeti → plán s cenou za den (stejný výpočet jako
+kalkulačka: `petToAnimal` → `buildPlan`) → interval každé 2 nebo 4 týdny a způsob dodání → u nepřihlášeného e-mail a kód
+(registrace do klubu) → profil zvířete se uloží do účtu (`savePetProfile`) a pokladna dostane košík s předplatným
+(`/pokladna?predplatne=14&dodani=rozvoz`). Dodávky z předplatného dostávají Kostičky navíc v hodnotě
+`subscription.pointsBonusPct` % z ceny zboží (migrace `0024`, v `create_order` i pro první objednávku z pokladny); sleva
+`discountPct` je 0. Odkazy z e-mailů Supabase (`/auth/callback`) se ověřují až tlačítkem, protože skenery odkazů v poště
+je jinak spotřebují dřív než zákazník. Návrh: `docs/PREDPLATNE.md`.
+
 ## Věrnostní karty a registrace na jeden krok
 
 Registrace (`/registrace`, `components/account/register-form.tsx`) je jméno, e-mail a souhlas; potvrzuje se šestimístným

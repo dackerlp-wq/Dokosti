@@ -58,4 +58,4 @@ export function nextWeekday(weekday: number, from = new Date()): string {
   return d.toISOString().slice(0, 10);
 }
 
-export const INTERVAL_LABEL: Record<number, string> = { 7: "každý týden", 14: "každých 14 dní", 28: "každé 4 týdny" };
+export const INTERVAL_LABEL: Record<number, string> = { 7: "každý týden", 14: "každé 2 týdny", 28: "každé 4 týdny" };

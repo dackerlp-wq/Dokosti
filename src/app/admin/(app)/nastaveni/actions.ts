@@ -78,7 +78,8 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
     case "subscription":
       value = {
         enabled: bool(fd, "enabled"),
-        discountPct: Math.min(50, Math.max(0, Math.round(num(fd, "discountPct", 5)))),
+        discountPct: Math.min(50, Math.max(0, Math.round(num(fd, "discountPct", 0)))),
+        pointsBonusPct: Math.min(50, Math.max(0, Math.round(num(fd, "pointsBonusPct", 5)))),
         reminderDaysBefore: Math.min(14, Math.max(1, Math.round(num(fd, "reminderDaysBefore", 3)))),
         cutoffDaysBefore: Math.min(7, Math.max(0, Math.round(num(fd, "cutoffDaysBefore", 1)))),
       };

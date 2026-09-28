@@ -293,8 +293,11 @@ function SubscriptionForm({ s }: { s: Settings["subscription"] }) {
     <SectionForm section="subscription">
       <Card title="Pravidelný odběr (předplatné)">
         <Check name="enabled" label="Zákazníci si mohou v pokladně nastavit pravidelný odběr" defaultChecked={s.enabled} />
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Field label="Sleva na zboží (%)" hint="0 = bez slevy">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Kostičky navíc (%)" hint="z ceny každé dodávky">
+            <input name="pointsBonusPct" type="number" min={0} max={50} defaultValue={s.pointsBonusPct} />
+          </Field>
+          <Field label="Sleva na zboží (%)" hint="0 = bez slevy; místo ní jsou Kostičky">
             <input name="discountPct" type="number" min={0} max={50} defaultValue={s.discountPct} />
           </Field>
           <Field label="E-mail předem (dní)">

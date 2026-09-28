@@ -180,7 +180,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
           <h2 className="text-[20px]">Jak často a kdy</h2>
           <div className="mt-3 flex flex-wrap gap-2">
-            {[7, 14, 28].map((i) => (
+            {[14, 28].map((i) => (
               <button key={i} type="button" onClick={() => setInterval(i)} aria-pressed={interval === i} className={pill(interval === i)}>
                 {INTERVAL_LABEL[i]}
               </button>

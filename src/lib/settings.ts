@@ -73,6 +73,8 @@ export type Settings = {
     enabled: boolean;
     /** Sleva na zboží při pravidelném odběru, %. 0 = bez slevy. */
     discountPct: number;
+    /** Kostičky navíc za dodávku z předplatného, v hodnotě % z ceny zboží. 0 = bez bonusu. */
+    pointsBonusPct: number;
     /** Kolik dní před dodáním přijde e-mail s možností přeskočit nebo změnit. */
     reminderDaysBefore: number;
     /** Kolik dní před dodáním vznikne objednávka (uzávěrka změn). */
@@ -138,7 +140,7 @@ export const DEFAULT_SETTINGS: Settings = {
     privacy: "",
   },
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
-  subscription: { enabled: true, discountPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
+  subscription: { enabled: true, discountPct: 0, pointsBonusPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
   pos: { autoPrint: false, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
   club: { registrationPoints: 50, petPoints: 150, petPointsMax: 3, termsVersion: "2026-09" },
 };
