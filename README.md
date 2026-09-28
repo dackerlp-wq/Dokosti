@@ -114,7 +114,8 @@ Kdo se přihlásí Googlem bez registrace, dokončí ji na `/registrace` bez hes
 
 ## Krmení na míru (průvodce a předplatné)
 
-`/krmeni-na-miru` (`components/plan/plan-wizard.tsx`): sedm otázek o zvířeti → plán s cenou za den (stejný výpočet jako
+`/krmeni-na-miru` (`components/plan/plan-wizard.tsx`): sedm otázek o zvířeti (druh a pohlaví, jméno, věk v letech
+nebo měsících, ze kterého se odvodí štěně/dospělý/senior, u samic březost nebo kojení; migrace `0026`) → plán s cenou za den (stejný výpočet jako
 kalkulačka: `petToAnimal` → `buildPlan`) → interval každé 2 nebo 4 týdny a způsob dodání → u nepřihlášeného e-mail a kód
 (registrace do klubu) → profil zvířete se uloží do účtu (`savePetProfile`) a pokladna dostane košík s předplatným
 (`/pokladna?predplatne=14&dodani=rozvoz&obcas=slug:6,…`; `predplatne=0` je jednorázová objednávka bez předplatného).
@@ -122,7 +123,9 @@ U granulí nebo mixu se ptá na podíl syrového (100/75/50/25 %), plán pak uka
 přidat naše granule. Položka, která vydrží aspoň dvojnásobek období, dostane `every_nth` = floor(vydrží / období) (max 12). Dodávky z předplatného dostávají Kostičky navíc v hodnotě
 `subscription.pointsBonusPct` % z ceny zboží (migrace `0024`, v `create_order` i pro první objednávku z pokladny); sleva
 `discountPct` je 0. Odkazy z e-mailů Supabase (`/auth/callback`) se ověřují až tlačítkem, protože skenery odkazů v poště
-je jinak spotřebují dřív než zákazník. Návrh: `docs/PREDPLATNE.md`.
+je jinak spotřebují dřív než zákazník. Když zákazník místo kódu klikne na odkaz, průvodce pokračuje u plánu
+(rozpracovaný stav je v `sessionStorage`). Jména se skloňují podle pohlaví (`lib/jmena.ts`: „Kolik je Báře“, „pro Rexe“).
+Návrh: `docs/PREDPLATNE.md`.
 
 ## Věrnostní karty a registrace na jeden krok
 

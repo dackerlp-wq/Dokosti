@@ -3,6 +3,7 @@
 import { normalizeCardCode } from "@/lib/cards";
 import { sendEmail } from "@/lib/email/send";
 import { clubWelcome } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 import { getSupabase } from "@/lib/supabase/server";
@@ -15,6 +16,8 @@ export type RegisterInput = {
   marketingEmail: boolean;
   /** Tablet v prodejně: po registraci se zařízení odhlásí. */
   kiosk: boolean;
+  /** Kam vést odkaz z e-mailu, když zákazník místo kódu klikne (výchozí účet). */
+  next?: string;
 };
 
 export type StartResult = { ok: true; state: "code" } | { ok: true; state: "done"; awarded: number } | { ok: false; error: string };
@@ -74,7 +77,8 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
     console.error("club_register_pending_email", pendingError.message);
     return { ok: false, error: "Registraci se nepodařilo uložit. Zkuste to znovu." };
   }
-  const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { full_name: name } } });
+  const next = input.next && input.next.startsWith("/") ? input.next : "/ucet";
+  const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { full_name: name }, emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}` } });
   if (error) {
     console.error("signInWithOtp", error.message);
     if (error.message.toLowerCase().includes("rate")) return { ok: false, error: "Kód jsme posílali před chvílí. Počkejte minutu a zkuste to znovu." };

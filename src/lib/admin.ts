@@ -84,8 +84,11 @@ export type PetDbRow = {
   customer_id: string | null;
   name: string;
   species: string | null;
+  sex: string | null;
   breed: string;
   born_on: string | null;
+  reproduction: string | null;
+  pregnancy_week: number | null;
   weight_kg: number | string | null;
   neutered: boolean | null;
   activity: string | null;

@@ -1,13 +1,27 @@
 import { type Activity, type AnimalInput, type Condition, type MeatKey, newAnimal, type Species, type Stage } from "@/lib/barf";
+import type { Sex } from "@/lib/jmena";
+
+export type Reproduction = "" | "brezi" | "kojici";
+export const REPRODUCTION_LABEL: Record<Species, Record<Exclude<Reproduction, "">, string>> = {
+  pes: { brezi: "Březí", kojici: "Kojí štěňata" },
+  kocka: { brezi: "Březí", kojici: "Kojí koťata" },
+};
+/** Označení podle druhu a pohlaví: pes / fena, kocour / kočka. */
+export const SEX_LABEL: Record<Species, Record<Sex, string>> = { pes: { samec: "Pes", samice: "Fena" }, kocka: { samec: "Kocour", samice: "Kočka" } };
 
 /** Profil zvířete tak, jak ho sbírá registrace a účet (strukturovaně, tabulka `pets`). */
 export type PetProfile = {
   id?: string;
   species: Species;
+  /** Pohlaví: kvůli oslovení (Báře / Rexovi) a březosti. */
+  sex: Sex;
   name: string;
   breed: string;
   /** ISO datum narození, může být přibližné. */
   bornOn: string;
+  /** Jen u samic: březí nebo kojící, dávka se počítá jinak. */
+  reproduction: Reproduction;
+  pregnancyWeek?: number;
   weightKg: number;
   neutered: boolean;
   activity: Activity;
@@ -31,7 +45,7 @@ export const HEARD_FROM = ["Doporučení od známých", "Prodejna", "Internet, v
 export const PET_SOURCE_LABEL: Record<string, string> = { web: "web", prodejna: "prodejna", admin: "admin" };
 
 export function emptyPet(species: Species = "pes"): PetProfile {
-  return { species, name: "", breed: "", bornOn: "", weightKg: 0, neutered: true, activity: "bezna", condition: "idealni", feedingNow: "", currentFood: "", exclude: [], note: "" };
+  return { species, sex: "samec", name: "", breed: "", bornOn: "", reproduction: "", weightKg: 0, neutered: true, activity: "bezna", condition: "idealni", feedingNow: "", currentFood: "", exclude: [], note: "" };
 }
 
 /** Věk v měsících z data narození (celé měsíce). */
@@ -53,7 +67,7 @@ export function stageFor(species: Species, months: number | null): Stage {
 /** Profil zvířete → vstup kalkulačky (uloží se do `pets.data`, kalkulačka ho načte beze změny). */
 export function petToAnimal(p: PetProfile): AnimalInput {
   const months = ageMonths(p.bornOn);
-  const stage = stageFor(p.species, months);
+  const stage: Stage = p.sex === "samice" && p.reproduction ? p.reproduction : stageFor(p.species, months);
   return {
     ...newAnimal(p.species),
     name: p.name,
@@ -63,6 +77,7 @@ export function petToAnimal(p: PetProfile): AnimalInput {
     activity: p.activity,
     neutered: p.neutered,
     ageMonths: stage === "mlade" && months !== null ? Math.max(1, months) : undefined,
+    pregnancyWeek: stage === "brezi" ? p.pregnancyWeek : undefined,
     rawShare: p.feedingNow === "mix" ? 50 : 100,
     beginner: p.feedingNow === "granule" || p.feedingNow === "konzervy",
     exclude: p.exclude,
@@ -70,8 +85,8 @@ export function petToAnimal(p: PetProfile): AnimalInput {
 }
 
 /** Text pro kasu a admin: „pes, 28 kg, 3 roky, bez kuřecího“. */
-export function petSummary(p: { species: string | null; weight_kg: number | string | null; born_on: string | null; exclude: string[] | null }, meatLabel: Record<string, string>): string {
-  const parts = [p.species === "kocka" ? "kočka" : "pes"];
+export function petSummary(p: { species: string | null; sex?: string | null; weight_kg: number | string | null; born_on: string | null; exclude: string[] | null }, meatLabel: Record<string, string>): string {
+  const parts = [p.species === "kocka" ? (p.sex === "samec" ? "kocour" : "kočka") : p.sex === "samice" ? "fena" : "pes"];
   if (p.weight_kg) parts.push(`${Number(p.weight_kg).toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg`);
   const m = p.born_on ? ageMonths(p.born_on) : null;
   if (m !== null) parts.push(m < 12 ? `${m} měs.` : `${Math.floor(m / 12)} r.`);

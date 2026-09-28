@@ -29,9 +29,12 @@ export default async function PlanWizardPage() {
     pets = ((rows ?? []) as PetDbRow[]).map((p) => ({
       id: p.id,
       species: p.species === "kocka" ? "kocka" : "pes",
+      sex: p.sex === "samice" ? "samice" : "samec",
       name: p.name,
       breed: p.breed ?? "",
       bornOn: p.born_on ?? "",
+      reproduction: p.reproduction === "brezi" || p.reproduction === "kojici" ? p.reproduction : "",
+      pregnancyWeek: p.pregnancy_week ?? undefined,
       weightKg: Number(p.weight_kg ?? (p.data as { weightKg?: number }).weightKg ?? 0),
       neutered: p.neutered ?? true,
       activity: (p.activity as Activity) ?? "bezna",

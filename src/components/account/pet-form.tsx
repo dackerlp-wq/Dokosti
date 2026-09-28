@@ -1,7 +1,8 @@
 "use client";
 
 import { ACTIVITY_LABEL, CONDITION_LABEL, MEAT_LABEL, type MeatKey } from "@/lib/barf";
-import { FEEDING_LABEL, type FeedingNow, type PetProfile } from "@/lib/club";
+import { FEEDING_LABEL, type FeedingNow, type PetProfile, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL } from "@/lib/club";
+import type { Sex } from "@/lib/jmena";
 
 const MEATS = Object.keys(MEAT_LABEL) as MeatKey[];
 
@@ -16,6 +17,13 @@ export function PetFields({ pet, onChange, idPrefix = "pet" }: { pet: PetProfile
         {(["pes", "kocka"] as const).map((sp) => (
           <button key={sp} type="button" onClick={() => set({ species: sp })} aria-pressed={pet.species === sp} className={`label min-h-10 flex-1 rounded-[var(--radius-control)] border text-[11px] ${pet.species === sp ? "border-green bg-green text-cream" : "border-line bg-cream text-green"}`}>
             {sp === "pes" ? "Pes" : "Kočka"}
+          </button>
+        ))}
+      </div>
+      <div className="sm:col-span-2 flex gap-2">
+        {(["samec", "samice"] as const).map((sx: Sex) => (
+          <button key={sx} type="button" onClick={() => set({ sex: sx, reproduction: sx === "samice" ? pet.reproduction : "" })} aria-pressed={pet.sex === sx} className={`label min-h-10 flex-1 rounded-[var(--radius-control)] border text-[11px] ${pet.sex === sx ? "border-green bg-green text-cream" : "border-line bg-cream text-green"}`}>
+            {SEX_LABEL[pet.species][sx]}
           </button>
         ))}
       </div>
@@ -71,9 +79,28 @@ export function PetFields({ pet, onChange, idPrefix = "pet" }: { pet: PetProfile
         <span className="label mb-1 block text-[11px] text-muted">Značka nebo druh krmiva</span>
         <input value={pet.currentFood} onChange={(e) => set({ currentFood: e.target.value })} maxLength={120} placeholder="nepovinné" />
       </label>
+      {pet.sex === "samice" && (
+        <label className="block">
+          <span className="label mb-1 block text-[11px] text-muted">Březost, kojení</span>
+          <select value={pet.reproduction} onChange={(e) => set({ reproduction: e.target.value as Reproduction })}>
+            <option value="">Ne</option>
+            {Object.entries(REPRODUCTION_LABEL[pet.species]).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {pet.sex === "samice" && pet.reproduction === "brezi" && (
+        <label className="block">
+          <span className="label mb-1 block text-[11px] text-muted">Týden březosti (1–9)</span>
+          <input type="number" inputMode="numeric" min={1} max={9} value={pet.pregnancyWeek ?? ""} onChange={(e) => set({ pregnancyWeek: Number(e.target.value) || undefined })} placeholder="např. 6" />
+        </label>
+      )}
       <label className="flex items-center gap-2 text-sm sm:col-span-2">
         <input type="checkbox" checked={pet.neutered} onChange={(e) => set({ neutered: e.target.checked })} className="h-4 min-h-0 w-4 accent-green" />
-        {pet.species === "pes" ? "Kastrovaný / kastrovaná" : "Kastrovaná / kastrovaný"}
+        {pet.sex === "samice" ? "Kastrovaná" : "Kastrovaný"}
       </label>
       <fieldset className="sm:col-span-2">
         <legend className="label mb-1 text-[11px] text-muted">Nesnáší nebo nechcete (vynecháme při doporučení)</legend>

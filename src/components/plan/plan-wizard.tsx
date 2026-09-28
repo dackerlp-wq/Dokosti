@@ -11,7 +11,8 @@ import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
 import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
-import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal } from "@/lib/club";
+import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
+import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
 import { formatPrice, formatWeight } from "@/lib/format";
 import type { Settings } from "@/lib/settings";
 
@@ -32,7 +33,17 @@ type Props = {
 const STEPS = ["Pro koho", "Věk", "Váha", "Aktivita", "Krmení", "Nesmí", "Plán", "Účet"] as const;
 type Days = 14 | 28;
 type Delivery = "rozvoz" | "odber";
-type AgeMode = "mlade" | "dospely" | "senior";
+type AgeUnit = "mesice" | "roky";
+/** Rozpracovaný průvodce, aby po přihlášení odkazem z e-mailu šlo pokračovat u plánu. */
+const STORE_KEY = "dokosti-plan";
+
+/** Jméno ve správném pádu, bez jména „váš pes / vaše kočka“. */
+function petName(name: string, species: PetProfile["species"], sex: Sex, pad: Pad): string {
+  const first = name.trim().split(" ")[0];
+  if (first) return sklonuj(first, sex, pad);
+  const dog = species === "pes";
+  return pad === "dat" ? (dog ? "vašemu psovi" : "vaší kočce") : pad === "acc" ? (dog ? "vašeho psa" : "vaši kočku") : dog ? "váš pes" : "vaše kočka";
+}
 const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "kost navíc", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", granule: "granule" };
 
 /** Datum narození zpětně z věku (měsíce nebo roky), přibližně na začátek měsíce. */
@@ -53,7 +64,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [step, setStep] = useState(1);
   const [pet, setPet] = useState<PetProfile>(() => emptyPet("pes"));
   const [petId, setPetId] = useState<string | undefined>(undefined);
-  const [ageMode, setAgeMode] = useState<AgeMode>("dospely");
+  const [ageUnit, setAgeUnit] = useState<AgeUnit>("roky");
   const [ageValue, setAgeValue] = useState("");
   const [days, setDays] = useState<Days>(14);
   const [delivery, setDelivery] = useState<Delivery>(shipping.rozvoz ? "rozvoz" : "odber");
@@ -78,7 +89,37 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   }, [cooldown]);
 
   const isDog = pet.species === "pes";
-  const first = pet.name.trim().split(" ")[0] || (isDog ? "váš pes" : "vaše kočka");
+  const first = petName(pet.name, pet.species, pet.sex, "nom");
+  const firstDat = petName(pet.name, pet.species, pet.sex, "dat");
+  const firstAcc = petName(pet.name, pet.species, pet.sex, "acc");
+  /** Věk v měsících z aktuálního zadání a z něj životní fáze (štěně, dospělý, senior). */
+  const ageM = Number(ageValue) > 0 ? (ageUnit === "mesice" ? Number(ageValue) : Math.round(Number(ageValue) * 12)) : null;
+  const stage = stageFor(pet.species, ageM);
+
+  // Po přihlášení odkazem z e-mailu pokračujeme u plánu, ne od začátku.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = sessionStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(STORE_KEY);
+      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; days: Days; delivery: Delivery; oneTime: boolean };
+      if (!st.pet?.name) return;
+      // Obnova rozpracovaného průvodce po návratu z e-mailu: stav se musí nastavit až na klientovi.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPet(st.pet);
+      setRawShare(st.rawShare);
+      setAddKibble(st.addKibble);
+      setRemoved(st.removed);
+      setSwaps(st.swaps);
+      setDays(st.days);
+      setDelivery(st.delivery);
+      setOneTime(st.oneTime);
+      setStep(7);
+    } catch {
+      /* rozbité nebo chybějící úložiště: začneme od začátku */
+    }
+  }, [user]);
   const total = user ? 7 : 8;
   const next = () => {
     setError(null);
@@ -131,8 +172,13 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
 
   function sendCode() {
     setError(null);
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, days, delivery, oneTime }));
+    } catch {
+      /* bez úložiště jen nepůjde pokračovat po kliknutí na odkaz z e-mailu */
+    }
     startTransition(async () => {
-      const res = await clubStart({ name: owner.name, email: owner.email, cardCode: "", terms: owner.terms, marketingEmail: owner.marketing, kiosk: false });
+      const res = await clubStart({ name: owner.name, email: owner.email, cardCode: "", terms: owner.terms, marketingEmail: owner.marketing, kiosk: false, next: "/krmeni-na-miru" });
       if (!res.ok) return setError(res.error);
       if (res.state === "done") return finish();
       setCodeSent(true);
@@ -186,7 +232,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               <div className="flex flex-wrap gap-2">
                 {pets.map((p) => (
                   <button key={p.id} type="button" onClick={() => pickPet(p)} className="label inline-flex min-h-9 items-center rounded-full border border-green px-3 text-[11px] text-green hover:bg-green hover:text-cream">
-                    Plán pro {p.name}
+                    Plán pro {petName(p.name, p.species, p.sex, "acc")}
                   </button>
                 ))}
               </div>
@@ -199,9 +245,18 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               </button>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            {(["samec", "samice"] as const).map((sx) => (
+              <button key={sx} type="button" onClick={() => setPet({ ...pet, sex: sx, reproduction: sx === "samice" ? pet.reproduction : "" })} aria-pressed={pet.sex === sx} className={`${opt(pet.sex === sx)} p-3`}>
+                <span className="font-semibold">{SEX_LABEL[pet.species][sx]}</span>
+              </button>
+            ))}
+          </div>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Jak se jmenuje</span>
-            <input value={pet.name} onChange={(e) => setPet({ ...pet, name: e.target.value })} placeholder={isDog ? "např. Rex" : "např. Micka"} required autoFocus />
+            <span className="label mb-1 block text-[11px] text-muted">
+              Jméno <span className="text-brick-text">*</span> <span className="normal-case tracking-normal">(povinné, plán děláme na jméno)</span>
+            </span>
+            <input value={pet.name} onChange={(e) => setPet({ ...pet, name: e.target.value })} placeholder={isDog ? "např. Rex" : "např. Micka"} required autoFocus aria-required="true" />
           </label>
           <Button type="submit" variant="action" className="w-full min-h-12" disabled={!canNext}>
             Pokračovat
@@ -213,35 +268,41 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const n = Number(ageValue);
-            const months = ageMode === "mlade" ? n : Math.round(n * 12);
-            setPet({ ...pet, bornOn: bornFrom(months) });
+            if (ageM === null) return;
+            setPet({ ...pet, bornOn: bornFrom(ageM) });
             next();
           }}
           className={`${box} space-y-4`}
         >
-          <h2 className="text-[26px]">Kolik je {first === "váš pes" || first === "vaše kočka" ? first : first + "ovi"}?</h2>
-          <div className="grid gap-2">
-            {(
-              [
-                ["mlade", isDog ? "Štěně" : "Kotě", "do jednoho roku"],
-                ["dospely", isDog ? "Dospělý pes" : "Dospělá kočka", "1 rok a víc"],
-                ["senior", "Senior", isDog ? "zhruba od 7 let" : "zhruba od 11 let"],
-              ] as [AgeMode, string, string][]
-            ).map(([m, label, hint]) => (
-              <button key={m} type="button" onClick={() => { setAgeMode(m); setAgeValue(""); }} aria-pressed={ageMode === m} className={opt(ageMode === m)}>
-                <span>
-                  <span className="font-semibold">{label}</span>
-                  <span className={sub(ageMode === m)}>{hint}</span>
-                </span>
-              </button>
-            ))}
+          <h2 className="text-[26px]">Kolik je {firstDat}?</h2>
+          <div className="flex gap-3">
+            <label className="block flex-1">
+              <span className="label mb-1 block text-[11px] text-muted">Věk</span>
+              <input type="number" inputMode="numeric" min={1} max={ageUnit === "mesice" ? 24 : 25} value={ageValue} onChange={(e) => setAgeValue(e.target.value)} required autoFocus placeholder={ageUnit === "mesice" ? "např. 4" : "např. 3"} />
+            </label>
+            <div className="flex items-end gap-2">
+              {(
+                [
+                  ["roky", "let"],
+                  ["mesice", "měsíců"],
+                ] as [AgeUnit, string][]
+              ).map(([u, label]) => (
+                <button key={u} type="button" onClick={() => setAgeUnit(u)} aria-pressed={ageUnit === u} className={`min-h-12 rounded-[var(--radius-control)] border px-4 text-sm ${ageUnit === u ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">{ageMode === "mlade" ? "Věk v měsících" : "Věk v letech"}</span>
-            <input type="number" inputMode="numeric" min={ageMode === "mlade" ? 1 : 1} max={ageMode === "mlade" ? 12 : 25} value={ageValue} onChange={(e) => setAgeValue(e.target.value)} required autoFocus placeholder={ageMode === "mlade" ? "např. 4" : "např. 3"} />
-          </label>
-          {ageMode === "mlade" && isDog && (
+          <p className="text-sm text-muted">
+            {ageM === null
+              ? `Štěně nebo kotě do roka zadejte v měsících. Senior je ${isDog ? "pes zhruba od 7 let" : "kočka zhruba od 11 let"}.`
+              : stage === "mlade"
+                ? `${isDog ? "Štěně" : "Kotě"}: dávku počítáme podle věku v měsících${isDog ? " a dospělé váhy" : ""}.`
+                : stage === "senior"
+                  ? "Senior: dávka je o něco menší a klidnější."
+                  : `${pet.sex === "samice" ? "Dospělá" : "Dospělý"} ${SEX_LABEL[pet.species][pet.sex].toLowerCase()}: dávka podle váhy a aktivity.`}
+          </p>
+          {stage === "mlade" && isDog && (
             <label className="block">
               <span className="label mb-1 block text-[11px] text-muted">Plemeno (kvůli dospělé váze, nepovinné)</span>
               <select value={pet.breed} onChange={(e) => setPet({ ...pet, breed: e.target.value })}>
@@ -253,6 +314,31 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                 ))}
               </select>
             </label>
+          )}
+          {pet.sex === "samice" && stage !== "mlade" && (
+            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
+              <p className="label mb-2 text-[11px] text-muted">Je {first} březí nebo kojí?</p>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["", "Ne"],
+                    ["brezi", REPRODUCTION_LABEL[pet.species].brezi],
+                    ["kojici", REPRODUCTION_LABEL[pet.species].kojici],
+                  ] as [Reproduction, string][]
+                ).map(([v, label]) => (
+                  <button key={v} type="button" onClick={() => setPet({ ...pet, reproduction: v })} aria-pressed={pet.reproduction === v} className={`${opt(pet.reproduction === v)} justify-center p-3`}>
+                    <span className="text-sm font-semibold">{label}</span>
+                  </button>
+                ))}
+              </div>
+              {pet.reproduction === "brezi" && (
+                <label className="mt-3 block">
+                  <span className="label mb-1 block text-[11px] text-muted">Týden březosti (1–9)</span>
+                  <input type="number" inputMode="numeric" min={1} max={9} value={pet.pregnancyWeek ?? ""} onChange={(e) => setPet({ ...pet, pregnancyWeek: Number(e.target.value) || undefined })} placeholder="např. 6" />
+                </label>
+              )}
+              {pet.reproduction && <p className="mt-2 text-xs text-muted">Dávka se zvýší, u kojení podle počtu mláďat. Při potížích se poraďte s veterinářem.</p>}
+            </div>
           )}
           <Button type="submit" variant="action" className="w-full min-h-12" disabled={!canNext}>
             Pokračovat
@@ -305,7 +391,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               ))}
           </div>
           <label className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-line p-4 text-sm">
-            <span>{first} je {isDog ? "kastrovaný" : "kastrovaná"}</span>
+            <span>{first} je {pet.sex === "samice" ? "kastrovaná" : "kastrovaný"}</span>
             <input type="checkbox" checked={pet.neutered} onChange={(e) => setPet({ ...pet, neutered: e.target.checked })} className="h-5 w-5 min-h-0 accent-green" />
           </label>
           <Button type="submit" variant="action" className="w-full min-h-12">
@@ -408,6 +494,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           plan={plan}
           pet={pet}
           first={first}
+          firstAcc={firstAcc}
           days={days}
           setDays={setDays}
           delivery={delivery}
@@ -427,7 +514,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           setOneTime={setOneTime}
           rawShare={rawShare}
           onContinue={() => (user ? finish() : next())}
-          cta={user ? `Chci to takhle pro ${first}` : "Pokračovat k účtu"}
+          cta={user ? `Chci to takhle pro ${firstAcc}` : "Pokračovat k účtu"}
         />
       )}
 
@@ -444,7 +531,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
             <>
               <h2 className="text-[26px]">Kam plán poslat?</h2>
               <p className="text-sm text-muted">
-                Založíme vám účet a profil {first === "váš pes" || first === "vaše kočka" ? "zvířete" : first + "e"}, ať jde plán kdykoli upravit. Bez hesla, jen kód z e-mailu.
+                Založíme vám účet a uložíme plán pro {firstAcc}, ať jde kdykoli upravit. Bez hesla, jen kód z e-mailu.
                 {club.petPoints > 0 && ` Za profil zvířete ${club.petPoints} Kostiček`}
                 {club.registrationPoints > 0 && `, za registraci ${club.registrationPoints}`}.
               </p>
@@ -529,6 +616,7 @@ function PlanStep({
   plan,
   pet,
   first,
+  firstAcc,
   days,
   setDays,
   delivery,
@@ -553,6 +641,7 @@ function PlanStep({
   plan: ReturnType<typeof buildPlan>;
   pet: PetProfile;
   first: string;
+  firstAcc: string;
   days: Days;
   setDays: (d: Days) => void;
   delivery: Delivery;
@@ -585,15 +674,15 @@ function PlanStep({
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       <div className="space-y-4">
         <div>
-          <p className="label text-brick-text">Plán pro {pet.name}</p>
+          <p className="label text-brick-text">Plán pro {firstAcc}</p>
           <h2 className="mt-1 text-[30px] leading-tight md:text-[34px]">
             {pet.name} potřebuje {r.dailyGrams} g {rawShare < 100 ? "syrového" : "syrové stravy"}
             {rawShare < 100 && r.kibbleGrams ? ` a ${r.kibbleGrams} g granulí` : ""} denně
           </h2>
           {rawShare < 100 && !r.kibbleGrams && <p className="mt-1 text-sm text-muted">Zbytek ({100 - rawShare} % energie, {r.kibbleKcal} kcal) doplní granule podle tabulky na obalu.</p>}
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            {pet.species === "pes" ? "Pes" : "Kočka"}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně, ve {r.mealsPerDay === 1 ? "jedné porci" : r.mealsPerDay === 2 ? "dvou porcích" : `${r.mealsPerDay} porcích`}
-            {r.mealsPerDay > 1 ? ` po ${Math.round(r.dailyGrams / r.mealsPerDay)} g` : ""}. Orientační dávka, po 2 až 4 týdnech {first} zvažte a plán upravíte v účtu.
+            {SEX_LABEL[pet.species][pet.sex]}{pet.sex === "samice" && pet.reproduction === "brezi" ? ", březí" : pet.sex === "samice" && pet.reproduction === "kojici" ? ", kojící" : ""}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně, ve {r.mealsPerDay === 1 ? "jedné porci" : r.mealsPerDay === 2 ? "dvou porcích" : `${r.mealsPerDay} porcích`}
+            {r.mealsPerDay > 1 ? ` po ${Math.round(r.dailyGrams / r.mealsPerDay)} g` : ""}. Orientační dávka, po 2 až 4 týdnech {firstAcc} zvažte a plán upravíte v účtu.
           </p>
         </div>
 
