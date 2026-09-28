@@ -2,7 +2,7 @@
 
 import { SlidersHorizontal, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
 import { type Animal, isMeatKey, type LineSlug, MEAT_LABEL, MEATS, type MeatKey, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
 
@@ -13,9 +13,11 @@ const PACK_LABEL: Record<Pack, string> = { male: "do 500 g", stredni: "500 g až
 const packOf = (p: Product): Pack => (p.unit === "kg" || p.weightGrams > 1000 ? "velke" : p.weightGrams > 500 ? "stredni" : "male");
 
 type Filters = { meats: MeatKey[]; animal: Animal | null; inStock: boolean; storage: Storage[]; pack: Pack[]; sort: Sort };
+const EMPTY: Omit<Filters, "sort"> = { meats: [], animal: null, inStock: false, storage: [], pack: [] };
 
 /**
- * Produkty řady s filtry (druh masa, zvíře, skladem, skladování, balení) a řazením.
+ * Produkty řady s filtry v bočním panelu (druh masa, pro koho, skladem, skladování, balení) a řazením nad mřížkou.
+ * Na mobilu se panel vysouvá tlačítkem „Filtry“.
  * Stav je v adrese: jeden druh masa má vlastní stránku /rada/[řada]/[maso], víc druhů je ?maso=a,b.
  * Stránka zůstává statická, filtruje se v prohlížeči.
  */
@@ -61,18 +63,35 @@ function apply(products: Product[], f: Filters, skip?: keyof Filters) {
   return list;
 }
 
+const plural = (n: number) => `${n} ${n === 1 ? "produkt" : n < 5 ? "produkty" : "produktů"}`;
+
 function Inner({ products, line, initialMeat, params }: { products: Product[]; line: LineSlug; initialMeat: MeatKey | null; params: URLSearchParams }) {
   const router = useRouter();
   const pathname = usePathname();
   const f = useMemo(() => parse(params, initialMeat), [params, initialMeat]);
-  const [more, setMore] = useState(f.storage.length > 0 || f.pack.length > 0);
+  const [open, setOpen] = useState(false);
   const list = apply(products, f);
 
-  const meatOptions = MEATS.map((key) => ({ key, count: apply(products, f, "meats").filter((p) => p.meats?.includes(key)).length })).filter((m) => products.some((p) => p.meats?.includes(m.key)));
+  // Počty u voleb: kolik produktů by zbylo, kdyby se zapnula jen tahle volba (ostatní filtry platí).
+  const count = (skip: keyof Filters, test: (p: Product) => boolean) => apply(products, f, skip).filter(test).length;
+  const meatOptions = MEATS.filter((key) => products.some((p) => p.meats?.includes(key))).map((key) => ({ key, count: count("meats", (p) => Boolean(p.meats?.includes(key))) }));
   const storageOptions = (Object.keys(STORAGE_LABEL) as Storage[]).filter((s) => products.some((p) => p.storage === s));
   const packOptions = (Object.keys(PACK_LABEL) as Pack[]).filter((k) => products.some((p) => packOf(p) === k));
   const animalOptions = (["pes", "kocka"] as Animal[]).filter((a) => products.some((p) => p.animals.includes(a)));
   const active = f.meats.length + (f.animal ? 1 : 0) + (f.inStock ? 1 : 0) + f.storage.length + f.pack.length;
+
+  // Vysunutý panel na mobilu: zámek scrollu a zavření klávesou Esc.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   function go(next: Filters) {
     // Jeden druh masa má vlastní stránku (SEO), jinak parametr.
@@ -90,33 +109,94 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
     if (url !== (pathname + (params.toString() ? `?${params}` : ""))) router.replace(url, { scroll: false });
   }
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
-  const chip = (on: boolean) => `label inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[11px] ${on ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`;
+  const reset = () => go({ ...EMPTY, sort: f.sort });
+
+  const panel = (
+    <div className="space-y-6">
+      {animalOptions.length > 0 && (
+        <Group title="Pro koho">
+          <Option kind="radio" checked={!f.animal} onChange={() => go({ ...f, animal: null })} label="Psi i kočky" count={count("animal", () => true)} />
+          {animalOptions.map((a) => (
+            <Option key={a} kind="radio" checked={f.animal === a} onChange={() => go({ ...f, animal: a })} label={a === "pes" ? "Pro psy" : "Pro kočky"} count={count("animal", (p) => p.animals.includes(a))} />
+          ))}
+        </Group>
+      )}
+      <Group title="Dostupnost">
+        <Option checked={f.inStock} onChange={() => go({ ...f, inStock: !f.inStock })} label="Jen skladem" count={count("inStock", (p) => p.inStock)} />
+      </Group>
+      {meatOptions.length > 0 && (
+        <Group title="Druh masa">
+          {meatOptions.map((m) => (
+            <Option key={m.key} checked={f.meats.includes(m.key)} onChange={() => go({ ...f, meats: toggle(f.meats, m.key) })} label={MEAT_LABEL[m.key]} count={m.count} className="capitalize" />
+          ))}
+        </Group>
+      )}
+      {storageOptions.length > 1 && (
+        <Group title="Skladování">
+          {storageOptions.map((s) => (
+            <Option key={s} checked={f.storage.includes(s)} onChange={() => go({ ...f, storage: toggle(f.storage, s) })} label={STORAGE_LABEL[s]} count={count("storage", (p) => p.storage === s)} />
+          ))}
+        </Group>
+      )}
+      {packOptions.length > 1 && (
+        <Group title="Balení">
+          {packOptions.map((k) => (
+            <Option key={k} checked={f.pack.includes(k)} onChange={() => go({ ...f, pack: toggle(f.pack, k) })} label={PACK_LABEL[k]} count={count("pack", (p) => packOf(p) === k)} />
+          ))}
+        </Group>
+      )}
+      {active > 0 && (
+        <button type="button" onClick={reset} className="inline-flex items-center gap-1 text-sm text-green underline">
+          <X strokeWidth={1.75} className="h-3.5 w-3.5" /> Zrušit filtry ({active})
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <>
-      <div className="mt-5 space-y-3 border-y border-line py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-2" role="group" aria-label="Pro koho">
-            <button type="button" onClick={() => go({ ...f, animal: null })} aria-pressed={!f.animal} className={chip(!f.animal)}>
-              Vše
-            </button>
-            {animalOptions.map((a) => (
-              <button key={a} type="button" onClick={() => go({ ...f, animal: f.animal === a ? null : a })} aria-pressed={f.animal === a} className={chip(f.animal === a)}>
-                {a === "pes" ? "Pro psy" : "Pro kočky"}
+    <div className="mt-6 lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
+      {/* Boční panel na desktopu */}
+      <aside className="hidden lg:block" aria-label="Filtry">
+        <div className="sticky top-24 rounded-[var(--radius-card)] border border-line bg-paper p-5">
+          <p className="label mb-4 text-brick-text">Filtry</p>
+          {panel}
+        </div>
+      </aside>
+
+      {/* Vysouvací panel na mobilu */}
+      {open && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button type="button" aria-label="Zavřít filtry" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/40" />
+          <div role="dialog" aria-modal="true" aria-label="Filtry" className="absolute inset-y-0 left-0 flex w-[min(320px,85vw)] flex-col bg-paper">
+            <div className="flex items-center justify-between border-b border-line px-5 py-3">
+              <p className="label text-brick-text">Filtry</p>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Zavřít" className="inline-flex h-10 w-10 items-center justify-center text-green">
+                <X strokeWidth={1.75} className="h-5 w-5" />
               </button>
-            ))}
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">{panel}</div>
+            <div className="border-t border-line p-4">
+              <button type="button" onClick={() => setOpen(false)} className="label inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-control)] bg-green text-cream">
+                Zobrazit {plural(list.length)}
+              </button>
+            </div>
           </div>
-          <button type="button" onClick={() => go({ ...f, inStock: !f.inStock })} aria-pressed={f.inStock} className={chip(f.inStock)}>
-            Jen skladem
-          </button>
-          {(storageOptions.length > 1 || packOptions.length > 1) && (
-            <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={chip(more)}>
-              <SlidersHorizontal strokeWidth={1.75} className="h-3.5 w-3.5" /> Další filtry
+        </div>
+      )}
+
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setOpen(true)} className="label inline-flex min-h-10 items-center gap-1.5 rounded-[var(--radius-control)] border border-line bg-paper px-3 text-[11px] text-green lg:hidden">
+              <SlidersHorizontal strokeWidth={1.75} className="h-4 w-4" /> Filtry{active > 0 && ` (${active})`}
             </button>
-          )}
-          <label className="ml-auto flex items-center gap-2 text-sm text-muted">
+            <span className="text-sm text-muted" aria-live="polite">
+              {plural(list.length)}
+            </span>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-muted">
             <span className="hidden sm:inline">Řadit</span>
-            <select value={f.sort} onChange={(e) => go({ ...f, sort: e.target.value as Sort })} aria-label="Řazení" className="min-h-9 w-auto py-1 text-sm">
+            <select value={f.sort} onChange={(e) => go({ ...f, sort: e.target.value as Sort })} aria-label="Řazení" className="min-h-10 w-auto py-1 text-sm">
               {(Object.keys(SORT_LABEL) as Sort[]).map((s) => (
                 <option key={s} value={s}>
                   {SORT_LABEL[s]}
@@ -126,60 +206,73 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
           </label>
         </div>
 
-        {meatOptions.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Druh masa">
-            <span className="label text-[11px] text-muted">Druh masa</span>
-            {meatOptions.map((m) => {
-              const on = f.meats.includes(m.key);
-              return (
-                <button key={m.key} type="button" onClick={() => go({ ...f, meats: toggle(f.meats, m.key) })} aria-pressed={on} disabled={!on && m.count === 0} className={`${chip(on)} disabled:opacity-40`}>
-                  {MEAT_LABEL[m.key]}
-                  <span className={on ? "opacity-80" : "text-muted"}>{m.count}</span>
-                </button>
-              );
-            })}
-          </div>
+        {/* Aktivní filtry jako štítky (hlavně pro mobil, kde je panel zavřený) */}
+        {active > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2 lg:hidden" aria-label="Aktivní filtry">
+            {f.animal && <Tag onRemove={() => go({ ...f, animal: null })}>{f.animal === "pes" ? "Pro psy" : "Pro kočky"}</Tag>}
+            {f.inStock && <Tag onRemove={() => go({ ...f, inStock: false })}>Jen skladem</Tag>}
+            {f.meats.map((m) => (
+              <Tag key={m} onRemove={() => go({ ...f, meats: toggle(f.meats, m) })}>
+                <span className="capitalize">{MEAT_LABEL[m]}</span>
+              </Tag>
+            ))}
+            {f.storage.map((s) => (
+              <Tag key={s} onRemove={() => go({ ...f, storage: toggle(f.storage, s) })}>
+                {STORAGE_LABEL[s]}
+              </Tag>
+            ))}
+            {f.pack.map((k) => (
+              <Tag key={k} onRemove={() => go({ ...f, pack: toggle(f.pack, k) })}>
+                {PACK_LABEL[k]}
+              </Tag>
+            ))}
+          </ul>
         )}
 
-        {more && (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {storageOptions.length > 1 && (
-              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Skladování">
-                <span className="label text-[11px] text-muted">Skladování</span>
-                {storageOptions.map((s) => (
-                  <button key={s} type="button" onClick={() => go({ ...f, storage: toggle(f.storage, s) })} aria-pressed={f.storage.includes(s)} className={chip(f.storage.includes(s))}>
-                    {STORAGE_LABEL[s]}
-                  </button>
-                ))}
-              </div>
-            )}
-            {packOptions.length > 1 && (
-              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Velikost balení">
-                <span className="label text-[11px] text-muted">Balení</span>
-                {packOptions.map((k) => (
-                  <button key={k} type="button" onClick={() => go({ ...f, pack: toggle(f.pack, k) })} aria-pressed={f.pack.includes(k)} className={chip(f.pack.includes(k))}>
-                    {PACK_LABEL[k]}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between gap-3 text-sm text-muted">
-          <span aria-live="polite">
-            {list.length} {list.length === 1 ? "produkt" : list.length < 5 ? "produkty" : "produktů"}
-          </span>
-          {active > 0 && (
-            <button type="button" onClick={() => go({ meats: [], animal: null, inStock: false, storage: [], pack: [], sort: f.sort })} className="inline-flex items-center gap-1 text-green underline">
-              <X strokeWidth={1.75} className="h-3.5 w-3.5" /> Zrušit filtry ({active})
-            </button>
+        <div className="mt-4">
+          {list.length === 0 && active > 0 ? (
+            <p className="text-muted">
+              Tomuhle výběru nic neodpovídá.{" "}
+              <button type="button" onClick={reset} className="text-green underline">
+                Zrušit filtry
+              </button>
+            </p>
+          ) : (
+            <ProductGrid products={list} columns={3} />
           )}
         </div>
       </div>
-      <div className="mt-5">
-        {list.length === 0 && active > 0 ? <p className="text-muted">Tomuhle výběru nic neodpovídá. Zkuste některý filtr zrušit.</p> : <ProductGrid products={list} />}
-      </div>
-    </>
+    </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset>
+      <legend className="label mb-2 text-[11px] text-muted">{title}</legend>
+      <div className="space-y-0.5">{children}</div>
+    </fieldset>
+  );
+}
+
+function Option({ kind = "checkbox", checked, onChange, label, count, className = "" }: { kind?: "checkbox" | "radio"; checked: boolean; onChange: () => void; label: string; count: number; className?: string }) {
+  const off = !checked && count === 0;
+  return (
+    <label className={`flex min-h-9 cursor-pointer items-center gap-2.5 text-sm ${off ? "text-muted/60" : "text-ink"}`}>
+      <input type={kind} checked={checked} onChange={onChange} disabled={off} className="h-4 min-h-0 w-4 shrink-0 accent-green" />
+      <span className={`flex-1 ${className}`}>{label}</span>
+      <span className="text-xs text-muted">{count}</span>
+    </label>
+  );
+}
+
+function Tag({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
+  return (
+    <li>
+      <button type="button" onClick={onRemove} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-green bg-green px-3 text-xs text-cream">
+        {children}
+        <X strokeWidth={1.75} className="h-3 w-3" />
+      </button>
+    </li>
   );
 }
