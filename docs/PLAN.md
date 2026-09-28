@@ -133,6 +133,7 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 | Doména dokosti.cz | hotovo | DNS u Forpsi, web na Vercelu, www přesměrovává na dokosti.cz. Zbývá Resend a Supabase Auth URL. |
 | Platební brána | čeká | Viz kategorie 2. |
 | Zálohy databáze | nápad | Supabase má denní zálohy v placeném plánu. |
+| Vlastní doména pro Supabase Auth (auth.dokosti.cz) | nápad | V okně Googlu se pak místo tpzeltvekvliqluhfrvn.supabase.co ukáže dokosti.cz. Vyžaduje plán Pro + doplněk Custom Domain; pak přepnout NEXT_PUBLIC_SUPABASE_URL a redirect URI v Google Cloud. |
 | Právní kontrola textů a tvrzení (nařízení 767/2009) | nápad | Jedna kontrola před spuštěním. |
 | Testovací provoz s pár zákazníky | nápad | |
 
