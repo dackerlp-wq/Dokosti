@@ -6,7 +6,7 @@ import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
-import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
+import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, MEAT_LABEL, MEATS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
 export function ProductForm({ product, others = [], manager = true }: { product?: ProductRow; others?: { slug: string; name: string }[]; manager?: boolean }) {
   const [state, action, pending] = useActionState(saveProduct, null);
@@ -22,7 +22,7 @@ export function ProductForm({ product, others = [], manager = true }: { product?
         <Fieldset title="Název">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Řada">
-              <select name="line" defaultValue={p?.line ?? "zaklad"}>
+              <select name="line" defaultValue={p?.line ?? "barf"}>
                 {LINES.map((l) => (
                   <option key={l} value={l}>
                     {LINE_INFO[l].name}
@@ -71,6 +71,16 @@ export function ProductForm({ product, others = [], manager = true }: { product?
                 ))}
               </select>
             </Field>
+            <Field label="Druhy masa" hint="podkategorie a filtr, může být víc">
+              <div className="flex min-h-10 flex-wrap items-center gap-x-4 gap-y-1">
+                {MEATS.map((m) => (
+                  <label key={m} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="meats" value={m} defaultChecked={p?.meats?.includes(m) ?? false} className="h-4 w-4 min-h-0 w-auto accent-green" />
+                    {MEAT_LABEL[m]}
+                  </label>
+                ))}
+              </div>
+            </Field>
             <Field label="Pro koho">
               <div className="flex min-h-10 items-center gap-4">
                 {(Object.keys(ANIMAL_LABEL) as (keyof typeof ANIMAL_LABEL)[]).map((a) => (
@@ -115,7 +125,7 @@ export function ProductForm({ product, others = [], manager = true }: { product?
 
         <Fieldset title="Údaje z etikety pro kalkulačku">
           <p className="mb-3 text-xs text-muted">
-            Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u mixů Základ chybí, kalkulačka počítá orientačně procentem
+            Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u BARF mixů chybí, kalkulačka počítá orientačně procentem
             hmotnosti; s energií počítá přesněji a zobrazí i kcal. Podíl kosti se používá pro bilanci kostí v dávce.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">

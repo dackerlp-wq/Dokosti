@@ -40,7 +40,7 @@ export default async function HomePage() {
               řekneme to na rovinu.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <ButtonLink href="/rada/zaklad" variant="action">
+              <ButtonLink href="/rada/barf" variant="action">
                 Vybrat krmivo
               </ButtonLink>
               <ButtonLink href="/doprava" variant="ghost">
@@ -58,7 +58,7 @@ export default async function HomePage() {
 
       <Section tone="cream">
         <SectionHeading eyebrow="Nabídka" title="Pět řad, jasný systém">
-          Základ je denní krmení, Kosti na hryzání, Navíc doplní, Mlsky odmění, Granule pro ty, kdo syrově nekrmí.
+          BARF mixy jsou denní krmení, Kosti na hryzání, Navíc doplní, Mlsky odmění, Granule pro ty, kdo syrově nekrmí.
         </SectionHeading>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {LINES.map((slug) => {

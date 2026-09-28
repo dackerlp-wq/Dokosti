@@ -17,7 +17,7 @@ const FAQ = [
   ["Proč vychází malému psovi víc procent než velkému?", "Potřeba energie roste s hmotností pomaleji než hmotnost sama. Čivava proto potřebuje 4–5 % své váhy, doga necelá 2 %. Tabulka „2–3 %“ platí jen pro střední psy, kalkulačka počítá energii a procento jen ukazuje pro kontrolu."],
   ["Jak přesný je výsledek?", "Je to výchozí hodnota pro zdravé zvíře podle doporučení FEDIAF. Skutečná potřeba se liší i o 20 %. Po dvou až čtyřech týdnech zvíře zvažte a dávku upravte podle kondice."],
   ["Co když neznám dospělou hmotnost štěněte?", "Vyberte plemeno, zadejte průměr hmotnosti rodičů, nebo pole nechte prázdné. Kalkulačka ji odhadne z aktuální hmotnosti a věku podle růstové křivky, do 12 týdnů je ale odhad hrubý."],
-  ["Proč kalkulačka doporučuje Kosti jako náhradu mixu, ne navíc?", "Mixy Základ už kost obsahují. Kdyby se Kosti jen přidaly, kosti v dávce by bylo příliš a stolice tvrdá. Proto se s nimi nahrazuje část mixu, a když je podíl kosti v mixu známý z etikety, kalkulačka ho dopočítá přesně."],
+  ["Proč kalkulačka doporučuje Kosti jako náhradu mixu, ne navíc?", "BARF mixy už kost obsahují. Kdyby se Kosti jen přidaly, kosti v dávce by bylo příliš a stolice tvrdá. Proto se s nimi nahrazuje část mixu, a když je podíl kosti v mixu známý z etikety, kalkulačka ho dopočítá přesně."],
   ["Můžu granule a syrovou stravu kombinovat?", "Ano. U štěňat a při přechodu nabízí kalkulačka podíl syrové stravy, energie se rozdělí a granule se dopočítají podle údajů z obalu. Nejlépe je podávat je v oddělených jídlech."],
   ["Co kalkulačka nespočítá?", "Dávku pro nemocná zvířata, hubnutí při výrazné nadváze a přesné složení pro štěňata obřích plemen. To patří k veterináři, kalkulačka vám dá jen výchozí bod."],
 ] as const;
@@ -82,7 +82,7 @@ export default async function CalculatorPage() {
             <h3>Složení a bilance kosti</h3>
             <p className="mt-1 text-sm text-muted">
               Cílem je zhruba 8 % jedlé kosti u dospělého psa, 6 % u kočky a 15 % u štěněte, 5 % jater a 5 % dalších vnitřností. Kost se
-              nepočítá podle hmotnosti masitých kostí, ale podle toho, kolik kosti v nich je (kuřecí krk asi 36 %). Mixy Základ kost už
+              nepočítá podle hmotnosti masitých kostí, ale podle toho, kolik kosti v nich je (kuřecí krk asi 36 %). BARF mixy kost už
               obsahují, Kosti proto nahrazují část mixu.
             </p>
           </div>

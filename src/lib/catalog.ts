@@ -3,7 +3,7 @@
  * (viz supabase/migrations), aby šlo přepnout z ukázkových dat bez změny UI.
  */
 
-export const LINES = ["zaklad", "kosti", "navic", "mlsky", "granule"] as const;
+export const LINES = ["barf", "kosti", "navic", "mlsky", "granule"] as const;
 export type LineSlug = (typeof LINES)[number];
 
 export type Line = {
@@ -15,12 +15,12 @@ export type Line = {
 };
 
 export const LINE_INFO: Record<LineSlug, Line> = {
-  zaklad: {
-    slug: "zaklad",
-    name: "Základ",
-    tagline: "Kompletní mixy masa, kostí a vnitřností. Denní krmení.",
+  barf: {
+    slug: "barf",
+    name: "BARF mixy",
+    tagline: "Hotové mixy masa, kostí a vnitřností. Denní krmení.",
     description:
-      "Řada Základ jsou hotové mixy, ve kterých je maso, masité kosti a vnitřnosti v poměru vhodném pro každodenní krmení. Rozmrazíte, odvážíte, podáte.",
+      "Hotové BARF mixy, ve kterých je maso, masité kosti a vnitřnosti v poměru vhodném pro každodenní krmení. Rozmrazíte, odvážíte, podáte. Vyberte podle druhu masa.",
   },
   kosti: {
     slug: "kosti",
@@ -54,6 +54,38 @@ export const LINE_INFO: Record<LineSlug, Line> = {
 
 export type Animal = "pes" | "kocka";
 export type Storage = "mrazene" | "chlazene" | "suche";
+
+/** Druhy masa: podkategorie a filtr v řadě, vyloučení v kalkulačce. */
+export const MEATS = ["kureci", "kruti", "kachni", "hovezi", "veprove", "jehneci", "kralici", "kone", "zverina", "ryby"] as const;
+export type MeatKey = (typeof MEATS)[number];
+export const MEAT_LABEL: Record<MeatKey, string> = {
+  kureci: "kuřecí",
+  kruti: "krůtí",
+  kachni: "kachní",
+  hovezi: "hovězí",
+  veprove: "vepřové",
+  jehneci: "jehněčí",
+  kralici: "králičí",
+  kone: "koňské",
+  zverina: "zvěřina",
+  ryby: "ryby",
+};
+/** Název druhu masa do nadpisu podkategorie: „Kuřecí BARF mixy“, „Ryby a BARF mixy“. */
+export const MEAT_TITLE: Record<MeatKey, string> = {
+  kureci: "Kuřecí",
+  kruti: "Krůtí",
+  kachni: "Kachní",
+  hovezi: "Hovězí",
+  veprove: "Vepřové",
+  jehneci: "Jehněčí",
+  kralici: "Králičí",
+  kone: "Koňské",
+  zverina: "Zvěřinové",
+  ryby: "Rybí",
+};
+export function isMeatKey(v: string): v is MeatKey {
+  return (MEATS as readonly string[]).includes(v);
+}
 /** Prodejní jednotka: balení po kusech, nebo na váhu (cena za kg, jen v prodejně). */
 export type ProductUnit = "ks" | "kg";
 export const UNIT_LABEL: Record<ProductUnit, string> = { ks: "kus", kg: "na váhu (kg)" };
@@ -72,9 +104,11 @@ export const STORAGE_LABEL: Record<Storage, string> = {
 export type Product = {
   slug: string;
   line: LineSlug;
-  /** Druh masa nebo suroviny, druhá část názvu: "Základ · hovězí mix". */
+  /** Druh masa nebo suroviny, z něj je název produktu: "Hovězí mix". */
   variant: string;
   animals: Animal[];
+  /** Druhy masa v produktu (podkategorie, filtr, vyloučení v kalkulačce). */
+  meats?: MeatKey[];
   storage: Storage;
   /** Hmotnost balení v gramech (u zboží na váhu orientační porce). */
   weightGrams: number;
@@ -133,8 +167,10 @@ export const BONE_CLASS_LABEL: Record<BoneClass, string> = {
   rekreacni: "Rekreační kost (jen okusování)",
 };
 
+/** Název produktu je druh masa nebo suroviny s velkým písmenem („Kuřecí mix“); řada se ukazuje jako štítek. */
 export function productName(p: Pick<Product, "line" | "variant">) {
-  return `${LINE_INFO[p.line].name} · ${p.variant}`;
+  const v = p.variant.trim();
+  return v.charAt(0).toUpperCase() + v.slice(1);
 }
 
 /**
@@ -146,8 +182,8 @@ const SLOZENI = "[SLOŽENÍ OD VÝROBCE] ";
 
 export const PRODUCTS: Product[] = [
   {
-    slug: "zaklad-hovezi-mix",
-    line: "zaklad",
+    slug: "barf-hovezi-mix",
+    line: "barf",
     variant: "hovězí mix",
     animals: ["pes"],
     storage: "mrazene",
@@ -162,8 +198,8 @@ export const PRODUCTS: Product[] = [
     image: null,
   },
   {
-    slug: "zaklad-drubezi-mix",
-    line: "zaklad",
+    slug: "barf-drubezi-mix",
+    line: "barf",
     variant: "drůbeží mix",
     animals: ["pes", "kocka"],
     storage: "mrazene",
@@ -178,8 +214,8 @@ export const PRODUCTS: Product[] = [
     image: null,
   },
   {
-    slug: "zaklad-kruti-mix",
-    line: "zaklad",
+    slug: "barf-kruti-mix",
+    line: "barf",
     variant: "krůtí mix",
     animals: ["pes", "kocka"],
     storage: "mrazene",
@@ -195,8 +231,8 @@ export const PRODUCTS: Product[] = [
     image: null,
   },
   {
-    slug: "zaklad-jehneci-mix",
-    line: "zaklad",
+    slug: "barf-jehneci-mix",
+    line: "barf",
     variant: "jehněčí mix",
     animals: ["pes"],
     storage: "mrazene",
@@ -211,8 +247,8 @@ export const PRODUCTS: Product[] = [
     image: null,
   },
   {
-    slug: "zaklad-rybi-mix",
-    line: "zaklad",
+    slug: "barf-rybi-mix",
+    line: "barf",
     variant: "rybí mix",
     animals: ["pes", "kocka"],
     storage: "mrazene",

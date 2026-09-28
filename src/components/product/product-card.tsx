@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { AddToCartButton } from "@/components/cart/add-to-cart-button";
 import { ProductImage } from "@/components/product/product-image";
-import { STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
+import { LINE_INFO, STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
 import { stockLabel } from "@/lib/stock";
 
@@ -24,7 +24,9 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <div className="flex flex-1 flex-col gap-0.5 pt-3">
-        <span className="label text-brick-text">{STORAGE_LABEL[product.storage]}</span>
+        <span className="label text-brick-text">
+          {LINE_INFO[product.line].name} <span className="text-muted">· {STORAGE_LABEL[product.storage]}</span>
+        </span>
         <h3 className="text-[17px] md:text-[18px]">
           <Link href={href} className="hover:underline">
             {productName(product)}

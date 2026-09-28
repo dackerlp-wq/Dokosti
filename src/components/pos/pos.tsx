@@ -37,7 +37,7 @@ type Shift = Awaited<ReturnType<typeof posShiftSummary>>;
 type Parked = { id: string; name: string; at: string; lines: { productId: string; qty: number }[]; customer: PosCustomer | null };
 
 const LINE_TILE: Record<LineSlug, string> = {
-  zaklad: "bg-green text-cream",
+  barf: "bg-green text-cream",
   kosti: "bg-brick text-cream",
   navic: "bg-ochre text-ink",
   mlsky: "bg-olive text-cream",

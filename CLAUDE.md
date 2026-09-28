@@ -10,7 +10,8 @@ Jazyk webu i kódu (komentáře, texty) je čeština. Na webu vykáme.
 - Stíny nepoužívat, hloubku dělá rámeček `border-line` a podklad `bg-paper`.
 - Zelená sekce nejvýš jedna na stránku (kromě hlavičky a patičky).
 - Ikony Lucide se `strokeWidth={1.75}`, žádné emoji.
-- Název produktu je vždy `productName()` z `src/lib/catalog.ts`: `Řada · druh masa`.
+- Název produktu je vždy `productName()` z `src/lib/catalog.ts`: druh masa s velkým písmenem („Kuřecí mix“), řada je štítek.
+  Řady: barf (BARF mixy), kosti, navic, mlsky, granule. Druhy masa jsou `meats` na produktu (podkategorie `/rada/[řada]/[maso]`).
 - Ceny a složení produktů nikdy nevymýšlet. Ukázková data v `catalog.ts` jsou označená jako placeholder.
 - Žádná zdravotní tvrzení, při potížích odkaz na veterináře.
 

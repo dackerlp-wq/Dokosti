@@ -49,30 +49,23 @@ export type AnimalInput = {
   addons: Record<AddonKey, boolean>;
   /** Konkrétní produkty, které zákazník z doporučení vyřadil (slugy). */
   removed: string[];
-  /** Náhrady druhu: původní slug → zvolený slug (mixy Základ a Kosti). */
+  /** Náhrady druhu: původní slug → zvolený slug (BARF mixy a Kosti). */
   swaps: Record<string, string>;
 };
 
-export type MeatKey = "kureci" | "kruti" | "kachni" | "hovezi" | "jehneci" | "veprove" | "kralici" | "ryby";
-export const MEAT_LABEL: Record<MeatKey, string> = {
-  kureci: "kuřecí",
-  kruti: "krůtí",
-  kachni: "kachní",
-  hovezi: "hovězí",
-  jehneci: "jehněčí",
-  veprove: "vepřové",
-  kralici: "králičí",
-  ryby: "ryby",
-};
-/** Slova ve variantě, složení a úvodu, která daný druh masa prozradí (bez diakritiky, malá písmena). */
+import { MEAT_LABEL, type MeatKey } from "@/lib/catalog";
+export { MEAT_LABEL, type MeatKey };
+/** Slova ve variantě, složení a úvodu, která daný druh masa prozradí (bez diakritiky, malá písmena). Záloha, když produkt nemá `meats`. */
 const MEAT_WORDS: Record<MeatKey, string[]> = {
-  kureci: ["kurec", "kure", "chicken"],
+  kureci: ["kurec", "kure", "chicken", "drubez"],
   kruti: ["kruti", "krut", "turkey"],
   kachni: ["kachn", "duck"],
   hovezi: ["hovez", "beef", "drstk", "bachor"],
-  jehneci: ["jehnec", "jehne", "lamb", "skopov"],
   veprove: ["veprov", "prase", "pork"],
+  jehneci: ["jehnec", "jehne", "lamb", "skopov"],
   kralici: ["kralic", "kralik", "rabbit"],
+  kone: ["konsk", "konin", "kun", "horse"],
+  zverina: ["zverin", "jelen", "srnc", "venison"],
   ryby: ["ryb", "losos", "sled", "makrel", "tresk", "fish"],
 };
 
@@ -90,6 +83,7 @@ export const DEFAULT_ADDONS: Record<AddonKey, boolean> = { kosti: true, ryba: tr
 /** Obsahuje produkt některý z vyloučených druhů masa? */
 export function containsMeat(p: Product, keys: MeatKey[]) {
   if (!keys.length) return false;
+  if (p.meats && p.meats.length) return keys.some((k) => p.meats!.includes(k));
   const hay = fold(`${p.variant} ${p.composition} ${p.intro}`);
   return keys.some((k) => MEAT_WORDS[k].some((w) => hay.includes(w)));
 }
@@ -382,10 +376,10 @@ const packs = (gramsTotal: number, packGrams: number) => Math.max(1, Math.ceil(g
 /** Výchozí podíl jedlé kosti v masité kosti, když chybí z etikety (kuřecí krk ≈ 36 %). */
 const DEFAULT_RMB_BONE_PCT = 36;
 
-/** Vybere mixy Základ: začátečník jeden drůbeží, jinak až tři různé druhy masa. Rybí mix zvlášť. */
+/** Vybere BARF mixy: začátečník jeden drůbeží, jinak až tři různé druhy masa. Rybí mix zvlášť. */
 function pickMixes(pool: Product[], i: AnimalInput) {
-  const mixes = pool.filter((p) => p.line === "zaklad" && p.storage !== "suche" && !has(p, "ryb"));
-  const fish = pool.find((p) => p.line === "zaklad" && has(p, "ryb"));
+  const mixes = pool.filter((p) => p.line === "barf" && p.storage !== "suche" && !has(p, "ryb"));
+  const fish = pool.find((p) => p.line === "barf" && has(p, "ryb"));
   const poultry = mixes.filter((p) => has(p, "drůbeží", "kuřecí", "krůtí", "kachní"));
   if (i.beginner || i.stage === "mlade") {
     const first = poultry[0] ?? mixes[0];
@@ -423,7 +417,7 @@ export function mixesKcal(mixes: Product[]) {
 }
 
 /**
- * Sestaví nákupní plán na `days` dní: mixy Základ, případně rybí den, doplnění kosti
+ * Sestaví nákupní plán na `days` dní: BARF mixy, případně rybí den, doplnění kosti
  * podle bilance, olej, zelenina, u štěňat granule. Množství zaokrouhluje na celá balení.
  */
 export function buildPlan(products: Product[], i: AnimalInput, days: number): Plan {
@@ -616,7 +610,7 @@ export type DayPlan = { day: number; label: string; items: { product: Product; g
 export const WEEK_DAYS = ["pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle"];
 
 /**
- * Rozloží denní dávku do sedmi dnů: mixy Základ se střídají, rybí den je čtvrtek,
+ * Rozloží denní dávku do sedmi dnů: BARF mixy se střídají, rybí den je čtvrtek,
  * Kosti nahrazují část mixu ve vybrané dny, olej, zelenina a granule jsou každý den.
  */
 export function weeklySchedule(plan: Plan): DayPlan[] {

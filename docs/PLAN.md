@@ -34,6 +34,7 @@ Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštěn�
 | Pokladna: odběr, rozvoz (dny), přepravce, platba převodem a na místě | hotovo | |
 | Slevové kódy, Kostičky | hotovo | Kostičky 1 za 10 Kč, 100 = 50 Kč. |
 | Platební brána (karta online, opakovaná platba) | čeká | Comgate nebo GoPay vyžadují firmu, účet a doménu. Do kódu se dá připravit rozhraní. |
+| Podkategorie podle druhu masa, filtry v řadě (maso, zvíře, skladem, skladování, balení, řazení), megamenu | hotovo | Řada Základ přejmenována na BARF mixy (slug barf, staré adresy přesměrované). Druhy masa jsou `products.meats`, upraví se v adminu. Migrace 0022. |
 | Varianty balení jednoho produktu (700 g / 1,3 kg / 12×150 g) | nápad | Dnes je každé balení samostatný produkt. Yoggies má tři velikosti u každého mixu. |
 | Hodnocení a recenze produktů | nápad | Až budou zákazníci. |
 | Dárkové poukazy | nápad | |

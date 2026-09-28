@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { LINES } from "@/lib/catalog";
+import { lineMeatPairs } from "@/lib/menu";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 
@@ -10,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...statics.map((p) => ({ url: `${SITE_URL}${p}`, lastModified: now, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.6 })),
     ...LINES.map((l) => ({ url: `${SITE_URL}/rada/${l}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.8 })),
+    ...lineMeatPairs(products).map((p) => ({ url: `${SITE_URL}/rada/${p.line}/${p.meat}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.7 })),
     ...products.map((p) => ({ url: `${SITE_URL}/produkt/${p.slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 })),
   ];
 }

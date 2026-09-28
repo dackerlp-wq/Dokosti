@@ -119,7 +119,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       {list.length === 0 ? (
         <p className="text-muted">
           Zatím žádné.{" "}
-          <Link href="/rada/zaklad" className="text-green underline">
+          <Link href="/rada/barf" className="text-green underline">
             Vybrat krmivo
           </Link>
         </p>

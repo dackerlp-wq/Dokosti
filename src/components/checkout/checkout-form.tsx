@@ -79,7 +79,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
     return (
       <p className="text-muted">
         Košík je prázdný.{" "}
-        <Link href="/rada/zaklad" className="text-green underline">
+        <Link href="/rada/barf" className="text-green underline">
           Vybrat krmivo
         </Link>
       </p>

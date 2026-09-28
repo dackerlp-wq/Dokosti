@@ -7,7 +7,7 @@ import { SITE_URL } from "@/lib/seo";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/product/product-image";
 import { Badge } from "@/components/ui/badge";
-import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, productName } from "@/lib/catalog";
+import { ANIMAL_LABEL, LINE_INFO, MEAT_LABEL, STORAGE_LABEL, productName } from "@/lib/catalog";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { stockLabel } from "@/lib/stock";
 import { formatPrice, formatWeight, pricePerKg } from "@/lib/format";
@@ -87,6 +87,12 @@ export default async function ProductPage({ params }: Props) {
         <div>
           <div className="mb-3 flex flex-wrap gap-1.5">
             <Badge kind={stock.kind === "neni" ? "neutral" : stock.kind}>{stock.text}</Badge>
+            <Badge>{line.name}</Badge>
+            {product.meats?.map((m) => (
+              <Link key={m} href={`/rada/${line.slug}/${m}`} className="contents">
+                <Badge>{MEAT_LABEL[m]}</Badge>
+              </Link>
+            ))}
             {product.isNew && <Badge kind="novinka">Novinka</Badge>}
             {onSale && <Badge kind="sleva">Sleva</Badge>}
             <Badge>{STORAGE_LABEL[product.storage]}</Badge>

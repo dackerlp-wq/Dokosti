@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/admin";
-import { isLineSlug, LINE_INFO, type Animal, type Storage } from "@/lib/catalog";
+import { isLineSlug, type Animal, type Storage, isMeatKey } from "@/lib/catalog";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 export type ProductFormState = { error: string } | null;
@@ -34,6 +34,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const variant = String(formData.get("variant") ?? "").trim();
   const storage = String(formData.get("storage") ?? "") as Storage;
   const animals = formData.getAll("animals").map(String) as Animal[];
+  const meats = formData.getAll("meats").map(String).filter(isMeatKey);
   const weight = num(formData.get("weight_grams"));
   const price = num(formData.get("price_czk"));
   const originalRaw = String(formData.get("original_price_czk") ?? "").trim();
@@ -58,11 +59,12 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const boneClass = String(formData.get("bone_class") ?? "");
 
   const row = {
-    slug: String(formData.get("slug") ?? "").trim() || slugify(LINE_INFO[line].name, variant),
+    slug: String(formData.get("slug") ?? "").trim() || slugify(line, variant),
     line,
     variant,
     storage,
     animals,
+    meats,
     weight_grams: Math.round(weight),
     price_czk: Math.round(price),
     original_price_czk: original === null ? null : Math.round(original),

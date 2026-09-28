@@ -3,9 +3,11 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { CATEGORY_NAV, PAGE_NAV } from "@/lib/site";
+import { PAGE_NAV } from "@/lib/site";
 
-export function MobileNav() {
+type MenuItem = { href: string; label: string; meats: { key: string; label: string }[] };
+
+export function MobileNav({ menu }: { menu: MenuItem[] }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -27,11 +29,22 @@ export function MobileNav() {
           <div className="container-dk py-3">
             <p className="label mb-1 text-[11px] text-muted">Nabídka</p>
             <ul className="mb-3">
-              {CATEGORY_NAV.map((item) => (
+              {menu.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} onClick={close} className="label flex min-h-11 items-center text-green hover:bg-cream">
                     {item.label}
                   </Link>
+                  {item.meats.length > 0 && (
+                    <ul className="mb-2 flex flex-wrap gap-1.5 pl-3">
+                      {item.meats.map((m) => (
+                        <li key={m.key}>
+                          <Link href={`${item.href}/${m.key}`} onClick={close} className="inline-flex min-h-8 items-center rounded-full border border-line bg-cream px-2.5 text-xs capitalize text-ink">
+                            {m.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
               <li>

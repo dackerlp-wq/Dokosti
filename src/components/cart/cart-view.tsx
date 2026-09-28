@@ -23,7 +23,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
       <div className="rounded-[var(--radius-card)] border border-line bg-paper p-8 text-center">
         <p className="text-muted">V košíku zatím nic není.</p>
         <div className="mt-6">
-          <ButtonLink href="/rada/zaklad">Vybrat krmivo</ButtonLink>
+          <ButtonLink href="/rada/barf">Vybrat krmivo</ButtonLink>
         </div>
       </div>
     );
@@ -114,7 +114,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
           </ButtonLink>
         </div>
         <p className="mt-3 text-center text-sm text-muted">
-          <Link href="/rada/zaklad" className="hover:underline">
+          <Link href="/rada/barf" className="hover:underline">
             Zpět do nabídky
           </Link>
         </p>

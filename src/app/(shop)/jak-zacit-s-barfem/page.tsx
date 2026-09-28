@@ -264,7 +264,7 @@ export default async function HowToStartPage() {
           {packs.length === 0 && (
             <ButtonLink href="#kalkulacka">Poskládat set kalkulačkou</ButtonLink>
           )}
-          <ButtonLink href="/rada/zaklad" variant="secondary">
+          <ButtonLink href="/rada/barf" variant="secondary">
             Nakoupit jednotlivě
           </ButtonLink>
         </div>

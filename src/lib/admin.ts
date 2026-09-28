@@ -136,6 +136,7 @@ export type ProductRow = {
   line: LineSlug;
   variant: string;
   animals: Animal[];
+  meats: string[];
   storage: Storage;
   weight_grams: number;
   price_czk: number;
@@ -218,7 +219,7 @@ export function formatDay(iso: string) {
   return d.format(new Date(iso + "T12:00:00"));
 }
 
-/** Z názvu varianty udělá slug: "Základ" + "hovězí mix" → "zaklad-hovezi-mix". */
+/** Z řady a varianty udělá slug: "barf" + "hovězí mix" → "barf-hovezi-mix". */
 export function slugify(...parts: string[]) {
   return parts
     .join(" ")

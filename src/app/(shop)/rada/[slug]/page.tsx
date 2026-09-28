@@ -30,7 +30,7 @@ export default async function LinePage({ params }: Props) {
       <h1>{line.name}</h1>
       <p className="mt-2 max-w-2xl text-muted">{line.description}</p>
 
-      <LineProducts products={products} />
+      <LineProducts products={products} line={slug} />
     </div>
   );
 }

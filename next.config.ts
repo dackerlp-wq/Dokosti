@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" }],
   },
+  // Řada „Základ“ se přejmenovala na „BARF mixy“ (slug barf); staré adresy vedou dál.
+  async redirects() {
+    return [
+      { source: "/rada/zaklad", destination: "/rada/barf", permanent: true },
+      { source: "/produkt/zaklad-:rest", destination: "/produkt/barf-:rest", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

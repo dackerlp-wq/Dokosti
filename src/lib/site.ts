@@ -5,9 +5,9 @@ export const SITE = {
   slogan: "Poctivé do kosti.",
 } as const;
 
-/** Řady produktů: hlavní lišta pod hlavičkou. */
+/** Řady produktů: patička a záloha pro menu (lišta v hlavičce se staví z produktů, viz lib/menu.ts). */
 export const CATEGORY_NAV = [
-  { href: "/rada/zaklad", label: "Základ" },
+  { href: "/rada/barf", label: "BARF mixy" },
   { href: "/rada/kosti", label: "Kosti" },
   { href: "/rada/navic", label: "Navíc" },
   { href: "/rada/mlsky", label: "Mlsky" },

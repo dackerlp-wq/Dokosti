@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage } from "@/lib/catalog";
+import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, isMeatKey } from "@/lib/catalog";
 import { getSupabase } from "@/lib/supabase/server";
 
 /** Řádek tabulky products v Supabase (snake_case). */
@@ -31,6 +31,7 @@ type ProductRow = {
   bone_class: BoneClass | null;
   is_complete: boolean;
   unit: ProductUnit;
+  meats: string[] | null;
 };
 
 /** Výživové údaje z řádku; null hodnoty vynechá, aby `nutrition` bylo prázdné jen když nic není. */
@@ -69,6 +70,7 @@ function fromRow(r: ProductRow): Product {
     crosssell: r.crosssell_slugs ?? [],
     nutrition: nutritionFromRow(r),
     unit: r.unit ?? "ks",
+    meats: (r.meats ?? []).filter(isMeatKey),
   };
 }
 
@@ -83,7 +85,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   const { data, error } = await db
     .from("products")
     .select(
-      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty",
+      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty, meats",
     )
     .eq("is_published", true)
     .order("sort_order")
