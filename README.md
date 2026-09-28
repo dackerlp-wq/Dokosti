@@ -104,6 +104,7 @@ Zákaznické účty používají Supabase Auth (registrace, přihlášení, obno
 Zákazník vidí své objednávky a Kostičky podle e-mailu (RLS v migraci `0013`), pokladna se předvyplní z účtu.
 Aby chodily potvrzovací a resetovací e-maily, nastavte v Supabase Authentication → URL Configuration
 Site URL `https://dokosti.cz` a Redirect URLs `https://dokosti.cz/auth/callback` a `https://dokosti.vercel.app/auth/callback`.
+České šablony těchto e-mailů jsou v `supabase/auth-emaily/` (vkládají se ručně, viz tamní README).
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 

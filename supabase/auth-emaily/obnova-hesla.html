@@ -1,0 +1,15 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><title>Nové heslo</title></head>
+<body style="margin:0;background:#f3ecdd;font-family:Arial,Helvetica,sans-serif;color:#24221f;font-size:15px;line-height:1.5">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3ecdd"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
+<tr><td style="background:#1f3a2d;color:#f3ecdd;padding:20px 24px;border-radius:12px 12px 0 0">
+<div style="font-family:Georgia,serif;font-size:26px;font-weight:bold">DoKosti</div>
+<div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;opacity:.85">BARF · krmivo pro psy a kočky</div></td></tr>
+<tr><td style="background:#fbf7ee;padding:24px;border:1px solid #d9cfb8;border-top:0;border-radius:0 0 12px 12px">
+<h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 12px">Nové heslo</h1>
+<p>Někdo (nejspíš vy) požádal o nové heslo k účtu DoKosti. Kliknutím se přihlásíte a rovnou si heslo nastavíte.</p><p style="margin:20px 0"><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;font-weight:bold">Nastavit nové heslo</a></p>
+<p style="font-size:13px;color:#55645a">Když tlačítko nefunguje, zkopírujte do prohlížeče tuto adresu:<br><span style="word-break:break-all">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&redirect_to={{ .RedirectTo }}</span></p>
+<p style="margin:24px 0 0;font-size:12px;color:#55645a;border-top:1px solid #d9cfb8;padding-top:12px">
+Pokud jste o tento e-mail nežádali, nic se neděje, klidně ho ignorujte. Odkaz platí jen chvíli a jde použít jednou.<br>
+<span style="font-family:Georgia,serif">Poctivé do kosti.</span></p>
+</td></tr></table></td></tr></table></body></html>
