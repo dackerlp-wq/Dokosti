@@ -113,6 +113,13 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
 
   const panel = (
     <div className="space-y-6">
+      {meatOptions.length > 0 && (
+        <Group title="Druh masa">
+          {meatOptions.map((m) => (
+            <Option key={m.key} checked={f.meats.includes(m.key)} onChange={() => go({ ...f, meats: toggle(f.meats, m.key) })} label={MEAT_LABEL[m.key]} count={m.count} className="capitalize" />
+          ))}
+        </Group>
+      )}
       {animalOptions.length > 0 && (
         <Group title="Pro koho">
           <Option kind="radio" checked={!f.animal} onChange={() => go({ ...f, animal: null })} label="Psi i kočky" count={count("animal", () => true)} />
@@ -124,13 +131,6 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
       <Group title="Dostupnost">
         <Option checked={f.inStock} onChange={() => go({ ...f, inStock: !f.inStock })} label="Jen skladem" count={count("inStock", (p) => p.inStock)} />
       </Group>
-      {meatOptions.length > 0 && (
-        <Group title="Druh masa">
-          {meatOptions.map((m) => (
-            <Option key={m.key} checked={f.meats.includes(m.key)} onChange={() => go({ ...f, meats: toggle(f.meats, m.key) })} label={MEAT_LABEL[m.key]} count={m.count} className="capitalize" />
-          ))}
-        </Group>
-      )}
       {storageOptions.length > 1 && (
         <Group title="Skladování">
           {storageOptions.map((s) => (
@@ -157,7 +157,8 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
     <div className="mt-6 lg:grid lg:grid-cols-[240px_1fr] lg:gap-8">
       {/* Boční panel na desktopu */}
       <aside className="hidden lg:block" aria-label="Filtry">
-        <div className="sticky top-24 rounded-[var(--radius-card)] border border-line bg-paper p-5">
+        {/* Přilepený u horního okraje; když je delší než okno, roluje uvnitř, aby byly všechny volby po ruce. */}
+        <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto rounded-[var(--radius-card)] border border-line bg-paper p-5">
           <p className="label mb-4 text-brick-text">Filtry</p>
           {panel}
         </div>
