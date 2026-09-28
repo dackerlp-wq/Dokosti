@@ -17,6 +17,22 @@ export async function customerLogin(_prev: AuthState, fd: FormData): Promise<Aut
   redirect(str(fd, "next") || "/ucet");
 }
 
+/**
+ * Přihlášení nebo registrace přes Google (Supabase OAuth, PKCE). Po návratu Google → Supabase → /auth/callback
+ * se vymění kód za session a jde se na `next`. Nový účet má e-mail od Googlu už ověřený.
+ */
+export async function signInWithGoogle(fd: FormData): Promise<void> {
+  const nextRaw = str(fd, "next") || "/ucet";
+  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/ucet";
+  const db = await getAuthSupabase();
+  const { data, error } = await db.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  if (error || !data.url) redirect(`/ucet/prihlaseni?chyba=google`);
+  redirect(data.url);
+}
+
 export async function customerRegister(_prev: AuthState, fd: FormData): Promise<AuthState> {
   const email = str(fd, "email");
   const password = String(fd.get("password") ?? "");

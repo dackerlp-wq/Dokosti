@@ -68,6 +68,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </form>
       </div>
 
+      {!c && !justDone?.done && (
+        <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
+          <p className="label text-brick-text">Dokončete registraci do klubu</p>
+          <p className="mt-1 text-sm">
+            Účet máte, ale ještě není v klubu DoKosti. Doplňte telefon, případně kartu z prodejny a profil zvířete
+            {settings.club.registrationPoints > 0 ? ` a získáte ${settings.club.registrationPoints} Kostiček` : ""}.
+          </p>
+          <Link href="/registrace" className="label mt-3 inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+            Dokončit registraci
+          </Link>
+        </div>
+      )}
       {(vitejte === "1" || justDone?.done) && (
         <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
           <p className="label text-brick-text">Vítejte v klubu</p>

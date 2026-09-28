@@ -105,6 +105,10 @@ Zákazník vidí své objednávky a Kostičky podle e-mailu (RLS v migraci `0013
 Aby chodily potvrzovací a resetovací e-maily, nastavte v Supabase Authentication → URL Configuration
 Site URL `https://dokosti.cz` a Redirect URLs `https://dokosti.cz/auth/callback` a `https://dokosti.vercel.app/auth/callback`.
 České šablony těchto e-mailů jsou v `supabase/auth-emaily/` (vkládají se ručně, viz tamní README).
+Přihlášení a registrace přes Google (`components/account/google-button.tsx`, akce `signInWithGoogle`) vyžaduje
+v Supabase Authentication → Providers → Google zapnutý provider s Client ID a Client Secret z Google Cloud Console
+(OAuth client typu Web application, Authorized redirect URI `https://tpzeltvekvliqluhfrvn.supabase.co/auth/v1/callback`).
+Kdo se přihlásí Googlem bez registrace, dokončí ji na `/registrace` bez hesla (účet je propojený, e-mail pevný).
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 

@@ -60,7 +60,8 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 |---|---|---|
 | Registrace do klubu (3 kroky: vy, zvířata, souhlasy), propojení podle e-mailu, karty a telefonu | hotovo | Odměna 50 Kostiček za registraci a 150 za úplný profil zvířete (nejvýš 3), v Nastavení → Klub. |
 | Profily zvířat strukturovaně (druh, plemeno, narození, váha, kastrace, aktivita, kondice, krmení, vyloučená masa) | hotovo | Sdílené s kalkulačkou, vidí je kasa i admin. |
-| Přihlášení odkazem e-mailem | hotovo | Vyžaduje odesílání e-mailů (Supabase Auth SMTP nebo vlastní). |
+| Přihlášení odkazem e-mailem | hotovo | SMTP přes Resend, české šablony v `supabase/auth-emaily/`. |
+| Přihlášení a registrace přes Google | doladit | Kód hotový; v Supabase zapnout Google provider (Client ID a Secret z Google Cloud). |
 | Newsletter: segmenty podle zvířat, rozesílka, odhlášení odkazem | nápad | Souhlasy a filtr zákazníků už jsou. |
 | Automatické e-maily: převážení štěněte, narozeniny zvířete s kódem | nápad | Z profilů zvířat. |
 | Smazání účtu (GDPR) | nápad | Anonymizace objednávek. |

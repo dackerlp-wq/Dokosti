@@ -39,11 +39,16 @@ const ERRORS: [string, string][] = [
  * session, dokončí ji (`club_complete_registration`). Bez session se dokončí po potvrzení e-mailu.
  */
 export async function clubRegister(input: RegisterInput): Promise<RegisterResult> {
-  const email = input.email.trim().toLowerCase();
+  const db = await getAuthSupabase();
+  // Už přihlášený účet (Google, nebo e-mail bez dokončené registrace): bez hesla, e-mail z účtu.
+  const {
+    data: { user: current },
+  } = await db.auth.getUser();
+  const email = (current?.email ?? input.email).trim().toLowerCase();
   const name = input.name.trim();
   if (!name) return { ok: false, error: "Doplňte jméno." };
   if (!email.includes("@")) return { ok: false, error: "Zadejte platný e-mail." };
-  if (input.password.length < 8) return { ok: false, error: "Heslo musí mít aspoň 8 znaků." };
+  if (!current && input.password.length < 8) return { ok: false, error: "Heslo musí mít aspoň 8 znaků." };
   if (!input.terms) return { ok: false, error: "Bez souhlasu s podmínkami registraci nedokončíme." };
   const card = input.cardCode.trim().toUpperCase();
   if (card && (card.length < 4 || /[^\x20-\x7e]/.test(card))) return { ok: false, error: "Kód karty nevypadá správně." };
@@ -78,20 +83,25 @@ export async function clubRegister(input: RegisterInput): Promise<RegisterResult
     pets,
   };
 
-  const db = await getAuthSupabase();
-  const { data, error } = await db.auth.signUp({ email, password: input.password, options: { emailRedirectTo: `${SITE_URL}/auth/callback?next=/ucet?vitejte=1` } });
-  if (error || !data.user) {
-    console.error("signUp", error?.message);
-    return { ok: false, error: error?.message.includes("already") ? "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." : "Registrace se nepovedla. Zkuste to znovu." };
-  }
-  // Supabase u existujícího e-mailu vrátí „uživatele“ bez identit, aby neprozradil, že účet existuje.
-  if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-    return { ok: false, error: "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." };
-  }
   const anon = getSupabase();
-  await (anon ?? db).rpc("club_register_pending", { p_user_id: data.user.id, p_data: payload });
-
-  if (!data.session) return { ok: true, state: "confirmEmail" };
+  let userId: string;
+  if (current) {
+    userId = current.id;
+    await (anon ?? db).rpc("club_register_pending", { p_user_id: userId, p_data: payload });
+  } else {
+    const { data, error } = await db.auth.signUp({ email, password: input.password, options: { emailRedirectTo: `${SITE_URL}/auth/callback?next=/ucet?vitejte=1` } });
+    if (error || !data.user) {
+      console.error("signUp", error?.message);
+      return { ok: false, error: error?.message.includes("already") ? "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." : "Registrace se nepovedla. Zkuste to znovu." };
+    }
+    // Supabase u existujícího e-mailu vrátí „uživatele“ bez identit, aby neprozradil, že účet existuje.
+    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return { ok: false, error: "Tento e-mail už účet má. Přihlaste se a údaje doplňte v účtu." };
+    }
+    userId = data.user.id;
+    await (anon ?? db).rpc("club_register_pending", { p_user_id: userId, p_data: payload });
+    if (!data.session) return { ok: true, state: "confirmEmail" };
+  }
 
   const { data: done, error: doneError } = await db.rpc("club_complete_registration");
   if (doneError) {

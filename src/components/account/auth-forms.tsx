@@ -4,6 +4,7 @@ import { MailCheck } from "lucide-react";
 import { startTransition, useActionState, useState } from "react";
 import Link from "next/link";
 import { customerLogin, requestMagicLink, requestPasswordReset, setNewPassword, type AuthState } from "@/app/(shop)/ucet/actions";
+import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { Button } from "@/components/ui/button";
 
 type Mode = "login" | "link" | "reset";
@@ -20,7 +21,13 @@ export function AuthForms({ next }: { next?: string }) {
           Odkazem e-mailem
         </Tab>
       </div>
-      {mode === "login" && <LoginForm next={next} onReset={() => setMode("reset")} />}
+      {mode === "login" && (
+        <>
+          <GoogleButton next={next && next.startsWith("/") ? next : "/ucet"} />
+          <OrDivider />
+          <LoginForm next={next} onReset={() => setMode("reset")} />
+        </>
+      )}
       {mode === "link" && <MagicLinkForm next={next} onBack={() => setMode("login")} />}
       {mode === "reset" && <ResetForm onBack={() => setMode("login")} />}
       <p className="mt-4 border-t border-line pt-3 text-sm text-muted">

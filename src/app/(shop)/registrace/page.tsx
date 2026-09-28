@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RegisterWizard } from "@/components/account/register-wizard";
 import { getCustomerUser } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
+import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Registrace do klubu DoKosti", description: "Účet pro e-shop i věrnostní kartu v prodejně. Kostičky za nákupy, profil vašeho psa nebo kočky a doporučení na míru." };
 
@@ -10,7 +11,18 @@ export const metadata: Metadata = { title: "Registrace do klubu DoKosti", descri
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ karta?: string; kiosk?: string }> }) {
   const [{ karta, kiosk }, settings] = await Promise.all([searchParams, getSettings()]);
   const isKiosk = kiosk === "1";
-  if (!isKiosk && (await getCustomerUser())) redirect("/ucet");
+  // Přihlášený bez propojeného zákazníka (např. po přihlášení Googlem) registraci dokončí bez hesla.
+  let account: { email: string; name: string } | null = null;
+  if (!isKiosk) {
+    const user = await getCustomerUser();
+    if (user) {
+      const db = await getAuthSupabase();
+      const [{ data: linked }, { data: auth }] = await Promise.all([db.from("customers").select("id").eq("user_id", user.id).maybeSingle(), db.auth.getUser()]);
+      if (linked) redirect("/ucet");
+      const meta = (auth.user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+      account = { email: user.email, name: meta.full_name ?? meta.name ?? "" };
+    }
+  }
   return (
     <div className="container-dk py-6 md:py-10">
       <div className="max-w-2xl">
@@ -23,7 +35,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
         </p>
       </div>
       <div className="mt-6">
-        <RegisterWizard cardCode={(karta ?? "").toUpperCase()} kiosk={isKiosk} club={settings.club} loyalty={settings.loyalty} />
+        <RegisterWizard cardCode={(karta ?? "").toUpperCase()} kiosk={isKiosk} club={settings.club} loyalty={settings.loyalty} account={account} />
       </div>
     </div>
   );

@@ -5,21 +5,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { clubRegister, type RegisterInput } from "@/app/(shop)/registrace/actions";
+import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { PetFields, petComplete } from "@/components/account/pet-form";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { emptyPet, HEARD_FROM, type PetProfile } from "@/lib/club";
 import { formatPrice } from "@/lib/format";
 import type { Settings } from "@/lib/settings";
 
-type Props = { cardCode: string; kiosk: boolean; club: Settings["club"]; loyalty: Settings["loyalty"] };
+type Props = {
+  cardCode: string;
+  kiosk: boolean;
+  club: Settings["club"];
+  loyalty: Settings["loyalty"];
+  /** Už přihlášený účet (Google nebo e-mail) bez propojeného zákazníka: bez hesla, e-mail pevný. */
+  account?: { email: string; name: string } | null;
+};
 type Step = 1 | 2 | 3;
 const STEPS = ["Vy", "Vaše zvířata", "Souhlasy"];
 
 /** Registrace ve třech krocích. V režimu kiosk se po dokončení vrátí na začátek pro dalšího zákazníka. */
-export function RegisterWizard({ cardCode, kiosk, club, loyalty }: Props) {
+export function RegisterWizard({ cardCode, kiosk, club, loyalty, account = null }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
-  const [you, setYou] = useState({ name: "", email: "", phone: "", password: "", cardCode });
+  const [you, setYou] = useState({ name: account?.name ?? "", email: account?.email ?? "", phone: "", password: "", cardCode });
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [consent, setConsent] = useState({ terms: false, marketingEmail: false, marketingSms: false, heardFrom: "" });
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +73,7 @@ export function RegisterWizard({ cardCode, kiosk, club, loyalty }: Props) {
         <p className="mt-3 text-muted">
           {done.state === "confirmEmail"
             ? `Na ${you.email} jsme poslali odkaz. Po kliknutí bude účet hotový${club.registrationPoints > 0 ? ` a připíšeme vám ${club.registrationPoints} Kostiček` : ""}${pets.length ? ` a odměnu za ${pets.length === 1 ? "profil zvířete" : "profily zvířat"}` : ""}.`
-            : `Účet je hotový${done.awarded > 0 ? `, připsali jsme ${done.awarded} Kostiček` : ""}. Přihlašovací údaje jsme poslali na ${you.email}.`}
+            : `Účet je hotový${done.awarded > 0 ? `, připsali jsme ${done.awarded} Kostiček` : ""}. Potvrzení jsme poslali na ${you.email}.`}
         </p>
         {kiosk ? (
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -105,14 +113,21 @@ export function RegisterWizard({ cardCode, kiosk, club, loyalty }: Props) {
           }}
           className="space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-5"
         >
+          {!kiosk && !account && (
+            <>
+              <GoogleButton next="/registrace" label="Rychleji přes Google" />
+              <OrDivider />
+            </>
+          )}
+          {account && <p className="text-sm text-muted">Účet už máte přihlášený, jen doplňte údaje pro klub.</p>}
           <Field label="Jméno a příjmení" value={you.name} onChange={(v) => setYou({ ...you, name: v })} required autoComplete="name" />
-          <Field label="E-mail" value={you.email} onChange={(v) => setYou({ ...you, email: v })} type="email" required autoComplete="email" hint="přihlašovací" />
+          <Field label="E-mail" value={you.email} onChange={(v) => setYou({ ...you, email: v })} type="email" required autoComplete="email" hint="přihlašovací" readOnly={Boolean(account)} className={account ? "bg-cream text-muted" : ""} />
           <Field label="Telefon" value={you.phone} onChange={(v) => setYou({ ...you, phone: v })} type="tel" required autoComplete="tel" hint="kvůli rozvozu a výdeji" />
-          <Field label="Heslo" value={you.password} onChange={(v) => setYou({ ...you, password: v })} type="password" required minLength={8} autoComplete="new-password" hint="aspoň 8 znaků" />
+          {!account && <Field label="Heslo" value={you.password} onChange={(v) => setYou({ ...you, password: v })} type="password" required minLength={8} autoComplete="new-password" hint="aspoň 8 znaků" />}
           <Field label="Kód věrnostní karty" value={you.cardCode} onChange={(v) => setYou({ ...you, cardCode: v.toUpperCase() })} hint="máte-li kartu z prodejny, jinak nechte prázdné" className="uppercase" />
           {kiosk && <p className="text-xs text-muted">Heslo si zvolte sami. Obsluha ho nevidí a do účtu se dostanete z domova.</p>}
           <div className="flex items-center justify-between gap-3 pt-2">
-            {!kiosk && (
+            {!kiosk && !account && (
               <Link href="/ucet/prihlaseni" className="text-sm text-muted hover:underline">
                 Už mám účet
               </Link>
