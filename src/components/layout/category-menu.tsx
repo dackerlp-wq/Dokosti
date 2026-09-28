@@ -31,7 +31,7 @@ export function CategoryMenu({ menu }: { menu: MenuLine[] }) {
                       <Link href={`${line.href}/${m.key}`} className="flex items-center gap-3 rounded-[var(--radius-control)] border border-transparent p-1.5 hover:border-line hover:bg-cream">
                         <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-cream">
                           {m.image ? (
-                            <Image src={m.image} alt="" fill sizes="48px" className="object-cover" />
+                            <Image src={m.image} alt="" fill sizes="48px" className={m.illustration ? "object-contain p-1" : "object-cover"} />
                           ) : (
                             <Bone strokeWidth={1.5} className="absolute inset-0 m-auto h-5 w-5 text-line" />
                           )}

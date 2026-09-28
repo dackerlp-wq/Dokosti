@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LineProducts } from "@/components/product/line-products";
 import { LINE_INFO, MEAT_LABEL, MEAT_TITLE, isLineSlug, isMeatKey } from "@/lib/catalog";
-import { lineMeatPairs } from "@/lib/menu";
+import { lineMeatPairs, meatIllustration } from "@/lib/menu";
 import { getProducts, getProductsByLine } from "@/lib/products";
 
 type Props = { params: Promise<{ slug: string; maso: string }> };
@@ -29,6 +30,7 @@ export default async function LineMeatPage({ params }: Props) {
   const line = LINE_INFO[slug];
   const products = await getProductsByLine(slug);
   if (!products.some((p) => p.meats?.includes(maso))) notFound();
+  const illustration = meatIllustration(maso);
 
   return (
     <div className="container-dk py-6 md:py-10">
@@ -38,9 +40,16 @@ export default async function LineMeatPage({ params }: Props) {
         </Link>{" "}
         · {MEAT_LABEL[maso]}
       </p>
-      <h1>
-        {MEAT_TITLE[maso]} {lowerFirst(line.name)}
-      </h1>
+      <div className="flex items-center gap-4">
+        {illustration && (
+          <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-line bg-cream md:h-20 md:w-20">
+            <Image src={illustration} alt="" fill sizes="80px" className="object-contain p-1.5" />
+          </span>
+        )}
+        <h1>
+          {MEAT_TITLE[maso]} {lowerFirst(line.name)}
+        </h1>
+      </div>
       <p className="mt-2 max-w-2xl text-muted">{line.description}</p>
 
       <LineProducts products={products} line={slug} initialMeat={maso} />
