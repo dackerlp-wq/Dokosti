@@ -58,7 +58,12 @@ export async function GET(req: NextRequest) {
         subscribe_interval: String(s.interval_days),
         subscription_id: s.id,
       };
-      const items = s.items.filter((i) => i.available !== false).map((i) => ({ product_slug: i.product_slug, qty: i.qty }));
+      // Položky, které vydrží déle než interval (olej, kosti navíc), jdou jen do každé N. dodávky:
+      // orders_count = kolik dodávek už bylo (i první z pokladny), položka jde do dodávky, když je jich dělitelný N (1., N+1., 2N+1. …).
+      const prior = s.orders_count ?? 0;
+      const items = s.items
+        .filter((i) => i.available !== false && prior % (i.every_nth ?? 1) === 0)
+        .map((i) => ({ product_slug: i.product_slug, qty: i.qty }));
       if (items.length === 0) throw new Error("žádná položka není skladem");
       const { data: created, error: orderError } = await db.rpc("create_order", { p_order: order, p_items: items });
       if (orderError || !created) throw new Error(orderError?.message ?? "create_order selhalo");

@@ -23,6 +23,8 @@ type Props = {
   initialInterval?: number;
   /** Předvolený způsob dodání z průvodce (?dodani=rozvoz). */
   initialShipping?: ShippingId;
+  /** Z průvodce: položky jen do každé N. dodávky (slug → N), např. olej, který vydrží déle než interval. */
+  everyNth?: Record<string, number>;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
 };
@@ -32,7 +34,7 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numer
 const INTERVALS = [0, 14, 28] as const;
 type Interval = (typeof INTERVALS)[number];
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, prefill }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, prefill }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(initialShipping && SHIPPING.some((m) => m.id === initialShipping) ? initialShipping : (SHIPPING[0]?.id ?? "odber"));
   const [interval, setInterval] = useState<Interval>(subscription.enabled && (INTERVALS as readonly number[]).includes(initialInterval) ? (initialInterval as Interval) : 0);
@@ -131,7 +133,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
       couponCode: coupon?.ok ? coupon.code : undefined,
       pointsRedeem: redeemSteps * loyalty.redeemStep,
-      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate } : undefined,
+      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate, everyNth } : undefined,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -248,6 +250,11 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                   První dodávka {dateFmt.format(new Date(firstDate + "T12:00:00"))}, další vždy v {DAY_NAMES[weekday] === "úterý" ? "úterý" : DAY_NAMES[weekday]}{" "}
                   {INTERVAL_LABEL[interval]}. {subscription.reminderDaysBefore} dny předem vám napíšeme, co posíláme, a jde to jedním kliknutím přeskočit.
                 </p>
+                {cart.items.some((i) => (everyNth[i.product.slug] ?? 1) > 1) && (
+                  <p className="mt-1 text-muted">
+                    Vydrží déle, proto jen občas: {cart.items.filter((i) => (everyNth[i.product.slug] ?? 1) > 1).map((i) => `${productName(i.product)} každou ${everyNth[i.product.slug]}. dodávku`).join(", ")}.
+                  </p>
+                )}
               </div>
             )}
           </fieldset>

@@ -20,7 +20,9 @@ export type SubscriptionView = {
   status: SubscriptionStatus;
   created_at: string;
   last_error: string | null;
-  items: { product_slug: string; qty: number; name: string | null; price_czk: number | null; weight_grams: number | null; available: boolean | null }[];
+  /** Kolik dodávek z předplatného už vzniklo (bez první objednávky z pokladny). */
+  orders_count?: number;
+  items: { product_slug: string; qty: number; every_nth?: number; name: string | null; price_czk: number | null; weight_grams: number | null; available: boolean | null }[];
 };
 
 export type SubscriptionStatus = "aktivni" | "pozastaveno" | "zruseno";

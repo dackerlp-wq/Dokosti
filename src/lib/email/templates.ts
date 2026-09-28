@@ -215,12 +215,12 @@ export function subscriptionCreated(o: OrderForEmail, s: Settings, sub: Subscrip
 
 /** Připomínka před dodávkou z předplatného. */
 export function subscriptionReminder(
-  sub: { customer_name: string; next_date: string; items: { name: string | null; qty: number; price_czk: number | null; available: boolean | null }[]; shipping_method: "odber" | "rozvoz" | "prepravce" },
+  sub: { customer_name: string; next_date: string; items: { name: string | null; qty: number; every_nth?: number; price_czk: number | null; available: boolean | null }[]; shipping_method: "odber" | "rozvoz" | "prepravce" },
   s: Settings,
   manageUrl: string,
 ): EmailMessage {
   const title = `${fmtDay(sub.next_date)} vám ${sub.shipping_method === "odber" ? "chystáme" : "posíláme"} pravidelný nákup`;
-  const rows = sub.items.map((i) => `<tr><td style="padding:4px 0;border-bottom:1px solid #d9cfb8">${i.qty} × ${esc(i.name ?? "položka")}${i.available === false ? " <span style=\"color:#9c4424\">(teď není skladem)</span>" : ""}</td><td align="right" style="padding:4px 0;border-bottom:1px solid #d9cfb8;white-space:nowrap">${i.price_czk != null ? formatPrice(i.qty * i.price_czk) : ""}</td></tr>`).join("");
+  const rows = sub.items.map((i) => `<tr><td style="padding:4px 0;border-bottom:1px solid #d9cfb8">${i.qty} × ${esc(i.name ?? "položka")}${i.available === false ? " <span style=\"color:#9c4424\">(teď není skladem)</span>" : ""}${(i.every_nth ?? 1) > 1 ? ` <span style=\"color:#55645a\">(jen každou ${i.every_nth}. dodávku)</span>` : ""}</td><td align="right" style="padding:4px 0;border-bottom:1px solid #d9cfb8;white-space:nowrap">${i.price_czk != null ? formatPrice(i.qty * i.price_czk) : ""}</td></tr>`).join("");
   const total = sub.items.reduce((n, i) => n + (i.price_czk ?? 0) * i.qty, 0);
   const cutoff = s.subscription.cutoffDaysBefore;
   const body = `<p>Dobrý den, ${esc(sub.customer_name)},</p>

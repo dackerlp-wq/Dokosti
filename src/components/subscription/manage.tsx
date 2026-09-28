@@ -21,7 +21,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
-  const [items, setItems] = useState(initial.items.map((i) => ({ slug: i.product_slug, qty: i.qty })));
+  const [items, setItems] = useState(initial.items.map((i) => ({ slug: i.product_slug, qty: i.qty, every: i.every_nth ?? 1 })));
   const [interval, setInterval] = useState(initial.interval_days);
   const [weekday, setWeekday] = useState(initial.weekday);
 
@@ -30,7 +30,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
       const res = await manageSubscription(s.token, action, payload);
       if (res.ok) {
         setS(res.subscription);
-        setItems(res.subscription.items.map((i) => ({ slug: i.product_slug, qty: i.qty })));
+        setItems(res.subscription.items.map((i) => ({ slug: i.product_slug, qty: i.qty, every: i.every_nth ?? 1 })));
         setEditing(false);
         setMsg(done ? { ok: true, text: done } : null);
       } else setMsg({ ok: false, text: res.error });
@@ -122,7 +122,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
           )}
         </div>
         <ul className="mt-3 divide-y divide-line text-sm">
-          {(editing ? items : s.items.map((i) => ({ slug: i.product_slug, qty: i.qty }))).map((line) => {
+          {(editing ? items : s.items.map((i) => ({ slug: i.product_slug, qty: i.qty, every: i.every_nth ?? 1 }))).map((line) => {
             const info = s.items.find((i) => i.product_slug === line.slug);
             return (
               <li key={line.slug} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -135,6 +135,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
                     <span className="font-semibold">{line.slug}</span>
                   )}
                   {info?.available === false && <span className="ml-2 text-brick-text">teď není skladem</span>}
+                  {line.every > 1 && <span className="label ml-2 text-[10px] text-muted">jen každou {line.every}. dodávku</span>}
                 </span>
                 {editing ? (
                   <span className="flex items-center gap-2">
@@ -160,10 +161,10 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
         </ul>
         {editing ? (
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button type="button" disabled={pending || items.every((i) => i.qty === 0)} onClick={() => run("items", { items: items.filter((i) => i.qty > 0).map((i) => ({ product_slug: i.slug, qty: i.qty })) }, "Množství jsme uložili.")}>
+            <Button type="button" disabled={pending || items.every((i) => i.qty === 0)} onClick={() => run("items", { items: items.filter((i) => i.qty > 0).map((i) => ({ product_slug: i.slug, qty: i.qty, every_nth: i.every })) }, "Množství jsme uložili.")}>
               Uložit
             </Button>
-            <button type="button" onClick={() => { setEditing(false); setItems(s.items.map((i) => ({ slug: i.product_slug, qty: i.qty }))); }} className="text-sm text-muted underline">
+            <button type="button" onClick={() => { setEditing(false); setItems(s.items.map((i) => ({ slug: i.product_slug, qty: i.qty, every: i.every_nth ?? 1 }))); }} className="text-sm text-muted underline">
               Zpět
             </button>
             <span className="text-xs text-muted">Množství 0 položku odebere. Něco přidat? Objednejte to jednou v e-shopu a napište nám, přidáme to.</span>

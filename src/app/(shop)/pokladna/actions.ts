@@ -19,7 +19,7 @@ export type CheckoutInput = {
   couponCode?: string;
   pointsRedeem?: number;
   /** Pravidelný odběr: interval, den v týdnu a datum první dodávky. */
-  subscribe?: { intervalDays: number; weekday: number; firstDate: string };
+  subscribe?: { intervalDays: number; weekday: number; firstDate: string; everyNth?: Record<string, number> };
   customer: {
     name: string;
     email: string;
@@ -79,13 +79,15 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     .filter((l) => l.qty >= 1);
   if (items.length === 0) return { ok: false, error: "Košík je prázdný." };
 
-  let subscribe: { intervalDays: number; weekday: number; firstDate: string } | null = null;
+  let subscribe: { intervalDays: number; weekday: number; firstDate: string; everyNth: Record<string, number> } | null = null;
   if (input.subscribe && settings.subscription.enabled) {
     const { intervalDays, weekday, firstDate } = input.subscribe;
-    if (![7, 14, 28].includes(intervalDays) || !(weekday >= 0 && weekday <= 6) || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) {
+    if (![14, 28].includes(intervalDays) || !(weekday >= 0 && weekday <= 6) || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) {
       return { ok: false, error: "Neplatné nastavení pravidelného odběru." };
     }
-    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate };
+    const everyNth: Record<string, number> = {};
+    for (const [slug, n] of Object.entries(input.subscribe.everyNth ?? {})) if (Number.isInteger(n) && n >= 1 && n <= 12) everyNth[slug] = n;
+    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate, everyNth };
   }
 
   const order = {
@@ -144,7 +146,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   if (subscribe) {
     const { data: sub, error: subError } = await db.rpc("create_subscription", {
       p_sub: { ...order, interval_days: subscribe.intervalDays, weekday: subscribe.weekday, first_date: subscribe.firstDate, order_number: r.order_number },
-      p_items: items,
+      p_items: items.map((i) => ({ ...i, every_nth: subscribe.everyNth[i.product_slug] ?? 1 })),
     });
     if (subError || !sub) console.error("create_subscription", subError);
     else {

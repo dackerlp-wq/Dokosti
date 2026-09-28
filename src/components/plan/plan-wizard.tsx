@@ -9,7 +9,7 @@ import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { savePetProfile } from "@/app/(shop)/ucet/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
-import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, type Activity, type Condition, type Reco } from "@/lib/barf";
+import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal } from "@/lib/club";
 import { formatPrice, formatWeight } from "@/lib/format";
@@ -59,6 +59,11 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [delivery, setDelivery] = useState<Delivery>(shipping.rozvoz ? "rozvoz" : "odber");
   const [removed, setRemoved] = useState<string[]>([]);
   const [swaps, setSwaps] = useState<Record<string, string>>({});
+  /** Podíl syrové stravy (zbytek granule) a zda přidat naše granule do dodávky. */
+  const [rawShare, setRawShare] = useState<AnimalInput["rawShare"]>(100);
+  const [addKibble, setAddKibble] = useState(true);
+  /** Jen jednou = bez předplatného. */
+  const [oneTime, setOneTime] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // Krok 8: účet
@@ -86,9 +91,21 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
 
   const plan = useMemo(() => {
     if (step < 7 || pet.weightKg <= 0) return null;
-    const input = { ...petToAnimal(pet), removed, swaps };
+    const input: AnimalInput = { ...petToAnimal(pet), rawShare, addons: { ...DEFAULT_ADDONS, granule: addKibble }, removed, swaps };
     return buildPlan(products, input, days);
-  }, [step, pet, removed, swaps, products, days]);
+  }, [step, pet, removed, swaps, products, days, rawShare, addKibble]);
+
+  /** Položky, které vydrží déle než interval (olej, kosti navíc): v dalších dodávkách jen každou N. */
+  const everyNth = useMemo(() => {
+    const out: Record<string, number> = {};
+    if (!plan) return out;
+    for (const i of plan.items) {
+      if (i.gramsPerDay <= 0) continue;
+      const lasts = (i.qty * i.product.weightGrams) / i.gramsPerDay;
+      if (lasts >= days * 2) out[i.product.slug] = Math.min(12, Math.floor(lasts / days));
+    }
+    return out;
+  }, [plan, days]);
 
   function pickPet(p: PetProfile) {
     setPet(p);
@@ -107,7 +124,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       if (!saved.ok) return setError(saved.error);
       cart.clear();
       plan.items.forEach((r) => cart.add(r.product.slug, r.qty));
-      router.push(`/pokladna?predplatne=${days}&dodani=${delivery}`);
+      const obcas = Object.entries(everyNth).map(([slug, n]) => `${slug}:${n}`).join(",");
+      router.push(`/pokladna?predplatne=${oneTime ? 0 : days}&dodani=${delivery}${!oneTime && obcas ? `&obcas=${encodeURIComponent(obcas)}` : ""}`);
     });
   }
 
@@ -308,11 +326,48 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           <p className="text-sm text-muted">Když přecházíte z granulí, začneme jedním druhem masa a pošleme plán na první týdny.</p>
           <div className="grid gap-2">
             {(Object.keys(FEEDING_LABEL) as Exclude<FeedingNow, "">[]).map((f) => (
-              <button key={f} type="button" onClick={() => setPet({ ...pet, feedingNow: f })} aria-pressed={pet.feedingNow === f} className={opt(pet.feedingNow === f)}>
+              <button
+                key={f}
+                type="button"
+                onClick={() => {
+                  setPet({ ...pet, feedingNow: f });
+                  setRawShare(f === "granule" || f === "mix" ? 50 : 100);
+                }}
+                aria-pressed={pet.feedingNow === f}
+                className={opt(pet.feedingNow === f)}
+              >
                 <span className="font-semibold">{FEEDING_LABEL[f]}</span>
               </button>
             ))}
           </div>
+          {(pet.feedingNow === "granule" || pet.feedingNow === "mix") && (
+            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
+              <p className="label mb-2 text-[11px] text-muted">Kolik syrového chcete krmit</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    [100, "Úplně syrové", "granule vysadíme"],
+                    [75, "Tři čtvrtiny", "granule jen občas"],
+                    [50, "Půl na půl", "syrové a granule v jiných jídlech"],
+                    [25, "Čtvrtina", "granule zůstávají základ"],
+                  ] as [AnimalInput["rawShare"], string, string][]
+                ).map(([v, label, hint]) => (
+                  <button key={v} type="button" onClick={() => setRawShare(v)} aria-pressed={rawShare === v} className={`${opt(rawShare === v)} p-3`}>
+                    <span>
+                      <span className="text-sm font-semibold">{label}</span>
+                      <span className={sub(rawShare === v)}>{hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {rawShare < 100 && (
+                <label className="mt-3 flex items-center justify-between gap-3 text-sm">
+                  <span>Přidat do dodávky i naše granule</span>
+                  <input type="checkbox" checked={addKibble} onChange={(e) => setAddKibble(e.target.checked)} className="h-5 w-5 min-h-0 accent-green" />
+                </label>
+              )}
+            </div>
+          )}
           <Button type="submit" variant="action" className="w-full min-h-12" disabled={!pet.feedingNow}>
             Pokračovat
           </Button>
@@ -367,6 +422,10 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           club={club}
           pending={pending}
           error={error}
+          everyNth={everyNth}
+          oneTime={oneTime}
+          setOneTime={setOneTime}
+          rawShare={rawShare}
           onContinue={() => (user ? finish() : next())}
           cta={user ? `Chci to takhle pro ${first}` : "Pokračovat k účtu"}
         />
@@ -484,6 +543,10 @@ function PlanStep({
   club,
   pending,
   error,
+  everyNth,
+  oneTime,
+  setOneTime,
+  rawShare,
   onContinue,
   cta,
 }: {
@@ -504,6 +567,10 @@ function PlanStep({
   club: Settings["club"];
   pending: boolean;
   error: string | null;
+  everyNth: Record<string, number>;
+  oneTime: boolean;
+  setOneTime: (v: boolean) => void;
+  rawShare: AnimalInput["rawShare"];
   onContinue: () => void;
   cta: string;
 }) {
@@ -520,8 +587,10 @@ function PlanStep({
         <div>
           <p className="label text-brick-text">Plán pro {pet.name}</p>
           <h2 className="mt-1 text-[30px] leading-tight md:text-[34px]">
-            {pet.name} potřebuje {r.dailyGrams} g syrové stravy denně
+            {pet.name} potřebuje {r.dailyGrams} g {rawShare < 100 ? "syrového" : "syrové stravy"}
+            {rawShare < 100 && r.kibbleGrams ? ` a ${r.kibbleGrams} g granulí` : ""} denně
           </h2>
+          {rawShare < 100 && !r.kibbleGrams && <p className="mt-1 text-sm text-muted">Zbytek ({100 - rawShare} % energie, {r.kibbleKcal} kcal) doplní granule podle tabulky na obalu.</p>}
           <p className="mt-2 max-w-2xl text-sm text-muted">
             {pet.species === "pes" ? "Pes" : "Kočka"}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně, ve {r.mealsPerDay === 1 ? "jedné porci" : r.mealsPerDay === 2 ? "dvou porcích" : `${r.mealsPerDay} porcích`}
             {r.mealsPerDay > 1 ? ` po ${Math.round(r.dailyGrams / r.mealsPerDay)} g` : ""}. Orientační dávka, po 2 až 4 týdnech {first} zvažte a plán upravíte v účtu.
@@ -546,7 +615,12 @@ function PlanStep({
                       {i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? i.why : `${ROLE_LABEL[i.role]}, ${i.why}`}
                     </p>
                   </div>
-                  <span className="text-xs text-muted">{i.gramsPerDay > 0 ? `${Math.round(i.gramsPerDay)} g/den` : ""}</span>
+                  <span className="text-xs text-muted">
+                    {i.gramsPerDay > 0 ? `${Math.round(i.gramsPerDay)} g/den` : ""}
+                    {everyNth[i.product.slug] && (
+                      <span className="block text-brick-text">vydrží ~{Math.round((i.qty * i.product.weightGrams) / i.gramsPerDay)} dní{!oneTime ? `, pak jen každou ${everyNth[i.product.slug]}. dodávku` : ""}</span>
+                    )}
+                  </span>
                   <span className="w-12 text-right font-semibold">{i.qty} ks</span>
                   <span className="flex items-center gap-2 text-xs">
                     {alternatives.length > 0 && (
@@ -598,12 +672,16 @@ function PlanStep({
         <p className="label mt-4 mb-1.5 text-[11px] text-muted">Jak často</p>
         <div className="flex gap-2">
           {([14, 28] as Days[]).map((d) => (
-            <button key={d} type="button" onClick={() => setDays(d)} aria-pressed={days === d} className={seg(days === d)}>
+            <button key={d} type="button" onClick={() => { setDays(d); setOneTime(false); }} aria-pressed={days === d && !oneTime} className={seg(days === d && !oneTime)}>
               <span className="block text-sm font-semibold">{d === 14 ? "Každé 2 týdny" : "Každé 4 týdny"}</span>
               <span className="block text-xs text-muted">{d === 14 ? "menší balík, jedna police" : "větší balík, méně dodávek"}</span>
             </button>
           ))}
         </div>
+        <button type="button" onClick={() => setOneTime(!oneTime)} aria-pressed={oneTime} className={`${seg(oneTime)} mt-2 w-full`}>
+          <span className="block text-sm font-semibold">Jen jednou</span>
+          <span className="block text-xs text-muted">balík na {days === 14 ? "2 týdny" : "4 týdny"}, bez dalších dodávek</span>
+        </button>
 
         <p className="label mt-4 mb-1.5 text-[11px] text-muted">Dodání</p>
         <div className="flex gap-2">
@@ -630,8 +708,8 @@ function PlanStep({
           {pending ? "Ukládám…" : cta}
         </Button>
         <p className="mt-2 text-center text-xs text-muted">
-          Bez závazku: dodávku přeskočíte, změníte nebo zrušíte kdykoli v účtu. Platíte za každou zvlášť.
-          {bonusPts > 0 && ` Za každou dodávku ${bonusPts} Kostiček navíc.`}
+          {oneTime ? "Jednorázová objednávka. Pravidelné dodávky si můžete nastavit kdykoli později v účtu." : "Bez závazku: dodávku přeskočíte, změníte nebo zrušíte kdykoli v účtu. Platíte za každou zvlášť."}
+          {!oneTime && bonusPts > 0 && ` Za každou dodávku ${bonusPts} Kostiček navíc.`}
           {club.petPoints > 0 && ` Za profil ${first} ${club.petPoints} Kostiček.`}
         </p>
       </aside>

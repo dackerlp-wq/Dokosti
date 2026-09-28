@@ -7,8 +7,8 @@ import { nextDeliveryDays, paymentMethods, shippingMethods, subscriptionWeekdays
 
 export const metadata: Metadata = { title: "Pokladna" };
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ predplatne?: string; dodani?: string }> }) {
-  const [settings, user, { predplatne, dodani }] = await Promise.all([getSettings(), getCustomerUser(), searchParams]);
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ predplatne?: string; dodani?: string; obcas?: string }> }) {
+  const [settings, user, { predplatne, dodani, obcas }] = await Promise.all([getSettings(), getCustomerUser(), searchParams]);
   let prefill: { name: string; email: string; phone: string; street: string; city: string; zip: string } | undefined;
   if (user) {
     const db = await getAuthSupabase();
@@ -29,6 +29,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           weekdays={{ odber: subscriptionWeekdays(settings, "odber"), rozvoz: subscriptionWeekdays(settings, "rozvoz"), prepravce: subscriptionWeekdays(settings, "prepravce") }}
           initialInterval={Number(predplatne ?? 0) || 0}
           initialShipping={dodani === "rozvoz" || dodani === "odber" || dodani === "prepravce" ? dodani : undefined}
+          everyNth={Object.fromEntries((obcas ?? "").split(",").map((p) => p.split(":")).filter(([slug, n]) => slug && Number(n) >= 2 && Number(n) <= 12).map(([slug, n]) => [slug, Number(n)]))}
           prefill={prefill}
         />
       </div>

@@ -84,7 +84,7 @@ Startovací balíčky se zobrazí, jakmile existují produkty se slugem `startov
 
 ## Předplatné (pravidelný odběr)
 
-V pokladně zákazník zvolí Jednorázově / každý týden / každých 14 dní / každé 4 týdny a den dodání (u rozvozu rozvozový den,
+V pokladně zákazník zvolí Jednorázově / každé 2 týdny / každé 4 týdny a den dodání (u rozvozu rozvozový den,
 jinak den v týdnu). První objednávka projde běžně, `create_subscription` k ní založí předplatné (tabulky `subscriptions`,
 `subscription_items`) a zákazník dostane e-mail s odkazem `/predplatne/<token>`, kde dodávku přeskočí, upraví množství,
 změní interval nebo odběr pozastaví a zruší (RPC `manage_subscription`). Přihlášený zákazník vidí předplatné i v účtu.
@@ -93,6 +93,8 @@ v tabulce `secrets`) pošle připomínku `reminderDaysBefore` dní předem a `cu
 `create_order` (sleva `subscription.discountPct` z nastavení, kód `PŘEDPLATNÉ`), pošle potvrzení a posune `next_date`. Když se
 objednávku nepodaří vytvořit, předplatné se pozastaví a prodejna dostane e-mail. Admin: Předplatné (seznam, detail se správou a
 objednávkami), Nastavení → Předplatné. Platba za každou dodávku zvlášť; opakovaná platba kartou přijde s platební bránou.
+Položka předplatného může mít `every_nth` (migrace `0025`): jde jen do každé N. dodávky (olej, kosti, které vydrží déle než
+interval); cron ji vynechá, když `orders_count % every_nth != 0`. Správa i pokladna to ukazují jako „jen každou N. dodávku“.
 Dotazy z poradny jdou do tabulky `inquiries`, e-mailem prodejně a do adminu (Poradna). Cookies lišta a Google Analytics se zapnou proměnnou `NEXT_PUBLIC_GA_ID`; bez ní se nic neměří.
 Šarže a expirace: u mraženého a chlazeného produktu v adminu, expirace do 14 dnů svítí na Přehledu.
 
@@ -115,7 +117,9 @@ Kdo se přihlásí Googlem bez registrace, dokončí ji na `/registrace` bez hes
 `/krmeni-na-miru` (`components/plan/plan-wizard.tsx`): sedm otázek o zvířeti → plán s cenou za den (stejný výpočet jako
 kalkulačka: `petToAnimal` → `buildPlan`) → interval každé 2 nebo 4 týdny a způsob dodání → u nepřihlášeného e-mail a kód
 (registrace do klubu) → profil zvířete se uloží do účtu (`savePetProfile`) a pokladna dostane košík s předplatným
-(`/pokladna?predplatne=14&dodani=rozvoz`). Dodávky z předplatného dostávají Kostičky navíc v hodnotě
+(`/pokladna?predplatne=14&dodani=rozvoz&obcas=slug:6,…`; `predplatne=0` je jednorázová objednávka bez předplatného).
+U granulí nebo mixu se ptá na podíl syrového (100/75/50/25 %), plán pak ukazuje „X g syrového a Y g granulí denně“ a jde
+přidat naše granule. Položka, která vydrží aspoň dvojnásobek období, dostane `every_nth` = floor(vydrží / období) (max 12). Dodávky z předplatného dostávají Kostičky navíc v hodnotě
 `subscription.pointsBonusPct` % z ceny zboží (migrace `0024`, v `create_order` i pro první objednávku z pokladny); sleva
 `discountPct` je 0. Odkazy z e-mailů Supabase (`/auth/callback`) se ověřují až tlačítkem, protože skenery odkazů v poště
 je jinak spotřebují dřív než zákazník. Návrh: `docs/PREDPLATNE.md`.

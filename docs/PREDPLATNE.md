@@ -36,11 +36,13 @@ Kdo je přihlášený, krok 8 nevidí; kdo má v účtu zvíře, může začít 
 - Složení dodávky: produkty s kusy na období, každý s „proč“ (základ, rybí den, kosti, olej). Jde odebrat nebo
   nahradit jiný druh masa (už umí kalkulačka).
 - **Cena za den** velkým písmem (např. 43 Kč/den), pod tím cena za dodávku.
-- Přepínač: **Pravidelně** (výchozí) vs. **Jen vyzkoušet**.
+- Přepínač: **Pravidelně** (výchozí) vs. **Jen jednou** (jednorázová objednávka, bez zkušebního balíčku).
   - Pravidelně: interval každé 2 nebo 4 týdny (podle mrazáku zákazníka), Kostičky navíc za předplatné, „kdykoli
     pozastavíte nebo zrušíte“.
-  - Jen vyzkoušet: zkušební balíček na 7 dní se slevou (výše slevy = nastavení, placeholder), po týdnu e-mail
-    „Jak Rexovi chutnalo? Nastavte si pravidelné dodávky“.
+  - Položky, které vydrží déle než období (olej, kosti), mají u sebe „vydrží ~N dní, pak jen každou k. dodávku“
+    a do předplatného jdou s `every_nth`.
+  - U granulí nebo mixu podíl syrového (100/75/50/25 %), plán ukazuje „X g syrového a Y g granulí denně“ a jde
+    přidat naše granule.
 - Rozvoz / odběr v prodejně, orientační první termín.
 
 ## Účet: Můj plán
