@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { MailCheck } from "lucide-react";
+import { startTransition, useActionState, useState } from "react";
 import Link from "next/link";
 import { customerLogin, requestMagicLink, requestPasswordReset, setNewPassword, type AuthState } from "@/app/(shop)/ucet/actions";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export function AuthForms({ next }: { next?: string }) {
         </Tab>
       </div>
       {mode === "login" && <LoginForm next={next} onReset={() => setMode("reset")} />}
-      {mode === "link" && <MagicLinkForm next={next} />}
+      {mode === "link" && <MagicLinkForm next={next} onBack={() => setMode("login")} />}
       {mode === "reset" && <ResetForm onBack={() => setMode("login")} />}
       <p className="mt-4 border-t border-line pt-3 text-sm text-muted">
         Nemáte účet?{" "}
@@ -76,15 +77,53 @@ function LoginForm({ next, onReset }: { next?: string; onReset: () => void }) {
   );
 }
 
-function MagicLinkForm({ next }: { next?: string }) {
+/**
+ * Obrazovka po odeslání odkazu: místo formuláře řekne, kam se podívat, a nabídne poslat znovu.
+ */
+function SentPanel({ email, what, pending, onResend, onBack }: { email: string; what: string; pending: boolean; onResend: () => void; onBack: () => void }) {
+  return (
+    <div className="space-y-3" role="status" aria-live="polite">
+      <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-line bg-cream p-4">
+        <MailCheck strokeWidth={1.75} className="mt-0.5 h-6 w-6 shrink-0 text-green" />
+        <div>
+          <p className="font-display text-lg font-semibold">Podívejte se do e-mailu</p>
+          <p className="mt-1 text-sm">
+            Pokud e-mail <strong>{email}</strong> známe, poslali jsme na něj {what}. Klikněte na tlačítko v něm, klidně i na telefonu.
+          </p>
+          <p className="mt-2 text-xs text-muted">Odkaz platí několik minut a jde použít jednou. Když nic nepřišlo, zkontrolujte složku spam nebo hromadné.</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="button" variant="secondary" onClick={onResend} disabled={pending}>
+          {pending ? "Odesílám…" : "Poslat znovu"}
+        </Button>
+        <button type="button" onClick={onBack} className="text-sm text-muted hover:underline">
+          Zpět na přihlášení
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MagicLinkForm({ next, onBack }: { next?: string; onBack: () => void }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(requestMagicLink, null);
+  const [email, setEmail] = useState("");
+  if (state?.info) {
+    const resend = () => {
+      const fd = new FormData();
+      fd.set("email", email);
+      fd.set("next", next ?? "");
+      startTransition(() => action(fd));
+    };
+    return <SentPanel email={email} what="přihlašovací odkaz" pending={pending} onResend={resend} onBack={onBack} />;
+  }
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="next" value={next ?? ""} />
       <p className="text-sm text-muted">Bez hesla: pošleme vám odkaz, kliknutím jste přihlášeni.</p>
-      <Field label="E-mail" name="email" type="email" autoComplete="email" required />
+      <Field label="E-mail" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <Msg state={state} />
-      <Button type="submit" className="w-full" disabled={pending || Boolean(state?.info)}>
+      <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Odesílám…" : "Poslat přihlašovací odkaz"}
       </Button>
     </form>
@@ -93,12 +132,21 @@ function MagicLinkForm({ next }: { next?: string }) {
 
 function ResetForm({ onBack }: { onBack: () => void }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(requestPasswordReset, null);
+  const [email, setEmail] = useState("");
+  if (state?.info) {
+    const resend = () => {
+      const fd = new FormData();
+      fd.set("email", email);
+      startTransition(() => action(fd));
+    };
+    return <SentPanel email={email} what="odkaz pro nastavení nového hesla" pending={pending} onResend={resend} onBack={onBack} />;
+  }
   return (
     <form action={action} className="space-y-3">
       <p className="text-sm text-muted">Pošleme vám odkaz, přes který si nastavíte nové heslo.</p>
-      <Field label="E-mail" name="email" type="email" autoComplete="email" required />
+      <Field label="E-mail" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <Msg state={state} />
-      <Button type="submit" className="w-full" disabled={pending || Boolean(state?.info)}>
+      <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Odesílám…" : "Poslat odkaz"}
       </Button>
       <button type="button" onClick={onBack} className="text-sm text-muted hover:underline">
