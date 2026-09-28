@@ -17,7 +17,7 @@ export default async function ProductsPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1>Produkty a sklad</h1>
+        <h1>Produkty</h1>
         <div className="flex gap-2">
           <ButtonLink href="/admin/sklad" variant="secondary">
             Sklad a příjemky

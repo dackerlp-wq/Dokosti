@@ -1,45 +1,33 @@
 "use client";
 
-import { BarChart3, Boxes, CreditCard, LayoutDashboard, LogOut, Mail, MessageCircleQuestion, Repeat, Settings, ShoppingBag, Store, Tag, Truck, Users, Warehouse } from "lucide-react";
+import { Boxes, LayoutDashboard, LogOut, Settings, ShoppingBag, Store, Tag, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
+import { ADMIN_SECTIONS, activeSection, isTabActive, type AdminSection } from "@/lib/admin-sections";
 
-/** Položky jen pro správce mají manager: true; obsluha vidí zbytek. */
-const ITEMS = [
-  { href: "/admin", label: "Přehled", icon: LayoutDashboard, exact: true },
-  { href: "/admin/kasa", label: "Kasa", icon: Store },
-  { href: "/admin/objednavky", label: "Objednávky", icon: ShoppingBag },
-  { href: "/admin/rozvoz", label: "Rozvoz a odběry", icon: Truck },
-  { href: "/admin/predplatne", label: "Předplatné", icon: Repeat, manager: true },
-  { href: "/admin/produkty", label: "Produkty", icon: Boxes },
-  { href: "/admin/sklad", label: "Sklad", icon: Warehouse },
-  { href: "/admin/zakaznici", label: "Zákazníci", icon: Users },
-  { href: "/admin/karty", label: "Karty", icon: CreditCard },
-  { href: "/admin/slevy", label: "Slevové kódy", icon: Tag, manager: true },
-  { href: "/admin/emaily", label: "E-maily", icon: Mail, manager: true },
-  { href: "/admin/poradna", label: "Poradna", icon: MessageCircleQuestion },
-  { href: "/admin/statistiky", label: "Statistiky", icon: BarChart3, manager: true },
-  { href: "/admin/nastaveni", label: "Nastavení", icon: Settings, manager: true },
-];
+const ICON: Record<AdminSection["icon"], typeof LayoutDashboard> = { prehled: LayoutDashboard, kasa: Store, objednavky: ShoppingBag, zbozi: Boxes, zakaznici: Users, slevy: Tag, nastaveni: Settings };
 
-export function AdminNav({ manager = true }: { manager?: boolean }) {
+/** Boční menu: sedm oddílů. Obsluha nevidí položky jen pro správce. */
+export function AdminNav({ manager = true, badges = {} }: { manager?: boolean; badges?: Record<string, number> }) {
   const path = usePathname();
+  const active = activeSection(path);
   return (
     <nav aria-label="Administrace" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:px-2 md:pb-0">
-      {ITEMS.filter((i) => manager || !i.manager).map(({ href, label, icon: Icon, exact }) => {
-        const active = exact ? path === href : path.startsWith(href);
+      {ADMIN_SECTIONS.filter((s) => manager || !s.manager).map((s) => {
+        const Icon = ICON[s.icon];
+        const on = active?.href === s.href;
+        const badge = badges[s.href];
         return (
           <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm ${
-              active ? "bg-green text-cream" : "text-ink hover:bg-cream"
-            }`}
+            key={s.href}
+            href={s.href}
+            aria-current={on ? "page" : undefined}
+            className={`flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm ${on ? "bg-green text-cream" : "text-ink hover:bg-cream"}`}
           >
             <Icon strokeWidth={1.75} className="h-4 w-4" />
-            {label}
+            {s.label}
+            {badge ? <span className={`label ml-auto rounded-full px-2 text-[10px] ${on ? "bg-cream text-green" : "bg-brick text-cream"}`}>{badge}</span> : null}
           </Link>
         );
       })}
@@ -49,5 +37,25 @@ export function AdminNav({ manager = true }: { manager?: boolean }) {
         </button>
       </form>
     </nav>
+  );
+}
+
+/** Záložky oddílu nad obsahem stránky (jen kde oddíl nějaké má). */
+export function SectionTabs({ manager = true }: { manager?: boolean }) {
+  const path = usePathname();
+  const section = activeSection(path);
+  const tabs = (section?.tabs ?? []).filter((t) => manager || !t.manager);
+  if (tabs.length < 2) return null;
+  return (
+    <div className="mb-5 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label={section?.label}>
+      {tabs.map((t) => {
+        const on = isTabActive(t, path);
+        return (
+          <Link key={t.href} href={t.href} role="tab" aria-selected={on} className={`label shrink-0 border-b-[3px] py-2.5 text-[12px] ${on ? "border-green text-green" : "border-transparent text-muted hover:text-green"}`}>
+            {t.label}
+          </Link>
+        );
+      })}
+    </div>
   );
 }
