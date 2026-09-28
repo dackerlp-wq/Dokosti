@@ -1,6 +1,6 @@
 # Plán vývoje e-shopu DoKosti
 
-Živý dokument. Každá položka má stav: **hotovo** (nasazeno na dokosti.vercel.app), **doladit** (funguje, ale
+Živý dokument. Každá položka má stav: **hotovo** (nasazeno na dokosti.cz), **doladit** (funguje, ale
 chce dotáhnout), **nápad** (zatím nic v kódu), **čeká** (závisí na firmě, dodavateli, prodejně nebo doméně). Postup u každé položky: nejdřív otázky a doporučení,
 pak teprve kód, pak ověření v prohlížeči a nasazení do `main`.
 
@@ -129,7 +129,7 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 | Živnost / firma, IČO, případně DPH | čeká | Rozhoduje o dokladech, právních textech a bráně. |
 | Dodavatel a smlouva | čeká | Yoggies má B2B portál a je 15 km od Kladna; rozhodnutí je na vás. |
 | Prodejna nebo výdejní místo, mrazicí kapacita | čeká | Bez prodejny dává smysl začít jen rozvozem a přepravcem. |
-| Doména | čeká | Rozhoduje o Resend, Supabase Auth URL, SEO. |
+| Doména dokosti.cz | hotovo | DNS u Forpsi, web na Vercelu, www přesměrovává na dokosti.cz. Zbývá Resend a Supabase Auth URL. |
 | Platební brána | čeká | Viz kategorie 2. |
 | Zálohy databáze | nápad | Supabase má denní zálohy v placeném plánu. |
 | Právní kontrola textů a tvrzení (nařízení 767/2009) | nápad | Jedna kontrola před spuštěním. |

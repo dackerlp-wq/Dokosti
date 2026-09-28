@@ -2,6 +2,7 @@ import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } f
 import path from "node:path";
 import { STAGE_LABEL, TRANSITION_STEPS, weeklySchedule, type Plan } from "@/lib/barf";
 import { productName } from "@/lib/catalog";
+import { SITE_HOST } from "@/lib/seo";
 import type { Settings } from "@/lib/settings";
 
 /**
@@ -161,7 +162,7 @@ function AnimalPage({ plan, shop, logo }: { plan: Plan; shop: Settings["shop"]; 
       <View style={s.footer} fixed>
         <Text>
           Orientační výchozí hodnota pro zdravé zvíře podle doporučení FEDIAF. Dávku upravujte podle kondice: žebra hmatatelná lehkým tlakem, pas viditelný
-          shora. Po 2–4 týdnech zvíře zvažte a plán přepočítejte na {shop.name.toLowerCase().includes("dokosti") ? "dokosti.vercel.app/kalkulacka" : "webu"}. U štěňat velkých plemen, březích a kojících zvířat a při
+          shora. Po 2–4 týdnech zvíře zvažte a plán přepočítejte na {shop.name.toLowerCase().includes("dokosti") ? `${SITE_HOST}/kalkulacka` : "webu"}. U štěňat velkých plemen, březích a kojících zvířat a při
           jakémkoli onemocnění se poraďte s veterinářem. Kosti vždy syrové, pod dohledem, ve velikosti podle zvířete. Rozmrazujte v lednici, rozmražené spotřebujte do dvou dnů.
         </Text>
         <Text style={{ marginTop: 3 }}>
