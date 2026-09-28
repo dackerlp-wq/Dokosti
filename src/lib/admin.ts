@@ -29,6 +29,7 @@ export type OrderRow = {
   paid_at: string | null;
   discount_note: string;
   created_by: string | null;
+  subscription_id: string | null;
   created_at: string;
 };
 
