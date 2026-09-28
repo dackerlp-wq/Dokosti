@@ -69,6 +69,7 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 | Položka | Stav | Poznámka |
 |---|---|---|
 | Registrace, přihlášení, obnova hesla | hotovo | Registrace na jeden krok s kódem z e-mailu, bez hesla; heslo volitelně v účtu. |
+| Administrace: sedm oddílů, Přehled „dnes“, Objednávky podle práce, kasa s platbou na obrazovce | hotovo | Podle návrhu na canvasu; Předplatné na frontendu je další krok. |
 | Věrnostní karty: dávky, QR, /k/KÓD, aktivace z kasy | hotovo | Admin → Karty, docs/KARTY.md. Zbývá: účet z objednávky v pokladně. |
 | Přehled objednávek, Kostiček, profilů zvířat, předplatného | hotovo | |
 | Předvyplnění pokladny z účtu | hotovo | |

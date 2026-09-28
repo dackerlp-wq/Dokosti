@@ -123,6 +123,16 @@ přiřadí a zákazníkovi s e-mailem pošle „Aktivujte kartu“. Ztracená ka
 Upsell („Lepší volba“) a cross-sell („Hodí se k tomu“) se nastavují u produktu v adminu (sloupce `upsell_slugs`,
 `crosssell_slugs`); zobrazují se na detailu produktu, cross-sell také v košíku.
 
+## Rozvržení administrace
+
+Menu má sedm oddílů (`src/lib/admin-sections.ts`): Přehled, Kasa, Objednávky, Zboží a sklad, Zákazníci a klub, Slevy a akce,
+Nastavení. Stránky, které byly dřív samostatné položky (Rozvoz a odběry, Předplatné, Sklad, Karty, Poradna, E-maily,
+Statistiky, Můj účet), jsou záložky uvnitř oddílu (`SectionTabs` v layoutu); adresy se nezměnily. Přehled je „dnes“:
+tržby, k vyřízení, sklad, klub, seznam „Co je potřeba udělat“ s tlačítkem u každé položky, týden v číslech a poslední
+pohyby. Objednávky mají záložky podle práce (K vyřízení, Dnes k výdeji a rozvozu, Hotové, Vše) a tlačítko dalšího kroku
+v řádku. Kasa: účtenka vlevo, světlé dlaždice s tečkou řady, platba jako obrazovka (způsob, rychlé částky, klávesnice,
+přijato a vrátit). Návrh obrazovek: canvas „DoKosti admin a kasa: návrh“.
+
 ## Prodejna: sklad, role, marže
 
 Produkt má prodejní jednotku `unit` (ks, nebo kg = na váhu jen v prodejně, cena za kg, na webu bez košíku), EAN pro čtečku a
