@@ -107,7 +107,7 @@ Klub DoKosti (návrh v `KLUB.md`): jedna registrace `/registrace` pro e-shop i v
 | Položka | Stav | Poznámka |
 |---|---|---|
 | Šablony: potvrzení, upozornění prodejně, změny stavu, plán, předplatné | hotovo | |
-| Odesílání přes Resend | čeká | Vyžaduje doménu; do té doby fronta v adminu, kde se dají e-maily prohlédnout. |
+| Odesílání přes Resend | hotovo | Doména dokosti.cz ověřená, odesílatel objednavky@dokosti.cz, sledování kliknutí vypnuté. Log v adminu → E-maily. |
 | SMS před rozvozem | nápad | |
 | Newsletter | nápad | Souhlas, odhlášení, šablona. |
 
