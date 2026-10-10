@@ -56,6 +56,13 @@ Doklady: tlačítko „Vystavit doklad“ na objednávce přidělí číslo z ř
 tisknutelný doklad (bez DPH, nebo s rozpisem 12 % po zapnutí plátce DPH v nastavení). Statistiky čtou pohledy
 `sales_by_day` a `top_products`; export CSV pro účetní je na `/admin/export/objednavky.csv?od=&do=`.
 Štítky na balíky: Rozvoz a odběry → Tisk štítků.
+Sklad (`/admin/sklad`): přehled evidovaných produktů se stavem Prodává se / Pomalé / Ležák / Docházející / Vyprodáno,
+dny zásoby (skladem ÷ denní prodej za 30/90/365 dní), poslední prodej, trend 12 týdnů a hodnota zásoby; filtr podle řady
+a stavu, export `/admin/export/sklad.csv`. Detail `/admin/sklad/[id]` má graf zásoby a prodejů po týdnech, pohyby se
+stavem po každém z nich, odpis a inventuru a doporučení k doobjednání. `/admin/sklad/pohyby` je deník všech pohybů
+(`stock_movements`: prodej web/kasa, storno, příjem, odpis, inventura, oprava) s filtrem a exportem `/admin/export/pohyby.csv`,
+`/admin/sklad/prijemky` příjem zboží od dodavatele. Limity (ležák po N dnech, pomalé od N dní zásoby, na kolik dní
+doobjednávat) jsou v Nastavení → Sklad (`settings.stock`). Vše se počítá z pohybů, bez nové tabulky.
 Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
 do tabulky `admins`.
 

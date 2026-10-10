@@ -13,7 +13,11 @@ export function StockMovements({ productId, unit, stockQty, movements, manager }
       <legend className="label px-1 text-[11px] text-muted">Sklad · pohyby</legend>
       <p className="text-sm">
         Aktuálně skladem <strong>{stockQty === null ? "neevidováno" : formatQty(stockQty, unit)}</strong>.{" "}
-        <Link href="/admin/sklad" className="text-green underline">
+        <Link href={`/admin/sklad/${productId}`} className="text-green underline">
+          Sklad a pohyby
+        </Link>{" "}
+        ·{" "}
+        <Link href="/admin/sklad/prijemky" className="text-green underline">
           Příjemka
         </Link>
       </p>

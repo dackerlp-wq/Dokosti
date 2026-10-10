@@ -20,7 +20,7 @@ export default async function ProductsPage() {
         <h1>Produkty</h1>
         <div className="flex gap-2">
           <ButtonLink href="/admin/sklad" variant="secondary">
-            Sklad a příjemky
+            Sklad
           </ButtonLink>
           <ButtonLink href="/admin/produkty/novy">Nový produkt</ButtonLink>
         </div>

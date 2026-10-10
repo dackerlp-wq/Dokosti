@@ -96,6 +96,14 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
         termsVersion: str(fd, "termsVersion").slice(0, 40) || DEFAULT_SETTINGS.club.termsVersion,
       };
       break;
+    case "stock":
+      value = {
+        deadDays: Math.min(730, Math.max(7, Math.round(num(fd, "deadDays", 90)))),
+        slowDays: Math.min(730, Math.max(7, Math.round(num(fd, "slowDays", 180)))),
+        reorderDays: Math.min(365, Math.max(7, Math.round(num(fd, "reorderDays", 60)))),
+        leadDays: Math.min(90, Math.max(0, Math.round(num(fd, "leadDays", 14)))),
+      };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

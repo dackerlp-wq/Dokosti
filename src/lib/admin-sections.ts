@@ -18,7 +18,17 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       { href: "/admin/predplatne", label: "Předplatné", manager: true },
     ],
   },
-  { href: "/admin/produkty", label: "Zboží a sklad", icon: "zbozi", tabs: [{ href: "/admin/produkty", label: "Produkty" }, { href: "/admin/sklad", label: "Sklad a příjemky" }] },
+  {
+    href: "/admin/produkty",
+    label: "Zboží a sklad",
+    icon: "zbozi",
+    tabs: [
+      { href: "/admin/produkty", label: "Produkty" },
+      { href: "/admin/sklad", label: "Sklad" },
+      { href: "/admin/sklad/pohyby", label: "Pohyby" },
+      { href: "/admin/sklad/prijemky", label: "Příjemky" },
+    ],
+  },
   {
     href: "/admin/zakaznici",
     label: "Zákazníci a klub",
@@ -54,5 +64,9 @@ export function activeSection(path: string): AdminSection | undefined {
 }
 
 export function isTabActive(tab: AdminTab, path: string): boolean {
-  return tab.href === "/admin" ? path === "/admin" : path === tab.href || path.startsWith(tab.href + "/");
+  if (tab.href === "/admin") return path === "/admin";
+  if (path === tab.href) return true;
+  if (!path.startsWith(tab.href + "/")) return false;
+  // Podstránka patří záložce jen tehdy, když ji nemá jiná, delší záložka (Sklad vs. Sklad/pohyby).
+  return !ADMIN_SECTIONS.some((s) => (s.tabs ?? []).some((t) => t.href !== tab.href && t.href.startsWith(tab.href + "/") && (path === t.href || path.startsWith(t.href + "/"))));
 }

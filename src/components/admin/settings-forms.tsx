@@ -14,6 +14,7 @@ const TABS = [
   { id: "subscription", label: "Předplatné" },
   { id: "pos", label: "Kasa" },
   { id: "club", label: "Klub" },
+  { id: "stock", label: "Sklad" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -44,6 +45,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "subscription" && <SubscriptionForm s={settings.subscription} />}
         {tab === "pos" && <PosForm s={settings.pos} />}
         {tab === "club" && <ClubForm s={settings.club} />}
+        {tab === "stock" && <StockForm s={settings.stock} />}
       </div>
     </div>
   );
@@ -359,6 +361,33 @@ function ClubForm({ s }: { s: Settings["club"] }) {
         <p className="mt-3 text-xs text-muted">
           Registrace je na /registrace (jméno, e-mail, kód z e-mailu), pro tablet v prodejně /registrace?kiosk=1 (po dokončení se odhlásí). QR na kartě vede na /k/KÓD,
           karty se tvoří v Admin → Karty. Úplný profil zvířete = druh, jméno, váha a datum narození; odměna za něj se připisuje v účtu.
+        </p>
+      </Card>
+    </SectionForm>
+  );
+}
+
+function StockForm({ s }: { s: Settings["stock"] }) {
+  return (
+    <SectionForm section="stock">
+      <Card title="Vyhodnocení skladu (přehled Sklad)">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Field label="Ležák po (dnech bez prodeje)">
+            <input name="deadDays" type="number" min={7} max={730} defaultValue={s.deadDays} />
+          </Field>
+          <Field label="Pomalé od (dní zásoby)">
+            <input name="slowDays" type="number" min={7} max={730} defaultValue={s.slowDays} />
+          </Field>
+          <Field label="Doobjednat na (dní)" hint="doporučené množství">
+            <input name="reorderDays" type="number" min={7} max={365} defaultValue={s.reorderDays} />
+          </Field>
+          <Field label="Dodací lhůta (dní)" hint="kdy objednat">
+            <input name="leadDays" type="number" min={0} max={90} defaultValue={s.leadDays} />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Ležák je zboží skladem bez prodeje déle než {s.deadDays} dní. Pomalé je zboží, kterého je při současném tempu prodeje na víc než {s.slowDays} dní.
+          Docházející se řídí limitem u každého produktu. Období prodejů (30, 90 nebo 365 dní) se přepíná přímo v přehledu.
         </p>
       </Card>
     </SectionForm>

@@ -69,7 +69,7 @@ export default async function AdminHome() {
     ...todayDeliveries.map((o) => ({ kind: "Dnes", kindStyle: "brick" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `rozvoz dnes · ${o.street}, ${o.city} · ${formatPrice(o.total_czk)}`, action: "Rozvoz", href: "/admin/rozvoz" })),
     ...fresh.map((o) => ({ kind: "Nová", kindStyle: "ochre" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `${SHIPPING_LABEL[o.shipping_method]}${o.delivery_date ? ` ${formatDay(o.delivery_date)}` : ""} · ${formatPrice(o.total_czk)} · ${o.paid_at ? "zaplaceno" : "nezaplaceno"}`, action: "Potvrdit", href: `/admin/objednavky/${o.id}` })),
     ...subsFailed.map((s) => ({ kind: "Předplatné", kindStyle: "brick" as const, title: s.customer_name, detail: `objednávka nevznikla: ${s.last_error}`, action: "Vyřešit", href: `/admin/predplatne/${s.id}` })),
-    ...low.map((p) => ({ kind: "Sklad", kindStyle: "plain" as const, title: `${productName(p)} dochází`, detail: `${formatQty(p.stock_qty, p.unit)} na skladě`, action: "Naskladnit", href: "/admin/sklad" })),
+    ...low.map((p) => ({ kind: "Sklad", kindStyle: "plain" as const, title: `${productName(p)} dochází`, detail: `${formatQty(p.stock_qty, p.unit)} na skladě`, action: "Naskladnit", href: "/admin/sklad/prijemky" })),
     ...exp.map((b) => ({ kind: "Expirace", kindStyle: "plain" as const, title: b.products ? productName(b.products) : "produkt", detail: `${b.batch_no ? `${b.batch_no} · ` : ""}do ${formatDay(b.expires_on)} · ${b.qty} ks`, action: "Zobrazit", href: `/admin/produkty/${b.product_id}` })),
     ...asks.map((a) => ({ kind: "Poradna", kindStyle: "plain" as const, title: `Dotaz od ${a.name || "zákazníka"}`, detail: `„${a.question.length > 70 ? a.question.slice(0, 70) + "…" : a.question}“`, action: "Odpovědět", href: "/admin/poradna" })),
   ];
@@ -78,7 +78,7 @@ export default async function AdminHome() {
     ...((lastSales ?? []) as { id: string; number: string; total_czk: number; created_at: string; status: string }[]).map((s) => ({ at: s.created_at, text: `Kasa · ${s.number}${s.status === "storno" ? " · storno" : ""}`, right: formatPrice(s.total_czk), href: `/admin/kasa/uctenka/${s.id}` })),
     ...((lastOrders ?? []) as { id: string; order_number: string; total_czk: number; created_at: string; customer_name: string }[]).map((o) => ({ at: o.created_at, text: `Web · ${o.order_number} · ${o.customer_name}`, right: formatPrice(o.total_czk), href: `/admin/objednavky/${o.id}` })),
     ...((lastCards ?? []) as unknown as { code: string; assigned_at: string; customers: { id: string; name: string } | null }[]).map((c) => ({ at: c.assigned_at, text: `Karta ${c.code} · ${c.customers?.name ?? ""}`, right: "", href: c.customers ? `/admin/zakaznici/${c.customers.id}` : "/admin/karty" })),
-    ...((lastReceipts ?? []) as { id: string; number: string; supplier: string; created_at: string }[]).map((r) => ({ at: r.created_at, text: `Příjemka ${r.number}${r.supplier ? ` · ${r.supplier}` : ""}`, right: "", href: "/admin/sklad" })),
+    ...((lastReceipts ?? []) as { id: string; number: string; supplier: string; created_at: string }[]).map((r) => ({ at: r.created_at, text: `Příjemka ${r.number}${r.supplier ? ` · ${r.supplier}` : ""}`, right: "", href: "/admin/sklad/prijemky" })),
   ]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 6);
@@ -95,7 +95,7 @@ export default async function AdminHome() {
           <p className="mt-1 text-sm text-muted">{shiftRow ? `Směna v kase otevřená od ${new Date(shiftRow.opened_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })}` : "Kasa je zavřená."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin/sklad" className={buttonClass("secondary")}>
+          <Link href="/admin/sklad/prijemky" className={buttonClass("secondary")}>
             Příjemka
           </Link>
           <Link href="/admin/objednavky/nova" className={buttonClass("secondary")}>

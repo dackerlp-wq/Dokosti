@@ -80,6 +80,16 @@ export type Settings = {
     /** Kolik dní před dodáním vznikne objednávka (uzávěrka změn). */
     cutoffDaysBefore: number;
   };
+  stock: {
+    /** Po kolika dnech bez prodeje je zboží na skladě ležák. */
+    deadDays: number;
+    /** Na kolik dní zásoby je prodej už pomalý. */
+    slowDays: number;
+    /** Na kolik dní zásoby doporučovat doobjednání. */
+    reorderDays: number;
+    /** Kolik dní předem doobjednávat (dodací lhůta dodavatele). */
+    leadDays: number;
+  };
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -143,9 +153,10 @@ export const DEFAULT_SETTINGS: Settings = {
   subscription: { enabled: true, discountPct: 0, pointsBonusPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
   pos: { autoPrint: false, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
   club: { registrationPoints: 50, petPoints: 150, petPointsMax: 3, termsVersion: "2026-09" },
+  stock: { deadDays: 90, slowDays: 180, reorderDays: 60, leadDays: 14 },
 };
 
-export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos", "club"] as const satisfies readonly (keyof Settings)[];
+export const SETTING_KEYS = ["shop", "shipping", "payment", "pages", "loyalty", "subscription", "pos", "club", "stock"] as const satisfies readonly (keyof Settings)[];
 
 /** Hluboké sloučení výchozích hodnot s uloženými (nové klíče dostanou výchozí hodnotu). */
 function merge<T>(base: T, over: unknown): T {

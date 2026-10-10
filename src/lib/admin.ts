@@ -197,7 +197,9 @@ export type StockMovementRow = {
   unit_cost_czk: number | null;
   order_id: string | null;
   receipt_id: string | null;
+  pos_sale_id: string | null;
   note: string;
+  created_by: string | null;
   created_at: string;
 };
 

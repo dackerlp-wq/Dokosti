@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 export type ReceiptState = { ok?: true; number?: string; error?: string } | null;
@@ -27,6 +28,7 @@ export async function postReceipt(_prev: ReceiptState, fd: FormData): Promise<Re
   });
   if (error || !data) return { error: error?.message ?? "Příjemku se nepodařilo uložit." };
   revalidatePath("/admin/sklad");
+  revalidatePath("/admin/sklad/prijemky");
   revalidatePath("/admin/produkty");
   revalidatePath("/admin");
   return { ok: true, number: (data as { number: string }).number };
@@ -45,5 +47,8 @@ export async function adjustStock(fd: FormData) {
   revalidatePath(`/admin/produkty/${productId}`);
   revalidatePath("/admin/produkty");
   revalidatePath("/admin/sklad");
+  revalidatePath(`/admin/sklad/${productId}`);
   revalidatePath("/admin");
+  const to = String(fd.get("redirect") ?? "");
+  if (to.startsWith("/admin/")) redirect(to);
 }
