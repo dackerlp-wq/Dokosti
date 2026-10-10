@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Slevové kódy" };
 export default async function CouponsPage() {
   await requireManager();
   const db = await getAuthSupabase();
-  const { data } = await db.from("coupons").select("*").order("created_at", { ascending: false });
+  const { data } = await db.from("coupons").select("*").eq("kind", "sleva").order("created_at", { ascending: false });
   const coupons = (data ?? []) as CouponRow[];
   const today = new Date().toISOString().slice(0, 10);
 

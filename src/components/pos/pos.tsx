@@ -47,6 +47,7 @@ const LINE_DOT: Record<LineSlug, string> = {
   granule: "bg-muted",
 };
 const PARKED_KEY = "dokosti-kasa-odlozene";
+const CART_KEY = "dokosti-pos-cart";
 const fmtQty = (qty: number, unit: "ks" | "kg") => (unit === "kg" ? `${qty.toLocaleString("cs-CZ", { maximumFractionDigits: 3 })} kg` : `${qty} ks`);
 
 /**
@@ -92,6 +93,8 @@ export function Pos({
   const [paying, setPaying] = useState(false);
   const [modal, setModal] = useState<null | { kind: "kg"; product: PosProduct } | { kind: "customer" } | { kind: "card"; code: string } | { kind: "discount" } | { kind: "done"; id: string; number: string; total: number; change: number | null; points: number } | { kind: "settle"; order: PickupOrder } | { kind: "storno"; sale: PosSaleRow } | { kind: "confirm"; title: string; text: string; label: string; onYes: () => void }>(null);
   const [parked, setParked] = useState<Parked[]>([]);
+  // Offline: kasa prodej neuloží (RPC), ale účtenka v rozpracování se neztratí (localStorage) a lišta řekne, co se děje.
+  const [online, setOnline] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -102,12 +105,31 @@ export function Pos({
     const t = setTimeout(() => {
       try {
         setParked(JSON.parse(localStorage.getItem(PARKED_KEY) || "[]"));
+        const saved = JSON.parse(localStorage.getItem(CART_KEY) || "null") as { lines: CartLine[]; at: number } | null;
+        if (saved && Array.isArray(saved.lines) && saved.lines.length > 0 && Date.now() - saved.at < 12 * 3600_000) setLines(saved.lines);
       } catch {
         /* bez localStorage */
       }
+      setOnline(navigator.onLine);
     }, 0);
-    return () => clearTimeout(t);
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("online", up);
+      window.removeEventListener("offline", down);
+    };
   }, []);
+  useEffect(() => {
+    try {
+      if (lines.length === 0) localStorage.removeItem(CART_KEY);
+      else localStorage.setItem(CART_KEY, JSON.stringify({ lines, at: Date.now() }));
+    } catch {
+      /* ignore */
+    }
+  }, [lines]);
   const saveParked = (list: Parked[]) => {
     setParked(list);
     try {
@@ -299,6 +321,11 @@ export function Pos({
             Odhlásit
           </button>
         </form>
+        {!online && (
+          <div role="status" className="fixed inset-x-0 top-0 z-50 bg-brick px-4 py-2 text-center text-sm text-cream">
+            Jste offline. Rozpracovaná účtenka se uchová, zaplacení počká na připojení. Hotovost přijměte a účtenku dokončete, až se spojení vrátí.
+          </div>
+        )}
         {toast && (
           <span role="status" className="rounded-[var(--radius-control)] bg-cream px-3 py-1 text-sm text-green">
             {toast}

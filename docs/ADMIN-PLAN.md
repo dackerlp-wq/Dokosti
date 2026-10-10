@@ -44,7 +44,7 @@ pro to, jak jednotlivé části adminu spolu mluví. Každá nová obrazovka neb
 | E3 Zboží | průvodce Nový produkt a Příjemka, dodavatelé a objednávky u nich, inventura, interní výdej, šarže k prodeji (FIFO), akce a slevy, hromadná změna cen, cenovky | hotovo |
 | E4 Provoz | zaměstnanci, docházka, dokumenty (verze, podpis, platnost), teplotní deník, sanitace, checklisty, úkoly, směny a uzávěrky, zaškolení | hotovo |
 | E5 Mzdy a Finance | parametry roku, podklady pro mzdy, orientační páska, export pro účetní, výdaje, od obratu k zisku, peníze a splatnosti | hotovo |
-| E6 Napříč | notifikace e-mail/push, zálohy, GDPR anonymizace, kasa offline, plán směn, firemní kalendář, péče o zákazníky, poukazy | probíhá |
+| E6 Napříč | notifikace e-mail/push, zálohy, GDPR anonymizace, kasa offline, plán směn, firemní kalendář, péče o zákazníky, poukazy | hotovo (kasa offline jen částečně) |
 
 ## Jak spolu moduly mluví (přehled vazeb)
 

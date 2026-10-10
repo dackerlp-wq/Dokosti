@@ -10,10 +10,11 @@ import { code128Svg, newCardCode } from "@/lib/barcode";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, type PosSaleRow } from "@/lib/pos";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
-import { adjustPoints, saveCardCode, saveCustomerNote } from "./actions";
+import { ConfirmButton } from "@/components/admin/confirm-button";
+import { adjustPoints, anonymizeCustomer, saveCardCode, saveCustomerNote } from "./actions";
 
 export default async function CustomerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ karta?: string }> }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const [{ id }, { karta }] = await Promise.all([params, searchParams]);
   const db = await getAuthSupabase();
   const [{ data: customer }, { data: orders }, { data: loyalty }, { data: sales }, { data: pets }] = await Promise.all([
@@ -184,6 +185,15 @@ export default async function CustomerPage({ params, searchParams }: { params: P
             Uložit poznámku
           </Button>
         </form>
+        {admin.isManager && (
+          <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+            <p className="label text-[11px] text-muted">GDPR</p>
+            <p className="mt-1 text-muted">Když zákazník požádá o výmaz, anonymizujte ho: jméno, kontakty a adresa se přepíší na všech dokladech, mazlíčci se vyprázdní, karta zablokuje. Čísla dokladů a částky zůstanou kvůli účetnictví. Nevratné.</p>
+            <ConfirmButton action={anonymizeCustomer} fields={{ id: c.id }} title="Anonymizovat zákazníka" text={`${c.name || c.email || "Zákazník"}: osobní údaje se nevratně přepíší na zákazníkovi, objednávkách, předplatném a mazlíčcích. Účet a karta se odpojí.`} confirmLabel="Anonymizovat" reasonName="reason" reasonLabel="Důvod (žádost ze dne…)" reasonRequired variant="ghost" className="mt-2 min-h-9 text-[11px] text-brick-text">
+              Anonymizovat
+            </ConfirmButton>
+          </div>
+        )}
 
         <form action={adjustPoints} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <input type="hidden" name="id" value={c.id} />

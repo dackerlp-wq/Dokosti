@@ -58,6 +58,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       { href: "/admin/zakaznici", label: "Zákazníci" },
       { href: "/admin/karty", label: "Klub a karty" },
       { href: "/admin/poradna", label: "Poradna" },
+      { href: "/admin/poukazy", label: "Dárkové poukazy", access: "spravce" },
     ],
   },
   {
@@ -70,6 +71,8 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       { href: "/admin/ukoly", label: "Úkoly", access: "brigada" },
       { href: "/admin/provoz", label: "Teploty a checklisty", access: "brigada" },
       { href: "/admin/dochazka", label: "Docházka", access: "brigada" },
+      { href: "/admin/plan-smen", label: "Plán směn", access: "brigada" },
+      { href: "/admin/kalendar", label: "Kalendář", access: "brigada" },
       { href: "/admin/smeny", label: "Směny a uzávěrky" },
       { href: "/admin/zamestnanci", label: "Zaměstnanci", access: "spravce" },
       { href: "/admin/mzdy", label: "Mzdy", access: "spravce" },

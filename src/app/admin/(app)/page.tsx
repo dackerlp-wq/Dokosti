@@ -46,6 +46,10 @@ export default async function AdminHome() {
     db.from("stock_receipts").select("id, number, supplier, created_at").order("created_at", { ascending: false }).limit(3),
     manager ? db.from("pos_sale_items").select("name, qty, pos_sales!inner(created_at, status)").gte("pos_sales.created_at", weekStart.toISOString()).eq("pos_sales.status", "zaplaceno") : Promise.resolve({ data: [] }),
   ]);
+  const [{ data: planToday }, { data: attToday }] = await Promise.all([
+    db.from("shift_plans").select("employee_id, starts, ends, note, employees(name)").eq("day", todayIso).order("starts"),
+    db.from("attendance").select("employee_id, started_at, ended_at, kind, employees(name)").eq("day", todayIso),
+  ]);
   const [alerts, { data: openTasks }, { data: activity }] = await Promise.all([
     loadAlerts(db, now, { manager }),
     db.from("tasks").select("*").is("done_at", null).or(`assigned_to.eq.${admin.id},assigned_to.is.null`).order("due_on", { ascending: true, nullsFirst: false }).limit(8),
@@ -175,6 +179,40 @@ export default async function AdminHome() {
         </section>
 
         <div className="flex flex-col gap-4">
+          <section className={`${card} p-4`}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[18px]">Kdo je dnes v práci</h2>
+              <Link href="/admin/plan-smen" className="text-sm text-green hover:underline">
+                Plán směn
+              </Link>
+            </div>
+            {(() => {
+              type Plan = { employee_id: string; starts: string; ends: string; note: string; employees: { name: string } | null };
+              type Att = { employee_id: string | null; started_at: string | null; ended_at: string | null; kind: string; employees: { name: string } | null };
+              const plans = (planToday ?? []) as unknown as Plan[];
+              const atts = (attToday ?? []) as unknown as Att[];
+              const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" }) : null);
+              const rows = plans.map((p) => {
+                const a = atts.find((x) => x.employee_id === p.employee_id && x.kind === "prace");
+                return { name: p.employees?.name ?? "?", plan: `${p.starts.slice(0, 5)}–${p.ends.slice(0, 5)}${p.note ? ` · ${p.note}` : ""}`, state: a ? (a.ended_at ? `v kase ${time(a.started_at)}–${time(a.ended_at)}` : `v práci od ${time(a.started_at)}`) : "plán" };
+              });
+              for (const a of atts) if (!plans.some((p) => p.employee_id === a.employee_id)) rows.push({ name: a.employees?.name ?? "?", plan: a.kind === "prace" ? "mimo plán" : a.kind, state: a.kind === "prace" ? (a.ended_at ? `v kase ${time(a.started_at)}–${time(a.ended_at)}` : `v práci od ${time(a.started_at)}`) : "" });
+              return rows.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">Na dnešek není nikdo naplánovaný.</p>
+              ) : (
+                <ul className="mt-2 divide-y divide-line text-sm">
+                  {rows.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 py-1.5">
+                      <span>
+                        <b className="font-semibold">{r.name}</b> <span className="text-muted">· {r.plan}</span>
+                      </span>
+                      <span className={`label shrink-0 text-[10px] ${r.state.startsWith("v práci") ? "rounded-full bg-green px-2 py-0.5 text-cream" : "text-muted"}`}>{r.state}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </section>
           <section className={`${card} p-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-[18px]">Úkoly</h2>

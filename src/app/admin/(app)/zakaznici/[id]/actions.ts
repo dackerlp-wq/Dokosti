@@ -53,3 +53,18 @@ export async function saveCardCode(formData: FormData) {
   revalidatePath(`/admin/zakaznici/${id}`);
   await flashOk(code ? `Karta ${code} uložena.` : "Karta odebrána.");
 }
+
+/** GDPR: osobní údaje zákazníka se nevratně přepíší (zákazník, objednávky, předplatné, mazlíčci, karta). Doklady zůstávají. */
+export async function anonymizeCustomer(formData: FormData) {
+  const admin = await requireAdmin("spravce");
+  const id = String(formData.get("id") ?? "");
+  const db = await getAuthSupabase();
+  const { data: c } = await db.from("customers").select("name, email").eq("id", id).maybeSingle();
+  if (!c) return flashError("Zákazník nenalezen.");
+  const { error } = await db.rpc("anonymize_customer", { p_id: id });
+  if (error) return flashError(`Anonymizace selhala: ${error.message}`);
+  await logActivity(db, admin, { kind: "zakaznik.anonymizovan", subject: "customer", subjectId: id, text: `Zákazník anonymizován na žádost (GDPR): ${String(formData.get("reason") ?? "").trim()}` });
+  revalidatePath("/admin/zakaznici");
+  revalidatePath(`/admin/zakaznici/${id}`);
+  await flashOk("Osobní údaje byly anonymizovány.");
+}

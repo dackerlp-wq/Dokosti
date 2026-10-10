@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendEmail } from "@/lib/email/send";
-import { orderConfirmation, orderNotification, subscriptionFailed, subscriptionReminder, type OrderForEmail } from "@/lib/email/templates";
+import { dailyDigestEmail, orderConfirmation, orderNotification, subscriptionFailed, subscriptionReminder, type DigestData, type OrderForEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 import type { SubscriptionView } from "@/lib/subscriptions";
@@ -98,5 +98,15 @@ export async function GET(req: NextRequest) {
   const { data: finance, error: financeError } = await db.rpc("finance_daily", { p_secret: secret });
   log.push(financeError ? `finance error ${financeError.message}` : `finance ${JSON.stringify(finance)}`);
 
+  // Ranní souhrn správci (když je zapnutý v Nastavení → Upozornění).
+  if (settings.notifications.dailyDigest) {
+    const to = settings.notifications.email || settings.shop.email;
+    const { data: digest, error: digestError } = await db.rpc("daily_digest", { p_secret: secret });
+    if (digestError || !to.includes("@")) log.push(`digest skipped ${digestError?.message ?? "no email"}`);
+    else {
+      await sendEmail(db, to, dailyDigestEmail(digest as DigestData, settings, `${SITE_URL}/admin`), "souhrn", null);
+      log.push(`digest ${to}`);
+    }
+  }
   return NextResponse.json({ today, processed: due.length, log });
 }

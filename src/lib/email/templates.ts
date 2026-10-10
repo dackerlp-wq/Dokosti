@@ -288,3 +288,44 @@ export function purchaseOrderEmail(number: string, lines: { name: string; qty: s
   const text = `Dobrý den,\n\nobjednáváme následující zboží${expectedOn ? `, dodání prosím ${fmtDay(expectedOn)}` : ""}:\n${lines.map((l) => `- ${l.name}${l.ean ? ` (EAN ${l.ean})` : ""}: ${l.qty}`).join("\n")}\n${note ? `\n${note}\n` : ""}\nDodací adresa: ${s.shop.name}, ${s.shop.address}, ${s.shop.city}${s.shop.ico ? `, IČO ${s.shop.ico}` : ""}.\nPotvrďte prosím termín. Děkujeme.\n\n${s.shop.name}${s.shop.phone ? ` · ${s.shop.phone}` : ""}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }
+
+/** Ranní souhrn pro správce z RPC daily_digest. */
+export type DigestData = {
+  today: string;
+  revenue_yesterday: number;
+  open_orders: number;
+  new_orders: number;
+  today_deliveries: number;
+  today_pickups: number;
+  unpaid_transfers: number;
+  expiring_batches: number;
+  low_stock: number;
+  overdue_tasks: string[];
+  due_tasks_today: number;
+  expiring_docs: string[];
+  expenses_due: number;
+  expenses_overdue: number;
+  temps_yesterday: number;
+  temps_bad_yesterday: number;
+  shifts_today: string[];
+  inquiries: number;
+};
+export function dailyDigestEmail(d: DigestData, s: Settings, adminUrl: string): EmailMessage {
+  const title = `${s.shop.name}: ${fmtDay(d.today)}`;
+  const rows: [string, string, boolean][] = [
+    ["Tržby včera", formatPrice(Number(d.revenue_yesterday)), false],
+    ["Dnes k vyřízení", `${d.today_deliveries} rozvoz, ${d.today_pickups} odběr · otevřených objednávek ${d.open_orders}${d.new_orders ? `, z toho ${d.new_orders} nových` : ""}`, d.new_orders > 0],
+    ["Směny dnes", d.shifts_today.length ? d.shifts_today.join(", ") : "nikdo naplánovaný", d.shifts_today.length === 0],
+    ["Úkoly", `${d.due_tasks_today} na dnes${d.overdue_tasks.length ? `, po termínu: ${d.overdue_tasks.join("; ")}` : ""}`, d.overdue_tasks.length > 0],
+    ["Sklad", `${d.low_stock} dochází, ${d.expiring_batches} šarží expiruje do 14 dnů`, d.expiring_batches > 0],
+    ["Peníze", `${d.unpaid_transfers} nezaplacených převodů přes 3 dny · k zaplacení do 3 dnů ${formatPrice(Number(d.expenses_due))}${Number(d.expenses_overdue) > 0 ? `, po splatnosti ${formatPrice(Number(d.expenses_overdue))}` : ""}`, Number(d.expenses_overdue) > 0 || d.unpaid_transfers > 0],
+    ["Teploty včera", d.temps_yesterday === 0 ? "nezapsány" : `${d.temps_yesterday} zápisů${d.temps_bad_yesterday ? `, ${d.temps_bad_yesterday} mimo rozsah` : ""}`, d.temps_yesterday === 0 || d.temps_bad_yesterday > 0],
+    ["Dokumenty", d.expiring_docs.length ? `končí: ${d.expiring_docs.join("; ")}` : "nic nekončí", d.expiring_docs.length > 0],
+    ["Poradna", `${d.inquiries} nezodpovězených dotazů`, d.inquiries > 0],
+  ];
+  const body = `<p>Dobré ráno, tady je přehled na ${esc(fmtDay(d.today))}.</p><table style="width:100%;border-collapse:collapse;font-size:14px">${rows
+    .map(([k, v, warn]) => `<tr><td style="padding:6px 8px 6px 0;color:#55645a;vertical-align:top;white-space:nowrap">${esc(k)}</td><td style="padding:6px 0;${warn ? "color:#9c4424;font-weight:bold" : ""}">${esc(v)}</td></tr>`)
+    .join("")}</table><p style="margin-top:16px"><a href="${adminUrl}" style="color:#1f3a2d">Otevřít Dnes v administraci</a></p>`;
+  const text = `Přehled na ${fmtDay(d.today)}\n\n${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\n${adminUrl}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}

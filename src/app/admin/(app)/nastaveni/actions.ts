@@ -106,6 +106,9 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
         leadDays: Math.min(90, Math.max(0, Math.round(num(fd, "leadDays", 14)))),
       };
       break;
+    case "notifications":
+      value = { dailyDigest: bool(fd, "dailyDigest"), email: str(fd, "email").slice(0, 120) };
+      break;
     default:
       return { error: "Neznámá sekce." };
   }

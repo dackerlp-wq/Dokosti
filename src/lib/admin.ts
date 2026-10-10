@@ -45,7 +45,10 @@ export type CouponRow = {
   used_count: number;
   active: boolean;
   note: string;
-  created_at: string;
+  created_at: string;  kind: "sleva" | "poukaz";
+  recipient: string;
+  issued_by: string | null;
+  sold_czk: number | null;
 };
 
 export type LoyaltyRow = {
@@ -75,6 +78,7 @@ export type CustomerRow = {
   consent_marketing_email_at: string | null;
   consent_marketing_sms_at: string | null;
   heard_from: string;
+  last_order_at: string | null;
   created_at: string;
 };
 
@@ -460,4 +464,16 @@ export function shiftMonth(month: string, by: number) {
 }
 export function isMonth(v: string | undefined): v is string {
   return !!v && /^\d{4}-\d{2}$/.test(v);
+}
+export type ShiftPlanRow = { id: string; employee_id: string; day: string; starts: string; ends: string; note: string; created_by: string | null; created_at: string };
+/** Pondělí týdne (ISO datum) pro zadané datum. */
+export function weekStartOf(iso: string) {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+export function addDaysIso(iso: string, n: number) {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
 }

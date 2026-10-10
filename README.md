@@ -240,6 +240,21 @@ prodaného zboží (z `unit_cost_czk` položek), hrubá marže, odpisy a intern�
 Peníze a splatnosti (`/admin/finance/splatnosti`): po splatnosti, do 30 dní, později, co ještě přijde (opakované,
 otevřené mzdy), kdo dluží nám, kolik je v kase.
 
+## Napříč systémem: souhrn e-mailem, plán směn, kalendář, poukazy, péče o zákazníky, GDPR, zálohy (migrace 0031)
+
+Ranní e-mail správci (Nastavení → Upozornění, `settings.notifications`): denní cron zavolá `daily_digest` (tržby včera,
+dnešní rozvozy a odběry, směny, úkoly po termínu, expirace, splatnosti, teploty, končící dokumenty, poradna) a pošle
+`dailyDigestEmail`. Plán směn (`shift_plans`, `/admin/plan-smen`): týdenní přehled, kdo má kdy být v prodejně, opakování
+po dnech v týdnu do data; vedle plánu skutečnost z docházky; Dnes ukazuje „Kdo je dnes v práci“. Kalendář (`/admin/kalendar`):
+měsíc se směnami, rozvozy a odběry podle termínu dodání, úkoly s termínem, konci platnosti dokumentů, splatnostmi výdajů,
+akčními cenami a volnem. Dárkové poukazy (`/admin/poukazy`): slevový kód na částku (`coupons.kind = 'poukaz'`, jedno
+použití, platnost rok, příjemce, `sold_czk`), kartička k tisku A6, uplatní se v kase i na webu jako kód; zneplatnění
+s důvodem. Péče o zákazníky: pohledy Ztrácíme (2+ nákupy a přes 60 dní nic, `customers.last_order_at` plní trigger z webu
+i kasy), Noví, Nejlepší; tlačítko „ozvat se“ založí úkol. GDPR: na kartě zákazníka „Anonymizovat“ (RPC `anonymize_customer`,
+přepíše údaje na zákazníkovi, objednávkách, předplatném, mazlíčcích, zablokuje kartu; doklady zůstanou). Záloha dat:
+Nastavení → „Stáhnout zálohu dat“ (`/admin/export/zaloha.json`, všechny provozní tabulky). Kasa offline: lišta, když vypadne
+připojení, rozpracovaná účtenka se drží v prohlížeči (12 h); samotný prodej offline neuloží (potřebuje databázi).
+
 ## Klub DoKosti (registrace, účet, karta, zvířata)
 
 Návrh v `docs/KLUB.md`. Zákazník (`customers`) je střed: `user_id` (účet Supabase Auth), `card_code` (věrnostní karta),

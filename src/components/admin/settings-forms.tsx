@@ -15,6 +15,7 @@ const TABS = [
   { id: "pos", label: "Kasa" },
   { id: "club", label: "Klub" },
   { id: "stock", label: "Sklad" },
+  { id: "notifications", label: "Upozornění" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
@@ -46,6 +47,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
         {tab === "pos" && <PosForm s={settings.pos} />}
         {tab === "club" && <ClubForm s={settings.club} />}
         {tab === "stock" && <StockForm s={settings.stock} />}
+        {tab === "notifications" && <NotificationsForm s={settings.notifications} />}
       </div>
     </div>
   );
@@ -389,6 +391,22 @@ function StockForm({ s }: { s: Settings["stock"] }) {
           Ležák je zboží skladem bez prodeje déle než {s.deadDays} dní. Pomalé je zboží, kterého je při současném tempu prodeje na víc než {s.slowDays} dní.
           Docházející se řídí limitem u každého produktu. Období prodejů (30, 90 nebo 365 dní) se přepíná přímo v přehledu.
         </p>
+      </Card>
+    </SectionForm>
+  );
+}
+
+function NotificationsForm({ s }: { s: Settings["notifications"] }) {
+  return (
+    <SectionForm section="notifications">
+      <Card title="Ranní e-mail správci">
+        <Check name="dailyDigest" label="Posílat každé ráno souhrn: tržby za včerejšek, co je dnes k vyřízení, expirace, splatnosti, úkoly po termínu, kdo má směnu" defaultChecked={s.dailyDigest} />
+        <div className="mt-3">
+          <Field label="Kam posílat (prázdné = e-mail prodejny z karty Prodejna)">
+            <input name="email" type="email" defaultValue={s.email} placeholder="majitel@dokosti.cz" />
+          </Field>
+        </div>
+        <p className="mt-3 text-xs text-muted">Odchází s denním cronem kolem 7:00. Stejná upozornění vidíte na Dnes; e-mail je pro dny, kdy se do systému nedostanete.</p>
       </Card>
     </SectionForm>
   );
