@@ -46,6 +46,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         subtitle="Podklady z docházky a sazeb, orientační výpočet čisté mzdy a nákladů. Odměny a srážky doplníte v řádku. Uzavření měsíce zmrazí podklady a zapíše mzdy do výdajů; oficiální výpočet dělá účetní z exportu."
         actions={
           <>
+            <Link href={`/admin/mzdy/parametry?rok=${month.slice(0, 4)}`} className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-line px-3 text-[11px] text-green hover:border-green">
+              Parametry {month.slice(0, 4)}{p?.verified ? " ✓" : ""}
+            </Link>
             <a href={`/admin/export/mzdy.csv?mesic=${month}`} className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-green px-3 text-[11px] text-green">
               Export pro účetní
             </a>

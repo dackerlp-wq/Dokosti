@@ -13,7 +13,11 @@ export type AdminSection = {
   icon: "dnes" | "kasa" | "prodej" | "zbozi" | "zakaznici" | "provoz" | "finance" | "statistiky" | "nastaveni";
   access?: AdminRole;
   exact?: boolean;
+  /** Záložky oddílu. Skupina (`group: true`) je v bočním menu rozbalená jako nadpis s podpoložkami, jinak je oddíl jeden odkaz a záložky jsou nad obsahem. */
   tabs?: AdminTab[];
+  group?: boolean;
+  /** Mezera nad položkou v bočním menu (oddělení spodní části: Finance, Statistiky, Nastavení). */
+  gap?: boolean;
 };
 
 export const ADMIN_SECTIONS: AdminSection[] = [
@@ -23,6 +27,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     href: "/admin/objednavky",
     label: "Prodej",
     icon: "prodej",
+    group: true,
     tabs: [
       { href: "/admin/objednavky", label: "Objednávky" },
       { href: "/admin/rozvoz", label: "Rozvoz a odběry" },
@@ -33,6 +38,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     href: "/admin/produkty",
     label: "Zboží",
     icon: "zbozi",
+    group: true,
     tabs: [
       { href: "/admin/produkty", label: "Produkty" },
       { href: "/admin/sklad", label: "Sklad" },
@@ -47,6 +53,7 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     href: "/admin/zakaznici",
     label: "Zákazníci",
     icon: "zakaznici",
+    group: true,
     tabs: [
       { href: "/admin/zakaznici", label: "Zákazníci" },
       { href: "/admin/karty", label: "Klub a karty" },
@@ -58,12 +65,14 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Provoz",
     icon: "provoz",
     access: "brigada",
+    group: true,
     tabs: [
       { href: "/admin/ukoly", label: "Úkoly", access: "brigada" },
       { href: "/admin/provoz", label: "Teploty a checklisty", access: "brigada" },
       { href: "/admin/dochazka", label: "Docházka", access: "brigada" },
       { href: "/admin/smeny", label: "Směny a uzávěrky" },
       { href: "/admin/zamestnanci", label: "Zaměstnanci", access: "spravce" },
+      { href: "/admin/mzdy", label: "Mzdy", access: "spravce" },
       { href: "/admin/dokumenty", label: "Dokumenty a smlouvy", access: "brigada" },
       { href: "/admin/denik", label: "Deník změn" },
     ],
@@ -73,11 +82,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     label: "Finance",
     icon: "finance",
     access: "spravce",
+    gap: true,
     tabs: [
       { href: "/admin/finance", label: "Přehled", access: "spravce" },
       { href: "/admin/finance/vydaje", label: "Výdaje", access: "spravce" },
       { href: "/admin/finance/splatnosti", label: "Peníze a splatnosti", access: "spravce" },
-      { href: "/admin/mzdy", label: "Mzdy", access: "spravce" },
       { href: "/admin/mzdy/parametry", label: "Parametry mezd", access: "spravce" },
     ],
   },
@@ -100,14 +109,26 @@ export function canSee(role: AdminRole, item: { access?: AdminRole }): boolean {
   return ADMIN_ROLE_RANK[role] >= ADMIN_ROLE_RANK[item.access ?? "obsluha"];
 }
 
-/** Které cesty patří do oddílu: jeho adresa a adresy záložek (i s podstránkami). */
-function belongs(section: AdminSection, path: string): boolean {
+/** Jak dlouhá adresa oddílu (jeho nebo záložky) sedí na cestu; 0 = nepatří sem. Vyhrává nejdelší shoda (Mzdy vs. Parametry mezd). */
+function matchLength(section: AdminSection, path: string): number {
   const roots = [section.href, ...(section.tabs ?? []).map((t) => t.href)];
-  return roots.some((r) => (r === "/admin" ? path === "/admin" : path === r || path.startsWith(r + "/")));
+  return roots.reduce((best, r) => {
+    const hit = r === "/admin" ? path === "/admin" : path === r || path.startsWith(r + "/");
+    return hit && r.length > best ? r.length : best;
+  }, 0);
 }
 
 export function activeSection(path: string): AdminSection | undefined {
-  return ADMIN_SECTIONS.find((s) => belongs(s, path));
+  let best: AdminSection | undefined;
+  let bestLen = 0;
+  for (const s of ADMIN_SECTIONS) {
+    const n = matchLength(s, path);
+    if (n > bestLen) {
+      best = s;
+      bestLen = n;
+    }
+  }
+  return best;
 }
 
 export function isTabActive(tab: AdminTab, path: string): boolean {

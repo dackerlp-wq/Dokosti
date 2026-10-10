@@ -9,46 +9,94 @@ import { ADMIN_SECTIONS, activeSection, canSee, isTabActive, type AdminSection }
 
 const ICON: Record<AdminSection["icon"], typeof Sun> = { dnes: Sun, kasa: Store, prodej: ShoppingBag, zbozi: Boxes, zakaznici: Users, provoz: ClipboardList, finance: Wallet, statistiky: BarChart3, nastaveni: Settings };
 
-/** Boční menu: oddíly podle práce. Každá role vidí jen své položky. */
+const item = (on: boolean, sub = false) =>
+  `flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-sm ${sub ? "pl-9 text-[13.5px]" : ""} ${on ? "bg-green text-cream" : sub ? "text-muted hover:bg-cream hover:text-ink" : "text-ink hover:bg-cream"}`;
+
+function Badge({ n, on }: { n?: number; on: boolean }) {
+  if (!n) return null;
+  return <span className={`label ml-auto rounded-full px-2 text-[10px] ${on ? "bg-cream text-green" : "bg-brick text-cream"}`}>{n}</span>;
+}
+
+/**
+ * Boční menu jako celý strom (podle návrhu): Dnes a Kasa jako odkazy, Prodej / Zboží / Zákazníci / Provoz
+ * jako skupiny s rozbalenými podpoložkami, dole Finance, Statistiky a Nastavení. Každá role vidí jen své.
+ */
 export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Record<string, number> }) {
   const path = usePathname();
   const active = activeSection(path);
+  const sections = ADMIN_SECTIONS.filter((s) => canSee(role, s));
   return (
-    <nav aria-label="Administrace" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:px-2 md:pb-0">
-      {ADMIN_SECTIONS.filter((s) => canSee(role, s)).map((s) => {
-        const Icon = ICON[s.icon];
-        const on = active?.href === s.href;
-        const badge = badges[s.href];
-        return (
-          <Link
-            key={s.href}
-            href={s.href}
-            aria-current={on ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm ${on ? "bg-green text-cream" : "text-ink hover:bg-cream"}`}
-          >
-            <Icon strokeWidth={1.75} className="h-4 w-4" />
-            {s.label}
-            {badge ? <span className={`label ml-auto rounded-full px-2 text-[10px] ${on ? "bg-cream text-green" : "bg-brick text-cream"}`}>{badge}</span> : null}
-          </Link>
-        );
-      })}
-      <form action={logout} className="md:hidden">
-        <button type="submit" className="flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm text-brick-text">
-          <LogOut strokeWidth={1.75} className="h-4 w-4" /> Odhlásit
-        </button>
-      </form>
-    </nav>
+    <>
+      {/* Velká obrazovka: strom */}
+      <nav aria-label="Administrace" className="hidden flex-col gap-0.5 px-2.5 md:flex">
+        {sections.map((s) => {
+          const Icon = ICON[s.icon];
+          const tabs = (s.tabs ?? []).filter((t) => canSee(role, t));
+          const sectionOn = active?.href === s.href;
+          if (s.group && tabs.length > 0) {
+            return (
+              <div key={s.href} className="mt-2.5">
+                <div className="flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-ink">
+                  <Icon strokeWidth={1.75} className="h-4 w-4" />
+                  {s.label}
+                </div>
+                {tabs.map((t) => {
+                  const on = isTabActive(t, path);
+                  return (
+                    <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={item(on, true)}>
+                      {t.label}
+                      <Badge n={badges[t.href]} on={on} />
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          }
+          return (
+            <Link key={s.href} href={s.href} aria-current={sectionOn ? "page" : undefined} className={`${item(sectionOn)} ${s.gap ? "mt-2.5" : ""}`}>
+              <Icon strokeWidth={1.75} className="h-4 w-4" />
+              {s.label}
+              <Badge n={badges[s.href] ?? tabs.reduce((n, t) => n + (badges[t.href] ?? 0), 0)} on={sectionOn} />
+            </Link>
+          );
+        })}
+      </nav>
+      {/* Mobil: řádek oddílů, podpoložky jsou v záložkách nad obsahem */}
+      <nav aria-label="Administrace" className="flex gap-1 overflow-x-auto px-2 pb-2 md:hidden">
+        {sections.map((s) => {
+          const Icon = ICON[s.icon];
+          const on = active?.href === s.href;
+          const tabs = (s.tabs ?? []).filter((t) => canSee(role, t));
+          const badge = badges[s.href] ?? tabs.reduce((n, t) => n + (badges[t.href] ?? 0), 0);
+          return (
+            <Link key={s.href} href={s.href} aria-current={on ? "page" : undefined} className={`shrink-0 ${item(on)}`}>
+              <Icon strokeWidth={1.75} className="h-4 w-4" />
+              {s.label}
+              <Badge n={badge} on={on} />
+            </Link>
+          );
+        })}
+        <form action={logout}>
+          <button type="submit" className="flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm text-brick-text">
+            <LogOut strokeWidth={1.75} className="h-4 w-4" /> Odhlásit
+          </button>
+        </form>
+      </nav>
+    </>
   );
 }
 
-/** Záložky oddílu nad obsahem stránky (jen kde oddíl nějaké má a role na ně dosáhne). */
+/**
+ * Záložky oddílu nad obsahem. U skupin (podpoložky jsou v bočním menu) jen na mobilu,
+ * u ostatních oddílů (Finance, Nastavení) vždy.
+ */
 export function SectionTabs({ role }: { role: AdminRole }) {
   const path = usePathname();
   const section = activeSection(path);
   const tabs = (section?.tabs ?? []).filter((t) => canSee(role, t));
   if (tabs.length < 2) return null;
   return (
-    <div className="mb-5 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label={section?.label}>
+    <div className={`mb-5 flex gap-5 overflow-x-auto border-b border-line ${section?.group ? "md:hidden" : ""}`} role="tablist" aria-label={section?.label}>
       {tabs.map((t) => {
         const on = isTabActive(t, path);
         return (
