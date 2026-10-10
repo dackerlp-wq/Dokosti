@@ -181,6 +181,25 @@ pohyby, šarže s expirací, nákupní cena), seznam příjemek a pohybů; u pro
 `order_items.unit_cost_czk` drží nákupní cenu v době prodeje, statistiky z ní počítají hrubý zisk. Role v `admins.role`:
 `spravce` (vše) a `obsluha` (bez nastavení, slev, e-mailů, statistik, předplatného a nákupních cen; RLS pro nastavení a kódy).
 
+## Zboží: dodavatelé, objednávky u nich, příjemka, inventura, akce (migrace 0028)
+
+Dodavatelé (`suppliers`: objednávkový den, dodací lhůta, minimální objednávka) se přiřazují produktům (`products.supplier_id`,
+k tomu `pack_size` obvyklé balení a `vat_rate` sazba DPH pro doklady). Objednávky u dodavatele (`purchase_orders`,
+`/admin/nakup`): návrh s položkami navrženými ze Skladu (`suggestedOrderQty`: spotřeba na `reorderDays` + dodací lhůta mínus
+zásoba, na balení), odeslání e-mailem (`purchaseOrderEmail`) nebo tiskem, přijetí příjemkou. Příjemka je průvodce
+(`receipt-wizard.tsx`): dodavatel a doklad (splatnost → automatický úkol `invoice-due:<id>`, částka faktury), položky
+čtečkou EAN nebo hledáním, kontrola rozdílů proti objednávce, změn nákupní ceny a marže, pak zaúčtování (`post_receipt`
++ vazby na objednávku). Faktura se označí jako zaplacená v seznamu příjemek (`stock_receipts.paid_at`, zavře úkol).
+Inventura (`/admin/sklad/inventura`): po řadách nebo čtečkou, rozpracovaná v prohlížeči, rozdíly v Kč, zápis jedním
+krokem (RPC `apply_inventory`). Interní výdej (ochutnávky, vlastní psi, dar) je vlastní druh pohybu `interni`, neskresluje
+ležáky ani marži. Prodej, odpis a interní výdej odečítají šarže od nejstarší expirace (trigger `apply_stock_movement`,
+`stock_movements.batch_id` = první dotčená šarže), storno vrací do nejstarší živé šarže.
+Akce a slevy (`/admin/akce`, jen správce): akční cena s platností od–do (`price_actions`); denní cron volá
+`price_actions_run` (přepne cenu a schová původní do `original_price_czk`, po konci vrátí), správce může spustit ručně.
+Hromadná změna cen (`/admin/produkty/ceny`): o %, o Kč nebo na cílovou marži, se zaokrouhlením a náhledem marže;
+cenovky k tisku (`/admin/produkty/cenovky`). Produkt je průvodce ve čtyřech krocích s náhledem karty na webu.
+Doklady a účtenky počítají DPH podle sazby u produktu (`lib/vat.ts`), doprava jde do převažující sazby.
+
 ## Klub DoKosti (registrace, účet, karta, zvířata)
 
 Návrh v `docs/KLUB.md`. Zákazník (`customers`) je střed: `user_id` (účet Supabase Auth), `card_code` (věrnostní karta),

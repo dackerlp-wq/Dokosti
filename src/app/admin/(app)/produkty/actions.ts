@@ -82,6 +82,9 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     stock_qty: String(formData.get("stock_qty") ?? "").trim() === "" ? null : Math.max(0, unit === "kg" ? Math.round(num(formData.get("stock_qty")) * 1000) / 1000 : Math.round(num(formData.get("stock_qty")))),
     unit,
     ean: ean || null,
+    supplier_id: String(formData.get("supplier_id") ?? "").trim() || null,
+    pack_size: String(formData.get("pack_size") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("pack_size")) * 1000) / 1000) || null,
+    vat_rate: [0, 12, 21].includes(Math.round(num(formData.get("vat_rate")))) ? Math.round(num(formData.get("vat_rate"))) : 12,
     ...(admin.isManager && formData.has("purchase_price_czk")
       ? { purchase_price_czk: String(formData.get("purchase_price_czk") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("purchase_price_czk")) * 100) / 100) }
       : {}),

@@ -279,3 +279,12 @@ export function paymentReminder(o: OrderForEmail, s: Settings): EmailMessage {
   const text = `Dobrý den, ${o.customer_name},\n\nu objednávky ${o.order_number} zatím nevidíme platbu. ${info}\n\nJakmile platba dorazí, dáme vám vědět. Pokud jste už platili, omlouváme se, platby se mohou potkat.\n\nDěkujeme, ${s.shop.name}${s.shop.phone ? ` · ${s.shop.phone}` : ""}.`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }
+
+/** Objednávka zboží u dodavatele (odesílá prodejna). */
+export function purchaseOrderEmail(number: string, lines: { name: string; qty: string; ean: string }[], expectedOn: string | null, note: string, s: Settings): EmailMessage {
+  const title = `Objednávka ${number} · ${s.shop.name}`;
+  const rows = lines.map((l) => `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${esc(l.name)}${l.ean ? ` <span style="color:#888">(EAN ${esc(l.ean)})</span>` : ""}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">${esc(l.qty)}</td></tr>`).join("");
+  const body = `<p>Dobrý den,</p><p>objednáváme následující zboží${expectedOn ? `, dodání prosím ${esc(fmtDay(expectedOn))}` : ""}:</p><table style="border-collapse:collapse">${rows}</table>${note ? `<p>${esc(note)}</p>` : ""}<p>Dodací adresa: ${esc(s.shop.name)}, ${esc(s.shop.address)}, ${esc(s.shop.city)}${s.shop.ico ? `, IČO ${esc(s.shop.ico)}` : ""}.<br>Potvrďte prosím termín. Děkujeme.</p><p>${esc(s.shop.name)}${s.shop.phone ? ` · ${esc(s.shop.phone)}` : ""}${s.shop.email ? ` · ${esc(s.shop.email)}` : ""}</p>`;
+  const text = `Dobrý den,\n\nobjednáváme následující zboží${expectedOn ? `, dodání prosím ${fmtDay(expectedOn)}` : ""}:\n${lines.map((l) => `- ${l.name}${l.ean ? ` (EAN ${l.ean})` : ""}: ${l.qty}`).join("\n")}\n${note ? `\n${note}\n` : ""}\nDodací adresa: ${s.shop.name}, ${s.shop.address}, ${s.shop.city}${s.shop.ico ? `, IČO ${s.shop.ico}` : ""}.\nPotvrďte prosím termín. Děkujeme.\n\n${s.shop.name}${s.shop.phone ? ` · ${s.shop.phone}` : ""}`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}

@@ -9,7 +9,7 @@ import { analyzeStock, type ProductStats, type StockMove, type StockProduct } fr
 const DAY = 86_400_000;
 const PAGE = 1000;
 
-export const STOCK_PRODUCT_COLUMNS = "id, slug, line, variant, unit, storage, price_czk, purchase_price_czk, stock_qty, low_stock_threshold, in_stock, is_published";
+export const STOCK_PRODUCT_COLUMNS = "id, slug, line, variant, unit, storage, price_czk, purchase_price_czk, stock_qty, low_stock_threshold, in_stock, is_published, supplier_id, pack_size";
 
 /** Pohyby od data, po stránkách (Supabase vrací nejvýš 1000 řádků na dotaz). */
 export async function fetchMoves(db: SupabaseClient, opts: { since: Date; productId?: string; kinds?: StockKind[] }): Promise<StockMove[]> {

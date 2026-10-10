@@ -41,8 +41,8 @@ pro to, jak jednotlivé části adminu spolu mluví. Každá nová obrazovka neb
 | --- | --- | --- |
 | E1 Základ | role na serveru, flash a potvrzení, `activity_log`, `tasks`, nové menu, Dnes, hledání Ctrl+K, sdílené komponenty | hotovo |
 | E2 Prodej | historie objednávky, interní poznámka, související, filtry a export, rozvoz s akcemi, nezaplacené s připomínkou, opravy kasy, předávka směny | hotovo |
-| E3 Zboží | průvodce Nový produkt a Příjemka, dodavatelé a objednávky u nich, inventura, interní výdej, šarže k prodeji (FIFO), akce a slevy, hromadná změna cen, cenovky | probíhá |
-| E4 Provoz | zaměstnanci, docházka, dokumenty (verze, podpis, platnost), teplotní deník, sanitace, checklisty, úkoly, směny a uzávěrky, zaškolení | |
+| E3 Zboží | průvodce Nový produkt a Příjemka, dodavatelé a objednávky u nich, inventura, interní výdej, šarže k prodeji (FIFO), akce a slevy, hromadná změna cen, cenovky | hotovo |
+| E4 Provoz | zaměstnanci, docházka, dokumenty (verze, podpis, platnost), teplotní deník, sanitace, checklisty, úkoly, směny a uzávěrky, zaškolení | probíhá |
 | E5 Mzdy a Finance | parametry roku, podklady pro mzdy, orientační páska, export pro účetní, výdaje, od obratu k zisku, peníze a splatnosti | |
 | E6 Napříč | notifikace e-mail/push, zálohy, GDPR anonymizace, kasa offline, plán směn, firemní kalendář, péče o zákazníky, poukazy | |
 

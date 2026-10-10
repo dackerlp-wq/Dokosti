@@ -59,6 +59,12 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
           <p className="mt-1 text-sm text-muted">Co se prodává, co leží a co dochází. Prodeje z webu i kasy za zvolené období.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/sklad/inventura" className="label mr-2 text-[11px] text-green underline">
+            Inventura
+          </Link>
+          <Link href="/admin/nakup/nova" className="label mr-2 text-[11px] text-green underline">
+            Objednat u dodavatele
+          </Link>
           <span className="label text-[11px] text-muted">Období prodejů</span>
           {STOCK_PERIODS.map((p) => (
             <Link key={p.id} href={`/admin/sklad${query({ obdobi: p.id })}`} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${p.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>

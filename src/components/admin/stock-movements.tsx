@@ -24,9 +24,15 @@ export function StockMovements({ productId, unit, stockQty, movements, manager }
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <form action={adjustStock} className="flex flex-wrap items-end gap-2 rounded-[var(--radius-control)] bg-cream p-3">
           <input type="hidden" name="product_id" value={productId} />
-          <input type="hidden" name="kind" value="odpis" />
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Odpis (kolik ubylo)</span>
+            <span className="label mb-1 block text-[11px] text-muted">Odpis / interní výdej</span>
+            <select name="kind" defaultValue="odpis" className="min-h-9 w-auto py-1">
+              <option value="odpis">Odpis</option>
+              <option value="interni">Interní výdej</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="label mb-1 block text-[11px] text-muted">Kolik ubylo</span>
             <input name="qty" type="number" min={0} step={unit === "kg" ? "0.001" : "1"} required className="w-28 min-h-9 py-1" />
           </label>
           <label className="block flex-1">

@@ -27,7 +27,7 @@ const MOVE_FILTERS = [
 const FILTER_KINDS: Record<string, StockKind[]> = {
   prodej: ["prodej_web", "prodej_kasa"],
   prijem: ["prijem", "storno"],
-  upravy: ["odpis", "inventura", "oprava"],
+  upravy: ["odpis", "inventura", "oprava", "interni"],
 };
 
 type Batch = { id: string; batch_no: string; expires_on: string; qty: number };
@@ -213,13 +213,14 @@ export default async function StockProductPage({ params, searchParams }: { param
 
             <div className="space-y-5">
               <form action={adjustStock} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-                <h2 className="text-[20px]">Odpis nebo inventura</h2>
+                <h2 className="text-[20px]">Odpis, interní výdej, inventura</h2>
                 <input type="hidden" name="product_id" value={id} />
                 <input type="hidden" name="redirect" value={base} />
                 <label className="mt-3 block">
                   <span className="label mb-1 block text-[11px] text-muted">Typ pohybu</span>
                   <select name="kind" defaultValue="odpis">
-                    <option value="odpis">Odpis (kolik ubylo: prošlé, poškozené)</option>
+                    <option value="odpis">Odpis (prošlé, poškozené)</option>
+                    <option value="interni">Interní výdej (ochutnávka, vzorek, vlastní psi, dar)</option>
                     <option value="inventura">Inventura (nový skutečný stav)</option>
                   </select>
                 </label>

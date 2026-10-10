@@ -173,6 +173,10 @@ export type ProductRow = {
   /** Poslední nákupní cena z příjemky, pro marži. Vidí jen správce. */
   purchase_price_czk: number | null;
   ean: string | null;
+  /** Dodavatel, obvyklé balení od něj a sazba DPH (migrace 0028). */
+  supplier_id: string | null;
+  pack_size: number | null;
+  vat_rate: number;
   updated_at: string;
 };
 
@@ -186,7 +190,7 @@ export const ADMIN_ROLE_HINT: Record<AdminRole, string> = {
   brigada: "kasa a provozní deník, storno jen vlastní účtenky do 10 minut",
 };
 
-export type StockKind = "prijem" | "prodej_web" | "prodej_kasa" | "storno" | "odpis" | "inventura" | "oprava";
+export type StockKind = "prijem" | "prodej_web" | "prodej_kasa" | "storno" | "odpis" | "inventura" | "oprava" | "interni";
 export const STOCK_KIND_LABEL: Record<StockKind, string> = {
   prijem: "Příjem",
   prodej_web: "Prodej web",
@@ -195,7 +199,55 @@ export const STOCK_KIND_LABEL: Record<StockKind, string> = {
   odpis: "Odpis",
   inventura: "Inventura",
   oprava: "Oprava",
+  interni: "Interní výdej",
 };
+
+/** Dodavatel (číselník). */
+export type SupplierRow = {
+  id: string;
+  name: string;
+  contact: string;
+  email: string;
+  phone: string;
+  order_weekday: number | null;
+  lead_days: number;
+  min_order_czk: number;
+  note: string;
+  active: boolean;
+  created_at: string;
+};
+
+export type PurchaseOrderStatus = "navrh" | "odeslana" | "prijata" | "zrusena";
+export const PURCHASE_ORDER_STATUS_LABEL: Record<PurchaseOrderStatus, string> = { navrh: "Návrh", odeslana: "Odeslaná", prijata: "Přijatá", zrusena: "Zrušená" };
+export type PurchaseOrderRow = {
+  id: string;
+  number: string;
+  supplier_id: string;
+  status: PurchaseOrderStatus;
+  note: string;
+  expected_on: string | null;
+  sent_at: string | null;
+  received_at: string | null;
+  receipt_id: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+export type PurchaseOrderItemRow = { id: string; purchase_order_id: string; product_id: string; qty: number; unit_cost_czk: number; received_qty: number };
+
+export type PriceActionStatus = "planovana" | "aktivni" | "skoncena" | "zrusena";
+export const PRICE_ACTION_STATUS_LABEL: Record<PriceActionStatus, string> = { planovana: "Plánovaná", aktivni: "Běží", skoncena: "Skončená", zrusena: "Zrušená" };
+export type PriceActionRow = {
+  id: string;
+  name: string;
+  product_id: string;
+  sale_price_czk: number;
+  starts_on: string;
+  ends_on: string;
+  status: PriceActionStatus;
+  original_price_czk: number | null;
+  created_at: string;
+};
+export const VAT_RATES = [12, 21, 0] as const;
 export type StockMovementRow = {
   id: string;
   product_id: string;

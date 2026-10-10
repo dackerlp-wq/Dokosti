@@ -3,11 +3,12 @@ import { PrintButton } from "@/components/admin/print-button";
 import { formatDay, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
+import { vatBreakdown } from "@/lib/vat";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium" });
 
-/** Doklad k objednávce. Neplátce DPH: doklad bez DPH. Plátce: doklad s rozpisem (sazba podle produktu zatím jednotná 12 %). */
+/** Doklad k objednávce. Neplátce DPH: doklad bez DPH. Plátce: rozpis DPH podle sazby u produktu. */
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
@@ -22,9 +23,11 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const lines = (items ?? []) as OrderItemRow[];
   const shop = settings.shop;
   const vat = shop.vatPayer;
-  const VAT_RATE = 12;
   const discount = o.discount_czk + o.points_discount_czk;
-  const base = vat ? Math.round(o.total_czk / (1 + VAT_RATE / 100)) : o.total_czk;
+  // Sazba DPH podle produktu (products.vat_rate); položka bez produktu dostane 12 %.
+  const { data: rates } = vat && lines.length ? await db.from("products").select("slug, vat_rate").in("slug", lines.map((l) => l.product_slug)) : { data: [] };
+  const rateBySlug = new Map(((rates ?? []) as { slug: string; vat_rate: number }[]).map((r) => [r.slug, r.vat_rate]));
+  const groups = vat ? vatBreakdown(lines.map((l) => ({ gross: Math.round(Number(l.qty) * l.unit_price_czk), rate: rateBySlug.get(l.product_slug) ?? 12 })), discount, o.shipping_czk) : [];
   const issued = o.invoice_issued_at ? new Date(o.invoice_issued_at) : new Date(o.created_at);
 
   return (
@@ -134,18 +137,19 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         </table>
 
         <section className="mt-4 ml-auto w-64 space-y-1 border-t border-line pt-3">
-          {vat && (
-            <>
-              <p className="flex justify-between text-muted">
-                <span>Základ daně</span>
-                <span>{formatPrice(base)}</span>
-              </p>
-              <p className="flex justify-between text-muted">
-                <span>DPH {VAT_RATE} %</span>
-                <span>{formatPrice(o.total_czk - base)}</span>
-              </p>
-            </>
-          )}
+          {vat &&
+            groups.map((g) => (
+              <div key={g.rate}>
+                <p className="flex justify-between text-muted">
+                  <span>Základ {g.rate} %</span>
+                  <span>{formatPrice(g.base)}</span>
+                </p>
+                <p className="flex justify-between text-muted">
+                  <span>DPH {g.rate} %</span>
+                  <span>{formatPrice(g.vat)}</span>
+                </p>
+              </div>
+            ))}
           <p className="flex justify-between font-display text-[18px] font-semibold">
             <span>Celkem k úhradě</span>
             <span>{formatPrice(o.total_czk)}</span>

@@ -38,7 +38,9 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       { href: "/admin/sklad", label: "Sklad" },
       { href: "/admin/sklad/pohyby", label: "Pohyby" },
       { href: "/admin/sklad/prijemky", label: "Příjemky" },
-      { href: "/admin/slevy", label: "Akce a slevy", access: "spravce" },
+      { href: "/admin/nakup", label: "Objednávky u dodavatelů" },
+      { href: "/admin/dodavatele", label: "Dodavatelé" },
+      { href: "/admin/akce", label: "Akce a slevy", access: "spravce" },
     ],
   },
   {

@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, type PosSaleItemRow, type PosSaleRow } from "@/lib/pos";
 import { getSettings } from "@/lib/settings";
+import { vatBreakdown } from "@/lib/vat";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
@@ -16,16 +17,23 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
   const [{ data: sale }, settings] = await Promise.all([db.from("pos_sales").select("*, customers(name, points)").eq("id", id).maybeSingle(), getSettings()]);
   if (!sale) notFound();
   const s = sale as PosSaleRow & { customers: { name: string; points: number } | null };
-  let items: { name: string; qty: number; unit: string; unit_price_czk: number; line_total_czk: number }[] = [];
+  let items: { name: string; qty: number; unit: string; unit_price_czk: number; line_total_czk: number; rate: number }[] = [];
   if (s.order_id) {
-    const { data } = await db.from("order_items").select("name, qty, unit_price_czk").eq("order_id", s.order_id);
-    items = ((data ?? []) as { name: string; qty: number; unit_price_czk: number }[]).map((i) => ({ ...i, unit: "ks", line_total_czk: Math.round(Number(i.qty) * i.unit_price_czk) }));
+    const { data } = await db.from("order_items").select("name, qty, unit_price_czk, product_slug").eq("order_id", s.order_id);
+    const rows = (data ?? []) as { name: string; qty: number; unit_price_czk: number; product_slug: string }[];
+    const { data: prods } = rows.length ? await db.from("products").select("slug, unit, vat_rate").in("slug", rows.map((r) => r.product_slug)) : { data: [] };
+    const bySlug = new Map(((prods ?? []) as { slug: string; unit: string; vat_rate: number }[]).map((p) => [p.slug, p]));
+    items = rows.map((i) => ({ ...i, unit: bySlug.get(i.product_slug)?.unit ?? "ks", rate: bySlug.get(i.product_slug)?.vat_rate ?? 12, line_total_czk: Math.round(Number(i.qty) * i.unit_price_czk) }));
   } else {
-    const { data } = await db.from("pos_sale_items").select("id, name, qty, unit, unit_price_czk, line_total_czk").eq("sale_id", id);
-    items = (data ?? []) as PosSaleItemRow[];
+    const { data } = await db.from("pos_sale_items").select("id, name, qty, unit, unit_price_czk, line_total_czk, product_id").eq("sale_id", id);
+    const rows = (data ?? []) as (PosSaleItemRow & { product_id: string | null })[];
+    const { data: prods } = rows.length ? await db.from("products").select("id, vat_rate").in("id", rows.map((r) => r.product_id).filter(Boolean) as string[]) : { data: [] };
+    const byId = new Map(((prods ?? []) as { id: string; vat_rate: number }[]).map((p) => [p.id, p.vat_rate]));
+    items = rows.map((i) => ({ ...i, rate: (i.product_id && byId.get(i.product_id)) || 12 }));
   }
   const shop = settings.shop;
   const vat = shop.vatPayer;
+  const vatGroups = vat ? vatBreakdown(items.map((i) => ({ gross: i.line_total_czk, rate: i.rate })), Math.max(0, items.reduce((n, i) => n + i.line_total_czk, 0) - s.total_czk)) : [];
 
   return (
     <div className="mx-auto max-w-[360px] px-4 py-6 print:max-w-none print:p-0">
@@ -85,12 +93,13 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
             <span>CELKEM</span>
             <span>{formatPrice(s.total_czk)}</span>
           </p>
-          {vat && (
-            <p className="flex justify-between text-muted">
-              <span>z toho DPH 12 %</span>
-              <span>{formatPrice(s.total_czk - Math.round(s.total_czk / 1.12))}</span>
-            </p>
-          )}
+          {vat &&
+            vatGroups.map((g) => (
+              <p key={g.rate} className="flex justify-between text-muted">
+                <span>z toho DPH {g.rate} % (základ {formatPrice(g.base)})</span>
+                <span>{formatPrice(g.vat)}</span>
+              </p>
+            ))}
           <p className="mt-1 flex justify-between">
             <span>{POS_PAYMENT_LABEL[s.payment]}</span>
             {s.payment === "hotove" && s.cash_received_czk != null ? <span>přijato {formatPrice(s.cash_received_czk)}</span> : null}

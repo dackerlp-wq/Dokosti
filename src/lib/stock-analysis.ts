@@ -41,7 +41,17 @@ export type StockProduct = {
   low_stock_threshold: number;
   in_stock: boolean;
   is_published: boolean;
+  supplier_id?: string | null;
+  pack_size?: number | null;
 };
+
+/** Doporučené množství k doobjednání: spotřeba na `reorderDays` mínus zásoba, zaokrouhlené na balení nahoru. */
+export function suggestedOrderQty(s: Pick<ProductStats, "sold" | "stock" | "product">, periodDays: number, settings: Settings["stock"]): number {
+  const need = (s.sold / periodDays) * (settings.reorderDays + settings.leadDays) - s.stock;
+  if (need <= 0) return 0;
+  const pack = s.product.pack_size && s.product.pack_size > 0 ? s.product.pack_size : s.product.unit === "kg" ? 1 : 1;
+  return Math.ceil(need / pack) * pack;
+}
 
 /** Pohyb tak, jak ho potřebuje vyhodnocení. */
 export type StockMove = { product_id: string; kind: StockKind; qty: number | string; created_at: string };
