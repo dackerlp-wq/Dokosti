@@ -60,6 +60,11 @@ export const ADMIN_SECTIONS: AdminSection[] = [
     access: "brigada",
     tabs: [
       { href: "/admin/ukoly", label: "Úkoly", access: "brigada" },
+      { href: "/admin/provoz", label: "Teploty a checklisty", access: "brigada" },
+      { href: "/admin/dochazka", label: "Docházka", access: "brigada" },
+      { href: "/admin/smeny", label: "Směny a uzávěrky" },
+      { href: "/admin/zamestnanci", label: "Zaměstnanci", access: "spravce" },
+      { href: "/admin/dokumenty", label: "Dokumenty a smlouvy", access: "brigada" },
       { href: "/admin/denik", label: "Deník změn" },
     ],
   },

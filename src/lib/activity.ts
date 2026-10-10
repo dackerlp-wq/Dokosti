@@ -5,7 +5,7 @@ import type { Admin } from "@/lib/supabase/auth";
  * Deník změn (activity_log): jediné místo, kam všechny akce zapisují „kdo, kdy, co, u čeho“.
  * Detaily objednávky, zákazníka, produktu i Dnes z něj čtou historii.
  */
-export type ActivitySubject = "order" | "product" | "customer" | "receipt" | "coupon" | "settings" | "card" | "inquiry" | "task" | "shift" | "sale" | "batch" | "admin" | "subscription";
+export type ActivitySubject = "order" | "product" | "customer" | "receipt" | "coupon" | "settings" | "card" | "inquiry" | "task" | "shift" | "sale" | "batch" | "admin" | "subscription" | "employee" | "document" | "device" | "attendance" | "checklist";
 
 export type ActivityRow = {
   id: number;
@@ -65,6 +65,16 @@ export function activityHref(a: Pick<ActivityRow, "subject_type" | "subject_id">
       return "/admin/poradna";
     case "task":
       return "/admin/ukoly";
+    case "employee":
+      return `/admin/zamestnanci/${a.subject_id}`;
+    case "document":
+      return `/admin/dokumenty/${a.subject_id}`;
+    case "device":
+      return "/admin/provoz";
+    case "attendance":
+      return "/admin/dochazka";
+    case "checklist":
+      return "/admin/provoz";
     default:
       return null;
   }

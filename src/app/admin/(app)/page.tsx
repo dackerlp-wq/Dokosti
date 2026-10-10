@@ -47,7 +47,7 @@ export default async function AdminHome() {
     manager ? db.from("pos_sale_items").select("name, qty, pos_sales!inner(created_at, status)").gte("pos_sales.created_at", weekStart.toISOString()).eq("pos_sales.status", "zaplaceno") : Promise.resolve({ data: [] }),
   ]);
   const [alerts, { data: openTasks }, { data: activity }] = await Promise.all([
-    loadAlerts(db, now),
+    loadAlerts(db, now, { manager }),
     db.from("tasks").select("*").is("done_at", null).or(`assigned_to.eq.${admin.id},assigned_to.is.null`).order("due_on", { ascending: true, nullsFirst: false }).limit(8),
     db.from("activity_log").select("*").order("created_at", { ascending: false }).limit(8),
   ]);

@@ -294,3 +294,90 @@ export function slugify(...parts: string[]) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** Provoz (migrace 0029): zaměstnanci, docházka, dokumenty, zařízení, checklisty. */
+export type ContractType = "hpp" | "dpp" | "dpc" | "jednatel" | "osvc";
+export const CONTRACT_LABEL: Record<ContractType, string> = { hpp: "Pracovní smlouva (HPP)", dpp: "Dohoda o provedení práce (DPP)", dpc: "Dohoda o pracovní činnosti (DPČ)", jednatel: "Jednatel / majitel", osvc: "OSVČ (faktura)" };
+export type EmployeeRow = {
+  id: string;
+  user_id: string | null;
+  name: string;
+  position: string;
+  contract_type: ContractType;
+  hourly_rate_czk: number | null;
+  monthly_salary_czk: number | null;
+  weekly_hours: number | null;
+  started_on: string | null;
+  ended_on: string | null;
+  phone: string;
+  email: string;
+  birth_date: string | null;
+  address: string;
+  note: string;
+  created_at: string;
+};
+export type AttendanceKind = "prace" | "dovolena" | "nemoc" | "svatek" | "volno" | "jine";
+export const ATTENDANCE_KIND_LABEL: Record<AttendanceKind, string> = { prace: "Práce", dovolena: "Dovolená", nemoc: "Nemoc", svatek: "Svátek", volno: "Volno", jine: "Jiné" };
+export type AttendanceRow = {
+  id: string;
+  employee_id: string | null;
+  user_id: string | null;
+  day: string;
+  started_at: string | null;
+  ended_at: string | null;
+  hours: number | null;
+  break_minutes: number;
+  kind: AttendanceKind;
+  source: "kasa" | "rucne";
+  shift_id: string | null;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+};
+export type DocumentCategory = "smlouvy" | "zamestnanci" | "faktury" | "najem" | "revize" | "haccp" | "urady" | "ostatni";
+export const DOCUMENT_CATEGORY_LABEL: Record<DocumentCategory, string> = { smlouvy: "Smlouvy", zamestnanci: "Zaměstnanci", faktury: "Faktury od dodavatelů", najem: "Nájem a provozovna", revize: "Revize a kontroly", haccp: "HACCP a hygiena", urady: "Úřady a registrace", ostatni: "Ostatní" };
+export type DocumentLink = "employee" | "supplier" | "receipt" | "order" | "device" | "firma";
+export const DOCUMENT_LINK_LABEL: Record<DocumentLink, string> = { employee: "Zaměstnanec", supplier: "Dodavatel", receipt: "Příjemka", order: "Objednávka", device: "Zařízení", firma: "Firma" };
+export type DocumentRow = {
+  id: string;
+  title: string;
+  category: DocumentCategory;
+  linked_type: DocumentLink | null;
+  linked_id: string | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  remind_days: number;
+  note: string;
+  archived_at: string | null;
+  created_by: string | null;
+  created_at: string;
+};
+export type DocumentVersionRow = { id: string; document_id: string; version: number; storage_path: string; file_name: string; mime: string; size_bytes: number; note: string; created_by: string | null; created_at: string };
+export type SignatureMethod = "tablet" | "sken" | "externi";
+export const SIGNATURE_METHOD_LABEL: Record<SignatureMethod, string> = { tablet: "Podpis na tabletu", sken: "Podepsaný sken", externi: "Podepsáno mimo systém" };
+export type SignatureRow = { id: string; version_id: string; signer_name: string; signer_user: string | null; method: SignatureMethod; signature_path: string | null; signed_at: string; user_agent: string };
+export type DeviceKind = "mrazak" | "chladnicka" | "jine";
+export const DEVICE_KIND_LABEL: Record<DeviceKind, string> = { mrazak: "Mrazák", chladnicka: "Chladnička", jine: "Jiné" };
+export type DeviceRow = { id: string; name: string; kind: DeviceKind; min_c: number; max_c: number; active: boolean; sort_order: number };
+export type TemperatureRow = { id: string; device_id: string; measured_at: string; value_c: number; ok: boolean; note: string; created_by: string | null; created_by_name: string };
+export type ChecklistPeriod = "denne" | "tydne" | "mesicne" | "nastup";
+export const CHECKLIST_PERIOD_LABEL: Record<ChecklistPeriod, string> = { denne: "Denně", tydne: "Týdně", mesicne: "Měsíčně", nastup: "Při nástupu" };
+export type ChecklistItem = { id: string; text: string };
+export type ChecklistRow = { id: string; name: string; period: ChecklistPeriod; items: ChecklistItem[]; active: boolean; sort_order: number };
+export type ChecklistRunRow = { id: string; checklist_id: string; period_key: string; done: Record<string, { by: string; at: string }>; created_at: string };
+
+/** Klíč období checklistu: den, týden (ISO) nebo měsíc. */
+export function periodKeyFor(period: ChecklistPeriod, now = new Date()): string {
+  const iso = now.toISOString().slice(0, 10);
+  if (period === "denne") return iso;
+  if (period === "mesicne") return iso.slice(0, 7);
+  if (period === "tydne") {
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const start = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const week = Math.ceil(((d.getTime() - start.getTime()) / 86_400_000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+  }
+  return iso;
+}

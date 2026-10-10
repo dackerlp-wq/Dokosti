@@ -200,6 +200,26 @@ Hromadná změna cen (`/admin/produkty/ceny`): o %, o Kč nebo na cílovou marž
 cenovky k tisku (`/admin/produkty/cenovky`). Produkt je průvodce ve čtyřech krocích s náhledem karty na webu.
 Doklady a účtenky počítají DPH podle sazby u produktu (`lib/vat.ts`), doprava jde do převažující sazby.
 
+## Provoz: zaměstnanci, docházka, dokumenty, teploty, checklisty (migrace 0029)
+
+Zaměstnanci (`employees`, `/admin/zamestnanci`, jen správce): smlouva (HPP, DPP, DPČ, OSVČ, rodina), hodinová nebo měsíční
+sazba, přístup do systému (vazba na `admins`), karta s docházkou, dokumenty, zaškolením (checklist „Zaškolení“ s klíčem
+`employee:<id>`) a údaji. Docházka (`attendance`, `/admin/dochazka`) vzniká automaticky z uzávěrek směn v kase (trigger
+`attendance_from_shift` na `pos_shifts`, úpravy se promítají), ručně se přidává jen rozvoz, dovolená, nemoc a náhradní
+volno; souhrn hodin po lidech za měsíc, export `/admin/export/dochazka.csv` (podklad pro mzdy v etapě 5). Směny a uzávěrky
+(`/admin/smeny`): přehled po dnech s rozdíly v hotovosti, export `/admin/export/smeny.csv`.
+Dokumenty (`documents`, `document_versions`, `document_signatures`, `/admin/dokumenty`): soubory v soukromém bucketu
+`dokumenty` (nahrává prohlížeč přes RLS, metadata zapíše server), kategorie (smlouvy, zaměstnanci, faktury, nájem, revize,
+HACCP, úřady), vazba na zaměstnance, dodavatele nebo zařízení (`?novy=1&vazba=employee:<id>` z karty zaměstnance),
+platnost s připomínkou (denní `provoz_daily` zakládá úkol `doc-expiry:<id>`, upozornění v Dnes do 60 dní). Verze se
+nepřepisují, každá změna je nová verze; podpis (na tabletu prstem, podepsaný sken jako verze, nebo zapsán jako podepsáno
+mimo systém) se váže k verzi. Zaměstnanec vidí a podepisuje jen dokumenty navázané na sebe (RLS i v storage).
+Stažení přes `/admin/dokumenty-soubor/[versionId]` (podepsaný odkaz na 2 minuty, `?stahnout=1`, `?podpis=<id>`).
+Archivace místo mazání. Provoz (`/admin/provoz`, i brigáda): zápis teplot mrazáků a chladniček (`devices`, `temperature_log`,
+rozsah u zařízení, mimo rozsah a chybějící zápis po 10:00 hlásí Dnes), export `/admin/export/teploty.csv` pro kontrolu,
+checklisty (`checklists` s položkami v JSON, `checklist_runs` podle klíče období: otevření, zavření, týdenní sanitace,
+měsíční kontrola, zaškolení) s průběhem za dnešek a tento týden.
+
 ## Klub DoKosti (registrace, účet, karta, zvířata)
 
 Návrh v `docs/KLUB.md`. Zákazník (`customers`) je střed: `user_id` (účet Supabase Auth), `card_code` (věrnostní karta),

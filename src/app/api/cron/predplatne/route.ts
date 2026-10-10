@@ -91,6 +91,9 @@ export async function GET(req: NextRequest) {
   // Akční ceny: spustit ty, které dnes začínají, a vrátit ceny u skončených.
   const { data: actions, error: actionsError } = await db.rpc("price_actions_run", { p_secret: secret });
   log.push(actionsError ? `price_actions error ${actionsError.message}` : `price_actions ${JSON.stringify(actions)}`);
+  // Provoz: úkoly z končících dokumentů.
+  const { data: provoz, error: provozError } = await db.rpc("provoz_daily", { p_secret: secret });
+  log.push(provozError ? `provoz error ${provozError.message}` : `provoz ${JSON.stringify(provoz)}`);
 
   return NextResponse.json({ today, processed: due.length, log });
 }
