@@ -55,7 +55,14 @@ Bez `RESEND_API_KEY` a `EMAIL_FROM` se ukládají do `email_log` se stavem „č
 Doklady: tlačítko „Vystavit doklad“ na objednávce přidělí číslo z řady `invoice_seq` (RRRRNNNN) a otevře
 tisknutelný doklad (bez DPH, nebo s rozpisem 12 % po zapnutí plátce DPH v nastavení). Statistiky čtou pohledy
 `sales_by_day` a `top_products`; export CSV pro účetní je na `/admin/export/objednavky.csv?od=&do=`.
-Štítky na balíky: Rozvoz a odběry → Tisk štítků.
+Štítky na balíky: Rozvoz a odběry → Tisk štítků (filtr způsobu a dne, `?objednavka=` pro jeden štítek z detailu).
+Objednávky: pohledy K vyřízení / Dnes / Čeká na platbu / Hotové / Zrušené / Vše, filtry dodání, platby a období sdílí
+export CSV (`lib/orders-query.ts`). Detail má historii z deníku, e-maily, interní poznámku (`orders.internal_note`),
+připomínku platby e-mailem (`paymentReminder`) a odkazy na štítek a novou objednávku pro zákazníka (`/admin/objednavky/nova?zakaznik=`).
+Rozvoz: dny Dnes/Zítra, krok dál v řádku, navigace na adresu i celou trasu (Google Maps, start z adresy prodejny),
+tisk trasy pro řidiče (`/admin/rozvoz/trasa?den=`). Kasa: `?zalozka=vydej` otevře výdej, slevový kód se ověří před
+platbou, mazání účtenky, odloženého účtu, výběr hotovosti a uzávěrka se ptají, výdej nezaplacené objednávky převodem
+nabídne platbu nebo potvrzení „převod dorazil“, poznámka z uzávěrky je předávka pro další směnu.
 Sklad (`/admin/sklad`): přehled evidovaných produktů se stavem Prodává se / Pomalé / Ležák / Docházející / Vyprodáno,
 dny zásoby (skladem ÷ denní prodej za 30/90/365 dní), poslední prodej, trend 12 týdnů a hodnota zásoby; filtr podle řady
 a stavu, export `/admin/export/sklad.csv`. Detail `/admin/sklad/[id]` má graf zásoby a prodejů po týdnech, pohyby se

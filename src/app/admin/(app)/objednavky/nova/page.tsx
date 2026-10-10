@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OrderForm, type OrderFormProduct } from "@/components/admin/order-form";
+import type { AdminCustomer } from "@/app/admin/(app)/objednavky/nova/actions";
 import { productName } from "@/lib/catalog";
 import type { LineSlug, ProductUnit } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
@@ -9,9 +10,12 @@ import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 export const dynamic = "force-dynamic";
 
 /** Objednávka za zákazníka (telefonická). Správce i obsluha. */
-export default async function NewOrderPage() {
+export default async function NewOrderPage({ searchParams }: { searchParams: Promise<{ zakaznik?: string }> }) {
   await requireAdmin();
+  const { zakaznik } = await searchParams;
   const [db, admin, settings] = await Promise.all([getAuthSupabase(), getAdmin(), getSettings()]);
+  // Z profilu zákazníka nebo z objednávky: zákazník je rovnou vybraný.
+  const { data: preset } = zakaznik ? await db.from("customers").select("id, name, email, phone, points, card_code, street, city, zip").eq("id", zakaznik).maybeSingle() : { data: null };
   const { data } = await db.from("products").select("slug, line, variant, unit, price_czk, in_stock, stock_qty, is_published").order("line").order("sort_order").order("variant");
   const products: OrderFormProduct[] = ((data ?? []) as { slug: string; line: LineSlug; variant: string; unit: ProductUnit; price_czk: number; in_stock: boolean; stock_qty: string | number | null; is_published: boolean }[]).map((p) => ({
     slug: p.slug,
@@ -40,6 +44,7 @@ export default async function NewOrderPage() {
           loyalty={settings.loyalty}
           manager={admin?.isManager ?? false}
           prevodEnabled={settings.payment.prevod.enabled}
+          initialCustomer={(preset as AdminCustomer | null) ?? null}
         />
       </div>
     </>

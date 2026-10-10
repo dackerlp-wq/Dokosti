@@ -9,7 +9,7 @@ import { formatDate, formatDay, ORDER_STATUS_LABEL, ORDER_STATUSES, PAYMENT_LABE
 import { formatPrice } from "@/lib/format";
 import { activityFor } from "@/lib/activity";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
-import { issueInvoice, saveOrderNote, setOrderPaid, setOrderStatus } from "./actions";
+import { issueInvoice, saveOrderNote, sendPaymentReminder, setOrderPaid, setOrderStatus } from "./actions";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -188,6 +188,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </Button>
           )}
         </form>
+        {!o.paid_at && o.payment_method === "prevod" && o.status !== "zrusena" && (
+          <form action={sendPaymentReminder} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+            <input type="hidden" name="id" value={o.id} />
+            <p className="label mb-1 text-[11px] text-muted">Připomínka platby</p>
+            <p className="text-sm text-muted">E-mail s číslem účtu, částkou a variabilním symbolem{o.customer_email ? ` na ${o.customer_email}` : " (zákazník nemá e-mail)"}.</p>
+            <Button type="submit" variant="secondary" className="mt-3 w-full" disabled={!o.customer_email}>
+              Poslat připomínku
+            </Button>
+          </form>
+        )}
 
         <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <p className="label mb-1 text-[11px] text-muted">Doklad</p>

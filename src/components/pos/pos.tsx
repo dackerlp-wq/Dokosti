@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
 import QRCode from "qrcode";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { previewCoupon } from "@/app/(shop)/pokladna/actions";
 import {
   posAssignCard,
   posCancelSale,
@@ -63,6 +64,7 @@ export function Pos({
   iban,
   initialShift,
   initialPickup,
+  initialTab = "prodej",
 }: {
   products: PosProduct[];
   manager: boolean;
@@ -74,17 +76,21 @@ export function Pos({
   iban: string | null;
   initialShift: Shift;
   initialPickup: PickupOrder[];
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("prodej");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [shift, setShift] = useState<Shift>(initialShift);
   const [pickup, setPickup] = useState<PickupOrder[]>(initialPickup);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [customer, setCustomer] = useState<PosCustomer | null>(null);
   const [discount, setDiscount] = useState<{ czk: number; pct: number; note: string }>({ czk: 0, pct: 0, note: "" });
   const [coupon, setCoupon] = useState("");
+  // Ověřený slevový kód: sleva se ukáže v účtence dřív, než zákazník platí. `forSubtotal` hlídá, že platí pro aktuální zboží.
+  const [couponInfo, setCouponInfo] = useState<{ code: string; discountCzk: number; label: string; forSubtotal: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [pointsRedeem, setPointsRedeem] = useState(0);
   const [paying, setPaying] = useState(false);
-  const [modal, setModal] = useState<null | { kind: "kg"; product: PosProduct } | { kind: "customer" } | { kind: "card"; code: string } | { kind: "discount" } | { kind: "done"; id: string; number: string; total: number; change: number | null; points: number } | { kind: "settle"; order: PickupOrder } | { kind: "storno"; sale: PosSaleRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "kg"; product: PosProduct } | { kind: "customer" } | { kind: "card"; code: string } | { kind: "discount" } | { kind: "done"; id: string; number: string; total: number; change: number | null; points: number } | { kind: "settle"; order: PickupOrder } | { kind: "storno"; sale: PosSaleRow } | { kind: "confirm"; title: string; text: string; label: string; onYes: () => void }>(null);
   const [parked, setParked] = useState<Parked[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -118,8 +124,41 @@ export function Pos({
   /* ---------- účtenka ---------- */
   const subtotal = lines.reduce((s, l) => s + Math.round(l.qty * l.product.price_czk), 0);
   const manualDiscount = Math.min(subtotal, Math.max(discount.czk, Math.round((subtotal * discount.pct) / 100)));
-  const pointsCzk = loyalty.enabled && customer ? Math.min((pointsRedeem / loyalty.redeemStep) * loyalty.redeemValueCzk, subtotal - manualDiscount) : 0;
-  const total = Math.max(0, subtotal - manualDiscount - pointsCzk);
+  const couponBase = subtotal - manualDiscount;
+  const couponCzk = couponInfo && couponInfo.forSubtotal === couponBase ? Math.min(couponInfo.discountCzk, couponBase) : 0;
+  const couponStale = !!coupon && (!couponInfo || couponInfo.code !== coupon || couponInfo.forSubtotal !== couponBase);
+  const pointsCzk = loyalty.enabled && customer ? Math.min((pointsRedeem / loyalty.redeemStep) * loyalty.redeemValueCzk, couponBase - couponCzk) : 0;
+  const total = Math.max(0, subtotal - manualDiscount - couponCzk - pointsCzk);
+
+  /** Ověří kód na serveru pro aktuální zboží; vrací true, když platí. */
+  async function applyCoupon(code: string): Promise<boolean> {
+    const c = code.trim().toUpperCase();
+    if (!c) {
+      setCouponInfo(null);
+      setCouponError(null);
+      return true;
+    }
+    const res = await previewCoupon(c, couponBase);
+    if (!res.ok) {
+      setCouponInfo(null);
+      setCouponError(res.error);
+      return false;
+    }
+    setCouponInfo({ code: c, discountCzk: res.discountCzk, label: res.label, forSubtotal: couponBase });
+    setCouponError(null);
+    return true;
+  }
+  function startPaying() {
+    if (noShift) return setTab("uzaverka");
+    if (couponStale) {
+      startTransition(async () => {
+        if (await applyCoupon(coupon)) setPaying(true);
+        else say("Slevový kód neplatí, odeberte ho nebo opravte.");
+      });
+      return;
+    }
+    setPaying(true);
+  }
   const maxSteps = customer ? Math.floor(customer.points / loyalty.redeemStep) : 0;
 
   function addProduct(p: PosProduct, qty = 1) {
@@ -137,6 +176,8 @@ export function Pos({
   function clearSale() {
     setLines([]);
     setCustomer(null);
+    setCouponInfo(null);
+    setCouponError(null);
     setDiscount({ czk: 0, pct: 0, note: "" });
     setCoupon("");
     setPointsRedeem(0);
@@ -363,6 +404,12 @@ export function Pos({
                   <span className="tabular-nums">−{formatPrice(manualDiscount)}</span>
                 </div>
               )}
+              {couponCzk > 0 && (
+                <div className="flex justify-between text-brick-text">
+                  <span>Kód {couponInfo?.code}</span>
+                  <span className="tabular-nums">−{formatPrice(couponCzk)}</span>
+                </div>
+              )}
               {pointsCzk > 0 && (
                 <div className="flex justify-between text-brick-text">
                   <span>Kostičky ({pointsRedeem})</span>
@@ -371,7 +418,12 @@ export function Pos({
               )}
               {!paying && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="Slevový kód" aria-label="Slevový kód" className="min-h-9 w-32 py-1 text-xs uppercase" />
+                  <span className="flex items-center gap-1">
+                    <input value={coupon} onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponError(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startTransition(async () => { await applyCoupon(coupon); }); } }} placeholder="Slevový kód" aria-label="Slevový kód" className={`min-h-9 w-28 py-1 text-xs uppercase ${couponError ? "border-brick" : ""}`} />
+                    <Button type="button" variant="secondary" onClick={() => startTransition(async () => { await applyCoupon(coupon); })} disabled={!coupon || !lines.length || (!couponStale && !!couponInfo)} className="min-h-9 px-2 text-[10px]">
+                      {couponInfo && !couponStale ? "Platí" : "Použít"}
+                    </Button>
+                  </span>
                   {loyalty.enabled && customer && maxSteps > 0 && (
                     <select value={pointsRedeem} onChange={(e) => setPointsRedeem(Number(e.target.value))} aria-label="Uplatnit Kostičky" className="min-h-9 w-auto py-1 text-xs">
                       {Array.from({ length: maxSteps + 1 }, (_, i) => (
@@ -390,12 +442,14 @@ export function Pos({
                     <Button type="button" variant="secondary" onClick={park} disabled={!lines.length} className="min-h-9 px-2.5 text-[10px]">
                       <Pause strokeWidth={1.75} className="h-3.5 w-3.5" /> Odložit
                     </Button>
-                    <Button type="button" variant="secondary" onClick={clearSale} disabled={!lines.length && !customer} className="min-h-9 border-line px-2.5 text-[10px] text-brick-text">
+                    <Button type="button" variant="secondary" onClick={() => (lines.length ? setModal({ kind: "confirm", title: "Vymazat účtenku?", text: `${lines.length} položek a zákazník zmizí. Nic se neúčtuje.`, label: "Vymazat", onYes: clearSale }) : clearSale())} disabled={!lines.length && !customer} className="min-h-9 border-line px-2.5 text-[10px] text-brick-text">
                       <Trash2 strokeWidth={1.75} className="h-3.5 w-3.5" /> Vymazat
                     </Button>
                   </span>
                 </div>
               )}
+              {couponError && <p className="mt-1 text-xs text-brick-text">{couponError}</p>}
+              {couponStale && !couponError && coupon && lines.length > 0 && <p className="mt-1 text-xs text-muted">Kód ověřte tlačítkem Použít, nebo se ověří při platbě.</p>}
               <div className="mt-3 flex items-baseline justify-between">
                 <span className="label text-[11px] text-muted">{paying ? "K zaplacení" : "Celkem"}</span>
                 <span className="font-display text-[34px] font-semibold text-green">{formatPrice(total)}</span>
@@ -405,7 +459,7 @@ export function Pos({
                   Zpět k prodeji
                 </Button>
               ) : (
-                <Button type="button" variant="action" onClick={() => (noShift ? setTab("uzaverka") : setPaying(true))} disabled={!lines.length || pending} className="mt-2 min-h-14 w-full text-[14px]">
+                <Button type="button" variant="action" onClick={startPaying} disabled={!lines.length || pending} className="mt-2 min-h-14 w-full text-[14px]">
                   {noShift ? "Nejdřív otevřít směnu" : `Zaplatit ${formatPrice(total)}`}
                 </Button>
               )}
@@ -493,7 +547,9 @@ export function Pos({
                 <li key={o.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-semibold">{o.customer_name}</p>
-                    <span className="text-xs text-muted">{o.order_number}</span>
+                    <Link href={`/admin/objednavky/${o.id}`} target="_blank" rel="noopener" className="text-xs text-muted hover:underline">
+                      {o.order_number}
+                    </Link>
                   </div>
                   <p className="text-xs text-muted">
                     {formatDate(o.created_at)} · {o.paid_at ? "zaplaceno" : PAYMENT_LABEL[o.payment_method]}
@@ -536,7 +592,7 @@ export function Pos({
                     <Button type="button" onClick={() => resume(p)} className="min-h-10">
                       Pokračovat
                     </Button>
-                    <Button type="button" variant="secondary" onClick={() => saveParked(parked.filter((x) => x.id !== p.id))} className="min-h-10">
+                    <Button type="button" variant="secondary" onClick={() => setModal({ kind: "confirm", title: `Smazat odložený účet ${p.name}?`, text: "Položky zmizí, nic se neúčtuje.", label: "Smazat", onYes: () => saveParked(parked.filter((x) => x.id !== p.id)) })} className="min-h-10">
                       Smazat
                     </Button>
                   </div>
@@ -549,7 +605,7 @@ export function Pos({
 
       {tab === "dnes" && <TodayTab manager={manager} userId={userId} onStorno={(s) => setModal({ kind: "storno", sale: s })} refreshKey={modal === null ? 1 : 0} />}
 
-      {tab === "uzaverka" && <ShiftTab shift={shift} onChange={setShift} say={say} />}
+      {tab === "uzaverka" && <ShiftTab shift={shift} onChange={setShift} say={say} confirm={(title, text, label, onYes) => setModal({ kind: "confirm", title, text, label, onYes })} />}
 
       {/* Modaly */}
       {modal?.kind === "kg" && (
@@ -581,26 +637,52 @@ export function Pos({
       )}
       {modal?.kind === "settle" && (
         <Modal title={`Výdej ${modal.order.order_number} · ${formatPrice(modal.order.total_czk)}`} onClose={() => setModal(null)} wide>
-          {modal.order.payment_method === "hotove" && !modal.order.paid_at ? (
-            <PayPanel
-              total={modal.order.total_czk}
-              iban={iban}
-              shopName={shopName}
-              pending={pending}
-              onPay={(payment, cash) =>
-                startTransition(async () => {
-                  const res = await posSettleOrder(modal.order.id, payment, cash);
-                  if (!res.ok) return say(res.error);
-                  setPickup(await posPickupOrders());
-                  setModal({ kind: "done", id: res.id, number: res.number, total: modal.order.total_czk, change: res.changeCzk, points: 0 });
-                  if (pos.autoPrint) window.open(`/admin/kasa/uctenka/${res.id}?tisk=1`, "_blank", "noopener");
-                  posShiftSummary().then(setShift);
-                })
-              }
-            />
+          {!modal.order.paid_at ? (
+            <div>
+              {modal.order.payment_method !== "hotove" && (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border border-ochre bg-paper px-3 py-2 text-sm">
+                  <span>
+                    Objednávka je {PAYMENT_LABEL[modal.order.payment_method].toLowerCase()} a <b>není označená jako zaplacená</b>. Vezměte platbu teď, nebo potvrďte, že převod už dorazil.
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={pending}
+                    className="min-h-9 text-[11px]"
+                    onClick={() =>
+                      startTransition(async () => {
+                        const res = await posSettleOrder(modal.order.id, "prevod");
+                        if (!res.ok) return say(res.error);
+                        setPickup(await posPickupOrders());
+                        setModal({ kind: "done", id: res.id, number: res.number, total: modal.order.total_czk, change: null, points: 0 });
+                        posShiftSummary().then(setShift);
+                      })
+                    }
+                  >
+                    Převod dorazil, jen vydat
+                  </Button>
+                </div>
+              )}
+              <PayPanel
+                total={modal.order.total_czk}
+                iban={iban}
+                shopName={shopName}
+                pending={pending}
+                onPay={(payment, cash) =>
+                  startTransition(async () => {
+                    const res = await posSettleOrder(modal.order.id, payment, cash);
+                    if (!res.ok) return say(res.error);
+                    setPickup(await posPickupOrders());
+                    setModal({ kind: "done", id: res.id, number: res.number, total: modal.order.total_czk, change: res.changeCzk, points: 0 });
+                    if (pos.autoPrint) window.open(`/admin/kasa/uctenka/${res.id}?tisk=1`, "_blank", "noopener");
+                    posShiftSummary().then(setShift);
+                  })
+                }
+              />
+            </div>
           ) : (
             <div>
-              <p className="text-sm text-muted">Objednávka je zaplacená předem{modal.order.paid_at ? "" : ` (${PAYMENT_LABEL[modal.order.payment_method]})`}. Potvrďte vydání zboží.</p>
+              <p className="text-sm text-muted">Objednávka je zaplacená předem ({PAYMENT_LABEL[modal.order.payment_method]}, {formatDate(modal.order.paid_at)}). Potvrďte vydání zboží.</p>
               <Button
                 type="button"
                 className="mt-4 min-h-12 w-full"
@@ -619,6 +701,19 @@ export function Pos({
               </Button>
             </div>
           )}
+        </Modal>
+      )}
+      {modal?.kind === "confirm" && (
+        <Modal title={modal.title} onClose={() => setModal(null)}>
+          <p className="text-sm">{modal.text}</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="min-h-10">
+              Zpět
+            </Button>
+            <Button type="button" variant="action" onClick={() => { const yes = modal.onYes; setModal(null); yes(); }} className="min-h-10">
+              {modal.label}
+            </Button>
+          </div>
         </Modal>
       )}
       {modal?.kind === "done" && (
@@ -1051,7 +1146,7 @@ function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean;
   );
 }
 
-function ShiftTab({ shift, onChange, say }: { shift: Shift; onChange: (s: Shift) => void; say: (t: string) => void }) {
+function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (s: Shift) => void; say: (t: string) => void; confirm: (title: string, text: string, label: string, onYes: () => void) => void }) {
   const [opening, setOpening] = useState("");
   const [counted, setCounted] = useState("");
   const [note, setNote] = useState("");
@@ -1095,6 +1190,13 @@ function ShiftTab({ shift, onChange, say }: { shift: Shift; onChange: (s: Shift)
       <section className="flex-1 overflow-y-auto p-4">
         <h2 className="text-[20px]">Otevřít směnu</h2>
         <p className="mt-1 text-sm text-muted">Napočítejte hotovost v pokladně a zadejte ji jako počáteční stav. Bez otevřené směny nejde prodávat.</p>
+        {shift.lastClosed && (
+          <div className="mt-3 max-w-lg rounded-[var(--radius-card)] border border-line bg-paper p-3 text-sm">
+            <p className="label text-[11px] text-muted">Předávka z minulé směny · {formatDate(shift.lastClosed.closed_at)}</p>
+            <p className="mt-1">{shift.lastClosed.note || <span className="text-muted">bez vzkazu</span>}</p>
+            {shift.lastClosed.difference !== 0 && <p className="mt-1 text-xs text-brick-text">Rozdíl v hotovosti při uzávěrce: {formatPrice(shift.lastClosed.difference)}.</p>}
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -1137,12 +1239,14 @@ function ShiftTab({ shift, onChange, say }: { shift: Shift; onChange: (s: Shift)
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            startTransition(async () => {
+            const run = () => startTransition(async () => {
               const res = await posCashMove(move.kind, Number(move.amount) || 0, move.note);
               if (!res.ok) return say(res.error);
               setMove({ kind: "vklad", amount: "", note: "" });
               await refresh();
             });
+            if (move.kind === "vyber") confirm(`Výběr ${formatPrice(Number(move.amount) || 0)} z pokladny?`, "Zapíše se do pohybů směny i do deníku změn se jménem.", "Vybrat", run);
+            else run();
           }}
           className="rounded-[var(--radius-card)] border border-line bg-paper p-4"
         >
@@ -1179,14 +1283,21 @@ function ShiftTab({ shift, onChange, say }: { shift: Shift; onChange: (s: Shift)
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            startTransition(async () => {
-              const res = await posCloseShift(Number(counted) || 0, note);
-              if (!res.ok) return say(res.error);
-              setResult(res);
-              setCounted("");
-              setNote("");
-              await refresh();
-            });
+            const diff = (Number(counted) || 0) - shift.expected;
+            confirm(
+              "Uzavřít směnu?",
+              `Napočítáno ${formatPrice(Number(counted) || 0)}, očekáváno ${formatPrice(shift.expected)}${diff !== 0 ? `, rozdíl ${formatPrice(diff)}` : ""}. Po uzávěrce nejde v této směně prodávat.`,
+              "Uzavřít směnu",
+              () =>
+                startTransition(async () => {
+                  const res = await posCloseShift(Number(counted) || 0, note);
+                  if (!res.ok) return say(res.error);
+                  setResult(res);
+                  setCounted("");
+                  setNote("");
+                  await refresh();
+                }),
+            );
           }}
           className="rounded-[var(--radius-card)] border border-line bg-paper p-4"
         >
@@ -1197,8 +1308,8 @@ function ShiftTab({ shift, onChange, say }: { shift: Shift; onChange: (s: Shift)
             <input type="number" inputMode="numeric" min={0} value={counted} onChange={(e) => setCounted(e.target.value)} required />
           </label>
           <label className="mt-2 block">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
-            <input value={note} onChange={(e) => setNote(e.target.value)} />
+            <span className="label mb-1 block text-[11px] text-muted">Vzkaz pro další směnu</span>
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="např. Nováková si zítra vyzvedne, chybí drobné" />
           </label>
           <Button type="submit" variant="action" disabled={pending} className="mt-3 min-h-11 w-full">
             Uzavřít směnu

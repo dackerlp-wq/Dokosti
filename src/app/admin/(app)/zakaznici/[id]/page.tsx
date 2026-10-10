@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow, type PetDbRow } from "@/lib/admin";
 import { MEAT_LABEL } from "@/lib/barf";
 import { FEEDING_LABEL, type FeedingNow, petSummary } from "@/lib/club";
@@ -23,6 +23,8 @@ export default async function CustomerPage({ params, searchParams }: { params: P
     db.from("pos_sales").select("*").eq("customer_id", id).is("order_id", null).order("created_at", { ascending: false }).limit(50),
     db.from("pets").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
   ]);
+  const { data: subs } = await db.from("subscriptions").select("id, status, next_date, interval_days").eq("customer_id", id).order("created_at", { ascending: false });
+  const subList = (subs ?? []) as { id: string; status: string; next_date: string; interval_days: number }[];
   const petList = (pets ?? []) as PetDbRow[];
   if (!customer) notFound();
   const c = customer as CustomerRow;
@@ -38,7 +40,19 @@ export default async function CustomerPage({ params, searchParams }: { params: P
           Zákazníci
         </Link>
       </p>
-      <h1>{c.name || c.email || "Zákazník bez jména"}</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1>{c.name || c.email || "Zákazník bez jména"}</h1>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/admin/objednavky/nova?zakaznik=${c.id}`} className={buttonClass("primary")}>
+            Nová objednávka
+          </Link>
+          {subList.length > 0 && (
+            <Link href={`/admin/predplatne/${subList[0].id}`} className={buttonClass("secondary")}>
+              Předplatné{subList.length > 1 ? ` (${subList.length})` : ""}
+            </Link>
+          )}
+        </div>
+      </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">

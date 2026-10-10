@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/activity";
 import { isOrderStatus, ORDER_STATUS_LABEL } from "@/lib/admin";
 import { sendEmail } from "@/lib/email/send";
-import { statusUpdate, type OrderForEmail } from "@/lib/email/templates";
+import { paymentReminder, statusUpdate, type OrderForEmail } from "@/lib/email/templates";
 import { flashError, flashOk } from "@/lib/flash";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
@@ -102,4 +102,19 @@ export async function saveOrderNote(formData: FormData) {
   await logActivity(db, admin, { kind: "objednavka.poznamka", subject: "order", subjectId: id, text: `${o?.order_number ?? "Objednávka"}: interní poznámka upravena` });
   revalidateOrder(id);
   await flashOk("Poznámka uložena.");
+}
+
+/** Pošle zákazníkovi připomínku nezaplacené objednávky (převod) s číslem účtu a VS. */
+export async function sendPaymentReminder(formData: FormData) {
+  const admin = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  const db = await getAuthSupabase();
+  const [{ data: order }, { data: items }, settings] = await Promise.all([db.from("orders").select("*").eq("id", id).maybeSingle(), db.from("order_items").select("name, qty, unit_price_czk").eq("order_id", id), getSettings()]);
+  if (!order) return flashError("Objednávka nenalezena.");
+  if (order.paid_at) return flashError("Objednávka už je zaplacená.");
+  if (!order.customer_email) return flashError("Zákazník nemá e-mail, zavolejte mu.");
+  await sendEmail(db, order.customer_email, paymentReminder({ ...(order as OrderForEmail), items: items ?? [] }, settings), "pripominka-platby", id);
+  await logActivity(db, admin, { kind: "objednavka.pripominka", subject: "order", subjectId: id, text: `${order.order_number}: odeslána připomínka platby na ${order.customer_email}` });
+  revalidateOrder(id);
+  await flashOk("Připomínka platby odeslána.");
 }

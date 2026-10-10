@@ -7,7 +7,8 @@ import { posPickupOrders, posShiftSummary } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function PosPage() {
+export default async function PosPage({ searchParams }: { searchParams: Promise<{ zalozka?: string }> }) {
+  const { zalozka } = await searchParams;
   const [db, admin, settings] = await Promise.all([getAuthSupabase(), getAdmin(), getSettings()]);
   const [{ data: products }, shift, pickup] = await Promise.all([
     db.from("products").select("id, slug, line, variant, unit, price_czk, weight_grams, ean, stock_qty, in_stock, is_published").order("line").order("sort_order").order("variant"),
@@ -29,6 +30,7 @@ export default async function PosPage() {
       iban={iban}
       initialShift={shift}
       initialPickup={pickup}
+      initialTab={zalozka === "vydej" || zalozka === "uzaverka" || zalozka === "dnes" ? zalozka : "prodej"}
     />
   );
 }

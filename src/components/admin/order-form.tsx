@@ -21,6 +21,8 @@ type Props = {
   loyalty: Settings["loyalty"];
   manager: boolean;
   prevodEnabled: boolean;
+  /** Zákazník předvybraný z profilu nebo z jiné objednávky. */
+  initialCustomer?: AdminCustomer | null;
 };
 
 type Line = { slug: string; qty: number };
@@ -28,10 +30,10 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numer
 const EMPTY = { name: "", phone: "", email: "", street: "", city: "", zip: "" };
 
 /** Objednávka za zákazníka (telefonická). Ceny počítá databáze, tady je jen náhled. */
-export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty, manager, prevodEnabled }: Props) {
+export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty, manager, prevodEnabled, initialCustomer = null }: Props) {
   const router = useRouter();
-  const [customer, setCustomer] = useState<AdminCustomer | null>(null);
-  const [form, setForm] = useState(EMPTY);
+  const [customer, setCustomer] = useState<AdminCustomer | null>(initialCustomer);
+  const [form, setForm] = useState(initialCustomer ? { name: initialCustomer.name, phone: initialCustomer.phone, email: initialCustomer.email ?? "", street: initialCustomer.street, city: initialCustomer.city, zip: initialCustomer.zip } : EMPTY);
   const [lines, setLines] = useState<Line[]>([]);
   const [pick, setPick] = useState("");
   const [shipping, setShipping] = useState<ShippingId>(SHIPPING[0]?.id ?? "odber");

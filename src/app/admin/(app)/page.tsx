@@ -76,7 +76,7 @@ export default async function AdminHome() {
   const top = [...topMap.entries()].sort((a, b) => b[1] - a[1])[0];
 
   const todos: Todo[] = [
-    ...todayPickups.map((o) => ({ kind: "Dnes", kindStyle: "brick" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `osobní odběr dnes · ${formatPrice(o.total_czk)}${o.paid_at ? " · zaplaceno" : ""}`, action: "Vydat u kasy", href: "/admin/kasa" })),
+    ...todayPickups.map((o) => ({ kind: "Dnes", kindStyle: "brick" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `osobní odběr dnes · ${formatPrice(o.total_czk)}${o.paid_at ? " · zaplaceno" : ""}`, action: "Vydat u kasy", href: "/admin/kasa?zalozka=vydej" })),
     ...todayDeliveries.map((o) => ({ kind: "Dnes", kindStyle: "brick" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `rozvoz dnes · ${o.street}, ${o.city} · ${formatPrice(o.total_czk)}`, action: "Rozvoz", href: "/admin/rozvoz" })),
     ...fresh.map((o) => ({ kind: "Nová", kindStyle: "ochre" as const, title: `${o.order_number} · ${o.customer_name}`, detail: `${SHIPPING_LABEL[o.shipping_method]}${o.delivery_date ? ` ${formatDay(o.delivery_date)}` : ""} · ${formatPrice(o.total_czk)} · ${o.paid_at ? "zaplaceno" : "nezaplaceno"}`, action: "Potvrdit", href: `/admin/objednavky/${o.id}` })),
     ...subsFailed.map((s) => ({ kind: "Předplatné", kindStyle: "brick" as const, title: s.customer_name, detail: `objednávka nevznikla: ${s.last_error}`, action: "Vyřešit", href: `/admin/predplatne/${s.id}` })),

@@ -270,3 +270,12 @@ export function cardActivation(name: string, code: string, s: Settings): EmailMe
   const text = `Dobrý den${first ? `, ${first}` : ""},\n\nv prodejně jste dostali věrnostní kartu ${code}. Kostičky se na ni už sbírají. Účet k ní aktivujete tady: ${url}\n\nStačí e-mail a kód, který vám pošleme. Bez hesla.\n\n${s.shop.name}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }
+
+/** Připomínka nezaplacené objednávky převodem (posílá obsluha z adminu). */
+export function paymentReminder(o: OrderForEmail, s: Settings): EmailMessage {
+  const title = `Připomínka platby za objednávku ${o.order_number}`;
+  const info = paymentInfo(o, s);
+  const body = `<p>Dobrý den, ${esc(o.customer_name)},</p><p>u objednávky ${esc(o.order_number)} zatím nevidíme platbu. ${esc(info)}</p><p>Jakmile platba dorazí, dáme vám vědět a objednávku ${o.shipping_method === "odber" ? "připravíme k vyzvednutí" : "odešleme"}. Pokud jste už platili, omlouváme se, platby se mohou potkat.</p><p>Děkujeme, ${esc(s.shop.name)}${s.shop.phone ? ` · ${esc(s.shop.phone)}` : ""}.</p>`;
+  const text = `Dobrý den, ${o.customer_name},\n\nu objednávky ${o.order_number} zatím nevidíme platbu. ${info}\n\nJakmile platba dorazí, dáme vám vědět. Pokud jste už platili, omlouváme se, platby se mohou potkat.\n\nDěkujeme, ${s.shop.name}${s.shop.phone ? ` · ${s.shop.phone}` : ""}.`;
+  return { subject: title, html: layout(title, body, s.shop), text };
+}

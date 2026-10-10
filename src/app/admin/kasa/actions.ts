@@ -121,11 +121,18 @@ export async function posCashMove(kind: "vklad" | "vyber", amount: number, note:
 }
 
 /** Přehled otevřené směny: prodeje a pohyby hotovosti. */
-export async function posShiftSummary(): Promise<{ shift: ShiftRow | null; cash: number; card: number; qr: number; count: number; cancelled: number; moves: { id: string; kind: "vklad" | "vyber"; amount_czk: number; note: string; created_at: string }[]; expected: number }> {
+export type LastClosed = { note: string; closed_at: string; difference: number } | null;
+export async function posShiftSummary(): Promise<{ shift: ShiftRow | null; cash: number; card: number; qr: number; count: number; cancelled: number; moves: { id: string; kind: "vklad" | "vyber"; amount_czk: number; note: string; created_at: string }[]; expected: number; lastClosed: LastClosed }> {
   await requireAdmin();
   const db = await getAuthSupabase();
-  const { data: shift } = await db.from("pos_shifts").select("*").is("closed_at", null).order("opened_at", { ascending: false }).limit(1).maybeSingle();
-  if (!shift) return { shift: null, cash: 0, card: 0, qr: 0, count: 0, cancelled: 0, moves: [], expected: 0 };
+  const [{ data: shift }, { data: last }] = await Promise.all([
+    db.from("pos_shifts").select("*").is("closed_at", null).order("opened_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("pos_shifts").select("note, closed_at, closing_cash_czk, expected_cash_czk").not("closed_at", "is", null).order("closed_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  // Předávka směny: poznámka z poslední uzávěrky se ukáže při otevření další.
+  const l = last as { note: string; closed_at: string; closing_cash_czk: number | null; expected_cash_czk: number | null } | null;
+  const lastClosed: LastClosed = l ? { note: l.note ?? "", closed_at: l.closed_at, difference: (l.closing_cash_czk ?? 0) - (l.expected_cash_czk ?? 0) } : null;
+  if (!shift) return { shift: null, cash: 0, card: 0, qr: 0, count: 0, cancelled: 0, moves: [], expected: 0, lastClosed };
   const s = shift as ShiftRow;
   const [{ data: sales }, { data: moves }] = await Promise.all([
     db.from("pos_sales").select("total_czk, payment, status").eq("shift_id", s.id),
@@ -136,7 +143,7 @@ export async function posShiftSummary(): Promise<{ shift: ShiftRow | null; cash:
   const mv = (moves ?? []) as { id: string; kind: "vklad" | "vyber"; amount_czk: number; note: string; created_at: string }[];
   const cash = sum("hotove");
   const expected = s.opening_cash_czk + cash + mv.filter((m) => m.kind === "vklad").reduce((n, m) => n + m.amount_czk, 0) - mv.filter((m) => m.kind === "vyber").reduce((n, m) => n + m.amount_czk, 0);
-  return { shift: s, cash, card: sum("karta"), qr: sum("qr"), count: paid.length, cancelled: (sales ?? []).length - paid.length, moves: mv, expected };
+  return { shift: s, cash, card: sum("karta"), qr: sum("qr"), count: paid.length, cancelled: (sales ?? []).length - paid.length, moves: mv, expected, lastClosed };
 }
 
 export async function posRecentSales(limit = 40): Promise<(PosSaleRow & { customers: { name: string } | null })[]> {
