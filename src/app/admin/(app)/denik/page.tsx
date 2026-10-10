@@ -9,7 +9,7 @@ import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Deník změn" };
 
-const SUBJECTS: Record<string, string> = { order: "Objednávky", product: "Produkty", customer: "Zákazníci", receipt: "Příjemky", coupon: "Slevy", settings: "Nastavení", card: "Karty", inquiry: "Poradna", task: "Úkoly", shift: "Směny", sale: "Kasa", batch: "Šarže", admin: "Uživatelé", subscription: "Předplatné", employee: "Zaměstnanci", document: "Dokumenty", device: "Zařízení", attendance: "Docházka", checklist: "Checklisty" };
+const SUBJECTS: Record<string, string> = { order: "Objednávky", product: "Produkty", customer: "Zákazníci", receipt: "Příjemky", coupon: "Slevy", settings: "Nastavení", card: "Karty", inquiry: "Poradna", task: "Úkoly", shift: "Směny", sale: "Kasa", batch: "Šarže", admin: "Uživatelé", subscription: "Předplatné", employee: "Zaměstnanci", document: "Dokumenty", device: "Zařízení", attendance: "Docházka", checklist: "Checklisty", payroll: "Mzdy", expense: "Výdaje" };
 
 /** Deník změn: kdo, kdy, co změnil, napříč celým adminem. */
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ q?: string; typ?: string; od?: string; do?: string }> }) {

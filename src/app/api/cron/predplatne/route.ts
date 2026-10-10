@@ -94,6 +94,9 @@ export async function GET(req: NextRequest) {
   // Provoz: úkoly z končících dokumentů.
   const { data: provoz, error: provozError } = await db.rpc("provoz_daily", { p_secret: secret });
   log.push(provozError ? `provoz error ${provozError.message}` : `provoz ${JSON.stringify(provoz)}`);
+  // Finance: opakované výdaje (nájem, energie) za aktuální měsíc.
+  const { data: finance, error: financeError } = await db.rpc("finance_daily", { p_secret: secret });
+  log.push(financeError ? `finance error ${financeError.message}` : `finance ${JSON.stringify(finance)}`);
 
   return NextResponse.json({ today, processed: due.length, log });
 }

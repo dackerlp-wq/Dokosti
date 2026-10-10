@@ -220,6 +220,26 @@ rozsah u zařízení, mimo rozsah a chybějící zápis po 10:00 hlásí Dnes), 
 checklisty (`checklists` s položkami v JSON, `checklist_runs` podle klíče období: otevření, zavření, týdenní sanitace,
 měsíční kontrola, zaškolení) s průběhem za dnešek a tento týden.
 
+## Mzdy a Finance (migrace 0030)
+
+Mzdy (`/admin/mzdy`, jen správce): „Načíst z docházky“ vezme hodiny ze směn a docházky za měsíc (`attendance`) a sazby
+z karty zaměstnance (hodinová nebo měsíční, prohlášení poplatníka `employees.tax_declaration`, účet) a spočítá orientační
+mzdu (`lib/payroll.ts`: hrubá, odvody, daň, čistá, odvody zaměstnavatele, náklady; rozpis na pásku). Odměna a srážka
+se doplní v řádku. Parametry roku (`payroll_params`, `/admin/mzdy/parametry`: minimální mzda, rozhodné částky DPP/DPČ,
+daň, sleva, sazby pojištění) jsou předvyplněné orientačně a správce je potvrdí s účetní. Uzavření měsíce
+(`payroll_months`, ptá se) zmrazí podklady (`payroll_items`), zaměstnanec pak vidí svou pásku (`/admin/mzdy/paska/[id]`,
+tisk / PDF, RLS) a do výdajů se zapíší hrubé mzdy a odvody zaměstnavatele. Export pro účetní `/admin/export/mzdy.csv?mesic=`.
+Výpočet je orientační (bez progrese, slev na děti, nemocenské po 14. dni), oficiální mzdy dělá účetní.
+Výdaje (`expenses`, `/admin/finance/vydaje`): jedna tabulka, vznikají samy z příjemek (trigger `expense_from_receipt`,
+částka faktury nebo součet položek, zaplacení příjemky se propíše oběma směry), z uzavřených mezd a z opakovaných výdajů
+(`recurring_expenses`: nájem, energie; denní cron `finance_daily` založí výdaj v zadaný den), zbytek ručně. Zaplaceno
+jedním klikem, kategorie, filtr měsíce, export `/admin/export/vydaje.csv`. Nezaplacené výdaje po splatnosti hlásí Dnes.
+Finance (`/admin/finance`): od obratu k zisku za měsíc a rok (pohled `finance_months`): tržby kasa + web, nákupní cena
+prodaného zboží (z `unit_cost_czk` položek), hrubá marže, odpisy a interní výdej v nákupních cenách, výdaje po kategoriích
+(bez zboží, to jde do výsledku až prodejem), výsledek měsíce; graf 12 měsíců, tok peněz, pohledávky, hodnota skladu.
+Peníze a splatnosti (`/admin/finance/splatnosti`): po splatnosti, do 30 dní, později, co ještě přijde (opakované,
+otevřené mzdy), kdo dluží nám, kolik je v kase.
+
 ## Klub DoKosti (registrace, účet, karta, zvířata)
 
 Návrh v `docs/KLUB.md`. Zákazník (`customers`) je střed: `user_id` (účet Supabase Auth), `card_code` (věrnostní karta),

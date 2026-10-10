@@ -193,12 +193,20 @@ export default async function EmployeePage({ params, searchParams }: { params: P
               <span className="label mb-1 block text-[11px] text-muted">Adresa</span>
               <input name="address" defaultValue={e.address} />
             </label>
+            <label className="block sm:col-span-2">
+              <span className="label mb-1 block text-[11px] text-muted">Číslo účtu pro výplatu</span>
+              <input name="bank_account" defaultValue={e.bank_account} placeholder="123456789/0100" />
+            </label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm">
+              <input type="checkbox" name="tax_declaration" value="1" defaultChecked={e.tax_declaration} className="h-4 w-4" />
+              Podepsal prohlášení poplatníka (sleva na dani)
+            </label>
             <label className="block sm:col-span-2 lg:col-span-3">
               <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
               <textarea name="note" rows={2} defaultValue={e.note} />
             </label>
           </div>
-          <p className="mt-3 text-xs text-muted">Osobní údaje vidí jen správce. Sazba a mzda jsou podklad pro Mzdy; samotný výpočet dělá účetní nebo orientační páska v etapě Mzdy.</p>
+          <p className="mt-3 text-xs text-muted">Osobní údaje vidí jen správce. Sazba, mzda a prohlášení poplatníka jsou podklad pro Mzdy (orientační výpočet), oficiální mzdy počítá účetní.</p>
           <Button type="submit" className="mt-3">
             Uložit
           </Button>

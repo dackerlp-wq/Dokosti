@@ -240,6 +240,10 @@ export default async function AdminHome() {
               <Link href="/admin/statistiky" className="mt-3 inline-block text-sm text-green hover:underline">
                 Celé statistiky
               </Link>
+              <span className="mx-2 text-muted">·</span>
+              <Link href="/admin/finance" className="mt-3 inline-block text-sm text-green hover:underline">
+                Finance a zisk
+              </Link>
             </section>
           )}
           <section className={`${card} p-4`}>

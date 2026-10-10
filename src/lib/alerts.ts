@@ -15,7 +15,7 @@ export async function loadAlerts(db: SupabaseClient, now = new Date(), opts: { m
   const soon = new Date(now.getTime() + 14 * DAY).toISOString().slice(0, 10);
   const unpaidBefore = new Date(now.getTime() - 3 * DAY).toISOString();
   const todayIso = now.toISOString().slice(0, 10);
-  const [{ data: expiring }, { data: stock }, { data: unpaid }, { data: failedSubs }, { data: overdueTasks }, { data: devices }, { data: temps }, { data: docs }, { data: dueReceipts }] = await Promise.all([
+  const [{ data: expiring }, { data: stock }, { data: unpaid }, { data: failedSubs }, { data: overdueTasks }, { data: devices }, { data: temps }, { data: docs }, { data: dueReceipts }, { data: dueExpenses }] = await Promise.all([
     db.from("stock_batches").select("id, product_id, batch_no, expires_on, qty, products(line, variant, unit)").gt("qty", 0).lte("expires_on", soon).order("expires_on"),
     db.from("products").select("id, line, variant, unit, stock_qty, low_stock_threshold").not("stock_qty", "is", null).order("stock_qty"),
     db.from("orders").select("id, order_number, customer_name, total_czk, created_at").eq("payment_method", "prevod").is("paid_at", null).in("status", ["nova", "potvrzena", "pripravena"]).lte("created_at", unpaidBefore).order("created_at"),
@@ -25,6 +25,7 @@ export async function loadAlerts(db: SupabaseClient, now = new Date(), opts: { m
     db.from("temperature_log").select("device_id, value_c, ok, measured_at").gte("measured_at", `${todayIso}T00:00:00`),
     opts.manager ? db.from("documents").select("id, title, valid_to").is("archived_at", null).not("valid_to", "is", null).lte("valid_to", new Date(now.getTime() + 60 * DAY).toISOString().slice(0, 10)).order("valid_to") : Promise.resolve({ data: [] }),
     opts.manager ? db.from("stock_receipts").select("id, number, doc_no, supplier, due_on, invoice_total_czk").is("paid_at", null).not("due_on", "is", null).lte("due_on", new Date(now.getTime() + 3 * DAY).toISOString().slice(0, 10)).order("due_on") : Promise.resolve({ data: [] }),
+    opts.manager ? db.from("expenses").select("id, description, amount_czk, due_on").is("paid_at", null).neq("source_type", "receipt").not("due_on", "is", null).lte("due_on", new Date(now.getTime() + 3 * DAY).toISOString().slice(0, 10)).order("due_on").limit(10) : Promise.resolve({ data: [] }),
   ]);
 
   const out: Alert[] = [];
@@ -71,6 +72,10 @@ export async function loadAlerts(db: SupabaseClient, now = new Date(), opts: { m
   for (const r of (dueReceipts ?? []) as { id: string; number: string; doc_no: string; supplier: string; due_on: string; invoice_total_czk: number | null }[]) {
     const days = Math.floor((new Date(r.due_on + "T12:00:00").getTime() - now.getTime()) / DAY);
     out.push({ id: `invoice:${r.id}`, level: days < 0 ? "hot" : "warn", kind: "Faktura", text: `${r.supplier || "Dodavatel"} ${r.doc_no || r.number}${r.invoice_total_czk ? ` (${formatPrice(Math.round(Number(r.invoice_total_czk)))})` : ""}: ${days < 0 ? "po splatnosti" : days === 0 ? "splatná dnes" : `splatná za ${days} dní`}.`, href: `/admin/sklad/prijemky#${r.id}`, action: "Příjemky" });
+  }
+  for (const e of (dueExpenses ?? []) as { id: string; description: string; amount_czk: number; due_on: string }[]) {
+    const days = Math.floor((new Date(e.due_on + "T12:00:00").getTime() - now.getTime()) / DAY);
+    out.push({ id: `expense:${e.id}`, level: days < 0 ? "hot" : "warn", kind: "Výdaj", text: `${e.description} (${formatPrice(Math.round(Number(e.amount_czk)))}): ${days < 0 ? "po splatnosti" : days === 0 ? "splatný dnes" : `splatný za ${days} dní`}.`, href: "/admin/finance/splatnosti", action: "Zaplatit" });
   }
   const rank = { hot: 0, warn: 1, info: 2 };
   return out.sort((a, b) => rank[a.level] - rank[b.level]);

@@ -314,6 +314,8 @@ export type EmployeeRow = {
   birth_date: string | null;
   address: string;
   note: string;
+  tax_declaration: boolean;
+  bank_account: string;
   created_at: string;
 };
 export type AttendanceKind = "prace" | "dovolena" | "nemoc" | "svatek" | "volno" | "jine";
@@ -336,8 +338,8 @@ export type AttendanceRow = {
 };
 export type DocumentCategory = "smlouvy" | "zamestnanci" | "faktury" | "najem" | "revize" | "haccp" | "urady" | "ostatni";
 export const DOCUMENT_CATEGORY_LABEL: Record<DocumentCategory, string> = { smlouvy: "Smlouvy", zamestnanci: "Zaměstnanci", faktury: "Faktury od dodavatelů", najem: "Nájem a provozovna", revize: "Revize a kontroly", haccp: "HACCP a hygiena", urady: "Úřady a registrace", ostatni: "Ostatní" };
-export type DocumentLink = "employee" | "supplier" | "receipt" | "order" | "device" | "firma";
-export const DOCUMENT_LINK_LABEL: Record<DocumentLink, string> = { employee: "Zaměstnanec", supplier: "Dodavatel", receipt: "Příjemka", order: "Objednávka", device: "Zařízení", firma: "Firma" };
+export type DocumentLink = "employee" | "supplier" | "receipt" | "order" | "device" | "firma" | "expense";
+export const DOCUMENT_LINK_LABEL: Record<DocumentLink, string> = { employee: "Zaměstnanec", supplier: "Dodavatel", receipt: "Příjemka", order: "Objednávka", device: "Zařízení", firma: "Firma", expense: "Výdaj" };
 export type DocumentRow = {
   id: string;
   title: string;
@@ -380,4 +382,82 @@ export function periodKeyFor(period: ChecklistPeriod, now = new Date()): string 
     return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
   }
   return iso;
+}
+
+/* Finance a mzdy (migrace 0030) */
+export type ExpenseCategory = "zbozi" | "mzdy" | "odvody" | "najem" | "energie" | "sluzby" | "doprava" | "marketing" | "vybaveni" | "dane" | "ostatni";
+export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = { zbozi: "Zboží", mzdy: "Mzdy", odvody: "Odvody", najem: "Nájem", energie: "Energie", sluzby: "Služby", doprava: "Doprava a auto", marketing: "Marketing", vybaveni: "Vybavení", dane: "Daně a poplatky", ostatni: "Ostatní" };
+export type ExpenseSource = "receipt" | "payroll" | "recurring" | "rucne";
+export const EXPENSE_SOURCE_LABEL: Record<ExpenseSource, string> = { receipt: "Příjemka", payroll: "Mzdy", recurring: "Opakovaný", rucne: "Ručně" };
+export type ExpenseRow = {
+  id: string;
+  day: string;
+  category: ExpenseCategory;
+  description: string;
+  amount_czk: number;
+  supplier: string;
+  document_no: string;
+  source_type: ExpenseSource;
+  source_id: string | null;
+  recurring_id: string | null;
+  due_on: string | null;
+  paid_at: string | null;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+};
+export type RecurringExpenseRow = { id: string; name: string; category: ExpenseCategory; amount_czk: number; day_of_month: number; supplier: string; note: string; active: boolean; last_generated_month: string | null; created_at: string };
+export type PayrollMonthRow = { month: string; status: "otevreny" | "uzavreny"; closed_at: string | null; closed_by: string | null; note: string; created_at: string };
+export type PayrollItemRow = {
+  id: string;
+  month: string;
+  employee_id: string;
+  employee_name: string;
+  contract_type: ContractType;
+  hours_work: number;
+  hours_vacation: number;
+  hours_sick: number;
+  hours_holiday: number;
+  hourly_rate_czk: number | null;
+  monthly_salary_czk: number | null;
+  bonus_czk: number;
+  deduction_czk: number;
+  gross_czk: number;
+  emp_levies_czk: number;
+  tax_czk: number;
+  net_czk: number;
+  er_levies_czk: number;
+  employer_cost_czk: number;
+  breakdown: { label: string; amount: number; kind?: string }[];
+  note: string;
+  updated_at: string;
+};
+export type FinanceMonthRow = {
+  month: string;
+  pos_revenue_czk: number;
+  pos_count: number;
+  pos_cost_czk: number;
+  web_revenue_czk: number;
+  web_count: number;
+  web_cost_czk: number;
+  web_unpaid_czk: number;
+  writeoff_czk: number;
+  internal_czk: number;
+  expenses: Partial<Record<ExpenseCategory, number>>;
+  expenses_czk: number;
+  expenses_paid_czk: number;
+};
+
+/** Měsíc „2026-03“ → „březen 2026“. */
+export function monthLabel(month: string) {
+  return new Intl.DateTimeFormat("cs-CZ", { month: "long", year: "numeric" }).format(new Date(`${month}-01T12:00:00`));
+}
+/** Posun měsíce o N (záporné = zpět). */
+export function shiftMonth(month: string, by: number) {
+  const d = new Date(`${month}-01T12:00:00`);
+  d.setMonth(d.getMonth() + by);
+  return d.toISOString().slice(0, 7);
+}
+export function isMonth(v: string | undefined): v is string {
+  return !!v && /^\d{4}-\d{2}$/.test(v);
 }

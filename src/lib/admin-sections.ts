@@ -68,6 +68,19 @@ export const ADMIN_SECTIONS: AdminSection[] = [
       { href: "/admin/denik", label: "Deník změn" },
     ],
   },
+  {
+    href: "/admin/finance",
+    label: "Finance",
+    icon: "finance",
+    access: "spravce",
+    tabs: [
+      { href: "/admin/finance", label: "Přehled", access: "spravce" },
+      { href: "/admin/finance/vydaje", label: "Výdaje", access: "spravce" },
+      { href: "/admin/finance/splatnosti", label: "Peníze a splatnosti", access: "spravce" },
+      { href: "/admin/mzdy", label: "Mzdy", access: "spravce" },
+      { href: "/admin/mzdy/parametry", label: "Parametry mezd", access: "spravce" },
+    ],
+  },
   { href: "/admin/statistiky", label: "Statistiky", icon: "statistiky", access: "spravce" },
   {
     href: "/admin/nastaveni",

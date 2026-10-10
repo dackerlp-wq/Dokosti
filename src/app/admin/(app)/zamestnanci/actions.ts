@@ -37,6 +37,8 @@ export async function saveEmployee(fd: FormData) {
     birth_date: String(fd.get("birth_date") ?? "") || null,
     address: String(fd.get("address") ?? "").trim().slice(0, 300),
     note: String(fd.get("note") ?? "").trim().slice(0, 2000),
+    bank_account: String(fd.get("bank_account") ?? "").trim().slice(0, 40),
+    tax_declaration: fd.get("tax_declaration") === "1",
   };
   const db = await getAuthSupabase();
   const { data, error } = id ? await db.from("employees").update(row).eq("id", id).select("id").single() : await db.from("employees").insert(row).select("id").single();
