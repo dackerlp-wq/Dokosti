@@ -6,6 +6,7 @@ import { sendEmail } from "@/lib/email/send";
 import { cardActivation } from "@/lib/email/templates";
 import type { PickupOrder, PosCustomer, PosPayment, PosSaleItemRow, PosSaleRow, ShiftRow } from "@/lib/pos";
 import { getSettings } from "@/lib/settings";
+import { logActivity } from "@/lib/activity";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 type Ok<T> = { ok: true } & T;
@@ -81,35 +82,41 @@ export async function posSettleOrder(orderId: string, payment: PosPayment, cashR
 }
 
 export async function posCancelSale(saleId: string, reason: string): Promise<Ok<object> | Err> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const db = await getAuthSupabase();
   const { error } = await db.rpc("pos_cancel_sale", { p_sale_id: saleId, p_reason: reason });
   if (error) return { ok: false, error: explain(error.message, "Storno se nepodařilo.") };
+  const { data: sale } = await db.from("pos_sales").select("number, total_czk").eq("id", saleId).maybeSingle();
+  await logActivity(db, admin, { kind: "kasa.storno", subject: "sale", subjectId: saleId, text: `Storno účtenky ${sale?.number ?? ""} (${sale?.total_czk ?? 0} Kč): ${reason}` });
   return { ok: true };
 }
 
 export async function posOpenShift(openingCash: number): Promise<Ok<{ id: string }> | Err> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const db = await getAuthSupabase();
   const { data, error } = await db.rpc("pos_open_shift", { p_opening_cash: Math.max(0, Math.round(openingCash)) });
   if (error || !data) return { ok: false, error: "Směnu se nepodařilo otevřít." };
+  await logActivity(db, admin, { kind: "smena.otevrena", subject: "shift", subjectId: String(data), text: `Směna otevřena, počáteční hotovost ${Math.round(openingCash)} Kč` });
   return { ok: true, id: data as string };
 }
 
 export type CloseResult = { cash: number; card: number; qr: number; count: number; cancelled: number; expected: number; counted: number; difference: number };
 export async function posCloseShift(countedCash: number, note: string): Promise<Ok<CloseResult> | Err> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const db = await getAuthSupabase();
   const { data, error } = await db.rpc("pos_close_shift", { p_closing_cash: Math.round(countedCash), p_note: note });
   if (error || !data) return { ok: false, error: explain(error?.message, "Uzávěrku se nepodařilo uložit.") };
-  return { ok: true, ...(data as CloseResult) };
+  const r = data as CloseResult;
+  await logActivity(db, admin, { kind: "smena.uzavrena", subject: "shift", text: `Uzávěrka: ${r.count} účtenek, napočítáno ${r.counted} Kč, rozdíl ${r.difference} Kč${note ? ` (${note})` : ""}`, data: r as unknown as Record<string, unknown> });
+  return { ok: true, ...r };
 }
 
 export async function posCashMove(kind: "vklad" | "vyber", amount: number, note: string): Promise<Ok<object> | Err> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const db = await getAuthSupabase();
   const { error } = await db.rpc("pos_cash_move", { p_kind: kind, p_amount: Math.round(amount), p_note: note });
   if (error) return { ok: false, error: explain(error.message, "Pohyb hotovosti se nepodařilo zapsat.") };
+  await logActivity(db, admin, { kind: `kasa.${kind}`, subject: "shift", text: `${kind === "vklad" ? "Vklad" : "Výběr"} hotovosti ${Math.round(amount)} Kč${note ? ` (${note})` : ""}` });
   return { ok: true };
 }
 

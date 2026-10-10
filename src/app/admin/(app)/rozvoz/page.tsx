@@ -5,13 +5,14 @@ import { Table, Td } from "@/components/admin/table";
 import { formatDay, PAYMENT_LABEL, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Rozvoz a odběry" };
 
 const OPEN = ["nova", "potvrzena", "pripravena"];
 
 export default async function DeliveryPage() {
+  await requireAdmin();
   const db = await getAuthSupabase();
   const [{ data: rozvoz }, { data: odber }, { data: prepravce }] = await Promise.all([
     db.from("orders").select("*").eq("shipping_method", "rozvoz").in("status", OPEN).order("delivery_date").order("created_at"),

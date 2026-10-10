@@ -5,9 +5,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { formatQty, type ProductRow } from "@/lib/admin";
 import { LINE_INFO, STORAGE_LABEL, productName } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export default async function ProductsPage() {
+  await requireAdmin();
   const [db, admin] = await Promise.all([getAuthSupabase(), getAdmin()]);
   const manager = admin?.isManager ?? false;
   const { data } = await db.from("products").select("*").order("line").order("sort_order").order("variant");

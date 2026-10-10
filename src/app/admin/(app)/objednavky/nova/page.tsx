@@ -4,12 +4,13 @@ import { productName } from "@/lib/catalog";
 import type { LineSlug, ProductUnit } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
 import { nextDeliveryDays, shippingMethods } from "@/lib/shipping";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
 
 /** Objednávka za zákazníka (telefonická). Správce i obsluha. */
 export default async function NewOrderPage() {
+  await requireAdmin();
   const [db, admin, settings] = await Promise.all([getAuthSupabase(), getAdmin(), getSettings()]);
   const { data } = await db.from("products").select("slug, line, variant, unit, price_czk, in_stock, stock_qty, is_published").order("line").order("sort_order").order("variant");
   const products: OrderFormProduct[] = ((data ?? []) as { slug: string; line: LineSlug; variant: string; unit: ProductUnit; price_czk: number; in_stock: boolean; stock_qty: string | number | null; is_published: boolean }[]).map((p) => ({

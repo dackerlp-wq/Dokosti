@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Table, Td } from "@/components/admin/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/admin";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "E-maily" };
 
@@ -16,6 +16,7 @@ const STATUS: Record<Row["status"], { label: string; kind: "novinka" | "skladem"
 };
 
 export default async function EmailsPage() {
+  await requireManager();
   const db = await getAuthSupabase();
   const { data } = await db.from("email_log").select("id, to_email, subject, kind, status, error, created_at, order_id").order("created_at", { ascending: false }).limit(200);
   const rows = (data ?? []) as Row[];

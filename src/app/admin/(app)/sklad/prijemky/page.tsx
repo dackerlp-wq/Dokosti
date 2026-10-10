@@ -4,7 +4,7 @@ import { Table, Td } from "@/components/admin/table";
 import { formatDate, type ProductRow } from "@/lib/admin";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Příjemky" };
 
@@ -12,6 +12,7 @@ type ReceiptRow = { id: string; number: string; supplier: string; doc_no: string
 
 /** Příjem zboží od dodavatele a seznam příjemek. */
 export default async function ReceiptsPage() {
+  await requireAdmin();
   const [db, admin] = await Promise.all([getAuthSupabase(), getAdmin()]);
   const manager = admin?.isManager ?? false;
   const [{ data: products }, { data: receipts }] = await Promise.all([

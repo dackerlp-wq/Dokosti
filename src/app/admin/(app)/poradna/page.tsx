@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/admin";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 import { setInquiryAnswered } from "./actions";
 
 export const metadata: Metadata = { title: "Poradna" };
@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "Poradna" };
 type Row = { id: string; name: string; email: string; animal: string; age_weight: string; question: string; answered: boolean; created_at: string };
 
 export default async function InquiriesPage() {
+  await requireAdmin();
   const db = await getAuthSupabase();
   const { data } = await db.from("inquiries").select("*").order("answered").order("created_at", { ascending: false }).limit(200);
   const rows = (data ?? []) as Row[];

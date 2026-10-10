@@ -1,20 +1,21 @@
 "use client";
 
-import { Boxes, LayoutDashboard, LogOut, Settings, ShoppingBag, Store, Tag, Users } from "lucide-react";
+import { BarChart3, Boxes, ClipboardList, LogOut, Settings, ShoppingBag, Store, Sun, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/admin/login/actions";
-import { ADMIN_SECTIONS, activeSection, isTabActive, type AdminSection } from "@/lib/admin-sections";
+import type { AdminRole } from "@/lib/admin";
+import { ADMIN_SECTIONS, activeSection, canSee, isTabActive, type AdminSection } from "@/lib/admin-sections";
 
-const ICON: Record<AdminSection["icon"], typeof LayoutDashboard> = { prehled: LayoutDashboard, kasa: Store, objednavky: ShoppingBag, zbozi: Boxes, zakaznici: Users, slevy: Tag, nastaveni: Settings };
+const ICON: Record<AdminSection["icon"], typeof Sun> = { dnes: Sun, kasa: Store, prodej: ShoppingBag, zbozi: Boxes, zakaznici: Users, provoz: ClipboardList, finance: Wallet, statistiky: BarChart3, nastaveni: Settings };
 
-/** Boční menu: sedm oddílů. Obsluha nevidí položky jen pro správce. */
-export function AdminNav({ manager = true, badges = {} }: { manager?: boolean; badges?: Record<string, number> }) {
+/** Boční menu: oddíly podle práce. Každá role vidí jen své položky. */
+export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Record<string, number> }) {
   const path = usePathname();
   const active = activeSection(path);
   return (
     <nav aria-label="Administrace" className="flex gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:px-2 md:pb-0">
-      {ADMIN_SECTIONS.filter((s) => manager || !s.manager).map((s) => {
+      {ADMIN_SECTIONS.filter((s) => canSee(role, s)).map((s) => {
         const Icon = ICON[s.icon];
         const on = active?.href === s.href;
         const badge = badges[s.href];
@@ -40,11 +41,11 @@ export function AdminNav({ manager = true, badges = {} }: { manager?: boolean; b
   );
 }
 
-/** Záložky oddílu nad obsahem stránky (jen kde oddíl nějaké má). */
-export function SectionTabs({ manager = true }: { manager?: boolean }) {
+/** Záložky oddílu nad obsahem stránky (jen kde oddíl nějaké má a role na ně dosáhne). */
+export function SectionTabs({ role }: { role: AdminRole }) {
   const path = usePathname();
   const section = activeSection(path);
-  const tabs = (section?.tabs ?? []).filter((t) => manager || !t.manager);
+  const tabs = (section?.tabs ?? []).filter((t) => canSee(role, t));
   if (tabs.length < 2) return null;
   return (
     <div className="mb-5 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label={section?.label}>

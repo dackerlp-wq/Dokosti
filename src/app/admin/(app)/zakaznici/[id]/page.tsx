@@ -9,10 +9,11 @@ import { FEEDING_LABEL, type FeedingNow, petSummary } from "@/lib/club";
 import { code128Svg, newCardCode } from "@/lib/barcode";
 import { formatPrice } from "@/lib/format";
 import { POS_PAYMENT_LABEL, type PosSaleRow } from "@/lib/pos";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 import { adjustPoints, saveCardCode, saveCustomerNote } from "./actions";
 
 export default async function CustomerPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ karta?: string }> }) {
+  await requireAdmin();
   const [{ id }, { karta }] = await Promise.all([params, searchParams]);
   const db = await getAuthSupabase();
   const [{ data: customer }, { data: orders }, { data: loyalty }, { data: sales }, { data: pets }] = await Promise.all([

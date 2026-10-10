@@ -4,10 +4,11 @@ import { useActionState } from "react";
 import { login } from "@/app/admin/login/actions";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm() {
+export function LoginForm({ next = "" }: { next?: string }) {
   const [state, action, pending] = useActionState(login, null);
   return (
     <form action={action} className="space-y-3">
+      <input type="hidden" name="next" value={next} />
       <div>
         <label htmlFor="email" className="label mb-1 block text-[11px] text-muted">
           E-mail

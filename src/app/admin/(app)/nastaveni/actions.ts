@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
+import { logActivity } from "@/lib/activity";
 import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
 
 export type SettingsState = { ok?: true; error?: string } | null;
@@ -17,7 +18,8 @@ const days = (fd: FormData, k: string) => fd.getAll(k).map(Number).filter((d) =>
 
 /** Uloží jednu sekci nastavení (shop / shipping / payment / pages). */
 export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<SettingsState> {
-  if (!(await getAdmin())) return { error: "Nejste přihlášeni." };
+  const admin = await getAdmin();
+  if (!admin?.isManager) return { error: "Nastavení může měnit jen správce." };
   const section = str(fd, "section") as keyof Settings;
   let value: Settings[keyof Settings];
 
@@ -111,6 +113,7 @@ export async function saveSettings(_prev: SettingsState, fd: FormData): Promise<
   const db = await getAuthSupabase();
   const { error } = await db.from("settings").upsert({ key: section, value });
   if (error) return { error: error.message };
+  await logActivity(db, admin, { kind: "nastaveni.ulozeno", subject: "settings", subjectId: section, text: `Nastavení: uložena sekce ${section}` });
   revalidatePath("/", "layout");
   return { ok: true };
 }

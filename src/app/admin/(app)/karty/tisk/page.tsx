@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { cardUrl } from "@/lib/cards";
 import { SITE_URL } from "@/lib/seo";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Karty: náhled pro tisk" };
 
 /** Náhled dávky s QR kódy: kontrola před tiskem, nebo nouzový tisk na štítky z prohlížeče (Ctrl+P). */
 export default async function CardsPrintPage({ searchParams }: { searchParams: Promise<{ davka?: string }> }) {
+  await requireAdmin();
   const { davka } = await searchParams;
   const batch = Number(davka);
   if (!Number.isInteger(batch) || batch < 1) notFound();

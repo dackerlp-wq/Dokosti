@@ -7,9 +7,10 @@ import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import { subscriptionWeekdays } from "@/lib/shipping";
 import { getSubscriptionByToken } from "@/lib/subscriptions";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export default async function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireManager();
   const { id } = await params;
   const db = await getAuthSupabase();
   const [{ data: row }, { data: orders }, settings] = await Promise.all([

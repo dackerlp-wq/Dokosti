@@ -1,57 +1,84 @@
+import { ADMIN_ROLE_RANK, type AdminRole } from "@/lib/admin";
+
 /**
- * Struktura administrace: sedm oddílů v menu, uvnitř záložky (stránky, které dřív byly samostatné položky).
- * Adresy stránek se nemění. Položky s `manager: true` vidí jen správce.
+ * Struktura administrace: oddíly podle práce (Dnes, Kasa, Prodej, Zboží, Zákazníci, Provoz, Finance,
+ * Statistiky, Nastavení), uvnitř záložky. Adresy stránek se nemění.
+ * `access` je nejnižší role, která položku vidí: brigada < obsluha < spravce (výchozí obsluha).
+ * Menu položky jen skrývá, stránky hlídá `requireAdmin()`.
  */
-export type AdminTab = { href: string; label: string; manager?: boolean };
-export type AdminSection = { href: string; label: string; icon: "prehled" | "kasa" | "objednavky" | "zbozi" | "zakaznici" | "slevy" | "nastaveni"; manager?: boolean; exact?: boolean; tabs?: AdminTab[] };
+export type AdminTab = { href: string; label: string; access?: AdminRole };
+export type AdminSection = {
+  href: string;
+  label: string;
+  icon: "dnes" | "kasa" | "prodej" | "zbozi" | "zakaznici" | "provoz" | "finance" | "statistiky" | "nastaveni";
+  access?: AdminRole;
+  exact?: boolean;
+  tabs?: AdminTab[];
+};
 
 export const ADMIN_SECTIONS: AdminSection[] = [
-  { href: "/admin", label: "Přehled", icon: "prehled", exact: true, tabs: [{ href: "/admin", label: "Dnes" }, { href: "/admin/statistiky", label: "Statistiky", manager: true }] },
-  { href: "/admin/kasa", label: "Kasa", icon: "kasa" },
+  { href: "/admin", label: "Dnes", icon: "dnes", exact: true, access: "brigada" },
+  { href: "/admin/kasa", label: "Kasa", icon: "kasa", access: "brigada" },
   {
     href: "/admin/objednavky",
-    label: "Objednávky",
-    icon: "objednavky",
+    label: "Prodej",
+    icon: "prodej",
     tabs: [
       { href: "/admin/objednavky", label: "Objednávky" },
       { href: "/admin/rozvoz", label: "Rozvoz a odběry" },
-      { href: "/admin/predplatne", label: "Předplatné", manager: true },
+      { href: "/admin/predplatne", label: "Předplatné", access: "spravce" },
     ],
   },
   {
     href: "/admin/produkty",
-    label: "Zboží a sklad",
+    label: "Zboží",
     icon: "zbozi",
     tabs: [
       { href: "/admin/produkty", label: "Produkty" },
       { href: "/admin/sklad", label: "Sklad" },
       { href: "/admin/sklad/pohyby", label: "Pohyby" },
       { href: "/admin/sklad/prijemky", label: "Příjemky" },
+      { href: "/admin/slevy", label: "Akce a slevy", access: "spravce" },
     ],
   },
   {
     href: "/admin/zakaznici",
-    label: "Zákazníci a klub",
+    label: "Zákazníci",
     icon: "zakaznici",
     tabs: [
       { href: "/admin/zakaznici", label: "Zákazníci" },
-      { href: "/admin/karty", label: "Karty" },
+      { href: "/admin/karty", label: "Klub a karty" },
       { href: "/admin/poradna", label: "Poradna" },
     ],
   },
-  { href: "/admin/slevy", label: "Slevy a akce", icon: "slevy", manager: true },
+  {
+    href: "/admin/ukoly",
+    label: "Provoz",
+    icon: "provoz",
+    access: "brigada",
+    tabs: [
+      { href: "/admin/ukoly", label: "Úkoly", access: "brigada" },
+      { href: "/admin/denik", label: "Deník změn" },
+    ],
+  },
+  { href: "/admin/statistiky", label: "Statistiky", icon: "statistiky", access: "spravce" },
   {
     href: "/admin/nastaveni",
     label: "Nastavení",
     icon: "nastaveni",
-    manager: true,
+    access: "spravce",
     tabs: [
-      { href: "/admin/nastaveni", label: "Nastavení" },
-      { href: "/admin/emaily", label: "Odeslané e-maily" },
-      { href: "/admin/ucet", label: "Můj účet" },
+      { href: "/admin/nastaveni", label: "Nastavení", access: "spravce" },
+      { href: "/admin/uzivatele", label: "Uživatelé", access: "spravce" },
+      { href: "/admin/emaily", label: "Odeslané e-maily", access: "spravce" },
+      { href: "/admin/ucet", label: "Můj účet", access: "brigada" },
     ],
   },
 ];
+
+export function canSee(role: AdminRole, item: { access?: AdminRole }): boolean {
+  return ADMIN_ROLE_RANK[role] >= ADMIN_ROLE_RANK[item.access ?? "obsluha"];
+}
 
 /** Které cesty patří do oddílu: jeho adresa a adresy záložek (i s podstránkami). */
 function belongs(section: AdminSection, path: string): boolean {

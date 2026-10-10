@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/admin";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export default async function EmailPreviewPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireManager();
   const { id } = await params;
   const db = await getAuthSupabase();
   const { data } = await db.from("email_log").select("*").eq("id", id).maybeSingle();

@@ -4,9 +4,10 @@ import { ProductForm } from "@/components/admin/product-form";
 import { StockMovements } from "@/components/admin/stock-movements";
 import type { ProductRow, StockMovementRow } from "@/lib/admin";
 import { productName } from "@/lib/catalog";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdmin();
   const { id } = await params;
   const [db, admin] = await Promise.all([getAuthSupabase(), getAdmin()]);
   const [{ data }, { data: batches }, { data: all }, { data: movements }] = await Promise.all([

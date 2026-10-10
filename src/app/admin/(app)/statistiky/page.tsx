@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Table, Td } from "@/components/admin/table";
 import { formatDay } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Statistiky" };
 
@@ -17,6 +17,7 @@ const PERIODS = [
 ] as const;
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ obdobi?: string }> }) {
+  await requireManager();
   const { obdobi } = await searchParams;
   const period = PERIODS.find((p) => p.id === obdobi) ?? PERIODS[0];
   const from = new Date();

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/admin";
 import { cardUrl } from "@/lib/cards";
 import { SITE_URL } from "@/lib/seo";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
+import { ConfirmButton } from "@/components/admin/confirm-button";
 import { generateCards, setCardBlocked } from "./actions";
 
 export const metadata: Metadata = { title: "Věrnostní karty" };
@@ -16,6 +17,7 @@ const STATUS_LABEL = { volna: "volná", prirazena: "přiřazená", blokovana: "b
 
 /** Dávky předtištěných karet: vytvoření, export pro tiskárnu, stav a blokace. Viz docs/KARTY.md. */
 export default async function CardsPage({ searchParams }: { searchParams: Promise<{ davka?: string; stav?: string; q?: string; chyba?: string }> }) {
+  await requireAdmin();
   const [{ davka, stav, q, chyba }, admin] = await Promise.all([searchParams, getAdmin()]);
   const db = await getAuthSupabase();
   const { data: all } = await db.from("cards").select("batch, status");
@@ -141,14 +143,20 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
                 </Td>
                 <Td className="text-muted">{c.assigned_at ? formatDate(c.assigned_at) : "–"}</Td>
                 <Td>
-                  <form action={setCardBlocked}>
-                    <input type="hidden" name="code" value={c.code} />
-                    <input type="hidden" name="blocked" value={c.status === "blokovana" ? "0" : "1"} />
-                    <input type="hidden" name="back" value={back} />
-                    <button type="submit" className="text-sm text-brick-text hover:underline">
-                      {c.status === "blokovana" ? "Odblokovat" : "Zablokovat"}
-                    </button>
-                  </form>
+                  {c.status === "blokovana" ? (
+                    <form action={setCardBlocked}>
+                      <input type="hidden" name="code" value={c.code} />
+                      <input type="hidden" name="blocked" value="0" />
+                      <input type="hidden" name="back" value={back} />
+                      <button type="submit" className="text-sm text-green hover:underline">
+                        Odblokovat
+                      </button>
+                    </form>
+                  ) : (
+                    <ConfirmButton action={setCardBlocked} fields={{ code: c.code, blocked: "1", back }} title={`Zablokovat kartu ${c.code}?`} text="Karta přestane fungovat u kasy i na webu. Zákazník si může vyzvednout novou, Kostičky zůstanou u účtu." confirmLabel="Zablokovat" reasonName="reason" reasonLabel="Důvod (ztráta, poškození…)" variant="ghost" className="min-h-8 px-2 text-[11px]">
+                      Zablokovat
+                    </ConfirmButton>
+                  )}
                 </Td>
               </tr>
             ))}

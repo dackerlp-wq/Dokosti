@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { PrintButton } from "@/components/admin/print-button";
 import { formatDay, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Štítky" };
 
 /** Štítky na balíky a tašky: jeden na otevřenou objednávku (bez doručených a zrušených). */
 export default async function LabelsPage({ searchParams }: { searchParams: Promise<{ zpusob?: string }> }) {
+  await requireAdmin();
   const { zpusob } = await searchParams;
   const db = await getAuthSupabase();
   let q = db.from("orders").select("*").in("status", ["nova", "potvrzena", "pripravena"]).order("delivery_date").order("created_at");

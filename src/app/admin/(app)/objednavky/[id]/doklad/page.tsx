@@ -3,12 +3,13 @@ import { PrintButton } from "@/components/admin/print-button";
 import { formatDay, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { dateStyle: "medium" });
 
 /** Doklad k objednávce. Neplátce DPH: doklad bez DPH. Plátce: doklad s rozpisem (sazba podle produktu zatím jednotná 12 %). */
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdmin();
   const { id } = await params;
   const db = await getAuthSupabase();
   const [{ data: order }, { data: items }, settings] = await Promise.all([

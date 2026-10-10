@@ -6,8 +6,9 @@ import { getAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Přihlášení do administrace", robots: { index: false } };
 
-export default async function AdminLoginPage() {
-  if (await getAdmin()) redirect("/admin");
+export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams;
+  if (await getAdmin()) redirect(next?.startsWith("/admin") ? next : "/admin");
   return (
     <div className="container-dk flex flex-col items-center py-16">
       <Logo variant="barevne" width={200} />
@@ -15,7 +16,7 @@ export default async function AdminLoginPage() {
         <h1 className="text-[24px]">Administrace</h1>
         <p className="mt-1 text-sm text-muted">Přihlášení pro obsluhu prodejny.</p>
         <div className="mt-5">
-          <LoginForm />
+          <LoginForm next={next?.startsWith("/admin") ? next : ""} />
         </div>
       </div>
     </div>

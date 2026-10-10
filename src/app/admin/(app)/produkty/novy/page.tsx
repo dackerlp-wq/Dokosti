@@ -1,9 +1,10 @@
 import { ProductForm } from "@/components/admin/product-form";
 import type { ProductRow } from "@/lib/admin";
 import { productName } from "@/lib/catalog";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export default async function NewProductPage() {
+  await requireAdmin();
   const [db, admin] = await Promise.all([getAuthSupabase(), getAdmin()]);
   const { data } = await db.from("products").select("slug, line, variant").order("line").order("variant");
   const others = ((data ?? []) as Pick<ProductRow, "slug" | "line" | "variant">[]).map((p) => ({ slug: p.slug, name: productName(p) }));

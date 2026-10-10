@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { SettingsForms } from "@/components/admin/settings-forms";
 import { getSettings } from "@/lib/settings";
+import { requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Nastavení" };
 
 export default async function SettingsPage() {
+  await requireManager();
   const settings = await getSettings();
   return (
     <>

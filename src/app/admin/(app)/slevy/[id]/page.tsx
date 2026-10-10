@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { CouponForm } from "@/components/admin/coupon-form";
 import type { CouponRow } from "@/lib/admin";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export default async function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireManager();
   const { id } = await params;
   const db = await getAuthSupabase();
   const { data } = await db.from("coupons").select("*").eq("id", id).maybeSingle();

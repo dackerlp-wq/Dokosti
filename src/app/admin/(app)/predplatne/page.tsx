@@ -6,7 +6,7 @@ import { formatDay, SHIPPING_LABEL } from "@/lib/admin";
 import { DAY_NAMES_SHORT } from "@/lib/settings";
 import { INTERVAL_LABEL } from "@/lib/shipping";
 import { SUBSCRIPTION_STATUS_LABEL, type SubscriptionStatus } from "@/lib/subscriptions";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Předplatné" };
 
@@ -28,6 +28,7 @@ type Row = {
 const KIND: Record<SubscriptionStatus, "skladem" | "sleva" | "neutral"> = { aktivni: "skladem", pozastaveno: "sleva", zruseno: "neutral" };
 
 export default async function SubscriptionsPage() {
+  await requireManager();
   const db = await getAuthSupabase();
   const { data } = await db
     .from("subscriptions")

@@ -5,13 +5,14 @@ import { Table, Td } from "@/components/admin/table";
 import { formatDate, formatQty, STOCK_KIND_LABEL, type StockKind, type StockMovementRow } from "@/lib/admin";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 import { loadMovementLog, MOVEMENT_LOG_LIMIT, type LogParams } from "@/lib/stock-data";
 
 export const metadata: Metadata = { title: "Pohyby skladu" };
 
 /** Deník všech pohybů skladu s filtrem a exportem. */
 export default async function StockLogPage({ searchParams }: { searchParams: Promise<LogParams> }) {
+  await requireAdmin();
   const sp = await searchParams;
   const [db, admin] = await Promise.all([getAuthSupabase(), getAdmin()]);
   const manager = admin?.isManager ?? false;

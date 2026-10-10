@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { logActivity } from "@/lib/activity";
+import { flashError, flashOk } from "@/lib/flash";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export type ReceiptState = { ok?: true; number?: string; error?: string } | null;
 
@@ -27,6 +29,9 @@ export async function postReceipt(_prev: ReceiptState, fd: FormData): Promise<Re
     p_items: items,
   });
   if (error || !data) return { error: error?.message ?? "Příjemku se nepodařilo uložit." };
+  const r = data as { id: string; number: string; total_czk: number; items: number };
+  const admin = (await getAdmin())!;
+  await logActivity(db, admin, { kind: "prijemka.zauctovana", subject: "receipt", subjectId: r.id, text: `Příjemka ${r.number}${fd.get("supplier") ? ` · ${String(fd.get("supplier")).trim()}` : ""}: ${r.items} položek${admin.isManager ? `, ${Math.round(Number(r.total_czk))} Kč` : ""}` });
   revalidatePath("/admin/sklad");
   revalidatePath("/admin/sklad/prijemky");
   revalidatePath("/admin/produkty");
@@ -36,14 +41,20 @@ export async function postReceipt(_prev: ReceiptState, fd: FormData): Promise<Re
 
 /** Odpis (kolik ubylo) nebo inventura (nový skutečný stav) u jednoho produktu. */
 export async function adjustStock(fd: FormData) {
-  if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");
+  const admin = await requireAdmin();
   const productId = String(fd.get("product_id") ?? "");
   const kind = String(fd.get("kind") ?? "");
   const qty = Number(String(fd.get("qty") ?? "").replace(",", "."));
-  if (!productId || !["odpis", "inventura"].includes(kind) || !Number.isFinite(qty) || qty < 0) return;
+  const note = String(fd.get("note") ?? "").trim();
+  if (!productId || !["odpis", "inventura"].includes(kind) || !Number.isFinite(qty) || qty < 0) return flashError("Zadejte množství.");
+  if (kind === "odpis" && qty === 0) return flashError("Odpis musí být větší než nula.");
   const db = await getAuthSupabase();
-  const { error } = await db.rpc("adjust_stock", { p_product_id: productId, p_kind: kind, p_qty: qty, p_note: String(fd.get("note") ?? "").trim() });
-  if (error) throw new Error(error.message);
+  const { data: after, error } = await db.rpc("adjust_stock", { p_product_id: productId, p_kind: kind, p_qty: qty, p_note: note });
+  if (error) return flashError(`Pohyb se nepodařilo zapsat: ${error.message}`);
+  const { data: p } = await db.from("products").select("line, variant, unit").eq("id", productId).maybeSingle();
+  const name = p ? `${p.variant.charAt(0).toUpperCase()}${p.variant.slice(1)}` : "Produkt";
+  await logActivity(db, admin, { kind: `sklad.${kind}`, subject: "product", subjectId: productId, text: `${name}: ${kind === "odpis" ? `odpis ${qty}` : `inventura, nový stav ${qty}`} ${p?.unit ?? ""}${note ? ` (${note})` : ""}, skladem ${Number(after)} ${p?.unit ?? ""}` });
+  await flashOk(kind === "odpis" ? `Odepsáno ${qty} ${p?.unit ?? ""}, skladem ${Number(after)}.` : `Inventura zapsána, skladem ${Number(after)} ${p?.unit ?? ""}.`);
   revalidatePath(`/admin/produkty/${productId}`);
   revalidatePath("/admin/produkty");
   revalidatePath("/admin/sklad");

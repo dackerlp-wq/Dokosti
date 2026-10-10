@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import { agoLabel, sortStats, STOCK_PERIODS, STOCK_SORTS, STOCK_STATUS_LABEL, stockPeriod, type StockStatus } from "@/lib/stock-analysis";
 import { loadStockStats } from "@/lib/stock-data";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Sklad" };
 
@@ -18,6 +18,7 @@ type Params = { obdobi?: string; q?: string; rada?: string; stav?: string; razen
 
 /** Přehled skladu: co se prodává, co leží, co dochází. Čísla z pohybů skladu za zvolené období. */
 export default async function StockOverviewPage({ searchParams }: { searchParams: Promise<Params> }) {
+  await requireAdmin();
   const sp = await searchParams;
   const period = stockPeriod(sp.obdobi);
   const [db, admin, settings] = await Promise.all([getAuthSupabase(), getAdmin(), getSettings()]);

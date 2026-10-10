@@ -3,11 +3,12 @@ import Link from "next/link";
 import { Table, Td } from "@/components/admin/table";
 import { formatDate, type CustomerRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Zákazníci" };
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; filtr?: string }> }) {
+  await requireAdmin();
   const { q, filtr } = await searchParams;
   const db = await getAuthSupabase();
   let query = db.from("customers").select("*").order("updated_at", { ascending: false }).limit(200);

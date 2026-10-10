@@ -64,7 +64,12 @@ stavem po každém z nich, odpis a inventuru a doporučení k doobjednání. `/a
 `/admin/sklad/prijemky` příjem zboží od dodavatele. Limity (ležák po N dnech, pomalé od N dní zásoby, na kolik dní
 doobjednávat) jsou v Nastavení → Sklad (`settings.stock`). Vše se počítá z pohybů, bez nové tabulky.
 Nového správce přidáte tak, že založíte uživatele v Supabase (Authentication → Users) a vložíte jeho `id`
-do tabulky `admins`.
+do tabulky `admins`; role a jména se pak spravují v Nastavení → Uživatelé. Role: `spravce`, `obsluha`, `brigada`
+(jen kasa a provoz). Každá stránka i akce hlídá roli na serveru (`requireAdmin`, `requireManager`), menu ji jen skrývá.
+Interní systém (plán a pravidla provázání: `docs/ADMIN-PLAN.md`): deník změn `activity_log` (zapisuje `logActivity`,
+čte Dnes, Provoz → Deník změn a historie v detailech), úkoly `tasks` (ruční i automatické s `auto_key`), hlášky po akci
+přes cookie (`setFlash`, komponenta `Flash`), potvrzení nevratných kroků (`ConfirmButton`), globální hledání Ctrl+K
+(`/admin/api/hledat`), upozornění z `lib/alerts.ts` (expirace, docházející zboží, nezaplacené převody, úkoly po termínu).
 
 ## Stránky
 

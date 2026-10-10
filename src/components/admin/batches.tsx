@@ -1,6 +1,7 @@
 import { Table, Td } from "@/components/admin/table";
 import { Button } from "@/components/ui/button";
 import { addBatch, updateBatchQty } from "@/app/admin/(app)/produkty/[id]/sarze/actions";
+import { ConfirmButton } from "@/components/admin/confirm-button";
 import { formatDay } from "@/lib/admin";
 
 export type BatchRow = { id: string; batch_no: string; expires_on: string; qty: number; note: string };
@@ -39,14 +40,9 @@ export function Batches({ productId, batches }: { productId: string; batches: Ba
                   </Td>
                   <Td className="text-muted">{b.note}</Td>
                   <Td>
-                    <form action={updateBatchQty}>
-                      <input type="hidden" name="id" value={b.id} />
-                      <input type="hidden" name="product_id" value={productId} />
-                      <input type="hidden" name="delete" value="1" />
-                      <button type="submit" className="label text-[10px] text-brick-text hover:underline">
-                        Smazat
-                      </button>
-                    </form>
+                    <ConfirmButton action={updateBatchQty} fields={{ id: b.id, product_id: productId, delete: "1" }} title={`Smazat šarži ${b.batch_no || "bez čísla"}?`} text="Šarže zmizí z evidence expirací. Stav skladu se nemění, ten upravte odpisem." confirmLabel="Smazat šarži" variant="ghost" className="min-h-7 px-2 text-[10px]">
+                      Smazat
+                    </ConfirmButton>
                   </Td>
                 </tr>
               );

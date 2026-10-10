@@ -12,7 +12,7 @@ import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
 import { agoLabel, analyzeStock, inDaysLabel, STOCK_PERIODS, stockAdvice, stockPeriod, type StockProduct } from "@/lib/stock-analysis";
 import { fetchMoves, STOCK_PRODUCT_COLUMNS } from "@/lib/stock-data";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Sklad produktu" };
 
@@ -34,6 +34,7 @@ type Batch = { id: string; batch_no: string; expires_on: string; qty: number };
 
 /** Detail produktu ve skladu: stav, graf zásoby a prodejů, pohyby, odpis a inventura, doporučení. */
 export default async function StockProductPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ obdobi?: string; typ?: string }> }) {
+  await requireAdmin();
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const period = stockPeriod(sp.obdobi);
   const [db, admin, settings] = await Promise.all([getAuthSupabase(), getAdmin(), getSettings()]);

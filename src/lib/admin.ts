@@ -176,8 +176,15 @@ export type ProductRow = {
   updated_at: string;
 };
 
-export type AdminRole = "spravce" | "obsluha";
-export const ADMIN_ROLE_LABEL: Record<AdminRole, string> = { spravce: "Správce", obsluha: "Obsluha" };
+export type AdminRole = "spravce" | "obsluha" | "brigada";
+export const ADMIN_ROLE_LABEL: Record<AdminRole, string> = { spravce: "Správce", obsluha: "Obsluha", brigada: "Brigáda" };
+/** Pořadí rolí pro „aspoň obsluha“ apod. */
+export const ADMIN_ROLE_RANK: Record<AdminRole, number> = { brigada: 0, obsluha: 1, spravce: 2 };
+export const ADMIN_ROLE_HINT: Record<AdminRole, string> = {
+  spravce: "vše včetně nákupních cen, mezd, dokumentů, financí a nastavení",
+  obsluha: "kasa, objednávky, sklad, zákazníci, deník a vlastní docházka",
+  brigada: "kasa a provozní deník, storno jen vlastní účtenky do 10 minut",
+};
 
 export type StockKind = "prijem" | "prodej_web" | "prodej_kasa" | "storno" | "odpis" | "inventura" | "oprava";
 export const STOCK_KIND_LABEL: Record<StockKind, string> = {

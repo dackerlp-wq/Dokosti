@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/admin";
 import { isLineSlug, type Animal, type Storage, isMeatKey } from "@/lib/catalog";
-import { getAdmin, getAuthSupabase } from "@/lib/supabase/auth";
+import { logActivity } from "@/lib/activity";
+import { flashError, flashOk } from "@/lib/flash";
+import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export type ProductFormState = { error: string } | null;
 
@@ -103,15 +105,24 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     return { error: error.message };
   }
 
+  await logActivity(db, admin, { kind: id ? "produkt.ulozen" : "produkt.zalozen", subject: "product", subjectId: id || "", text: `${id ? "Upraven" : "Založen"} produkt ${variant} (${row.price_czk} Kč${row.is_published ? "" : ", nezveřejněno"})` });
   revalidatePath("/", "layout");
+  await flashOk(id ? `Produkt ${variant} uložen.` : `Produkt ${variant} založen.`);
   redirect("/admin/produkty");
 }
 
 export async function deleteProduct(formData: FormData) {
-  if (!(await getAdmin())) throw new Error("Nepřihlášený uživatel");
+  const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const db = await getAuthSupabase();
-  await db.from("products").delete().eq("id", id);
+  const { data: p } = await db.from("products").select("variant").eq("id", id).maybeSingle();
+  const { error } = await db.from("products").delete().eq("id", id);
+  if (error) {
+    await flashError(error.code === "23503" ? "Produkt má objednávky nebo příjemky, nejde smazat. Místo toho ho skryjte z webu." : `Nepodařilo se smazat: ${error.message}`);
+    return;
+  }
+  await logActivity(db, admin, { kind: "produkt.smazan", subject: "product", subjectId: id, text: `Smazán produkt ${p?.variant ?? ""}` });
   revalidatePath("/", "layout");
+  await flashOk("Produkt smazán.");
   redirect("/admin/produkty");
 }

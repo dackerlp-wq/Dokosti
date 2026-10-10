@@ -4,7 +4,7 @@ import { Table, Td } from "@/components/admin/table";
 import { buttonClass } from "@/components/ui/button";
 import { formatDate, formatDay, PAYMENT_LABEL, SHIPPING_LABEL, type OrderItemRow, type OrderRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 import { setOrderStatus } from "./[id]/actions";
 
 const OPEN = ["nova", "potvrzena", "pripravena"];
@@ -18,6 +18,7 @@ type View = (typeof VIEWS)[number]["id"];
 
 /** Objednávky podle toho, co s nimi je potřeba udělat, s dalším krokem rovnou v řádku. */
 export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ zobrazit?: string; q?: string; stav?: string }> }) {
+  await requireAdmin();
   const { zobrazit, q, stav } = await searchParams;
   const view: View = (VIEWS.find((v) => v.id === zobrazit)?.id ?? (stav ? "vse" : "vyrizeni")) as View;
   const today = new Date().toISOString().slice(0, 10);

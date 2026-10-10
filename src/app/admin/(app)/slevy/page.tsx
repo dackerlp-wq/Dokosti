@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { formatDay, type CouponRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
-import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Slevové kódy" };
 
 export default async function CouponsPage() {
+  await requireManager();
   const db = await getAuthSupabase();
   const { data } = await db.from("coupons").select("*").order("created_at", { ascending: false });
   const coupons = (data ?? []) as CouponRow[];
