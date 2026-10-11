@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { type PetProfile, petToAnimal } from "@/lib/club";
+import type { PetDbRow } from "@/lib/admin";
+import { type PetProfile, petToAnimal, rowToProfile } from "@/lib/club";
 import { SITE_URL } from "@/lib/seo";
 import { getAuthSupabase } from "@/lib/supabase/auth";
 
@@ -196,12 +197,24 @@ export async function updateProfile(_prev: AuthState, fd: FormData): Promise<Aut
 }
 
 /** Přihlášený uživatel a jeho uložené profily zvířat pro kalkulačku (načítá se v prohlížeči, stránka může být statická). */
-export async function loadProfiles(): Promise<{ user: { email: string } | null; pets: { id: string; name: string; data: Record<string, unknown> }[] }> {
+export async function loadPets(): Promise<{ user: { email: string } | null; pets: PetProfile[] }> {
   const db = await getAuthSupabase();
   const {
     data: { user },
   } = await db.auth.getUser();
   if (!user) return { user: null, pets: [] };
-  const { data } = await db.from("pets").select("id, name, data").order("updated_at", { ascending: false }).limit(10);
-  return { user: { email: (user.email ?? "").toLowerCase() }, pets: (data ?? []) as { id: string; name: string; data: Record<string, unknown> }[] };
+  const { data } = await db.from("pets").select("*").order("updated_at", { ascending: false }).limit(10);
+  return { user: { email: (user.email ?? "").toLowerCase() }, pets: ((data ?? []) as PetDbRow[]).map(rowToProfile) };
+}
+
+/** Smazání profilu zvířete z kalkulačky nebo průvodce (RLS pustí jen vlastní řádky). */
+export async function deletePetById(id: string): Promise<{ ok: boolean }> {
+  if (!id) return { ok: false };
+  const db = await getAuthSupabase();
+  const { error } = await db.from("pets").delete().eq("id", id);
+  if (error) return { ok: false };
+  revalidatePath("/ucet");
+  revalidatePath("/kalkulacka");
+  revalidatePath("/krmeni-na-miru");
+  return { ok: true };
 }

@@ -273,6 +273,17 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               Štítek Novinka
             </label>
           </div>
+          <label className="mt-3 block max-w-sm">
+            <span className="mb-1 block text-label text-green">Doporučení v kalkulačce</span>
+            <select name="reco_boost" defaultValue={String(p?.reco_boost ?? 0)}>
+              <option value="-2">Nedoporučovat (jen když není jiná možnost)</option>
+              <option value="-1">Spíš nedoporučovat</option>
+              <option value="0">Běžně (podle marže a skladu)</option>
+              <option value="1">Spíš doporučovat</option>
+              <option value="2">Přednostně doporučovat</option>
+            </select>
+            <span className="mt-1 block text-small">Kalkulačka a průvodce vybírají mezi produkty stejné role podle marže, stavu skladu a této přednosti.</span>
+          </label>
         </Fieldset>
         <div className="flex justify-start">
           <Button type="button" variant="secondary" onClick={() => setStep(3)}>

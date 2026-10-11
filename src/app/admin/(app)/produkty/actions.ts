@@ -89,6 +89,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
       ? { purchase_price_czk: String(formData.get("purchase_price_czk") ?? "").trim() === "" ? null : Math.max(0, Math.round(num(formData.get("purchase_price_czk")) * 100) / 100) }
       : {}),
     low_stock_threshold: Math.max(0, Math.round(num(formData.get("low_stock_threshold")) || 0)),
+    reco_boost: Math.max(-2, Math.min(2, Math.round(Number(formData.get("reco_boost") ?? 0)) || 0)),
     in_stock: formData.get("in_stock") === "on",
     is_new: formData.get("is_new") === "on",
     is_published: formData.get("is_published") === "on",

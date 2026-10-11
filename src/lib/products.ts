@@ -32,7 +32,25 @@ type ProductRow = {
   is_complete: boolean;
   unit: ProductUnit;
   meats: string[] | null;
+  purchase_price_czk: number | string | null;
+  low_stock_threshold: number | null;
+  reco_boost: number | null;
 };
+
+/**
+ * Výhodnost produktu pro obchod (0–100): marže 60 %, stav skladu 30 % (přebytek tlačit, nedostatek šetřit),
+ * ruční přednost z administrace ±30 %. Nákupní cena zůstává na serveru, ven jde jen skóre.
+ */
+export function recoScore(r: Pick<ProductRow, "price_czk" | "purchase_price_czk" | "stock_qty" | "low_stock_threshold" | "reco_boost">): number {
+  const purchase = r.purchase_price_czk == null ? null : Number(r.purchase_price_czk);
+  const margin = purchase && r.price_czk > 0 ? (r.price_czk - purchase) / r.price_czk : 0.35;
+  const marginScore = Math.max(0, Math.min(1, margin / 0.6));
+  const qty = r.stock_qty == null ? null : Number(r.stock_qty);
+  const threshold = Math.max(1, r.low_stock_threshold ?? 5);
+  const stockScore = qty == null ? 0.5 : qty <= threshold ? 0.2 : qty >= 4 * threshold ? 1 : 0.2 + (0.8 * (qty - threshold)) / (3 * threshold);
+  const boost = (r.reco_boost ?? 0) * 0.15;
+  return Math.round(100 * Math.max(0, Math.min(1, 0.6 * marginScore + 0.3 * stockScore + 0.05 + boost)));
+}
 
 /** Výživové údaje z řádku; null hodnoty vynechá, aby `nutrition` bylo prázdné jen když nic není. */
 export function nutritionFromRow(r: Pick<ProductRow, "kcal_per_100g" | "bone_pct" | "organ_pct" | "liver_pct" | "taurine_mg_per_kg" | "bone_class" | "is_complete">): Nutrition | undefined {
@@ -71,6 +89,7 @@ function fromRow(r: ProductRow): Product {
     nutrition: nutritionFromRow(r),
     unit: r.unit ?? "ks",
     meats: (r.meats ?? []).filter(isMeatKey),
+    recoScore: recoScore(r),
   };
 }
 
@@ -85,7 +104,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   const { data, error } = await db
     .from("products")
     .select(
-      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty, meats",
+      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty, meats, purchase_price_czk, low_stock_threshold, reco_boost",
     )
     .eq("is_published", true)
     .order("sort_order")

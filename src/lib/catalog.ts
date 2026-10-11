@@ -137,6 +137,11 @@ export type Product = {
   /** Cross-sell: hodí se k tomu (slugy). */
   crosssell?: string[];
   /**
+   * Výhodnost pro obchod 0–100 (marže, stav skladu, ruční přednost), počítá se na serveru v lib/products.
+   * Kalkulačka a průvodce jí řadí produkty se stejnou rolí. Nákupní cena se do prohlížeče neposílá.
+   */
+  recoScore?: number;
+  /**
    * Údaje z etikety výrobce pro kalkulačku dávky. Nikdy se nedopočítávají;
    * bez nich kalkulačka počítá orientačně procentem hmotnosti.
    */

@@ -7,8 +7,8 @@ import { ProfileForm } from "@/components/account/profile-form";
 import { ButtonLink } from "@/components/ui/button";
 import { PageIntro } from "@/components/ui/page-intro";
 import { formatDate, formatDay, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow, type PetDbRow } from "@/lib/admin";
-import { MEAT_LABEL, type Activity, type Condition, type MeatKey } from "@/lib/barf";
-import { type FeedingNow, type PetProfile, petSummary } from "@/lib/club";
+import { MEAT_LABEL } from "@/lib/barf";
+import { petSummary, rowToProfile } from "@/lib/club";
 import { getCustomerUser } from "@/lib/customer";
 import { sendEmail } from "@/lib/email/send";
 import { clubWelcome } from "@/lib/email/templates";
@@ -48,24 +48,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const list = (orders ?? []) as OrderRow[];
   const points = (loyalty ?? []) as LoyaltyRow[];
   const petList = (pets ?? []) as PetDbRow[];
-  const toProfile = (p: PetDbRow): PetProfile => ({
-    id: p.id,
-    species: p.species === "kocka" ? "kocka" : "pes",
-    sex: p.sex === "samice" ? "samice" : "samec",
-    name: p.name,
-    breed: p.breed ?? "",
-    bornOn: p.born_on ?? "",
-    reproduction: p.reproduction === "brezi" || p.reproduction === "kojici" ? p.reproduction : "",
-    pregnancyWeek: p.pregnancy_week ?? undefined,
-    weightKg: Number(p.weight_kg ?? (p.data as { weightKg?: number }).weightKg ?? 0),
-    neutered: p.neutered ?? true,
-    activity: (p.activity as Activity) ?? "bezna",
-    condition: (p.condition as Condition) ?? "idealni",
-    feedingNow: (p.feeding_now as FeedingNow) ?? "",
-    currentFood: p.current_food ?? "",
-    exclude: (p.exclude ?? []) as MeatKey[],
-    note: p.note ?? "",
-  });
   const subList = (subs ?? []) as { id: string; token: string; interval_days: number; next_date: string; status: SubscriptionStatus; skip_next: boolean }[];
   const { loyalty: L } = settings;
 
@@ -227,7 +209,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <PetRowEditable
               key={p.id}
               id={p.id}
-              pet={toProfile(p)}
+              pet={rowToProfile(p)}
               summary={petSummary(p, MEAT_LABEL)}
               petPoints={settings.club.petPoints}
               deleteAction={

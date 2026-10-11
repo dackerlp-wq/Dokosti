@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, Cat, Check, Dog, Footprints, MailCheck, Moon, Soup, Trophy, UtensilsCrossed, Wheat, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, Cat, Check, Dog, Footprints, MailCheck, Moon, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
-import { savePetProfile } from "@/app/(shop)/ucet/actions";
+import { deletePetById, savePetProfile } from "@/app/(shop)/ucet/actions";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
@@ -61,9 +61,10 @@ function bornFrom(months: number): string {
  * Průvodce „Krmení na míru“: sedm otázek, plán s cenou za den, pravidelné dodávky.
  * Výpočet je stejný jako v kalkulačce (petToAnimal → buildPlan), profil zvířete se uloží do účtu.
  */
-export function PlanWizard({ products, club, subscription, loyalty, shipping, user, pets, meatImages }: Props) {
+export function PlanWizard({ products, club, subscription, loyalty, shipping, user, pets: initialPets, meatImages }: Props) {
   const router = useRouter();
   const cart = useCart();
+  const [pets, setPets] = useState<PetProfile[]>(initialPets);
   const [step, setStep] = useState(1);
   const [pet, setPet] = useState<PetProfile>(() => emptyPet("pes"));
   const [petId, setPetId] = useState<string | undefined>(undefined);
@@ -161,6 +162,17 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     setSwaps({});
     setStep(7);
   }
+  /** Smazání profilu z účtu přímo z průvodce (s potvrzením). */
+  function removePet(p: PetProfile) {
+    if (!p.id || !window.confirm(`Smazat profil ${p.name || "zvířete"} z účtu?`)) return;
+    const id = p.id;
+    startTransition(async () => {
+      const res = await deletePetById(id);
+      if (!res.ok) return setError("Profil se nepodařilo smazat.");
+      setPets((list) => list.filter((x) => x.id !== id));
+      if (petId === id) setPetId(undefined);
+    });
+  }
 
   /** Uloží profil, naplní košík plánem a přejde do pokladny s předplatným. */
   function finish() {
@@ -248,13 +260,19 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           {pets.length > 0 && (
             <div className="mb-5 rounded-panel bg-paper p-4">
               <p className="mb-2 text-label text-green">Z vašeho účtu</p>
-              <div className="flex flex-wrap gap-1.25">
+              <ul className="flex flex-wrap gap-1.25" aria-busy={pending}>
                 {pets.map((p) => (
-                  <button key={p.id} type="button" onClick={() => pickPet(p)} className={chipClass(false)}>
-                    Plán pro {petName(p.name, p.species, p.sex, "acc")}
-                  </button>
+                  <li key={p.id} className="flex items-center">
+                    <button type="button" onClick={() => pickPet(p)} className={chipClass(false, "rounded-r-none border-r-0")}>
+                      Plán pro {petName(p.name, p.species, p.sex, "acc")}
+                    </button>
+                    <button type="button" onClick={() => removePet(p)} disabled={pending} aria-label={`Smazat profil ${p.name}`} title="Smazat profil" className={chipClass(false, "rounded-l-none px-2 text-muted hover:text-brick-text")}>
+                      <X className="size-3.5" strokeWidth={2} aria-hidden />
+                    </button>
+                  </li>
                 ))}
-              </div>
+              </ul>
+              <p className="mt-2 text-small">Plán se přepočítá podle uložené váhy a věku. Křížkem profil z účtu smažete.</p>
             </div>
           )}
           <ChoiceGrid label="Zvíře">

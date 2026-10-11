@@ -182,6 +182,8 @@ export type ProductRow = {
   pack_size: number | null;
   vat_rate: number;
   updated_at: string;
+  /** Přednost v doporučení kalkulačky: −2 nedoporučovat … +2 přednostně. */
+  reco_boost?: number | null;
 };
 
 export type AdminRole = "spravce" | "obsluha" | "brigada";

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { PlanWizard } from "@/components/plan/plan-wizard";
 import { WizardHero } from "@/components/plan/wizard-ui";
-import { type Activity, type Condition, type MeatKey } from "@/lib/barf";
+import type { MeatKey } from "@/lib/barf";
 import { MEATS } from "@/lib/catalog";
-import { type FeedingNow, type PetProfile } from "@/lib/club";
+import { type PetProfile, rowToProfile } from "@/lib/club";
 import { getCustomerUser } from "@/lib/customer";
 import { meatIllustration } from "@/lib/menu";
 import { getProducts } from "@/lib/products";
@@ -27,24 +27,7 @@ export default async function PlanWizardPage() {
     const db = await getAuthSupabase();
     const [{ data: c }, { data: rows }] = await Promise.all([db.from("customers").select("name").eq("user_id", user.id).maybeSingle(), db.from("pets").select("*").order("updated_at", { ascending: false })]);
     account = { email: user.email, name: c?.name ?? "" };
-    pets = ((rows ?? []) as PetDbRow[]).map((p) => ({
-      id: p.id,
-      species: p.species === "kocka" ? "kocka" : "pes",
-      sex: p.sex === "samice" ? "samice" : "samec",
-      name: p.name,
-      breed: p.breed ?? "",
-      bornOn: p.born_on ?? "",
-      reproduction: p.reproduction === "brezi" || p.reproduction === "kojici" ? p.reproduction : "",
-      pregnancyWeek: p.pregnancy_week ?? undefined,
-      weightKg: Number(p.weight_kg ?? (p.data as { weightKg?: number }).weightKg ?? 0),
-      neutered: p.neutered ?? true,
-      activity: (p.activity as Activity) ?? "bezna",
-      condition: (p.condition as Condition) ?? "idealni",
-      feedingNow: (p.feeding_now as FeedingNow) ?? "",
-      currentFood: p.current_food ?? "",
-      exclude: (p.exclude ?? []) as MeatKey[],
-      note: p.note ?? "",
-    }));
+    pets = ((rows ?? []) as PetDbRow[]).map(rowToProfile);
   }
   const meatImages: Partial<Record<MeatKey, string>> = {};
   for (const m of MEATS) {

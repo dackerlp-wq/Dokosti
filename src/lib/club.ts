@@ -1,4 +1,5 @@
 import { type Activity, type AnimalInput, type Condition, type MeatKey, newAnimal, type Species, type Stage } from "@/lib/barf";
+import type { PetDbRow } from "@/lib/admin";
 import type { Sex } from "@/lib/jmena";
 
 export type Reproduction = "" | "brezi" | "kojici";
@@ -62,6 +63,28 @@ export function stageFor(species: Species, months: number | null): Stage {
   if (months < 12) return "mlade";
   if (species === "pes" ? months >= 84 : months >= 132) return "senior";
   return "dospely";
+}
+
+/** Řádek tabulky `pets` → profil zvířete (účet, průvodce i kalkulačka čtou stejně). */
+export function rowToProfile(p: PetDbRow): PetProfile {
+  return {
+    id: p.id,
+    species: p.species === "kocka" ? "kocka" : "pes",
+    sex: p.sex === "samice" ? "samice" : "samec",
+    name: p.name,
+    breed: p.breed ?? "",
+    bornOn: p.born_on ?? "",
+    reproduction: p.reproduction === "brezi" || p.reproduction === "kojici" ? p.reproduction : "",
+    pregnancyWeek: p.pregnancy_week ?? undefined,
+    weightKg: Number(p.weight_kg ?? (p.data as { weightKg?: number }).weightKg ?? 0),
+    neutered: p.neutered ?? true,
+    activity: (p.activity as Activity) ?? "bezna",
+    condition: (p.condition as Condition) ?? "idealni",
+    feedingNow: (p.feeding_now as FeedingNow) ?? "",
+    currentFood: p.current_food ?? "",
+    exclude: (p.exclude ?? []) as MeatKey[],
+    note: p.note ?? "",
+  };
 }
 
 /** Profil zvířete → vstup kalkulačky (uloží se do `pets.data`, kalkulačka ho načte beze změny). */

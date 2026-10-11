@@ -1,30 +1,35 @@
 "use client";
 
-import { Baby, Cat, Check, Dog, Moon, PawPrint, ShoppingBasket } from "lucide-react";
+import { Baby, Cat, Check, Dog, Moon, PawPrint, Plus, ShoppingBasket, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { deletePetById, loadPets } from "@/app/(shop)/ucet/actions";
 import { FeedingSchedule } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { Choice, ChoiceGrid, WizardLabel, WizardPanel } from "@/components/plan/wizard-ui";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
-import { ACTIVITY_LABEL, buildPlan, CONDITION_LABEL, MEAT_LABEL, newAnimal, type Activity, type AnimalInput, type Condition, type MeatKey, type Plan, type Stage } from "@/lib/barf";
+import { ACTIVITY_LABEL, addonForRole, BASE_ADDONS, buildPlan, CONDITION_LABEL, MEAT_LABEL, newAnimal, recommendExtras, type Activity, type AnimalInput, type Condition, type MeatKey, type Plan, type Reco, type Stage } from "@/lib/barf";
 import { productName, type Product } from "@/lib/catalog";
+import { type PetProfile, petToAnimal } from "@/lib/club";
 import { formatPrice, formatWeight } from "@/lib/format";
 
 /**
  * Kalkulačka dávky: tři otázky (kdo, kolik váží, jak je starý), výsledek a nákup na 14 dní.
  * Aktivita, kastrace, kondice, březost a vyloučené maso jsou pod „Upřesnit“ s rozumnými výchozími hodnotami.
+ * Základní nákup jsou jen mixy (a granule při kombinaci). Kosti, ryba, vnitřnosti, olej a zelenina se nabízejí
+ * zvlášť v „Doporučujeme navíc“ a zákazník si je přidá jedním klepnutím.
  * Plán, rozpis a pravidelné dodávky dělá průvodce Krmení na míru.
  */
-const STORAGE_KEY = "dokosti-kalkulacka-v3";
+const STORAGE_KEY = "dokosti-kalkulacka-v4";
+const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", rekreacni: "Na okusování" };
 const DAYS = [7, 14, 30] as const;
 type Days = (typeof DAYS)[number];
 
 function withDefaults(a: Partial<AnimalInput>): AnimalInput {
   const base = newAnimal(a.species);
-  return { ...base, ...a, addons: { ...base.addons, ...(a.addons ?? {}) }, exclude: a.exclude ?? [], removed: [], swaps: {} };
+  return { ...base, ...a, addons: { ...BASE_ADDONS, ...(a.addons ?? {}) }, exclude: a.exclude ?? [], removed: [], swaps: {} };
 }
 
 /* Stav v prohlížeči; useSyncExternalStore drží server a klient v souladu bez setState v efektu. */
@@ -48,7 +53,7 @@ function writeStored(a: AnimalInput) {
   }
 }
 const noop = () => () => {};
-const DEFAULT: AnimalInput = { ...newAnimal("pes"), id: "prvni" };
+const DEFAULT: AnimalInput = { ...newAnimal("pes"), id: "prvni", addons: { ...BASE_ADDONS } };
 
 const kgText = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1).replace(".", ",")} kg` : `${g} g`);
 const round5 = (g: number) => Math.max(5, Math.round(g / 5) * 5);
@@ -65,6 +70,18 @@ export function BarfCalculator({ products }: { products: Product[] }) {
   const a = edited ?? stored ?? DEFAULT;
   const [days, setDays] = useState<Days>(14);
   const [added, setAdded] = useState(false);
+  /* Zvířata z účtu: načtou se v prohlížeči, stránka zůstává statická. */
+  const [pets, setPets] = useState<PetProfile[] | null>(null);
+  const [pending, startTransition] = useTransition();
+  useEffect(() => {
+    let live = true;
+    loadPets()
+      .then((r) => live && setPets(r.user ? r.pets : null))
+      .catch(() => live && setPets(null));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   function patch(p: Partial<AnimalInput>) {
     const next = { ...a, ...p };
@@ -72,11 +89,28 @@ export function BarfCalculator({ products }: { products: Product[] }) {
     writeStored(next);
     setAdded(false);
   }
+  /** Profil z účtu do kalkulačky: přepočítá se podle uložené váhy a věku, doplňky zůstávají na výběr. */
+  function pickPet(p: PetProfile) {
+    patch({ ...petToAnimal(p), id: p.id ?? a.id, addons: { ...BASE_ADDONS }, removed: [], swaps: {} });
+  }
+  function removePet(p: PetProfile) {
+    if (!p.id || !window.confirm(`Smazat profil ${p.name || "zvířete"} z účtu?`)) return;
+    const id = p.id;
+    startTransition(async () => {
+      const res = await deletePetById(id);
+      if (res.ok) setPets((list) => (list ?? []).filter((x) => x.id !== id));
+    });
+  }
+  const setAddon = (role: Reco["role"], on: boolean) => {
+    const key = addonForRole(role);
+    if (key) patch({ addons: { ...a.addons, [key]: on } });
+  };
 
   const isDog = a.species === "pes";
   const young = a.stage === "mlade";
   const valid = a.weightKg > 0 && (!young || (a.ageMonths ?? 0) > 0);
   const plan = useMemo<Plan | null>(() => (valid ? buildPlan(products, a, days) : null), [valid, a, products, days]);
+  const extras = useMemo<Reco[]>(() => (valid ? recommendExtras(products, a, days) : []), [valid, a, products, days]);
   const r = plan?.result;
   const warnings = plan?.notes.filter((n) => n.kind === "warn") ?? [];
   const infos = plan?.notes.filter((n) => n.kind === "info") ?? [];
@@ -90,6 +124,33 @@ export function BarfCalculator({ products }: { products: Product[] }) {
   return (
     <div id="kalkulacka" className="scroll-mt-4 space-y-5">
       <WizardPanel kicker="Tři údaje" title="Kdo bude jíst a kolik váží?" helper="Vyberte zvíře, zadejte váhu a věk. Výsledek se spočítá hned." hideActions>
+        {pets && pets.length > 0 && (
+          <div className="mb-5 rounded-panel bg-paper p-4">
+            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
+              <p className="text-label text-green">Vaše zvířata</p>
+              <Link href="/ucet" className="text-small font-semibold text-green hover:underline">
+                Upravit v účtu
+              </Link>
+            </div>
+            <ul className="flex flex-wrap gap-1.25" aria-busy={pending}>
+              {pets.map((p) => {
+                const active = a.id === p.id;
+                return (
+                  <li key={p.id} className="flex items-center">
+                    <button type="button" onClick={() => pickPet(p)} aria-pressed={active} className={chipClass(active, "rounded-r-none border-r-0")}>
+                      {active && <Check className="size-3.5" strokeWidth={2.5} aria-hidden />}
+                      {p.name || (p.species === "pes" ? "Pes" : "Kočka")}
+                    </button>
+                    <button type="button" onClick={() => removePet(p)} disabled={pending} aria-label={`Smazat profil ${p.name}`} title="Smazat profil" className={chipClass(false, "rounded-l-none px-2 text-muted hover:text-brick-text")}>
+                      <X className="size-3.5" strokeWidth={2} aria-hidden />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-2 text-small">Klepnutím se dávka přepočítá podle uložené váhy a věku. Křížkem profil z účtu smažete.</p>
+          </div>
+        )}
         <ChoiceGrid label="Kdo bude jíst">
           <Choice icon={Dog} title="Pes" desc="dávka podle váhy a aktivity" checked={isDog} onSelect={() => patch({ species: "pes", stage: "dospely", ration: "pmr", rawShare: 100 })} />
           <Choice icon={Cat} title="Kočka" desc="striktní masožravec, bez zeleniny" checked={!isDog} onSelect={() => patch({ species: "kocka", stage: "dospely", ration: "pmr", rawShare: 100 })} />
@@ -208,7 +269,7 @@ export function BarfCalculator({ products }: { products: Product[] }) {
             <div className="flex flex-wrap items-center justify-between gap-3.5 border-b border-line px-5 py-4 md:px-7">
               <div>
                 <h3 className="text-heading-lg text-green">Co nakoupit na {days} dní</h3>
-                <p className="text-small">Celá balení, jedno po druhém. Mixy, kosti a olej z naší nabídky.</p>
+                <p className="text-small">Celá balení, jedno po druhém. Základ jsou mixy, doplňky si přidáte níže.</p>
               </div>
               <div className="flex gap-1.25" role="group" aria-label="Období">
                 {DAYS.map((d) => (
@@ -228,7 +289,18 @@ export function BarfCalculator({ products }: { products: Product[] }) {
                       <Link href={`/produkt/${it.product.slug}`} className="font-semibold text-green hover:underline">
                         {productName(it.product)}
                       </Link>
-                      <p className="text-small">{it.portionText}</p>
+                      {EXTRA_LABEL[it.role] && <span className="ml-2 text-eyebrow text-muted uppercase">{EXTRA_LABEL[it.role]}</span>}
+                      <p className="text-small">
+                        {it.portionText}
+                        {addonForRole(it.role) && (
+                          <>
+                            {" · "}
+                            <button type="button" onClick={() => setAddon(it.role, false)} className="font-semibold text-green underline-offset-2 hover:underline">
+                              Odebrat
+                            </button>
+                          </>
+                        )}
+                      </p>
                     </div>
                     <p className="text-right text-small tabular-nums">
                       {it.qty} × {formatWeight(it.product.weightGrams)}
@@ -271,6 +343,40 @@ export function BarfCalculator({ products }: { products: Product[] }) {
               </div>
             </div>
           </section>
+
+          {extras.length > 0 && (
+            <section className="rounded-panel border border-line bg-paper" aria-label="Doporučujeme navíc">
+              <div className="border-b border-line px-5 py-4 md:px-7">
+                <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
+                <p className="text-small">Vybráno tak, aby se balení za {days} dní spotřebovalo celé nebo z co největší části. Co přidáte, zapadne do dávky místo části mixu.</p>
+              </div>
+              <ul className="divide-y divide-line">
+                {extras.map((it) => (
+                  <li key={it.product.slug} className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 px-5 py-3.5 md:grid-cols-[auto_1fr_auto_auto] md:px-7">
+                    <p className="hidden w-28 text-eyebrow text-muted uppercase md:block">{EXTRA_LABEL[it.role]}</p>
+                    <div className="min-w-0">
+                      <Link href={`/produkt/${it.product.slug}`} className="font-semibold text-green hover:underline">
+                        {productName(it.product)}
+                      </Link>
+                      <p className="text-small">
+                        {it.portionText}
+                        {it.why ? `, ${it.why}` : ""}
+                      </p>
+                      <p className="text-small tabular-nums text-muted">
+                        {it.qty} × {formatWeight(it.product.weightGrams)}
+                        {it.periods > 1 ? ` · vydrží ~${it.periods} nákupy` : ""}
+                      </p>
+                    </div>
+                    <p className="hidden text-right font-semibold text-green tabular-nums md:block">{formatPrice(it.qty * it.product.priceCzk)}</p>
+                    <Button type="button" variant="secondary" onClick={() => setAddon(it.role, true)} aria-label={`Přidat ${productName(it.product)} do nákupu`}>
+                      <Plus className="size-4" strokeWidth={2} aria-hidden /> Přidat
+                      <span className="md:hidden"> · {formatPrice(it.qty * it.product.priceCzk)}</span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <details className="rounded-panel border border-line bg-white p-5 shadow-card md:px-7">
             <summary className="cursor-pointer text-button text-green">Rozpis po dnech a poznámky k výpočtu</summary>
