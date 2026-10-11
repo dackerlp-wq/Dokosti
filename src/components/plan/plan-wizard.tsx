@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { savePetProfile } from "@/app/(shop)/ucet/actions";
+import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
 import { chipClass } from "@/components/ui/field";
@@ -707,6 +708,7 @@ function PlanStep({
                     </p>
                     <p className="text-xs text-muted">
                       {i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? i.why : `${ROLE_LABEL[i.role]}, ${i.why}`}
+                      {leftoverText(i) && <> · {leftoverText(i)}</>}
                     </p>
                   </div>
                   <span className="text-xs text-muted">
@@ -742,6 +744,12 @@ function PlanStep({
             </p>
           )}
         </div>
+        <details className="rounded-card border border-line bg-white p-4">
+          <summary className="cursor-pointer text-button text-green">Rozpis krmení po dnech: které balení kdy načít</summary>
+          <div className="mt-3">
+            <FeedingSchedule plan={plan} />
+          </div>
+        </details>
         {plan.notes.length > 0 && (
           <ul className="space-y-1 text-sm text-muted">
             {plan.notes.map((n, idx) => (

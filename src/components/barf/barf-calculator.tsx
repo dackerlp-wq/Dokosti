@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { emailPlan } from "@/app/(shop)/kalkulacka/actions";
 import { loadProfiles, savePet } from "@/app/(shop)/ucet/actions";
+import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
@@ -18,8 +19,6 @@ import {
   MEAT_LABEL,
   newAnimal,
   STAGE_LABEL,
-  feedingSchedule,
-  scheduleWeeks,
   type Activity,
   type AddonKey,
   type AnimalInput,
@@ -470,7 +469,6 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
   const [pending, startTransition] = useTransition();
   const href = `/kalkulacka/plan.pdf?d=${encoded}`;
   const btn = "inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line bg-white px-3 text-sm text-green hover:border-green";
-  const weeks = open ? scheduleWeeks(feedingSchedule(plan)) : [];
 
   return (
     <div className="mt-4">
@@ -482,37 +480,7 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
       </div>
       {open && (
         <div className="mt-3 rounded-card border border-line bg-white p-4">
-          <p className="text-eyebrow uppercase text-muted">Rozpis po dnech, balení po balení</p>
-          <p className="mt-1 text-small">Jedno balení vždy dojezte a teprve pak načněte další. Porce se den ode dne trochu liší, důležitý je součet za týden.</p>
-          {weeks.map((week, w) => (
-            <table key={w} className="mt-3 w-full text-sm">
-              {weeks.length > 1 && (
-                <caption className="pb-1 text-left text-label text-green">{w + 1}. týden</caption>
-              )}
-              <tbody className="divide-y divide-line">
-                {week.map((d) => (
-                  <tr key={d.day}>
-                    <td className="w-24 py-1.5 pr-2 align-top text-eyebrow text-green uppercase">
-                      {d.label}
-                      <span className="block text-muted normal-case tracking-normal">{d.weekday}</span>
-                    </td>
-                    <td className="py-1.5">
-                      {d.items.length === 0 && <span className="text-muted">stavte se pro mix, zrovna nic není skladem</span>}
-                      {d.items.map((it, j) => (
-                        <div key={j} className="flex justify-between gap-2">
-                          <span>
-                            {productName(it.product)}
-                            {it.note ? <span className="text-muted"> · {it.note}</span> : null}
-                          </span>
-                          <span className="whitespace-nowrap">{it.grams > 0 ? `${it.grams} g` : ""}</span>
-                        </div>
-                      ))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ))}
+          <FeedingSchedule plan={plan} />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <a href={`${href}&download=1`} className={btn}>
               <FileDown strokeWidth={1.75} className="h-4 w-4" /> Stáhnout PDF
@@ -604,6 +572,7 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
                   </Link>
                   <span className="block text-xs text-muted">
                     {it.why}
+                    {leftoverText(it) && <> · {leftoverText(it)}</>}
                     {alts.length > 0 && (
                       <>
                         {" · "}
