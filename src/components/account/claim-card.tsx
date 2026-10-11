@@ -11,10 +11,11 @@ export function ClaimCardButton({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   return (
-    <div className="max-w-md space-y-3">
+    <div className="space-y-3 text-center">
       <Button
         type="button"
         variant="action"
+        size="md"
         disabled={pending}
         onClick={() =>
           startTransition(async () => {

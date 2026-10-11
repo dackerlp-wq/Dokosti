@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { loyaltyBalance, previewCoupon, submitOrder, type CheckoutInput, type CouponPreview } from "@/app/(shop)/pokladna/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { chipClass, Field, fieldInput, StepDisc } from "@/components/ui/field";
 import { productName } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 import { DAY_NAMES, DAY_NAMES_SHORT, type Settings } from "@/lib/settings";
@@ -52,9 +53,9 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
   if (done) {
     return (
-      <div className="max-w-xl rounded-[var(--radius-card)] border border-line bg-paper p-8">
-        <p className="label text-brick-text">Hotovo</p>
-        <h2 className="mt-1">Objednávka {done.number} je u nás</h2>
+      <div className="mx-auto max-w-[560px] rounded-card bg-paper p-8 text-center">
+        <p className="text-eyebrow uppercase text-muted">Hotovo</p>
+        <h2 className="mt-1 font-display text-display-md text-green md:text-display-lg">Objednávka {done.number} je u nás</h2>
         <p className="mt-4 text-muted">
           Celkem {formatPrice(done.total)}. Potvrzení pošleme e-mailem. Kdyby něco nesedělo, zavoláme. Děkujeme.
         </p>
@@ -65,14 +66,16 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
           <p className="mt-2 text-muted">
             Pravidelný odběr je nastavený, další dodávka {dateFmt.format(new Date(done.subscription.nextDate + "T12:00:00"))}. Přeskočit, změnit nebo zrušit ho
             můžete kdykoli na{" "}
-            <Link href={`/predplatne/${done.subscription.token}`} className="text-green underline">
+            <Link href={`/predplatne/${done.subscription.token}`} className="text-brick-text underline">
               stránce předplatného
             </Link>
             , odkaz posíláme i e-mailem.
           </p>
         )}
         <div className="mt-6">
-          <ButtonLink href="/">Zpět na úvod</ButtonLink>
+          <ButtonLink href="/" size="md">
+            Zpět na úvod
+          </ButtonLink>
         </div>
       </div>
     );
@@ -83,7 +86,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
     return (
       <p className="text-muted">
         Košík je prázdný.{" "}
-        <Link href="/rada/barf" className="text-green underline">
+        <Link href="/rada/barf" className="text-brick-text underline">
           Vybrat krmivo
         </Link>
       </p>
@@ -156,10 +159,10 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <div className="space-y-8">
+    <form onSubmit={onSubmit} className="grid gap-10 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-10">
         <fieldset>
-          <legend className="mb-3 text-[20px] font-semibold">Způsob dodání</legend>
+          <StepLegend n={1} title="Doprava" />
           <div className="space-y-2">
             {SHIPPING.map((s) => (
               <RadioCard
@@ -184,7 +187,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
         {shipping === "rozvoz" && deliveryDays.length > 0 && (
           <fieldset>
-            <legend className="mb-3 text-[20px] font-semibold">Den rozvozu</legend>
+            <legend className="mb-2.5 text-heading-md text-green">Den rozvozu</legend>
             <div className="flex flex-wrap gap-2">
               {deliveryDays.map((d) => {
                 const date = new Date(d + "T12:00:00");
@@ -195,11 +198,9 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                     type="button"
                     onClick={() => setDeliveryDate(d)}
                     aria-pressed={active}
-                    className={`rounded-[var(--radius-control)] border px-4 py-2 text-sm ${
-                      active ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"
-                    }`}
+                    className={chipClass(active, "min-h-13 flex-col gap-0 py-1.5 leading-tight")}
                   >
-                    <span className="label block text-[11px]">{DAY_NAMES[date.getDay()]}</span>
+                    <span className="block text-eyebrow uppercase">{DAY_NAMES[date.getDay()]}</span>
                     {dateFmt.format(date)} · {deliveryWindow}
                   </button>
                 );
@@ -210,8 +211,8 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
         {subscription.enabled && (
           <fieldset>
-            <legend className="mb-1 text-[20px] font-semibold">Pravidelně?</legend>
-            <p className="mb-3 text-sm text-muted">
+            <legend className="mb-1 text-heading-md text-green">Pravidelně?</legend>
+            <p className="mb-3 text-small">
               Stejný nákup vám pošleme znovu{subscription.discountPct > 0 ? ` a dáme ${subscription.discountPct} % slevu na zboží` : ""}
               {subscription.pointsBonusPct > 0 ? ` a za každou dodávku připíšeme Kostičky navíc v hodnotě ${subscription.pointsBonusPct} % nákupu` : ""}. Platíte za každou dodávku zvlášť, kdykoli ji přeskočíte nebo zrušíte.
             </p>
@@ -222,7 +223,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                   type="button"
                   onClick={() => setInterval(i)}
                   aria-pressed={interval === i}
-                  className={`rounded-[var(--radius-control)] border px-4 py-2 text-sm ${interval === i ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}
+                  className={chipClass(interval === i)}
                 >
                   {i === 0 ? "Jednorázově" : INTERVAL_LABEL[i]}
                 </button>
@@ -232,14 +233,14 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
               <div className="mt-3 text-sm">
                 {shipping !== "rozvoz" && allowedWeekdays.length > 1 && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="label text-[11px] text-muted">{shipping === "odber" ? "Den vyzvednutí" : "Den odeslání"}</span>
+                    <span className="text-label text-green">{shipping === "odber" ? "Den vyzvednutí" : "Den odeslání"}</span>
                     {allowedWeekdays.map((d) => (
                       <button
                         key={d}
                         type="button"
                         onClick={() => setWeekdayChoice(d)}
                         aria-pressed={weekday === d}
-                        className={`rounded-[var(--radius-control)] border px-3 py-1 text-sm ${weekday === d ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}
+                        className={chipClass(weekday === d)}
                       >
                         {DAY_NAMES_SHORT[d]}
                       </button>
@@ -261,7 +262,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         )}
 
         <fieldset>
-          <legend className="mb-3 text-[20px] font-semibold">Platba</legend>
+          <StepLegend n={2} title="Platba" />
           <div className="space-y-2">
             {paymentOptions.map((p) => (
               <RadioCard
@@ -277,43 +278,10 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-[20px] font-semibold">Kontakt</legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Jméno a příjmení" name="name" autoComplete="name" required defaultValue={prefill?.name} />
-            <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required defaultValue={prefill?.phone} />
-            <Field
-              label="E-mail"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="sm:col-span-2"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setBalance(null);
-                setRedeemSteps(0);
-              }}
-            />
-          </div>
-        </fieldset>
-
-        {needsAddress && (
-          <fieldset>
-            <legend className="mb-3 text-[20px] font-semibold">Adresa doručení</legend>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" defaultValue={prefill?.street} />
-              <Field label="Město" name="city" autoComplete="address-level2" required defaultValue={prefill?.city} />
-              <Field label="PSČ" name="zip" autoComplete="postal-code" required defaultValue={prefill?.zip} />
-            </div>
-          </fieldset>
-        )}
-
-        <fieldset>
-          <legend className="mb-3 text-[20px] font-semibold">Sleva</legend>
+          <legend className="mb-2.5 text-heading-md text-green">Sleva a Kostičky</legend>
           <div className="space-y-4">
             <div>
-              <label htmlFor="coupon" className="label mb-1 block text-[11px] text-muted">
+              <label htmlFor="coupon" className="mb-1 block text-label text-green">
                 Slevový kód
               </label>
               <div className="flex gap-2">
@@ -325,9 +293,9 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                     setCoupon(null);
                   }}
                   placeholder="Např. VITEJTE"
-                  className="uppercase"
+                  className={`${fieldInput} uppercase`}
                 />
-                <Button type="button" variant="secondary" onClick={applyCoupon} disabled={!couponInput.trim()}>
+                <Button type="button" variant="secondary" size="md" className="min-h-13.75" onClick={applyCoupon} disabled={!couponInput.trim()}>
                   Použít
                 </Button>
               </div>
@@ -341,7 +309,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
             {loyalty.enabled && (
               <div>
-                <p className="label mb-1 text-[11px] text-muted">Kostičky</p>
+                <p className="mb-1 text-label text-green">Kostičky</p>
                 {balance === null ? (
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
                     <span>Sbíráte Kostičky? Vyplňte e-mail a zjistěte stav.</span>
@@ -375,17 +343,50 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
           </div>
         </fieldset>
 
+        <fieldset>
+          <StepLegend n={3} title="Údaje" />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Jméno a příjmení" name="name" autoComplete="name" required defaultValue={prefill?.name} />
+            <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required defaultValue={prefill?.phone} />
+            <Field
+              label="E-mail"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="sm:col-span-2"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setBalance(null);
+                setRedeemSteps(0);
+              }}
+            />
+          </div>
+        </fieldset>
+
+        {needsAddress && (
+          <fieldset>
+            <legend className="mb-2.5 text-heading-md text-green">Adresa doručení</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" defaultValue={prefill?.street} />
+              <Field label="Město" name="city" autoComplete="address-level2" required defaultValue={prefill?.city} />
+              <Field label="PSČ" name="zip" autoComplete="postal-code" required defaultValue={prefill?.zip} />
+            </div>
+          </fieldset>
+        )}
+
         <div>
-          <label className="label mb-1 block text-[11px] text-muted" htmlFor="note">
+          <label className="mb-1 block text-label text-green" htmlFor="note">
             Poznámka
           </label>
-          <textarea id="note" name="note" rows={3} placeholder="Kdy vám můžeme zavolat, jak se k vám dostaneme…" />
+          <textarea id="note" name="note" rows={3} className="px-5 py-3.5" placeholder="Kdy vám můžeme zavolat, jak se k vám dostaneme…" />
         </div>
       </div>
 
-      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5 lg:sticky lg:top-4">
-        <h2 className="text-[20px]">Objednávka</h2>
-        <ul className="mt-4 divide-y divide-line text-sm">
+      <aside className="h-fit rounded-card bg-paper p-5 lg:sticky lg:top-5">
+        <h2 className="text-heading-lg text-green">Objednávka</h2>
+        <ul className="mt-4 divide-y divide-line text-small">
           {cart.items.map(({ product, qty }) => (
             <li key={product.slug} className="flex justify-between gap-3 py-2">
               <span>
@@ -422,7 +423,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             <dt className="text-muted">Doprava</dt>
             <dd>{shippingCzk === 0 ? "zdarma" : formatPrice(shippingCzk)}</dd>
           </div>
-          <div className="flex justify-between text-[19px] font-semibold">
+          <div className="flex justify-between text-price-lg text-green">
             <dt>Celkem</dt>
             <dd>{formatPrice(totalCzk)}</dd>
           </div>
@@ -434,22 +435,22 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         )}
 
         {belowMin && (
-          <p className="mt-4 rounded-[var(--radius-control)] bg-cream p-3 text-sm text-brick-text">
+          <p className="mt-4 rounded-control border border-brick-text bg-white p-3 text-small font-semibold text-brick-text">
             Pro tento způsob dodání je minimální objednávka {formatPrice(method.minOrderCzk)}.
           </p>
         )}
         {error && (
-          <p role="alert" className="mt-4 rounded-[var(--radius-control)] bg-cream p-3 text-sm text-brick-text">
+          <p role="alert" className="mt-4 rounded-control border border-brick-text bg-white p-3 text-small font-semibold text-brick-text">
             {error}
           </p>
         )}
 
         <div className="mt-6">
-          <Button type="submit" className="w-full" disabled={pending || belowMin}>
+          <Button type="submit" variant="action" size="lg" className="w-full" disabled={pending || belowMin}>
             {pending ? "Odesílám…" : "Objednat"}
           </Button>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small">
           Odesláním souhlasíte s{" "}
           <Link href="/obchodni-podminky" className="underline">
             obchodními podmínkami
@@ -478,34 +479,28 @@ function RadioCard({
 }) {
   return (
     <label
-      className={`flex cursor-pointer gap-3 rounded-[var(--radius-card)] border bg-paper p-3 text-sm ${
+      className={`flex cursor-pointer gap-3.5 rounded-card border bg-white p-3.5 transition-colors duration-300 ${
         checked ? "border-green ring-1 ring-green" : "border-line hover:border-green"
       }`}
     >
       <input type="radio" name={name} checked={checked} onChange={onChange} className="mt-0.5 h-4 w-4 min-h-0 accent-green" />
       <span className="flex-1">
-        <span className="flex justify-between gap-3 font-semibold">
+        <span className="flex justify-between gap-3 font-semibold text-green">
           <span>{title}</span>
           {price !== undefined && <span>{price === 0 ? "zdarma" : formatPrice(price)}</span>}
         </span>
-        <span className="mt-0.5 block text-xs text-muted">{description}</span>
+        <span className="mt-0.5 block text-small">{description}</span>
       </span>
     </label>
   );
 }
 
-function Field({
-  label,
-  name,
-  className = "",
-  ...rest
-}: { label: string; name: string; className?: string } & React.ComponentProps<"input">) {
+/** Nadpis kroku pokladny: číslo v zeleném disku a název. */
+function StepLegend({ n, title }: { n: number; title: string }) {
   return (
-    <div className={className}>
-      <label htmlFor={name} className="label mb-1 block text-[11px] text-muted">
-        {label}
-      </label>
-      <input id={name} name={name} {...rest} />
-    </div>
+    <legend className="mb-5 flex items-center gap-3.5">
+      <StepDisc n={n} />
+      <span className="text-heading-lg text-green">{title}</span>
+    </legend>
   );
 }

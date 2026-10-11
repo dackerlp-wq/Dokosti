@@ -1,10 +1,11 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/components/cart/cart-context";
 import { ProductImage } from "@/components/product/product-image";
 import { ButtonLink } from "@/components/ui/button";
+import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
 import { maxQty } from "@/lib/stock";
@@ -21,7 +22,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
   if (items.length === 0) {
     return (
       <div className="rounded-card border border-line bg-white p-8 text-center">
-        <p className="text-muted">V košíku zatím nic není.</p>
+        <p>V košíku zatím nic není.</p>
         <div className="mt-6">
           <ButtonLink href="/rada/barf" variant="action" size="md">
             Vybrat krmivo
@@ -39,9 +40,9 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
         {items.map(({ product, qty }) => {
           const limit = maxQty(product);
           return (
-          <li key={product.slug} className="grid grid-cols-[80px_1fr] gap-4 p-4 sm:grid-cols-[96px_1fr_auto]">
+          <li key={product.slug} className="grid grid-cols-[80px_1fr] gap-5 p-5 sm:grid-cols-[96px_1fr_auto]">
             <Link href={`/produkt/${product.slug}`}>
-              <ProductImage product={product} sizes="96px" />
+              <ProductImage product={product} sizes="96px" className="h-20 sm:h-24" />
             </Link>
             <div>
               <h3 className="text-heading-md font-bold">
@@ -49,23 +50,16 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
                   {productName(product)}
                 </Link>
               </h3>
-              <p className="text-sm text-muted">
+              <p className="text-small">
                 {formatWeight(product.weightGrams)} · {formatPrice(product.priceCzk)} / ks
               </p>
               <div className="mt-3 flex items-center gap-2">
-                <QtyButton label="Ubrat" onClick={() => setQty(product.slug, qty - 1)}>
-                  <Minus strokeWidth={1.75} className="h-4 w-4" />
-                </QtyButton>
-                <span className="w-8 text-center font-semibold" aria-live="polite">
-                  {qty}
-                </span>
-                <QtyButton label="Přidat" onClick={() => setQty(product.slug, Math.min(qty + 1, limit === Infinity ? qty + 1 : limit))} disabled={qty >= limit}>
-                  <Plus strokeWidth={1.75} className="h-4 w-4" />
-                </QtyButton>
+                <QuantityStepper size="sm" value={qty} onChange={(v) => setQty(product.slug, v)} max={limit === Infinity ? 99 : Math.max(1, limit)} />
+                <span className="text-small">ks</span>
                 <button
                   type="button"
                   onClick={() => remove(product.slug)}
-                  className="ml-2 inline-flex min-h-10 items-center gap-1 rounded-[var(--radius-control)] px-2 text-sm text-muted hover:text-brick-text"
+                  className="ml-2 inline-flex min-h-10 items-center gap-1 rounded-control px-2 text-small text-muted hover:text-brick-text"
                 >
                   <Trash2 strokeWidth={1.75} className="h-4 w-4" /> Odebrat
                 </button>
@@ -85,7 +79,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
             ) : qty === limit ? (
               <p className="col-start-2 text-xs text-muted">Víc kusů teď skladem není.</p>
             ) : null}
-            <p className="col-start-2 text-[17px] font-semibold sm:col-start-3 sm:text-right">
+            <p className="col-start-2 text-price text-green sm:col-start-3 sm:text-right">
               {formatPrice(product.priceCzk * qty)}
             </p>
           </li>
@@ -93,12 +87,12 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
         })}
       </ul>
 
-      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5">
+      <aside className="h-fit rounded-card bg-paper p-5">
         <h2 className="text-heading-lg">Souhrn</h2>
         <dl className="mt-4 space-y-2">
           <div className="flex justify-between">
             <dt className="text-muted">Zboží</dt>
-            <dd>{formatPrice(subtotalCzk)}</dd>
+            <dd className="font-semibold text-ink">{formatPrice(subtotalCzk)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Doprava</dt>
@@ -106,7 +100,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
           </div>
         </dl>
         {toFree > 0 && (
-          <p className="mt-4 rounded-[var(--radius-control)] bg-cream p-3 text-sm text-muted">
+          <p className="mt-4 rounded-control bg-white p-3 text-small">
             Ještě {formatPrice(toFree)} a rozvoz po Kladně máte zdarma.
           </p>
         )}
@@ -124,12 +118,12 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
 
       {suggestions.length > 0 && (
         <section className="lg:col-span-2">
-          <p className="label mb-1 text-[11px] text-brick-text">Hodí se k tomu</p>
+          <p className="mb-1 text-eyebrow uppercase text-muted">Hodí se k tomu</p>
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {suggestions.map((p) => (
-              <li key={p.slug} className="flex items-center gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-3">
+              <li key={p.slug} className="flex items-center gap-3 rounded-card border border-line bg-white p-3 shadow-card">
                 <div className="w-16 shrink-0">
-                  <ProductImage product={p} sizes="64px" />
+                  <ProductImage product={p} sizes="64px" className="h-16" />
                 </div>
                 <div className="min-w-0 flex-1 text-sm">
                   <Link href={`/produkt/${p.slug}`} className="font-semibold hover:underline">
@@ -138,7 +132,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
                   <p className="text-muted">
                     {formatWeight(p.weightGrams)} · {formatPrice(p.priceCzk)}
                   </p>
-                  <button type="button" onClick={() => add(p.slug)} className="label mt-1 text-[11px] text-green hover:underline">
+                  <button type="button" onClick={() => add(p.slug)} className="mt-1 text-small font-semibold text-brick-text hover:underline">
                     Přidat
                   </button>
                 </div>
@@ -151,16 +145,3 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
   );
 }
 
-function QtyButton({ label, onClick, disabled = false, children }: { label: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-control border border-muted bg-paper text-green hover:bg-cream disabled:opacity-40"
-    >
-      {children}
-    </button>
-  );
-}

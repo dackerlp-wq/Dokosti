@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
-import { Section, SectionHeading } from "@/components/ui/section";
+import { CreditCard, Landmark, Snowflake, Store, Truck, Wallet, type LucideIcon } from "lucide-react";
+import { IconTile } from "@/components/ui/icon-tile";
+import { PageIntro } from "@/components/ui/page-intro";
+import { Section, SectionHeader } from "@/components/ui/section";
+import { StepDisc } from "@/components/ui/field";
 import { formatPrice } from "@/lib/format";
-import { DAY_NAMES } from "@/lib/settings";
-import { getSettings } from "@/lib/settings";
-import { paymentMethods, shippingMethods } from "@/lib/shipping";
+import { DAY_NAMES, getSettings } from "@/lib/settings";
+import { paymentMethods, type PaymentId, type ShippingId, shippingMethods } from "@/lib/shipping";
 
 export const metadata: Metadata = {
   title: "Doprava a platba",
   description: "Osobní odběr v Kladně, rozvoz po okolí a chlazený přepravce po celé ČR.",
 };
+
+const SHIPPING_ICON: Record<ShippingId, LucideIcon> = { odber: Store, rozvoz: Truck, prepravce: Snowflake };
+const PAYMENT_ICON: Record<PaymentId, LucideIcon> = { karta: CreditCard, prevod: Landmark, hotove: Wallet };
+
+const AFTER = [
+  "Balík rozbalte hned a krmivo dejte do mrazáku. Suchý led nechte odpařit venku, neberte ho do ruky.",
+  "Lehce namrzlé okraje jsou v pořádku. Rozmražené a teplé krmivo ne, v tom případě nám zavolejte.",
+  "Krmivo, které chcete použít, rozmrazujte v lednici, ne na lince.",
+];
 
 export default async function ShippingPage() {
   const settings = await getSettings();
@@ -17,54 +29,48 @@ export default async function ShippingPage() {
   const rozvozDny = settings.shipping.rozvoz.days.map((d) => DAY_NAMES[d]).join(" a ");
   return (
     <>
-      <div className="container-dk pt-6 md:pt-10">
-        <p className="label mb-2 text-brick-text">Doručení</p>
-        <h1>Mražené dovezeme mražené</h1>
-        <p className="mt-2 max-w-2xl text-muted">
-          Syrové krmivo nesmí cestou rozmrznout. Proto nejde poslat běžným balíkem ani na výdejní místo. Máme tři
-          cesty, jak ho dostat k vám.
-        </p>
-      </div>
+      <PageIntro eyebrow="Doručení" title="Mražené dovezeme mražené">
+        <p>Syrové krmivo nesmí cestou rozmrznout. Proto nejde poslat běžným balíkem ani na výdejní místo. Máme tři cesty, jak ho dostat k vám.</p>
+      </PageIntro>
 
-      <Section tone="cream">
-        <div className="grid gap-4 md:grid-cols-3">
+      <Section tone="paper">
+        <div className="grid gap-x-5 gap-y-7.5 md:grid-cols-3">
           {SHIPPING.map((s) => (
-            <div key={s.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-              <h2 className="text-[19px]">{s.name}</h2>
-              <p className="mt-1 text-[19px] font-semibold">
-                {s.priceCzk === 0 ? "zdarma" : formatPrice(s.priceCzk)}
-              </p>
-              <p className="mt-2 text-sm text-muted">
-                {s.description}
-                {s.id === "rozvoz" && ` Jezdíme ${rozvozDny}, ${settings.shipping.rozvoz.window}.`}
-              </p>
-              <ul className="mt-3 space-y-1 text-xs text-muted">
-                {s.minOrderCzk > 0 && <li>Minimální objednávka {formatPrice(s.minOrderCzk)}.</li>}
-                {s.freeFromCzk && <li>Zdarma od {formatPrice(s.freeFromCzk)}.</li>}
-              </ul>
-            </div>
+            <IconTile
+              key={s.id}
+              icon={SHIPPING_ICON[s.id]}
+              title={s.name}
+              text={`${s.description}${s.id === "rozvoz" ? ` Jezdíme ${rozvozDny}, ${settings.shipping.rozvoz.window}.` : ""}`}
+              action={
+                <p className="text-small">
+                  <span className="text-price text-green">{s.priceCzk === 0 ? "zdarma" : formatPrice(s.priceCzk)}</span>
+                  {s.minOrderCzk > 0 && <span className="block">Minimální objednávka {formatPrice(s.minOrderCzk)}.</span>}
+                  {s.freeFromCzk && <span className="block">Zdarma od {formatPrice(s.freeFromCzk)}.</span>}
+                </p>
+              }
+            />
+          ))}
+        </div>
+      </Section>
+
+      <Section>
+        <SectionHeader eyebrow="Platba" title="Jak zaplatit" />
+        <div className="grid gap-x-5 gap-y-7.5 md:grid-cols-3">
+          {PAYMENT.map((p) => (
+            <IconTile key={p.id} icon={PAYMENT_ICON[p.id]} title={p.name} text={p.description} />
           ))}
         </div>
       </Section>
 
       <Section tone="paper">
-        <SectionHeading eyebrow="Platba" title="Jak zaplatit" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {PAYMENT.map((p) => (
-            <div key={p.id} className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
-              <h3>{p.name}</h3>
-              <p className="mt-1 text-sm text-muted">{p.description}</p>
-            </div>
+        <SectionHeader eyebrow="Po doručení" title="Co s balíkem" />
+        <ol className="mx-auto grid max-w-text gap-5">
+          {AFTER.map((text, i) => (
+            <li key={text} className="flex items-start gap-5">
+              <StepDisc n={i + 1} />
+              <p className="pt-1.5">{text}</p>
+            </li>
           ))}
-        </div>
-      </Section>
-
-      <Section tone="cream">
-        <SectionHeading eyebrow="Po doručení" title="Co s balíkem" />
-        <ol className="max-w-2xl list-decimal space-y-2 pl-5 text-sm text-muted">
-          <li>Balík rozbalte hned a krmivo dejte do mrazáku. Suchý led nechte odpařit venku, neberte ho do ruky.</li>
-          <li>Lehce namrzlé okraje jsou v pořádku. Rozmražené a teplé krmivo ne, v tom případě nám zavolejte.</li>
-          <li>Krmivo, které chcete použít, rozmrazujte v lednici, ne na lince.</li>
         </ol>
       </Section>
     </>

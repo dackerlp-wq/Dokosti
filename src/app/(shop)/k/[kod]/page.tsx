@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForms } from "@/components/account/auth-forms";
 import { ClaimCardButton } from "@/components/account/claim-card";
 import { RegisterForm } from "@/components/account/register-form";
+import { ButtonLink } from "@/components/ui/button";
+import { PageIntro } from "@/components/ui/page-intro";
 import { type CardState, normalizeCardCode } from "@/lib/cards";
 import { getCustomerUser, signedInWithoutClub } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
@@ -29,27 +30,23 @@ export default async function CardPage({ params, searchParams }: Props) {
   const who = card.state === "prirazena" ? card.initials : "";
   const dot = who.endsWith(".") ? "" : ".";
   const head = (title: string, text?: string) => (
-    <div className="max-w-2xl">
-      <p className="label text-brick-text">
-        Věrnostní karta <span className="font-mono">{code}</span>
-      </p>
-      <h1 className="mt-1">{title}</h1>
-      {text && <p className="mt-2 text-muted">{text}</p>}
-    </div>
+    <PageIntro eyebrow={`Věrnostní karta ${code}`} title={title}>
+      {text && <p>{text}</p>}
+    </PageIntro>
   );
-  const wrap = (children: React.ReactNode) => <div className="container-dk py-6 md:py-10">{children}</div>;
+  const wrap = (children: React.ReactNode) => <div className="pb-10 md:pb-15 [&>*:not(header)]:mx-auto [&>*:not(header)]:max-w-[560px] [&>*:not(header)]:px-5">{children}</div>;
 
   if (card.state === "neplatna" || card.state === "blokovana") {
     return wrap(
       <>
         {head(card.state === "blokovana" ? "Karta je zablokovaná" : "Kartu neznáme", card.state === "blokovana" ? "Tuto kartu jsme na žádost majitele zablokovali. Novou vám dáme v prodejně." : "Kód na kartě nesedí. Zkuste ho zadat ručně, nebo se registrujte bez karty a kartu vám přiřadíme v prodejně.")}
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link href={isKiosk ? "/registrace?kiosk=1" : "/registrace"} className="label inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+        <div className="flex flex-wrap justify-center gap-5">
+          <ButtonLink href={isKiosk ? "/registrace?kiosk=1" : "/registrace"} variant="action" size="md">
             Registrace bez karty
-          </Link>
-          <Link href="/kontakt" className="label inline-flex min-h-10 items-center rounded-[var(--radius-control)] border-2 border-green px-4 text-green">
+          </ButtonLink>
+          <ButtonLink href="/kontakt" variant="secondary" size="md">
             Kontakt
-          </Link>
+          </ButtonLink>
         </div>
       </>,
     );
@@ -63,10 +60,10 @@ export default async function CardPage({ params, searchParams }: Props) {
       return wrap(
         <>
           {head("Karta patří jinému účtu", `Karta je připojená k účtu ${card.initials || "jiného zákazníka"}. Pokud je vaše, ozvěte se nám a spojíme to ručně.`)}
-          <div className="mt-5">
-            <Link href="/ucet" className="label inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+          <div className="text-center">
+            <ButtonLink href="/ucet" size="md">
               Můj účet
-            </Link>
+            </ButtonLink>
           </div>
         </>,
       );
@@ -76,7 +73,7 @@ export default async function CardPage({ params, searchParams }: Props) {
       return wrap(
         <>
           {head("Dokončete registraci s kartou", "Účet máte, ještě ho zapíšeme do klubu a připojíme kartu.")}
-          <div className="mt-6">
+          <div>
             <RegisterForm cardCode={code} kiosk={false} club={settings.club} account={account} ownerInitials={card.state === "prirazena" ? card.initials : undefined} />
           </div>
         </>,
@@ -85,7 +82,7 @@ export default async function CardPage({ params, searchParams }: Props) {
     return wrap(
       <>
         {head("Připojit kartu k účtu", card.state === "prirazena" ? `Karta je vedená na jméno ${who}${dot} Po připojení se Kostičky z prodejny spojí s vaším účtem.` : "Karta je volná. Po připojení sbíráte Kostičky u pultu i na webu na jeden účet.")}
-        <div className="mt-5">
+        <div>
           <ClaimCardButton code={code} />
         </div>
       </>,
@@ -96,7 +93,7 @@ export default async function CardPage({ params, searchParams }: Props) {
     return wrap(
       <>
         {head("Přihlaste se", `Karta je připojená k účtu ${card.initials || ""}. Po přihlášení jste rovnou v účtu.`)}
-        <div className="mt-6">
+        <div>
           <AuthForms next="/ucet" />
         </div>
       </>,
@@ -112,7 +109,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           ? `Kartu jsme u pultu vydali na jméno ${who}${dot} Zadejte e-mail, pošleme kód a účet bude hotový${settings.club.registrationPoints > 0 ? ` i s ${settings.club.registrationPoints} Kostičkami` : ""}.`
           : `Karta je připravená. Jméno, e-mail, kód z e-mailu, a máte účet s kartou${settings.club.registrationPoints > 0 ? ` a ${settings.club.registrationPoints} Kostičkami` : ""}.`,
       )}
-      <div className="mt-6">
+      <div>
         <RegisterForm cardCode={code} kiosk={isKiosk} club={settings.club} ownerInitials={assigned ? card.initials : undefined} />
       </div>
     </>,

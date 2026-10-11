@@ -9,6 +9,7 @@ import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { savePetProfile } from "@/app/(shop)/ucet/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
+import { chipClass } from "@/components/ui/field";
 import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
@@ -198,8 +199,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     });
   }
 
-  const box = "rounded-[var(--radius-card)] border border-line bg-paper p-5 md:p-6";
-  const opt = (on: boolean) => `flex w-full items-center gap-3 rounded-[var(--radius-card)] border-2 p-4 text-left ${on ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`;
+  const box = "rounded-card border border-line bg-white p-5 md:p-6";
+  const opt = (on: boolean) => `flex w-full items-center gap-3 rounded-card border-2 p-4 text-left ${on ? "border-green bg-green text-cream" : "border-muted bg-white text-green hover:bg-paper"}`;
   const sub = (on: boolean) => `block text-xs ${on ? "text-cream/80" : "text-muted"}`;
   const canNext = step === 1 ? pet.name.trim().length > 0 : step === 2 ? Number(ageValue) > 0 : step === 3 ? pet.weightKg > 0 : true;
 
@@ -213,7 +214,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         ) : (
           <span />
         )}
-        <span className="label text-[11px] text-muted">
+        <span className="text-eyebrow uppercase text-muted">
           {step} / {total} · {STEPS[step - 1]}
         </span>
       </div>
@@ -231,11 +232,11 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         >
           <h2 className="text-[26px]">Pro koho plán děláme?</h2>
           {pets.length > 0 && (
-            <div className="rounded-[var(--radius-control)] border border-line bg-cream p-3 text-sm">
-              <p className="label mb-2 text-[11px] text-muted">Z vašeho účtu</p>
+            <div className="rounded-control border border-line bg-white p-3 text-sm">
+              <p className="mb-2 text-label text-green">Z vašeho účtu</p>
               <div className="flex flex-wrap gap-2">
                 {pets.map((p) => (
-                  <button key={p.id} type="button" onClick={() => pickPet(p)} className="label inline-flex min-h-9 items-center rounded-full border border-green px-3 text-[11px] text-green hover:bg-green hover:text-cream">
+                  <button key={p.id} type="button" onClick={() => pickPet(p)} className={chipClass(false)}>
                     Plán pro {petName(p.name, p.species, p.sex, "acc")}
                   </button>
                 ))}
@@ -257,7 +258,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
             ))}
           </div>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">
+            <span className="mb-1 block text-label text-green">
               Jméno <span className="text-brick-text">*</span> <span className="normal-case tracking-normal">(povinné, plán děláme na jméno)</span>
             </span>
             <input value={pet.name} onChange={(e) => setPet({ ...pet, name: e.target.value })} placeholder={isDog ? "např. Rex" : "např. Micka"} required autoFocus aria-required="true" />
@@ -281,7 +282,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           <h2 className="text-[26px]">Kolik je {firstDat}?</h2>
           <div className="flex gap-3">
             <label className="block flex-1">
-              <span className="label mb-1 block text-[11px] text-muted">Věk</span>
+              <span className="mb-1 block text-label text-green">Věk</span>
               <input type="number" inputMode="numeric" min={1} max={ageUnit === "mesice" ? 24 : 25} value={ageValue} onChange={(e) => setAgeValue(e.target.value)} required autoFocus placeholder={ageUnit === "mesice" ? "např. 4" : "např. 3"} />
             </label>
             <div className="flex items-end gap-2">
@@ -291,7 +292,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                   ["mesice", "měsíců"],
                 ] as [AgeUnit, string][]
               ).map(([u, label]) => (
-                <button key={u} type="button" onClick={() => setAgeUnit(u)} aria-pressed={ageUnit === u} className={`min-h-12 rounded-[var(--radius-control)] border px-4 text-sm ${ageUnit === u ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
+                <button key={u} type="button" onClick={() => setAgeUnit(u)} aria-pressed={ageUnit === u} className={`min-h-12 rounded-control border px-4 text-sm ${ageUnit === u ? "border-green bg-green text-cream" : "border-muted bg-white text-green hover:bg-paper"}`}>
                   {label}
                 </button>
               ))}
@@ -308,7 +309,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           </p>
           {stage === "mlade" && isDog && (
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Plemeno (kvůli dospělé váze, nepovinné)</span>
+              <span className="mb-1 block text-label text-green">Plemeno (kvůli dospělé váze, nepovinné)</span>
               <select value={pet.breed} onChange={(e) => setPet({ ...pet, breed: e.target.value })}>
                 <option value="">Nevím / kříženec</option>
                 {BREEDS.map((b) => (
@@ -320,8 +321,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
             </label>
           )}
           {pet.sex === "samice" && stage !== "mlade" && (
-            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
-              <p className="label mb-2 text-[11px] text-muted">Je {first} březí nebo kojí?</p>
+            <div className="rounded-card border border-line bg-white p-4">
+              <p className="mb-2 text-label text-green">Je {first} březí nebo kojí?</p>
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
@@ -337,7 +338,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               </div>
               {pet.reproduction === "brezi" && (
                 <label className="mt-3 block">
-                  <span className="label mb-1 block text-[11px] text-muted">Týden březosti (1–9)</span>
+                  <span className="mb-1 block text-label text-green">Týden březosti (1–9)</span>
                   <input type="number" inputMode="numeric" min={1} max={9} value={pet.pregnancyWeek ?? ""} onChange={(e) => setPet({ ...pet, pregnancyWeek: Number(e.target.value) || undefined })} placeholder="např. 6" />
                 </label>
               )}
@@ -360,7 +361,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         >
           <h2 className="text-[26px]">Kolik {first} váží a jak vypadá?</h2>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Aktuální váha (kg)</span>
+            <span className="mb-1 block text-label text-green">Aktuální váha (kg)</span>
             <input type="number" inputMode="decimal" min={0.3} max={120} step={0.1} value={pet.weightKg || ""} onChange={(e) => setPet({ ...pet, weightKg: Number(e.target.value) || 0 })} required autoFocus placeholder="např. 20" />
           </label>
           <div className="grid gap-2">
@@ -394,7 +395,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                 </button>
               ))}
           </div>
-          <label className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-line p-4 text-sm">
+          <label className="flex items-center justify-between gap-3 rounded-card border border-line p-4 text-sm">
             <span>{first} je {pet.sex === "samice" ? "kastrovaná" : "kastrovaný"}</span>
             <input type="checkbox" checked={pet.neutered} onChange={(e) => setPet({ ...pet, neutered: e.target.checked })} className="h-5 w-5 min-h-0 accent-green" />
           </label>
@@ -431,8 +432,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
             ))}
           </div>
           {(pet.feedingNow === "granule" || pet.feedingNow === "mix") && (
-            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-4">
-              <p className="label mb-2 text-[11px] text-muted">Kolik syrového chcete krmit</p>
+            <div className="rounded-card border border-line bg-white p-4">
+              <p className="mb-2 text-label text-green">Kolik syrového chcete krmit</p>
               <div className="grid grid-cols-2 gap-2">
                 {(
                   [
@@ -479,8 +480,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               const on = pet.exclude.includes(m);
               const img = meatImages[m];
               return (
-                <button key={m} type="button" onClick={() => setPet({ ...pet, exclude: on ? pet.exclude.filter((x) => x !== m) : [...pet.exclude, m] })} aria-pressed={on} className={`flex items-center gap-2 rounded-[var(--radius-card)] border-2 p-2 text-left text-sm ${on ? "border-brick bg-paper line-through decoration-brick" : "border-line bg-paper hover:border-green"}`}>
-                  <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-line bg-cream">{img && <Image src={img} alt="" fill sizes="40px" className="object-contain p-1" />}</span>
+                <button key={m} type="button" onClick={() => setPet({ ...pet, exclude: on ? pet.exclude.filter((x) => x !== m) : [...pet.exclude, m] })} aria-pressed={on} className={`flex items-center gap-2 rounded-card border-2 p-2 text-left text-sm ${on ? "border-brick bg-paper line-through decoration-brick" : "border-muted bg-white text-green hover:bg-paper"}`}>
+                  <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-line bg-white">{img && <Image src={img} alt="" fill sizes="40px" className="object-contain p-1" />}</span>
                   <span className="capitalize">{MEAT_LABEL[m]}</span>
                   {on && <Check strokeWidth={1.75} className="ml-auto h-4 w-4 text-brick-text" />}
                 </button>
@@ -540,22 +541,22 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                 {club.registrationPoints > 0 && `, za registraci ${club.registrationPoints}`}.
               </p>
               <label className="block">
-                <span className="label mb-1 block text-[11px] text-muted">Vaše jméno a příjmení</span>
+                <span className="mb-1 block text-label text-green">Vaše jméno a příjmení</span>
                 <input value={owner.name} onChange={(e) => setOwner({ ...owner, name: e.target.value })} required autoComplete="name" autoFocus />
               </label>
               <label className="block">
-                <span className="label mb-1 block text-[11px] text-muted">E-mail</span>
+                <span className="mb-1 block text-label text-green">E-mail</span>
                 <input type="email" value={owner.email} onChange={(e) => setOwner({ ...owner, email: e.target.value })} required autoComplete="email" />
               </label>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={owner.terms} onChange={(e) => setOwner({ ...owner, terms: e.target.checked })} required className="mt-0.5 h-4 min-h-0 w-4 accent-green" />
                 <span>
                   Souhlasím s{" "}
-                  <Link href="/obchodni-podminky" target="_blank" className="text-green underline">
+                  <Link href="/obchodni-podminky" target="_blank" className="text-brick-text underline">
                     obchodními podmínkami
                   </Link>{" "}
                   a beru na vědomí{" "}
-                  <Link href="/ochrana-udaju" target="_blank" className="text-green underline">
+                  <Link href="/ochrana-udaju" target="_blank" className="text-brick-text underline">
                     zpracování osobních údajů
                   </Link>
                   .
@@ -575,7 +576,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               </Button>
               <p className="text-sm text-muted">
                 Už máte účet?{" "}
-                <Link href="/ucet/prihlaseni?next=/krmeni-na-miru" className="text-green underline">
+                <Link href="/ucet/prihlaseni?next=/krmeni-na-miru" className="text-brick-text underline">
                   Přihlásit se
                 </Link>
               </p>
@@ -601,7 +602,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                 {pending ? "Ověřuji…" : "Dokončit a jít k dodání"}
               </Button>
               <div className="flex items-center justify-between text-sm">
-                <button type="button" onClick={sendCode} disabled={pending || cooldown > 0} className="text-green underline disabled:no-underline disabled:opacity-60">
+                <button type="button" onClick={sendCode} disabled={pending || cooldown > 0} className="text-brick-text underline disabled:no-underline disabled:opacity-60">
                   {cooldown > 0 ? `Poslat znovu (${cooldown} s)` : "Poslat kód znovu"}
                 </button>
                 <button type="button" onClick={() => setCodeSent(false)} className="text-muted hover:underline">
@@ -671,14 +672,14 @@ function PlanStep({
   const totalKg = plan.items.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
   const shipFree = shipping.freeFromCzk !== null && plan.totalCzk >= shipping.freeFromCzk;
   const bonusPts = subscription.pointsBonusPct > 0 && loyalty.enabled ? Math.round(((plan.totalCzk * subscription.pointsBonusPct) / 100) * (loyalty.redeemStep / loyalty.redeemValueCzk)) : 0;
-  const seg = (on: boolean) => `flex-1 rounded-[var(--radius-card)] border-2 p-3 text-left ${on ? "border-green" : "border-line hover:border-green"}`;
+  const seg = (on: boolean) => `flex-1 rounded-card border-2 p-3 text-left ${on ? "border-green" : "border-line hover:border-green"}`;
   const removedItems = plan.pool.filter((p) => removed.includes(p.slug));
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
       <div className="space-y-4">
         <div>
-          <p className="label text-brick-text">Plán pro {firstAcc}</p>
+          <p className="text-eyebrow uppercase text-muted">Plán pro {firstAcc}</p>
           <h2 className="mt-1 text-[30px] leading-tight md:text-[34px]">
             {pet.name} potřebuje {r.dailyGrams} g {rawShare < 100 ? "syrového" : "syrové stravy"}
             {rawShare < 100 && r.kibbleGrams ? ` a ${r.kibbleGrams} g granulí` : ""} denně
@@ -690,7 +691,7 @@ function PlanStep({
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper">
+        <div className="overflow-hidden rounded-card border border-line bg-white">
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
             <h3 className="text-[17px]">Dodávka na {days === 14 ? "2 týdny" : "4 týdny"}</h3>
             <span className="text-xs text-muted">{totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg · {days === 14 ? "v mrazáku zhruba jedna police" : "větší mrazák"}</span>
@@ -724,7 +725,7 @@ function PlanStep({
                         ))}
                       </select>
                     )}
-                    <button type="button" onClick={() => setRemoved([...removed, i.product.slug])} className="text-green underline">
+                    <button type="button" onClick={() => setRemoved([...removed, i.product.slug])} className="text-brick-text underline">
                       odebrat
                     </button>
                   </span>
@@ -735,7 +736,7 @@ function PlanStep({
           {removedItems.length > 0 && (
             <p className="border-t border-line px-4 py-2 text-xs text-muted">
               Odebráno: {removedItems.map((p) => productName(p)).join(", ")}.{" "}
-              <button type="button" onClick={() => setRemoved([])} className="text-green underline">
+              <button type="button" onClick={() => setRemoved([])} className="text-brick-text underline">
                 vrátit
               </button>
             </p>
@@ -752,15 +753,15 @@ function PlanStep({
         )}
       </div>
 
-      <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5 lg:sticky lg:top-4">
-        <p className="label text-[11px] text-muted">Cena za den</p>
+      <aside className="h-fit rounded-card border border-line bg-white p-5 lg:sticky lg:top-4">
+        <p className="text-eyebrow uppercase text-muted">Cena za den</p>
         <p className="text-[44px] font-semibold leading-none">{formatPrice(plan.perDayCzk)}</p>
         <p className="mt-1 text-xs text-muted">
           {formatPrice(plan.totalCzk)} za dodávku na {days === 14 ? "2 týdny" : "4 týdny"}
           {delivery === "rozvoz" ? (shipFree ? " · rozvoz zdarma" : ` · rozvoz ${formatPrice(shipping.rozvozPriceCzk)}`) : " · odběr v prodejně zdarma"}
         </p>
 
-        <p className="label mt-4 mb-1.5 text-[11px] text-muted">Jak často</p>
+        <p className="mt-4 mb-1.5 text-label text-green">Jak často</p>
         <div className="flex gap-2">
           {([14, 28] as Days[]).map((d) => (
             <button key={d} type="button" onClick={() => { setDays(d); setOneTime(false); }} aria-pressed={days === d && !oneTime} className={seg(days === d && !oneTime)}>
@@ -774,7 +775,7 @@ function PlanStep({
           <span className="block text-xs text-muted">balík na {days === 14 ? "2 týdny" : "4 týdny"}, bez dalších dodávek</span>
         </button>
 
-        <p className="label mt-4 mb-1.5 text-[11px] text-muted">Dodání</p>
+        <p className="mt-4 mb-1.5 text-label text-green">Dodání</p>
         <div className="flex gap-2">
           {shipping.rozvoz && (
             <button type="button" onClick={() => setDelivery("rozvoz")} aria-pressed={delivery === "rozvoz"} className={seg(delivery === "rozvoz")}>

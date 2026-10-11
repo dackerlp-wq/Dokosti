@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PetEditor, PetRowEditable } from "@/components/account/pet-editor";
 import { ProfileForm } from "@/components/account/profile-form";
+import { ButtonLink } from "@/components/ui/button";
+import { PageIntro } from "@/components/ui/page-intro";
 import { formatDate, formatDay, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow, type PetDbRow } from "@/lib/admin";
 import { MEAT_LABEL, type Activity, type Condition, type MeatKey } from "@/lib/barf";
 import { type FeedingNow, type PetProfile, petSummary } from "@/lib/club";
@@ -68,38 +70,35 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { loyalty: L } = settings;
 
   return (
-    <div className="container-dk py-6 md:py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1>Můj účet</h1>
-          <p className="mt-1 text-sm text-muted">{user.email}</p>
-        </div>
-        <form action={customerLogout} className="flex items-center gap-4">
-          <Link href="/ucet/nove-heslo" className="label text-[11px] text-green hover:underline">
+    <>
+      <PageIntro eyebrow={user.email} title="Můj účet">
+        <form action={customerLogout} className="flex flex-wrap items-center justify-center gap-5 text-small font-semibold">
+          <Link href="/ucet/nove-heslo" className="text-green hover:underline">
             Nastavit heslo
           </Link>
-          <button type="submit" className="label text-[11px] text-brick-text hover:underline">
+          <button type="submit" className="text-brick-text hover:underline">
             Odhlásit se
           </button>
         </form>
-      </div>
+      </PageIntro>
+    <div className="mx-auto max-w-narrow px-5 pb-10 md:pb-15">
 
       {!c && !justDone?.done && (
-        <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
-          <p className="label text-brick-text">Dokončete registraci do klubu</p>
-          <p className="mt-1 text-sm">
+        <div className="rounded-card bg-paper p-5">
+          <p className="text-eyebrow uppercase text-muted">Dokončete registraci do klubu</p>
+          <p className="mt-1">
             Účet máte, ale ještě není v klubu DoKosti. Doplňte telefon, případně kartu z prodejny a profil zvířete
             {settings.club.registrationPoints > 0 ? ` a získáte ${settings.club.registrationPoints} Kostiček` : ""}.
           </p>
-          <Link href="/registrace" className="label mt-3 inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+          <ButtonLink href="/registrace" variant="action" size="md" className="mt-3.5">
             Dokončit registraci
-          </Link>
+          </ButtonLink>
         </div>
       )}
       {(vitejte === "1" || justDone?.done) && (
-        <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
-          <p className="label text-brick-text">Vítejte v klubu</p>
-          <p className="mt-1 text-sm">
+        <div className="mt-5 rounded-card bg-paper p-5">
+          <p className="text-eyebrow uppercase text-muted">Vítejte v klubu</p>
+          <p className="mt-1">
             Účet je propojený s Kostičkami{c?.card_code ? ` i s kartou ${c.card_code}` : ""}.
             {justDone?.awarded ? ` Připsali jsme ${justDone.awarded} Kostiček.` : ""}
             {!c?.card_code && " Kartu z prodejny připojíte načtením QR kódu na ní, nebo vám ji přiřadí obsluha u pultu."}
@@ -108,40 +107,40 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </div>
       )}
       {karta === "1" && c?.card_code && (
-        <div className="mt-5 rounded-[var(--radius-card)] border border-green bg-paper p-4">
-          <p className="label text-brick-text">Karta připojena</p>
-          <p className="mt-1 text-sm">Karta {c.card_code} je připojená k vašemu účtu. Kostičky z prodejny i z webu se sbírají na jednom místě.</p>
+        <div className="mt-5 rounded-card bg-paper p-5">
+          <p className="text-eyebrow uppercase text-muted">Karta připojena</p>
+          <p className="mt-1">Karta {c.card_code} je připojená k vašemu účtu. Kostičky z prodejny i z webu se sbírají na jednom místě.</p>
         </div>
       )}
 
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <p className="label text-[11px] text-muted">Kostičky</p>
-          <p className="text-[28px] font-semibold">{c?.points ?? 0}</p>
+      <div className="mt-5 grid gap-5 md:grid-cols-3">
+        <div className="rounded-card border border-line bg-white p-5 shadow-card">
+          <p className="text-eyebrow uppercase text-muted">Kostičky</p>
+          <p className="text-price-lg text-green">{c?.points ?? 0}</p>
           {L.enabled && (
-            <p className="text-xs text-muted">
+            <p className="text-small">
               1 za každých {L.czkPerPoint} Kč, {L.redeemStep} = {formatPrice(L.redeemValueCzk)}. Uplatníte v pokladně.
             </p>
           )}
         </div>
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <p className="label text-[11px] text-muted">Objednávek</p>
-          <p className="text-[28px] font-semibold">{c?.orders_count ?? list.length}</p>
-          <p className="text-xs text-muted">celkem {formatPrice(c?.total_spent_czk ?? 0)}</p>
+        <div className="rounded-card border border-line bg-white p-5 shadow-card">
+          <p className="text-eyebrow uppercase text-muted">Objednávek</p>
+          <p className="text-price-lg text-green">{c?.orders_count ?? list.length}</p>
+          <p className="text-small">celkem {formatPrice(c?.total_spent_czk ?? 0)}</p>
         </div>
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-          <p className="label text-[11px] text-muted">Kontakt</p>
+        <div className="rounded-card border border-line bg-white p-5 text-small shadow-card">
+          <p className="text-eyebrow uppercase text-muted">Kontakt</p>
           {c ? (
             <>
-              <p>{c.name}</p>
-              <p className="text-muted">{c.phone}</p>
+              <p className="font-semibold text-ink">{c.name}</p>
+              <p>{c.phone}</p>
               {c.street && (
                 <p className="text-muted">
                   {c.street}, {c.zip} {c.city}
                 </p>
               )}
               {c.card_code && <p className="mt-1 text-xs text-muted">Karta {c.card_code}</p>}
-              <a href="#profil" className="mt-1 inline-block text-xs text-green underline">
+              <a href="#profil" className="mt-1 inline-block text-brick-text underline">
                 Upravit údaje a souhlasy
               </a>
             </>
@@ -151,18 +150,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </div>
       </div>
 
-      <h2 className="mt-8 mb-3 text-[22px]">Objednávky</h2>
+      <h2 className="mt-10 mb-3.5 text-heading-lg text-green">Objednávky</h2>
       {list.length === 0 ? (
         <p className="text-muted">
           Zatím žádné.{" "}
-          <Link href="/rada/barf" className="text-green underline">
+          <Link href="/rada/barf" className="text-brick-text underline">
             Vybrat krmivo
           </Link>
         </p>
       ) : (
-        <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper">
+        <ul className="divide-y divide-line rounded-card border border-line bg-white">
           {list.map((o) => (
-            <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
+            <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-5 text-small">
               <div>
                 <Link href={`/ucet/objednavky/${o.id}`} className="font-semibold text-green hover:underline">
                   {o.order_number}
@@ -174,7 +173,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold">{formatPrice(o.total_czk)}</span>
+                <span className="text-price text-green">{formatPrice(o.total_czk)}</span>
                 <StatusBadge status={o.status} />
               </div>
             </li>
@@ -182,18 +181,18 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </ul>
       )}
 
-      <h2 className="mt-8 mb-3 text-[22px]">Můj plán</h2>
+      <h2 className="mt-10 mb-3.5 text-heading-lg text-green">Můj plán</h2>
       {subList.length === 0 && (
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+        <div className="rounded-card bg-paper p-5">
           <p>Zatím žádné pravidelné dodávky. Sestavte plán pro {petList.length ? petList.map((p) => p.name).join(" a ") : "svého psa nebo kočku"}: dávka, složení dodávky a cena za den.</p>
-          <Link href="/krmeni-na-miru" className="label mt-3 inline-flex min-h-10 items-center rounded-[var(--radius-control)] bg-green px-4 text-cream">
+          <ButtonLink href="/krmeni-na-miru" size="md" className="mt-3.5">
             Sestavit plán
-          </Link>
+          </ButtonLink>
         </div>
       )}
       {subList.length > 0 && (
         <>
-          <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+          <ul className="divide-y divide-line rounded-card border border-line bg-white text-small">
             {subList.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                 <span>
@@ -204,10 +203,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   </span>
                 </span>
                 <span className="flex gap-3">
-                  <Link href={`/predplatne/${s.token}`} className="text-green underline">
+                  <Link href={`/predplatne/${s.token}`} className="text-brick-text underline">
                     Spravovat
                   </Link>
-                  <Link href="/krmeni-na-miru" className="text-green underline">
+                  <Link href="/krmeni-na-miru" className="text-brick-text underline">
                     Přepočítat plán
                   </Link>
                 </span>
@@ -217,13 +216,13 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </>
       )}
 
-      <h2 className="mt-8 mb-3 text-[22px]">Moje zvířata</h2>
-      <p className="mb-3 text-sm text-muted">
+      <h2 className="mt-10 mb-3.5 text-heading-lg text-green">Moje zvířata</h2>
+      <p className="mb-3.5 text-small">
         Z profilu počítáme denní dávku a doporučujeme krmivo.
         {settings.club.petPoints > 0 && ` Za úplný profil (jméno, váha, datum narození) připíšeme ${settings.club.petPoints} Kostiček, nejvýš za ${settings.club.petPointsMax} zvířata.`}
       </p>
       {petList.length > 0 && (
-        <ul className="mb-3 divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper">
+        <ul className="mb-3 divide-y divide-line rounded-card border border-line bg-white">
           {petList.map((p) => (
             <PetRowEditable
               key={p.id}
@@ -247,15 +246,15 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
       {c && (
         <>
-          <h2 id="profil" className="mt-8 mb-3 scroll-mt-4 text-[22px]">Moje údaje a souhlasy</h2>
+          <h2 id="profil" className="mt-10 mb-3.5 scroll-mt-4 text-heading-lg text-green">Moje údaje a souhlasy</h2>
           <ProfileForm c={c} />
         </>
       )}
 
       {points.length > 0 && (
         <>
-          <h2 className="mt-8 mb-3 text-[22px]">Historie Kostiček</h2>
-          <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+          <h2 className="mt-10 mb-3.5 text-heading-lg text-green">Historie Kostiček</h2>
+          <ul className="divide-y divide-line rounded-card border border-line bg-white text-small">
             {points.map((t) => (
               <li key={t.id} className="flex justify-between gap-3 p-3">
                 <span className="text-muted">
@@ -271,5 +270,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </>
       )}
     </div>
+    </>
   );
 }

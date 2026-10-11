@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlanWizard } from "@/components/plan/plan-wizard";
+import { PageIntro } from "@/components/ui/page-intro";
 import { type Activity, type Condition, type MeatKey } from "@/lib/barf";
 import { MEATS } from "@/lib/catalog";
 import { type FeedingNow, type PetProfile } from "@/lib/club";
@@ -53,12 +54,11 @@ export default async function PlanWizardPage() {
   const s = settings.shipping;
 
   return (
-    <div className="container-dk py-6 md:py-10">
-      <div className="mx-auto mb-6 max-w-xl text-center">
-        <p className="label text-brick-text">Krmení na míru</p>
-        <h1 className="mt-1">Plán pro vašeho psa nebo kočku</h1>
-        <p className="mt-2 text-muted">Sedm otázek, dvě minuty. Dostanete denní dávku, složení dodávky a cenu za den. Pošleme pravidelně, nebo jen jednou.</p>
-      </div>
+    <>
+      <PageIntro eyebrow="Krmení na míru" title="Plán pro vašeho psa nebo kočku">
+        <p>Sedm otázek, dvě minuty. Dostanete denní dávku, složení dodávky a cenu za den. Pošleme pravidelně, nebo jen jednou.</p>
+      </PageIntro>
+      <div className="mx-auto max-w-site px-5 pb-10 md:pb-15">
       <PlanWizard
         products={products}
         club={settings.club}
@@ -69,6 +69,7 @@ export default async function PlanWizardPage() {
         pets={pets}
         meatImages={meatImages}
       />
-    </div>
+      </div>
+    </>
   );
 }

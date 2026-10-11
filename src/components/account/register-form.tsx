@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from "react";
 import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { GoogleButton, OrDivider } from "@/components/account/google-button";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { fieldInput, fieldLabel } from "@/components/ui/field";
 import type { Settings } from "@/lib/settings";
 
 type Props = {
@@ -82,18 +83,20 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
     setStage({ kind: "done", awarded, name: who, email: mail });
   }
 
-  const box = "max-w-md rounded-[var(--radius-card)] border border-line bg-paper p-5";
+  const box = "rounded-card border border-line bg-white p-5 shadow-card";
 
   if (stage.kind === "done") {
     return (
       <div className={box}>
-        <p className="label text-brick-text">Hotovo</p>
-        <h2 className="mt-1">Vítejte v klubu{stage.name ? `, ${stage.name.split(" ")[0]}` : ""}</h2>
+        <p className="text-eyebrow uppercase text-muted">Hotovo</p>
+        <h2 className="mt-1 font-display text-display-md text-green">Vítejte v klubu{stage.name ? `, ${stage.name.split(" ")[0]}` : ""}</h2>
         <p className="mt-3 text-muted">
           Účet je hotový{stage.awarded > 0 ? `, připsali jsme ${stage.awarded} Kostiček` : ""}. Potvrzení jsme poslali na {stage.email}. Do účtu se dostanete z domova přihlášením odkazem na e-mail.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <ButtonLink href="/registrace?kiosk=1">Další zákazník</ButtonLink>
+          <ButtonLink href="/registrace?kiosk=1" size="md">
+            Další zákazník
+          </ButtonLink>
           <span className="text-xs text-muted">Tablet se sám vrátí na začátek.</span>
         </div>
       </div>
@@ -112,14 +115,14 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         <div className="flex items-start gap-3">
           <MailCheck strokeWidth={1.75} className="mt-0.5 h-6 w-6 shrink-0 text-green" />
           <div>
-            <p className="text-lg font-semibold">Opište kód z e-mailu</p>
+            <p className="text-heading-md text-green">Opište kód z e-mailu</p>
             <p className="mt-1 text-sm">
               Na <strong>{stage.email}</strong> jsme poslali šestimístný kód. Platí několik minut.
             </p>
           </div>
         </div>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Kód z e-mailu</span>
+          <span className="mb-1 block text-label text-green">Kód z e-mailu</span>
           <input
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -129,7 +132,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
             required
             autoFocus
             aria-label="Kód z e-mailu"
-            className="text-center text-2xl tracking-[0.4em]"
+            className="min-h-13.75 text-center text-2xl tracking-[0.4em]"
           />
         </label>
         {error && (
@@ -137,11 +140,11 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
             {error}
           </p>
         )}
-        <Button type="submit" variant="action" className="w-full" disabled={pending || code.length !== 6}>
+        <Button type="submit" variant="action" size="md" className="w-full" disabled={pending || code.length !== 6}>
           {pending ? "Ověřuji…" : "Dokončit registraci"}
         </Button>
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <button type="button" onClick={start} disabled={pending || cooldown > 0} className="text-green underline disabled:no-underline disabled:opacity-60">
+          <button type="button" onClick={start} disabled={pending || cooldown > 0} className="text-brick-text underline disabled:no-underline disabled:opacity-60">
             {cooldown > 0 ? `Poslat znovu (${cooldown} s)` : "Poslat kód znovu"}
           </button>
           <button type="button" onClick={() => setStage({ kind: "form" })} className="text-muted hover:underline">
@@ -175,7 +178,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         </p>
       )}
       <Field label="Jméno a příjmení" value={name} onChange={setName} required={!ownerInitials} autoComplete="name" placeholder={ownerInitials ? `${ownerInitials} (doplňte celé)` : undefined} />
-      <Field label="E-mail" value={email} onChange={setEmail} type="email" required autoComplete="email" hint="přihlašovací" readOnly={Boolean(account)} className={account ? "bg-cream text-muted" : ""} />
+      <Field label="E-mail" value={email} onChange={setEmail} type="email" required autoComplete="email" hint="přihlašovací" readOnly={Boolean(account)} className={account ? "bg-paper text-muted" : ""} />
       {!cardCode && <Field label="Kód věrnostní karty" value={card} onChange={(v) => setCard(v.toUpperCase())} hint="máte-li kartu z prodejny, jinak nechte prázdné" className="uppercase" />}
       {cardCode && (
         <p className="text-sm">
@@ -186,11 +189,11 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} required className="mt-0.5 h-4 min-h-0 w-4 accent-green" />
         <span>
           Souhlasím s{" "}
-          <Link href="/obchodni-podminky" target="_blank" className="text-green underline">
+          <Link href="/obchodni-podminky" target="_blank" className="text-brick-text underline">
             obchodními podmínkami
           </Link>{" "}
           a beru na vědomí{" "}
-          <Link href="/ochrana-udaju" target="_blank" className="text-green underline">
+          <Link href="/ochrana-udaju" target="_blank" className="text-brick-text underline">
             zpracování osobních údajů
           </Link>
           .
@@ -205,7 +208,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
           {error}
         </p>
       )}
-      <Button type="submit" variant="action" className="w-full" disabled={pending || !terms}>
+      <Button type="submit" variant="action" size="md" className="w-full" disabled={pending || !terms}>
         {pending ? "Odesílám…" : account ? "Vstoupit do klubu" : "Poslat kód a dokončit"}
       </Button>
       <p className="text-xs text-muted">
@@ -216,7 +219,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
       {!kiosk && !account && (
         <p className="text-sm text-muted">
           Už máte účet?{" "}
-          <Link href={card ? `/ucet/prihlaseni?next=${encodeURIComponent(`/k/${card}`)}` : "/ucet/prihlaseni"} className="text-green underline">
+          <Link href={card ? `/ucet/prihlaseni?next=${encodeURIComponent(`/k/${card}`)}` : "/ucet/prihlaseni"} className="text-brick-text underline">
             Přihlásit se
           </Link>
         </p>
@@ -228,11 +231,11 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
 function Field({ label, value, onChange, hint, className = "", ...rest }: { label: string; value: string; onChange: (v: string) => void; hint?: string; className?: string } & Omit<React.ComponentProps<"input">, "value" | "onChange">) {
   return (
     <label className="block">
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className={fieldLabel}>
         {label}
-        {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
+        {hint && <span className="ml-1 font-normal text-muted">({hint})</span>}
       </span>
-      <input value={value} onChange={(e) => onChange(e.target.value)} className={className} {...rest} />
+      <input value={value} onChange={(e) => onChange(e.target.value)} className={`${fieldInput} ${className}`} {...rest} />
     </label>
   );
 }

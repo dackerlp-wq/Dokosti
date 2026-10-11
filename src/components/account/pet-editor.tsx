@@ -16,7 +16,7 @@ export function PetEditor({ initial, id, petPoints, onDone }: { initial?: PetPro
 
   if (!open) {
     return (
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+      <Button type="button" variant="secondary" size="md" onClick={() => setOpen(true)}>
         <Plus strokeWidth={1.75} className="h-4 w-4" /> Přidat zvíře
       </Button>
     );
@@ -36,7 +36,7 @@ export function PetEditor({ initial, id, petPoints, onDone }: { initial?: PetPro
           onDone?.();
         });
       }}
-      className="rounded-[var(--radius-card)] border border-line bg-paper p-4"
+      className="rounded-card border border-line bg-white p-5 shadow-card"
     >
       <PetFields pet={pet} onChange={setPet} idPrefix={id ?? "new"} />
       {petPoints > 0 && !id && !petComplete(pet) && <p className="mt-2 text-xs text-muted">Za profil se jménem, váhou a datem narození připíšeme {petPoints} Kostiček.</p>}
@@ -63,10 +63,10 @@ export function PetRowEditable({ pet, id, summary, petPoints, deleteAction }: { 
           <strong>{pet.name}</strong> <span className="text-muted">· {summary}</span>
         </span>
         <span className="flex items-center gap-3">
-          <a href="/kalkulacka" className="text-green underline">
+          <a href="/kalkulacka" className="text-brick-text underline">
             Dávka a doporučení
           </a>
-          <button type="button" onClick={() => setEditing((v) => !v)} className="text-green underline">
+          <button type="button" onClick={() => setEditing((v) => !v)} className="text-brick-text underline">
             {editing ? "Zavřít" : "Upravit"}
           </button>
           {deleteAction}

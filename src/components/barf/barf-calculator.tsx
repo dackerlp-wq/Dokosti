@@ -140,7 +140,7 @@ export function BarfCalculator({
   return (
     <div id="kalkulacka" className="scroll-mt-4 space-y-4">
       {/* 1. Údaje o zvířeti */}
-      <section className="rounded-[var(--radius-card)] border border-line bg-paper p-5 md:p-6" aria-label="Údaje o zvířeti">
+      <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-label="Údaje o zvířeti">
         {!compact && (
           <>
             <h2 className="text-[24px]">Spočítejte si denní dávku</h2>
@@ -151,9 +151,9 @@ export function BarfCalculator({
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
             {savedPets.length > 0 ? (
               <>
-                <span className="label text-[11px]">Uložené profily</span>
+                <span className="text-eyebrow text-muted uppercase">Uložené profily</span>
                 {savedPets.map((p) => (
-                  <button key={p.id} type="button" onClick={() => patch(withDefaults({ ...p.data, id: p.id, name: p.name }))} className="rounded-[var(--radius-control)] border border-line bg-cream px-3 py-1 text-sm text-ink hover:border-green">
+                  <button key={p.id} type="button" onClick={() => patch(withDefaults({ ...p.data, id: p.id, name: p.name }))} className="rounded-control border border-line bg-white px-3 py-1 text-sm text-ink hover:border-green">
                     {p.name}
                   </button>
                 ))}
@@ -161,7 +161,7 @@ export function BarfCalculator({
             ) : (
               <span>
                 Údaje si pamatuje tento prohlížeč.{" "}
-                <Link href="/ucet/prihlaseni?next=/kalkulacka" className="text-green underline">
+                <Link href="/ucet/prihlaseni?next=/kalkulacka" className="text-brick-text underline">
                   Po přihlášení
                 </Link>{" "}
                 uložíte profil k účtu.
@@ -171,7 +171,7 @@ export function BarfCalculator({
         )}
         <AnimalForm a={a} onChange={patch} />
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          <span className="label text-[11px] text-muted">Nesmí</span>
+          <span className="text-eyebrow uppercase text-muted">Nesmí</span>
           {(Object.keys(MEAT_LABEL) as MeatKey[]).map((k) => (
             <label key={k} className="flex items-center gap-1">
               <input type="checkbox" checked={a.exclude.includes(k)} onChange={(e) => patch({ exclude: e.target.checked ? [...a.exclude, k] : a.exclude.filter((x) => x !== k), removed: [], swaps: {} })} className="h-4 w-4 min-h-0 w-auto accent-brick" />
@@ -194,18 +194,18 @@ export function BarfCalculator({
       </section>
 
       {/* 2. Výsledek */}
-      <section className="rounded-[var(--radius-card)] border border-line bg-paper p-5 md:p-6" aria-live="polite" aria-label="Výsledek">
+      <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-live="polite" aria-label="Výsledek">
         {plan ? <ResultView plan={plan} encoded={encodeRequest(a, days)} defaultEmail={user?.email ?? ""} /> : <p className="text-muted">Doplňte hmotnost{a.stage === "mlade" ? " a věk" : ""}, výsledek se objeví sám.</p>}
       </section>
 
       {/* 3. Nákup */}
       {plan && (
-        <section className="rounded-[var(--radius-card)] border border-line bg-paper p-5 md:p-6" aria-label="Nákup">
+        <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-label="Nákup">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[22px]">Nákup z naší nabídky</h2>
             <div className="flex gap-1.5" role="group" aria-label="Období">
               {DAYS.map((d) => (
-                <button key={d} type="button" onClick={() => setDays(d)} aria-pressed={days === d} className={`rounded-[var(--radius-control)] border px-3 py-1.5 text-sm ${days === d ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
+                <button key={d} type="button" onClick={() => setDays(d)} aria-pressed={days === d} className={`rounded-control border px-3 py-1.5 text-sm ${days === d ? "border-green bg-green text-cream" : "border-muted bg-white text-green hover:bg-paper"}`}>
                   {d} dní
                 </button>
               ))}
@@ -219,7 +219,7 @@ export function BarfCalculator({
               {a.removed.length + Object.keys(a.swaps).length > 0 && (
                 <>
                   {" · "}
-                  <button type="button" onClick={() => patch({ removed: [], swaps: {} })} className="text-green underline">
+                  <button type="button" onClick={() => patch({ removed: [], swaps: {} })} className="text-brick-text underline">
                     vrátit původní výběr ({a.removed.length + Object.keys(a.swaps).length})
                   </button>
                 </>
@@ -427,7 +427,7 @@ function ResultView({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
         <Tile label="Měsíčně" value={kgText(r.dailyGrams * 30)} sub="30 dní" />
         <Tile label="Porce" value={`${r.mealsPerDay} × ${perMeal} g`} sub={`${r.mealsPerDay} ${r.mealsPerDay === 2 ? "jídla" : "jídel"} denně${r.kibbleKcal > 0 ? ` · plus granule ${r.kibbleGrams ? `${r.kibbleGrams} g` : `${r.kibbleKcal} kcal`}` : ""}`} />
       </div>
-      <div className="mt-3 flex h-2.5 overflow-hidden rounded-[var(--radius-control)] border border-line">
+      <div className="mt-3 flex h-2.5 overflow-hidden rounded-control border border-line">
         {parts.map((p) => (
           <div key={p.label} className={p.cls} style={{ width: `${p.v}%` }} title={`${p.label} ${p.v} %`} />
         ))}
@@ -452,8 +452,8 @@ function ResultView({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
 
 function Tile({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-cream px-4 py-3">
-      <p className="label text-[11px] text-muted">{label}</p>
+    <div className="rounded-card border border-line bg-white px-4 py-3">
+      <p className="text-eyebrow uppercase text-muted">{label}</p>
       <p className="text-[28px] font-semibold leading-tight text-green">{value}</p>
       <p className="text-xs text-muted">{sub}</p>
     </div>
@@ -468,7 +468,7 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const href = `/kalkulacka/plan.pdf?d=${encoded}`;
-  const btn = "inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-line bg-paper px-3 text-sm text-green hover:border-green";
+  const btn = "inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line bg-white px-3 text-sm text-green hover:border-green";
   const week = open ? weeklySchedule(plan) : [];
 
   return (
@@ -480,13 +480,13 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
         <span className="text-xs text-muted">Jedna stránka: dávka, porce, týden v misce{plan.input.beginner ? ", postup přechodu" : ""}.</span>
       </div>
       {open && (
-        <div className="mt-3 rounded-[var(--radius-card)] border border-line bg-cream p-4">
-          <p className="label text-[11px] text-brick-text">Týden v misce</p>
+        <div className="mt-3 rounded-card border border-line bg-white p-4">
+          <p className="text-eyebrow uppercase text-muted">Týden v misce</p>
           <table className="mt-2 w-full text-sm">
             <tbody className="divide-y divide-line">
               {week.map((d) => (
                 <tr key={d.day}>
-                  <td className="label w-20 py-1.5 pr-2 align-top text-[10px] text-green">{d.label}</td>
+                  <td className="w-20 py-1.5 pr-2 align-top text-eyebrow text-green uppercase">{d.label}</td>
                   <td className="py-1.5">
                     {d.items.length === 0 && <span className="text-muted">stavte se pro mix, zrovna nic není skladem</span>}
                     {d.items.map((it, j) => (
@@ -551,7 +551,7 @@ function AddonRow({ a, plan, onChange }: { a: AnimalInput; plan: Plan; onChange:
   });
   return (
     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-      <span className="label text-[11px] text-muted">Přidat</span>
+      <span className="text-eyebrow uppercase text-muted">Přidat</span>
       {keys.map((k) => (
         <label key={k} className="flex items-center gap-1">
           <input type="checkbox" checked={a.addons[k]} onChange={(e) => onChange({ addons: { ...a.addons, [k]: e.target.checked } })} className="h-4 w-4 min-h-0 w-auto accent-green" />
@@ -575,7 +575,7 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
     <div className="mt-3 overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="label border-b border-line text-left text-[10px] text-muted">
+          <tr className="border-b border-line text-left text-eyebrow text-muted uppercase">
             <th className="py-2 pr-2 font-semibold">Produkt</th>
             <th className="py-2 pr-2 text-right font-semibold">Denně</th>
             <th className="py-2 pr-2 text-right font-semibold">Balení</th>
@@ -615,7 +615,7 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
                 </td>
                 <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">{formatPrice(it.qty * it.product.priceCzk)}</td>
                 <td className="py-2 text-right">
-                  <button type="button" onClick={() => onChange({ removed: [...a.removed, it.product.slug] })} aria-label={`Vyřadit ${productName(it.product)}`} title="Vyřadit" className="inline-flex h-6 w-6 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-cream hover:text-brick-text">
+                  <button type="button" onClick={() => onChange({ removed: [...a.removed, it.product.slug] })} aria-label={`Vyřadit ${productName(it.product)}`} title="Vyřadit" className="inline-flex h-6 w-6 items-center justify-center rounded-control text-muted hover:bg-cream hover:text-brick-text">
                     <X strokeWidth={1.75} className="h-4 w-4" />
                   </button>
                 </td>
@@ -631,7 +631,7 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className="mb-1 block text-label text-green">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
       </span>

@@ -50,7 +50,7 @@ export function CookieConsent() {
         </>
       )}
       {consent === null && (
-        <div role="dialog" aria-label="Souhlas s cookies" className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-lg rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+        <div role="dialog" aria-label="Souhlas s cookies" className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-lg rounded-card border border-line bg-white p-4 text-sm">
           <p>
             Rádi bychom měřili návštěvnost, abychom věděli, co vás zajímá. K tomu potřebujeme váš souhlas s analytickými
             cookies. Nákup funguje i bez nich.

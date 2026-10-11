@@ -22,7 +22,7 @@ export function GoogleButton({ next = "/ucet", label = "Pokračovat s Googlem", 
       <input type="hidden" name="next" value={next} />
       <button
         type="submit"
-        className="label inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-line bg-paper px-4 text-ink transition-colors hover:border-green"
+        className="inline-flex min-h-13 w-full items-center justify-center gap-2.5 rounded-control border border-muted bg-white px-4 text-button text-ink transition-colors duration-300 hover:bg-paper"
       >
         <GoogleMark /> {label}
       </button>

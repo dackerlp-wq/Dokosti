@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SubscriptionManage } from "@/components/subscription/manage";
+import { PageIntro } from "@/components/ui/page-intro";
 import { getSettings } from "@/lib/settings";
 import { subscriptionWeekdays } from "@/lib/shipping";
 import { getSubscriptionByToken } from "@/lib/subscriptions";
@@ -16,13 +17,13 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ t
   if (!sub) notFound();
 
   return (
-    <div className="container-dk max-w-3xl py-6 md:py-10">
-      <p className="label mb-2 text-brick-text">Pravidelný odběr</p>
-      <h1>Dobrý den, {sub.customer_name.split(" ")[0]}.</h1>
-      <p className="mt-2 text-muted">Tady si dodávky přeskočíte, upravíte nebo zrušíte. Odkaz na tuto stránku je jen váš.</p>
-      <div className="mt-6">
+    <>
+      <PageIntro eyebrow="Pravidelný odběr" title={`Dobrý den, ${sub.customer_name.split(" ")[0]}.`}>
+        <p>Tady si dodávky přeskočíte, upravíte nebo zrušíte. Odkaz na tuto stránku je jen váš.</p>
+      </PageIntro>
+      <div className="mx-auto max-w-narrow px-5 pb-10 md:pb-15">
         <SubscriptionManage initial={sub} weekdays={subscriptionWeekdays(settings, sub.shipping_method)} settings={settings.subscription} />
       </div>
-    </div>
+    </>
   );
 }

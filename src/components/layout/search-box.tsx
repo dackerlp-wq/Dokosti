@@ -82,13 +82,13 @@ export function SearchBox({ products, className = "", autoFocus }: { products: P
           autoFocus={autoFocus}
           className="min-h-10 pr-10 text-sm"
         />
-        <button type="submit" aria-label="Hledat" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-[var(--radius-control)] p-1.5 text-green hover:bg-cream">
+        <button type="submit" aria-label="Hledat" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-control p-1.5 text-green hover:bg-cream">
           <Search strokeWidth={1.75} className="h-4 w-4" />
         </button>
       </form>
 
       {open && terms.length > 0 && (
-        <ul id={listId} role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+        <ul id={listId} role="listbox" className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-card border border-line bg-white text-sm">
           {hits.map((p, i) => (
             <li key={p.slug} role="option" aria-selected={i === active}>
               <Link

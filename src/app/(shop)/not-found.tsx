@@ -1,14 +1,23 @@
 import { ButtonLink } from "@/components/ui/button";
+import { PageIntro } from "@/components/ui/page-intro";
 
 export default function NotFound() {
   return (
-    <div className="container-dk py-20 text-center">
-      <p className="label mb-2 text-brick-text">Chyba 404</p>
-      <h1>Tady nic není</h1>
-      <p className="mx-auto mt-4 max-w-md text-muted">Stránka neexistuje nebo jsme ji přesunuli. Zkuste nabídku.</p>
-      <div className="mt-8">
-        <ButtonLink href="/">Zpět na úvod</ButtonLink>
-      </div>
-    </div>
+    <PageIntro
+      eyebrow="Chyba 404"
+      title="Tady nic není"
+      actions={
+        <>
+          <ButtonLink href="/rada/barf" variant="action" size="md">
+            Vybrat krmivo
+          </ButtonLink>
+          <ButtonLink href="/" variant="secondary" size="md">
+            Zpět na úvod
+          </ButtonLink>
+        </>
+      }
+    >
+      <p>Stránka neexistuje nebo jsme ji přesunuli. Zkuste nabídku.</p>
+    </PageIntro>
   );
 }

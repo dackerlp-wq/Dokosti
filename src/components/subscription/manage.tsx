@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { manageSubscription } from "@/app/(shop)/predplatne/actions";
 import { Button } from "@/components/ui/button";
+import { chipClass } from "@/components/ui/field";
 import { formatPrice } from "@/lib/format";
 import { DAY_NAMES, DAY_NAMES_SHORT, type Settings } from "@/lib/settings";
 import { INTERVAL_LABEL } from "@/lib/shipping";
@@ -40,21 +41,21 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
   const active = s.status === "aktivni";
   const subtotal = subscriptionSubtotal(s);
   const discounted = settings.discountPct > 0 ? Math.round(subtotal * (1 - settings.discountPct / 100)) : subtotal;
-  const pill = (on: boolean) => `rounded-[var(--radius-control)] border px-3 py-1 text-sm ${on ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`;
+  const pill = (on: boolean) => chipClass(on);
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+      <div className="rounded-card bg-paper p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="label text-[11px] text-muted">Stav</p>
-          <span className={`label text-[11px] ${active ? "text-green" : "text-brick-text"}`}>{SUBSCRIPTION_STATUS_LABEL[s.status]}</span>
+          <p className="text-eyebrow uppercase text-muted">Stav</p>
+          <span className={`text-small font-semibold ${active ? "text-green" : "text-brick-text"}`}>{SUBSCRIPTION_STATUS_LABEL[s.status]}</span>
         </div>
         {s.status === "zruseno" ? (
-          <p className="mt-2 text-lg">Předplatné je zrušené. Chcete ho obnovit?</p>
+          <p className="mt-2 text-heading-md font-bold text-green">Předplatné je zrušené. Chcete ho obnovit?</p>
         ) : s.status === "pozastaveno" ? (
-          <p className="mt-2 text-lg">Předplatné je pozastavené, nic nevzniká. {s.last_error ? <span className="text-brick-text">Důvod: {s.last_error}.</span> : ""}</p>
+          <p className="mt-2 text-heading-md font-bold text-green">Předplatné je pozastavené, nic nevzniká. {s.last_error ? <span className="text-brick-text">Důvod: {s.last_error}.</span> : ""}</p>
         ) : (
-          <p className="mt-2 text-lg">
+          <p className="mt-2 text-heading-md font-bold text-green">
             {s.skip_next ? (
               <>
                 Dodávku <strong>{day(s.next_date)}</strong> přeskočíme, další bude o {s.interval_days} dní později.
@@ -99,7 +100,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
               onClick={() => {
                 if (confirm("Opravdu zrušit pravidelný odběr? Objednané dodávky to neovlivní.")) run("cancel", {}, "Předplatné je zrušené.");
               }}
-              className="label inline-flex min-h-10 items-center px-2 text-[11px] text-brick-text hover:underline"
+              className="inline-flex min-h-10 items-center px-2 text-small font-semibold text-brick-text hover:underline"
             >
               Zrušit předplatné
             </button>
@@ -112,11 +113,11 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
         )}
       </div>
 
-      <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+      <div className="rounded-card border border-line bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-[20px]">Co posíláme</h2>
+          <h2 className="text-heading-lg">Co posíláme</h2>
           {!editing && s.status !== "zruseno" && (
-            <button type="button" onClick={() => setEditing(true)} className="text-sm text-green underline">
+            <button type="button" onClick={() => setEditing(true)} className="text-sm text-brick-text underline">
               Upravit množství
             </button>
           )}
@@ -135,7 +136,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
                     <span className="font-semibold">{line.slug}</span>
                   )}
                   {info?.available === false && <span className="ml-2 text-brick-text">teď není skladem</span>}
-                  {line.every > 1 && <span className="label ml-2 text-[10px] text-muted">jen každou {line.every}. dodávku</span>}
+                  {line.every > 1 && <span className="ml-2 text-small text-muted">jen každou {line.every}. dodávku</span>}
                 </span>
                 {editing ? (
                   <span className="flex items-center gap-2">
@@ -178,8 +179,8 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
       </div>
 
       {s.status !== "zruseno" && (
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
-          <h2 className="text-[20px]">Jak často a kdy</h2>
+        <div className="rounded-card border border-line bg-white p-5">
+          <h2 className="text-heading-lg">Jak často a kdy</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {[14, 28].map((i) => (
               <button key={i} type="button" onClick={() => setInterval(i)} aria-pressed={interval === i} className={pill(interval === i)}>
@@ -189,7 +190,7 @@ export function SubscriptionManage({ initial, weekdays, settings, admin = false 
           </div>
           {weekdays.length > 1 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="label text-[11px] text-muted">Den</span>
+              <span className="text-eyebrow uppercase text-muted">Den</span>
               {weekdays.map((d) => (
                 <button key={d} type="button" onClick={() => setWeekday(d)} aria-pressed={weekday === d} className={pill(weekday === d)}>
                   {DAY_NAMES_SHORT[d]}

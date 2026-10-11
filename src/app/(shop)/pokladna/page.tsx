@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
+import { PageIntro } from "@/components/ui/page-intro";
 import { getCustomerUser } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
@@ -16,9 +17,11 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     prefill = { email: user.email, name: data?.name ?? "", phone: data?.phone ?? "", street: data?.street ?? "", city: data?.city ?? "", zip: data?.zip ?? "" };
   }
   return (
-    <div className="container-dk py-6 md:py-10">
-      <h1>Dodání a platba</h1>
-      <div className="mt-6">
+    <>
+      <PageIntro title="Pokladna">
+        <p>Tři kroky: doprava, platba a vaše údaje. Mražené zboží posíláme tak, aby dorazilo mražené.</p>
+      </PageIntro>
+      <div className="mx-auto max-w-site px-5 pb-10 md:pb-15">
         <CheckoutForm
           shipping={shippingMethods(settings)}
           payment={paymentMethods(settings)}
@@ -33,6 +36,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           prefill={prefill}
         />
       </div>
-    </div>
+    </>
   );
 }
