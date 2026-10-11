@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { deletePetById, loadPets } from "@/app/(shop)/ucet/actions";
-import { FeedingSchedule } from "@/components/barf/feeding-schedule";
+import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { Choice, ChoiceGrid, WizardLabel, WizardPanel } from "@/components/plan/wizard-ui";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -292,6 +292,7 @@ export function BarfCalculator({ products }: { products: Product[] }) {
                       {EXTRA_LABEL[it.role] && <span className="ml-2 text-eyebrow text-muted uppercase">{EXTRA_LABEL[it.role]}</span>}
                       <p className="text-small">
                         {it.portionText}
+                        {leftoverText(it) && <> · {leftoverText(it)}</>}
                         {addonForRole(it.role) && (
                           <>
                             {" · "}
