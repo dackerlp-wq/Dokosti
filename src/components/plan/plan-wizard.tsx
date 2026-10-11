@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, Cat, Check, Dog, Footprints, MailCheck, Moon, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, Cat, Check, Dog, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
 import { Choice, ChoiceGrid, SideCards, WizardLabel, WizardLayout, WizardPanel } from "@/components/plan/wizard-ui";
-import { ACTIVITY_LABEL, BREEDS, CONDITION_LABEL, buildPlan, DEFAULT_ADDONS, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
+import { ACTIVITY_LABEL, addonForRole, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -48,6 +48,7 @@ function petName(name: string, species: PetProfile["species"], sex: Sex, pad: Pa
   return pad === "dat" ? (dog ? "vašemu psovi" : "vaší kočce") : pad === "acc" ? (dog ? "vašeho psa" : "vaši kočku") : dog ? "váš pes" : "vaše kočka";
 }
 const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "kost navíc", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", granule: "granule" };
+const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", rekreacni: "Na okusování" };
 
 /** Datum narození zpětně z věku (měsíce nebo roky), přibližně na začátek měsíce. */
 function bornFrom(months: number): string {
@@ -74,6 +75,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [delivery, setDelivery] = useState<Delivery>(shipping.rozvoz ? "rozvoz" : "odber");
   const [removed, setRemoved] = useState<string[]>([]);
   const [swaps, setSwaps] = useState<Record<string, string>>({});
+  /** Doplňky k základu (kosti, ryba, olej…): v dodávce jen to, co si zákazník přidá z doporučení. */
+  const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ ...BASE_ADDONS });
   /** Podíl syrové stravy (zbytek granule) a zda přidat naše granule do dodávky. */
   const [rawShare, setRawShare] = useState<AnimalInput["rawShare"]>(100);
   const [addKibble, setAddKibble] = useState(true);
@@ -107,7 +110,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       const raw = sessionStorage.getItem(STORE_KEY);
       if (!raw) return;
       sessionStorage.removeItem(STORE_KEY);
-      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; days: Days; delivery: Delivery; oneTime: boolean };
+      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; addons?: Record<AddonKey, boolean>; days: Days; delivery: Delivery; oneTime: boolean };
       if (!st.pet?.name) return;
       // Obnova rozpracovaného průvodce po návratu z e-mailu: stav se musí nastavit až na klientovi.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -116,6 +119,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       setAddKibble(st.addKibble);
       setRemoved(st.removed);
       setSwaps(st.swaps);
+      setAddons({ ...BASE_ADDONS, ...(st.addons ?? {}) });
       setDays(st.days);
       setDelivery(st.delivery);
       setOneTime(st.oneTime);
@@ -134,11 +138,17 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     setStep((s) => Math.max(1, s - 1));
   };
 
-  const plan = useMemo(() => {
+  const input = useMemo<AnimalInput | null>(() => {
     if (step < 7 || pet.weightKg <= 0) return null;
-    const input: AnimalInput = { ...petToAnimal(pet), rawShare, addons: { ...DEFAULT_ADDONS, granule: addKibble }, removed, swaps };
-    return buildPlan(products, input, days);
-  }, [step, pet, removed, swaps, products, days, rawShare, addKibble]);
+    return { ...petToAnimal(pet), rawShare, addons: { ...addons, granule: addKibble }, removed, swaps };
+  }, [step, pet, removed, swaps, rawShare, addons, addKibble]);
+  const plan = useMemo(() => (input ? buildPlan(products, input, days) : null), [input, products, days]);
+  /* Doporučení navíc: pro každý vypnutý doplněk nejlepší produkt podle využití balení a výhodnosti. */
+  const extras = useMemo(() => (input ? recommendExtras(products, input, days) : []), [input, products, days]);
+  const setAddon = (role: Reco["role"], on: boolean) => {
+    const key = addonForRole(role);
+    if (key) setAddons((a) => ({ ...a, [key]: on }));
+  };
 
   /**
    * Položky, které vydrží déle než interval (olej, kosti navíc): v dalších dodávkách jen každou N.
@@ -191,7 +201,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   function sendCode() {
     setError(null);
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, days, delivery, oneTime }));
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, addons, days, delivery, oneTime }));
     } catch {
       /* bez úložiště jen nepůjde pokračovat po kliknutí na odkaz z e-mailu */
     }
@@ -221,6 +231,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     setAgeUnit("roky");
     setRemoved([]);
     setSwaps({});
+    setAddons({ ...BASE_ADDONS });
     setRawShare(100);
     setError(null);
   };
@@ -459,6 +470,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           setRemoved={setRemoved}
           swaps={swaps}
           setSwaps={setSwaps}
+          extras={extras}
+          setAddon={setAddon}
           shipping={shipping}
           subscription={subscription}
           loyalty={loyalty}
@@ -568,6 +581,8 @@ function PlanStep({
   setRemoved,
   swaps,
   setSwaps,
+  extras,
+  setAddon,
   shipping,
   subscription,
   loyalty,
@@ -594,6 +609,8 @@ function PlanStep({
   setRemoved: (r: string[]) => void;
   swaps: Record<string, string>;
   setSwaps: (s: Record<string, string>) => void;
+  extras: Reco[];
+  setAddon: (role: Reco["role"], on: boolean) => void;
   shipping: Props["shipping"];
   subscription: Settings["subscription"];
   loyalty: Settings["loyalty"];
@@ -669,7 +686,7 @@ function PlanStep({
                         ))}
                       </select>
                     )}
-                    <button type="button" onClick={() => setRemoved([...removed, i.product.slug])} className="text-brick-text underline">
+                    <button type="button" onClick={() => (addonForRole(i.role) ? setAddon(i.role, false) : setRemoved([...removed, i.product.slug]))} className="text-brick-text underline">
                       odebrat
                     </button>
                   </span>
@@ -686,6 +703,33 @@ function PlanStep({
             </p>
           )}
         </div>
+        {extras.length > 0 && (
+          <section className="overflow-hidden rounded-panel border border-line bg-paper" aria-label="Doporučujeme navíc">
+            <div className="border-b border-line px-4 py-3">
+              <h3 className="text-heading-md text-green">Doporučujeme navíc</h3>
+              <p className="text-xs text-muted">Vybráno tak, aby se balení za {days === 14 ? "2 týdny" : "4 týdny"} spotřebovalo celé nebo z co největší části. Co přidáte, zapadne do dávky místo části mixu.</p>
+            </div>
+            <ul className="divide-y divide-line text-sm">
+              {extras.map((i) => (
+                <li key={i.product.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p>
+                      <span className="text-eyebrow text-muted uppercase">{EXTRA_LABEL[i.role]}</span> <span className="font-semibold">{productName(i.product)}</span> <span className="text-muted">{formatWeight(i.product.weightGrams)}</span>
+                    </p>
+                    <p className="text-xs text-muted">
+                      {i.portionText}
+                      {i.why ? `, ${i.why}` : ""} · {i.qty} ks{i.periods > 1 ? `, vydrží ~${i.periods} dodávky` : ""}
+                    </p>
+                  </div>
+                  <span className="font-semibold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</span>
+                  <Button type="button" variant="secondary" onClick={() => setAddon(i.role, true)} aria-label={`Přidat ${productName(i.product)} do dodávky`}>
+                    <Plus className="size-4" strokeWidth={2} aria-hidden /> Přidat
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <details className="rounded-panel border border-line bg-white p-4 shadow-card">
           <summary className="cursor-pointer text-button text-green">Rozpis krmení po dnech: které balení kdy načít</summary>
           <div className="mt-3">
