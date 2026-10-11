@@ -81,15 +81,6 @@
   }
 }
 
-/* Drobný popisek verzálkami. V e-shopu jen pro nadtitulky použij raději `text-eyebrow uppercase`; administrace ho používá dál. */
-@utility label {
-  font-family: var(--font-label);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
 /* Obsah stránky: 1200 px se 20px okraji (totéž co `mx-auto max-w-site px-5`). */
 @utility container-dk {
   margin-inline: auto;

@@ -18,7 +18,8 @@ import {
   MEAT_LABEL,
   newAnimal,
   STAGE_LABEL,
-  weeklySchedule,
+  feedingSchedule,
+  scheduleWeeks,
   type Activity,
   type AddonKey,
   type AnimalInput,
@@ -469,7 +470,7 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
   const [pending, startTransition] = useTransition();
   const href = `/kalkulacka/plan.pdf?d=${encoded}`;
   const btn = "inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line bg-white px-3 text-sm text-green hover:border-green";
-  const week = open ? weeklySchedule(plan) : [];
+  const weeks = open ? scheduleWeeks(feedingSchedule(plan)) : [];
 
   return (
     <div className="mt-4">
@@ -477,32 +478,41 @@ function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: stri
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={btn}>
           {open ? "Skrýt plán krmení" : "Plán krmení na lednici (PDF)"}
         </button>
-        <span className="text-xs text-muted">Jedna stránka: dávka, porce, týden v misce{plan.input.beginner ? ", postup přechodu" : ""}.</span>
+        <span className="text-small">Dávka, porce a rozpis po dnech na {plan.days} dní, balení po balení{plan.input.beginner ? ", postup přechodu" : ""}.</span>
       </div>
       {open && (
         <div className="mt-3 rounded-card border border-line bg-white p-4">
-          <p className="text-eyebrow uppercase text-muted">Týden v misce</p>
-          <table className="mt-2 w-full text-sm">
-            <tbody className="divide-y divide-line">
-              {week.map((d) => (
-                <tr key={d.day}>
-                  <td className="w-20 py-1.5 pr-2 align-top text-eyebrow text-green uppercase">{d.label}</td>
-                  <td className="py-1.5">
-                    {d.items.length === 0 && <span className="text-muted">stavte se pro mix, zrovna nic není skladem</span>}
-                    {d.items.map((it, j) => (
-                      <div key={j} className="flex justify-between gap-2">
-                        <span>
-                          {productName(it.product)}
-                          {it.note ? <span className="text-muted"> · {it.note}</span> : null}
-                        </span>
-                        <span className="whitespace-nowrap">{it.grams > 0 ? `${it.grams} g` : ""}</span>
-                      </div>
-                    ))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p className="text-eyebrow uppercase text-muted">Rozpis po dnech, balení po balení</p>
+          <p className="mt-1 text-small">Jedno balení vždy dojezte a teprve pak načněte další. Porce se den ode dne trochu liší, důležitý je součet za týden.</p>
+          {weeks.map((week, w) => (
+            <table key={w} className="mt-3 w-full text-sm">
+              {weeks.length > 1 && (
+                <caption className="pb-1 text-left text-label text-green">{w + 1}. týden</caption>
+              )}
+              <tbody className="divide-y divide-line">
+                {week.map((d) => (
+                  <tr key={d.day}>
+                    <td className="w-24 py-1.5 pr-2 align-top text-eyebrow text-green uppercase">
+                      {d.label}
+                      <span className="block text-muted normal-case tracking-normal">{d.weekday}</span>
+                    </td>
+                    <td className="py-1.5">
+                      {d.items.length === 0 && <span className="text-muted">stavte se pro mix, zrovna nic není skladem</span>}
+                      {d.items.map((it, j) => (
+                        <div key={j} className="flex justify-between gap-2">
+                          <span>
+                            {productName(it.product)}
+                            {it.note ? <span className="text-muted"> · {it.note}</span> : null}
+                          </span>
+                          <span className="whitespace-nowrap">{it.grams > 0 ? `${it.grams} g` : ""}</span>
+                        </div>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ))}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <a href={`${href}&download=1`} className={btn}>
               <FileDown strokeWidth={1.75} className="h-4 w-4" /> Stáhnout PDF
