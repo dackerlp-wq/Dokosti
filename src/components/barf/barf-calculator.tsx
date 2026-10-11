@@ -1,56 +1,33 @@
 "use client";
 
-import { FileDown, Mail, Printer, X } from "lucide-react";
+import { Baby, Cat, Check, Dog, Moon, PawPrint, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
-import { emailPlan } from "@/app/(shop)/kalkulacka/actions";
-import { loadProfiles, savePet } from "@/app/(shop)/ucet/actions";
-import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { FeedingSchedule } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
+import { Choice, ChoiceGrid, WizardLabel, WizardPanel } from "@/components/plan/wizard-ui";
 import { Button, ButtonLink } from "@/components/ui/button";
-import {
-  ACTIVITY_LABEL,
-  ADDON_LABEL,
-  BREEDS,
-  buildPlan,
-  CONDITION_LABEL,
-  estimateAdultWeight,
-  MEAT_LABEL,
-  newAnimal,
-  STAGE_LABEL,
-  type Activity,
-  type AddonKey,
-  type AnimalInput,
-  type Condition,
-  type MeatKey,
-  type Plan,
-  type Reco,
-  type Species,
-  type Stage,
-} from "@/lib/barf";
+import { chipClass, fieldInput } from "@/components/ui/field";
+import { ACTIVITY_LABEL, buildPlan, CONDITION_LABEL, MEAT_LABEL, newAnimal, type Activity, type AnimalInput, type Condition, type MeatKey, type Plan, type Stage } from "@/lib/barf";
 import { productName, type Product } from "@/lib/catalog";
-import { decodePlanRequest } from "@/lib/pdf/request";
 import { formatPrice, formatWeight } from "@/lib/format";
 
 /**
- * Kalkulačka dávky pro jedno zvíře: údaje, výsledek (denně, týdně, měsíčně, porce),
- * plán krmení v PDF a jeden nákup z nabídky s vyřazením a náhradou druhu.
- * Vše se přepočítává hned při změně. Stav si pamatuje prohlížeč, profil jde uložit k účtu.
+ * Kalkulačka dávky: tři otázky (kdo, kolik váží, jak je starý), výsledek a nákup na 14 dní.
+ * Aktivita, kastrace, kondice, březost a vyloučené maso jsou pod „Upřesnit“ s rozumnými výchozími hodnotami.
+ * Plán, rozpis a pravidelné dodávky dělá průvodce Krmení na míru.
  */
-export type SavedPet = { id: string; name: string; data: Partial<AnimalInput> };
-
-const STORAGE_KEY = "dokosti-kalkulacka-v2";
+const STORAGE_KEY = "dokosti-kalkulacka-v3";
 const DAYS = [7, 14, 30] as const;
 type Days = (typeof DAYS)[number];
 
-/** Doplní nová pole do profilů uložených dřív. */
 function withDefaults(a: Partial<AnimalInput>): AnimalInput {
   const base = newAnimal(a.species);
-  return { ...base, ...a, addons: { ...base.addons, ...(a.addons ?? {}) }, exclude: a.exclude ?? [], removed: a.removed ?? [], swaps: a.swaps ?? {} };
+  return { ...base, ...a, addons: { ...base.addons, ...(a.addons ?? {}) }, exclude: a.exclude ?? [], removed: [], swaps: {} };
 }
 
-/* Uložený stav v prohlížeči; useSyncExternalStore drží server a klient v souladu bez setState v efektu. */
+/* Stav v prohlížeči; useSyncExternalStore drží server a klient v souladu bez setState v efektu. */
 let cached: AnimalInput | null | undefined;
 function readStored(): AnimalInput | null {
   if (cached !== undefined) return cached;
@@ -73,51 +50,21 @@ function writeStored(a: AnimalInput) {
 const noop = () => () => {};
 const DEFAULT: AnimalInput = { ...newAnimal("pes"), id: "prvni" };
 
-/** Zakóduje vstup do URL parametru pro PDF a e-mail (base64url, stejně jako lib/pdf/request na serveru). */
-function encodeRequest(animal: AnimalInput, days: number) {
-  const json = JSON.stringify({ animals: [animal], days });
-  return btoa(Array.from(new TextEncoder().encode(json), (b) => String.fromCharCode(b)).join(""))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
 const kgText = (g: number) => (g >= 1000 ? `${(g / 1000).toFixed(1).replace(".", ",")} kg` : `${g} g`);
 const round5 = (g: number) => Math.max(5, Math.round(g / 5) * 5);
+const num = (s: string) => {
+  const n = Number(s.replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 
-export function BarfCalculator({
-  products,
-  compact = false,
-}: {
-  products: Product[];
-  compact?: boolean;
-}) {
-  // Přihlášení a uložené profily se načtou až v prohlížeči, stránka tak může jít z CDN.
-  const [profiles, setProfiles] = useState<{ user: { email: string } | null; pets: SavedPet[] }>({ user: null, pets: [] });
-  useEffect(() => {
-    let live = true;
-    loadProfiles().then((r) => live && setProfiles({ user: r.user, pets: r.pets as SavedPet[] }));
-    return () => {
-      live = false;
-    };
-  }, []);
-  const user = profiles.user;
-  const savedPets = profiles.pets;
-  // Předvyplnění z odkazu v e-mailu s plánem (?d=…), čte se až v prohlížeči.
-  const [initial, setInitial] = useState<{ animals: AnimalInput[]; days: number } | null>(null);
-  useEffect(() => {
-    const t = setTimeout(() => setInitial(decodePlanRequest(new URLSearchParams(window.location.search).get("d"))), 0);
-    return () => clearTimeout(t);
-  }, []);
+export function BarfCalculator({ products }: { products: Product[] }) {
   const cart = useCart();
   const router = useRouter();
   const stored = useSyncExternalStore(noop, readStored, () => null);
   const [edited, setEdited] = useState<AnimalInput | null>(null);
-  const a = edited ?? initial?.animals[0] ?? stored ?? DEFAULT;
-  const [days, setDays] = useState<Days>((DAYS as readonly number[]).includes(initial?.days ?? 0) ? (initial!.days as Days) : 14);
+  const a = edited ?? stored ?? DEFAULT;
+  const [days, setDays] = useState<Days>(14);
   const [added, setAdded] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [pending, startTransition] = useTransition();
 
   function patch(p: Partial<AnimalInput>) {
     const next = { ...a, ...p };
@@ -126,496 +73,231 @@ export function BarfCalculator({
     setAdded(false);
   }
 
-  const valid = a.weightKg > 0 && (a.stage !== "mlade" || (a.ageMonths ?? 0) > 0);
+  const isDog = a.species === "pes";
+  const young = a.stage === "mlade";
+  const valid = a.weightKg > 0 && (!young || (a.ageMonths ?? 0) > 0);
   const plan = useMemo<Plan | null>(() => (valid ? buildPlan(products, a, days) : null), [valid, a, products, days]);
-
-  function saveProfile() {
-    startTransition(async () => {
-      const name = a.name || (a.species === "pes" ? "Pes" : "Kočka");
-      const res = await savePet(name, a as unknown as Record<string, unknown>);
-      setMsg(res.ok ? { ok: true, text: `Profil „${name}“ je uložený u vašeho účtu.` } : { ok: false, text: res.error });
-    });
-  }
+  const r = plan?.result;
+  const warnings = plan?.notes.filter((n) => n.kind === "warn") ?? [];
+  const infos = plan?.notes.filter((n) => n.kind === "info") ?? [];
+  const stageCards: { value: Stage; icon: typeof Dog; title: string; desc: string }[] = [
+    { value: "mlade", icon: Baby, title: isDog ? "Štěně" : "Kotě", desc: "do roka, počítáme podle měsíců" },
+    { value: "dospely", icon: isDog ? Dog : Cat, title: isDog ? "Dospělý" : "Dospělá", desc: "běžná dávka podle váhy" },
+    { value: "senior", icon: Moon, title: "Senior", desc: isDog ? "zhruba od 7 let" : "zhruba od 11 let" },
+  ];
+  const stageValue: Stage = a.stage === "brezi" || a.stage === "kojici" ? "dospely" : a.stage;
 
   return (
-    <div id="kalkulacka" className="scroll-mt-4 space-y-4">
-      {/* 1. Údaje o zvířeti */}
-      <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-label="Údaje o zvířeti">
-        {!compact && (
-          <>
-            <h2 className="text-[24px]">Spočítejte si denní dávku</h2>
-            <p className="mt-1 text-sm text-muted">Vyplňte údaje, vše se přepočítá hned.</p>
-          </>
-        )}
-        {(savedPets.length > 0 || !user) && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
-            {savedPets.length > 0 ? (
-              <>
-                <span className="text-eyebrow text-muted uppercase">Uložené profily</span>
-                {savedPets.map((p) => (
-                  <button key={p.id} type="button" onClick={() => patch(withDefaults({ ...p.data, id: p.id, name: p.name }))} className="rounded-control border border-line bg-white px-3 py-1 text-sm text-ink hover:border-green">
-                    {p.name}
-                  </button>
-                ))}
-              </>
-            ) : (
-              <span>
-                Údaje si pamatuje tento prohlížeč.{" "}
-                <Link href="/ucet/prihlaseni?next=/kalkulacka" className="text-brick-text underline">
-                  Po přihlášení
-                </Link>{" "}
-                uložíte profil k účtu.
+    <div id="kalkulacka" className="scroll-mt-4 space-y-5">
+      <WizardPanel kicker="Tři údaje" title="Kdo bude jíst a kolik váží?" helper="Vyberte zvíře, zadejte váhu a věk. Výsledek se spočítá hned." hideActions>
+        <ChoiceGrid label="Kdo bude jíst">
+          <Choice icon={Dog} title="Pes" desc="dávka podle váhy a aktivity" checked={isDog} onSelect={() => patch({ species: "pes", stage: "dospely", ration: "pmr", rawShare: 100 })} />
+          <Choice icon={Cat} title="Kočka" desc="striktní masožravec, bez zeleniny" checked={!isDog} onSelect={() => patch({ species: "kocka", stage: "dospely", ration: "pmr", rawShare: 100 })} />
+        </ChoiceGrid>
+
+        <WizardLabel htmlFor="kalk-vaha" required>
+          Aktuální váha v kg
+        </WizardLabel>
+        <input id="kalk-vaha" type="number" inputMode="decimal" min={0.3} max={120} step={0.1} value={a.weightKg > 0 ? a.weightKg : ""} onChange={(e) => patch({ weightKg: num(e.target.value) })} placeholder="např. 20" className={`${fieldInput} max-w-xs`} />
+
+        <WizardLabel>Věk</WizardLabel>
+        <ChoiceGrid cols={3} label="Věk">
+          {stageCards.map((c) => (
+            <Choice key={c.value} icon={c.icon} title={c.title} desc={c.desc} checked={stageValue === c.value} onSelect={() => patch({ stage: c.value, rawShare: 100 })} />
+          ))}
+        </ChoiceGrid>
+        {young && (
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-label text-green">
+                Věk v měsících <span className="text-brick-text">*</span>
               </span>
+              <input type="number" inputMode="numeric" min={1} max={24} value={a.ageMonths && a.ageMonths > 0 ? a.ageMonths : ""} onChange={(e) => patch({ ageMonths: num(e.target.value) })} placeholder="např. 4" className={fieldInput} />
+            </label>
+            {isDog && (
+              <label className="block">
+                <span className="mb-2 block text-label text-green">
+                  Dospělá váha v kg <span className="font-normal text-muted">(nepovinné, odhadneme)</span>
+                </span>
+                <input type="number" inputMode="decimal" min={1} max={100} step={0.5} value={a.adultWeightKg ?? ""} onChange={(e) => patch({ adultWeightKg: num(e.target.value) || undefined })} placeholder="podle rodičů nebo plemene" className={fieldInput} />
+              </label>
             )}
           </div>
         )}
-        <AnimalForm a={a} onChange={patch} />
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          <span className="text-eyebrow uppercase text-muted">Nesmí</span>
-          {(Object.keys(MEAT_LABEL) as MeatKey[]).map((k) => (
-            <label key={k} className="flex items-center gap-1">
-              <input type="checkbox" checked={a.exclude.includes(k)} onChange={(e) => patch({ exclude: e.target.checked ? [...a.exclude, k] : a.exclude.filter((x) => x !== k), removed: [], swaps: {} })} className="h-4 w-4 min-h-0 w-auto accent-brick" />
-              {MEAT_LABEL[k]}
-            </label>
-          ))}
-          {user && (
-            <span className="ml-auto flex items-center gap-3">
-              {msg && (
-                <span role="status" className={`text-xs ${msg.ok ? "text-green" : "text-brick-text"}`}>
-                  {msg.text}
-                </span>
-              )}
-              <Button type="button" variant="secondary" onClick={saveProfile} disabled={pending || !valid} className="min-h-9 px-3 text-[11px]">
-                {pending ? "Ukládám…" : "Uložit profil"}
-              </Button>
-            </span>
-          )}
-        </div>
-      </section>
 
-      {/* 2. Výsledek */}
-      <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-live="polite" aria-label="Výsledek">
-        {plan ? <ResultView plan={plan} encoded={encodeRequest(a, days)} defaultEmail={user?.email ?? ""} /> : <p className="text-muted">Doplňte hmotnost{a.stage === "mlade" ? " a věk" : ""}, výsledek se objeví sám.</p>}
-      </section>
-
-      {/* 3. Nákup */}
-      {plan && (
-        <section className="rounded-card border border-line bg-white p-5 md:p-6" aria-label="Nákup">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-[22px]">Nákup z naší nabídky</h2>
-            <div className="flex gap-1.5" role="group" aria-label="Období">
-              {DAYS.map((d) => (
-                <button key={d} type="button" onClick={() => setDays(d)} aria-pressed={days === d} className={`rounded-control border px-3 py-1.5 text-sm ${days === d ? "border-green bg-green text-cream" : "border-muted bg-white text-green hover:bg-paper"}`}>
-                  {d} dní
+        <details className="mt-6 rounded-panel border border-line bg-paper p-4 open:pb-5">
+          <summary className="cursor-pointer text-button text-green">Upřesnit: aktivita, kastrace, kondice, co nesmí</summary>
+          <div className="mt-4 space-y-5">
+            <Row label="Aktivita">
+              {(Object.keys(ACTIVITY_LABEL[a.species]) as Activity[])
+                .filter((k, i, arr) => arr.findIndex((x) => ACTIVITY_LABEL[a.species][x] === ACTIVITY_LABEL[a.species][k]) === i)
+                .map((k) => (
+                  <button key={k} type="button" onClick={() => patch({ activity: k })} aria-pressed={a.activity === k} className={chipClass(a.activity === k)}>
+                    {ACTIVITY_LABEL[a.species][k]}
+                  </button>
+                ))}
+            </Row>
+            <Row label="Kondice">
+              {(Object.keys(CONDITION_LABEL) as Condition[]).map((k) => (
+                <button key={k} type="button" onClick={() => patch({ condition: k })} aria-pressed={a.condition === k} className={chipClass(a.condition === k)}>
+                  {CONDITION_LABEL[k]}
                 </button>
               ))}
-            </div>
-          </div>
-          <AddonRow a={a} plan={plan} onChange={patch} />
-          <ShoppingTable plan={plan} a={a} onChange={patch} />
-          <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-xs text-muted">
-              Na {days} dní · {formatPrice(plan.perDayCzk)} za den{plan.items.some((it) => it.periods > 1) ? " (balení na víc nákupů rozpočítaná)" : ""}
-              {a.removed.length + Object.keys(a.swaps).length > 0 && (
-                <>
-                  {" · "}
-                  <button type="button" onClick={() => patch({ removed: [], swaps: {} })} className="text-brick-text underline">
-                    vrátit původní výběr ({a.removed.length + Object.keys(a.swaps).length})
+            </Row>
+            <Row label="Kastrace">
+              <button type="button" onClick={() => patch({ neutered: true })} aria-pressed={a.neutered} className={chipClass(a.neutered)}>
+                {isDog ? "Kastrovaný" : "Kastrovaná"}
+              </button>
+              <button type="button" onClick={() => patch({ neutered: false })} aria-pressed={!a.neutered} className={chipClass(!a.neutered)}>
+                Nekastrovaný
+              </button>
+            </Row>
+            {!young && (
+              <Row label={isDog ? "Fena" : "Kočka"}>
+                <button type="button" onClick={() => patch({ stage: "dospely", pregnancyWeek: undefined })} aria-pressed={a.stage !== "brezi" && a.stage !== "kojici"} className={chipClass(a.stage !== "brezi" && a.stage !== "kojici")}>
+                  Není březí ani nekojí
+                </button>
+                <button type="button" onClick={() => patch({ stage: "brezi" })} aria-pressed={a.stage === "brezi"} className={chipClass(a.stage === "brezi")}>
+                  Březí
+                </button>
+                <button type="button" onClick={() => patch({ stage: "kojici" })} aria-pressed={a.stage === "kojici"} className={chipClass(a.stage === "kojici")}>
+                  Kojící
+                </button>
+                {a.stage === "brezi" && (
+                  <input type="number" inputMode="numeric" min={1} max={9} value={a.pregnancyWeek ?? ""} onChange={(e) => patch({ pregnancyWeek: num(e.target.value) || undefined })} placeholder="týden 1–9" aria-label="Týden březosti" className="w-28" />
+                )}
+              </Row>
+            )}
+            <Row label="Nesmí">
+              {(Object.keys(MEAT_LABEL) as MeatKey[]).map((k) => {
+                const on = a.exclude.includes(k);
+                return (
+                  <button key={k} type="button" onClick={() => patch({ exclude: on ? a.exclude.filter((x) => x !== k) : [...a.exclude, k] })} aria-pressed={on} className={chipClass(on, "capitalize")}>
+                    {on && <Check className="size-3.5" strokeWidth={2.5} aria-hidden />}
+                    {MEAT_LABEL[k]}
                   </button>
-                </>
-              )}
-            </span>
-            <span>
-              Celkem <strong className="text-[22px] text-green">{formatPrice(plan.totalCzk)}</strong>
-            </span>
+                );
+              })}
+            </Row>
           </div>
-          {plan.items.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="action"
-                onClick={() => {
-                  plan.items.forEach((r) => cart.add(r.product.slug, r.qty));
-                  setAdded(true);
-                }}
-              >
-                {added ? "Přidáno do košíku" : "Přidat vše do košíku"}
-              </Button>
-              {added && (
-                <ButtonLink href="/kosik" variant="secondary">
-                  Do košíku
-                </ButtonLink>
-              )}
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  if (!added) plan.items.forEach((r) => cart.add(r.product.slug, r.qty));
-                  setAdded(true);
-                  router.push(`/pokladna?predplatne=${days === 30 ? 28 : days}`);
-                }}
-              >
-                Posílat pravidelně
-              </Button>
+        </details>
+      </WizardPanel>
+
+      {plan && r ? (
+        <>
+          <section className="rounded-panel border border-line bg-white p-5 shadow-card md:p-7" aria-live="polite" aria-label="Výsledek">
+            <p className="text-eyebrow text-green uppercase">Denní dávka</p>
+            <div className="mt-2 flex flex-wrap items-end gap-x-7.5 gap-y-3">
+              <p className="text-display-lg text-green">{r.dailyGrams} g</p>
+              <p className="pb-2">
+                {r.mealsPerDay} {r.mealsPerDay === 1 ? "porce" : r.mealsPerDay < 5 ? "porce" : "porcí"} po {round5(r.dailyGrams / r.mealsPerDay)} g · rozmezí {r.rangeGrams[0]} až {r.rangeGrams[1]} g · {kgText(r.dailyGrams * 7)} týdně
+                {r.kibbleKcal > 0 ? ` · plus granule ${r.kibbleGrams ? `${r.kibbleGrams} g` : `${r.kibbleKcal} kcal`}` : ""}
+              </p>
             </div>
-          )}
-          <p className="mt-4 text-xs text-muted">
-            Výsledek je orientační výchozí hodnota pro zdravé zvíře podle doporučení FEDIAF. Dávku upravujte podle kondice: žebra mají být hmatatelná lehkým tlakem a
-            pas viditelný shora. Po dvou až čtyřech týdnech zvíře zvažte a výpočet zopakujte. U štěňat velkých plemen, březích a kojících zvířat, seniorů s nadváhou a při
-            jakémkoli onemocnění dávku konzultujte s veterinářem. Kalkulačka nenahrazuje veterinární vyšetření.
-          </p>
-        </section>
-      )}
-    </div>
-  );
-}
-
-function AnimalForm({ a, onChange }: { a: AnimalInput; onChange: (p: Partial<AnimalInput>) => void }) {
-  const isDog = a.species === "pes";
-  const young = a.stage === "mlade";
-  const special = a.stage === "brezi" || a.stage === "kojici";
-  const estimate = isDog && young && a.weightKg > 0 && (a.ageMonths ?? 0) > 0 ? estimateAdultWeight(a.weightKg, a.ageMonths as number) : null;
-  const numberValue = (v: number | undefined) => (v && v > 0 ? String(v) : "");
-  const num = (s: string) => {
-    const n = Number(s.replace(",", "."));
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  };
-
-  return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Field label="Jméno" hint="nepovinné">
-        <input value={a.name} onChange={(e) => onChange({ name: e.target.value })} placeholder={isDog ? "např. Rex" : "např. Micka"} />
-      </Field>
-      <Field label="Kdo bude jíst?">
-        <select value={a.species} onChange={(e) => onChange({ species: e.target.value as Species, stage: "dospely", ration: "pmr", rawShare: 100, removed: [], swaps: {} })}>
-          <option value="pes">Pes</option>
-          <option value="kocka">Kočka</option>
-        </select>
-      </Field>
-      <Field label="Životní fáze">
-        <select value={a.stage} onChange={(e) => onChange({ stage: e.target.value as Stage, rawShare: e.target.value === "mlade" ? a.rawShare : 100, removed: [], swaps: {} })}>
-          {(Object.keys(STAGE_LABEL[a.species]) as Stage[]).map((s) => (
-            <option key={s} value={s}>
-              {STAGE_LABEL[a.species][s]}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Aktuální hmotnost (kg)">
-        <input type="number" inputMode="decimal" min={0.3} max={120} step={0.1} value={numberValue(a.weightKg)} onChange={(e) => onChange({ weightKg: num(e.target.value) })} placeholder="např. 20" />
-      </Field>
-
-      {young && (
-        <Field label="Věk (měsíce)">
-          <input type="number" inputMode="numeric" min={1} max={24} step={1} value={numberValue(a.ageMonths)} onChange={(e) => onChange({ ageMonths: num(e.target.value) })} placeholder="např. 4" />
-        </Field>
-      )}
-      {young && isDog && (
-        <Field label="Dospělá hmotnost (kg)" hint={estimate ? `odhad ${estimate} kg` : "plemeno nebo rodiče"}>
-          <div className="flex gap-2">
-            <input type="number" inputMode="decimal" min={1} max={100} step={0.5} value={numberValue(a.adultWeightKg)} onChange={(e) => onChange({ adultWeightKg: num(e.target.value) || undefined })} placeholder={estimate ? String(estimate) : "např. 30"} className="min-w-0" />
-            <select aria-label="Plemeno" value="" onChange={(e) => e.target.value && onChange({ adultWeightKg: Number(e.target.value) })} className="w-auto max-w-[45%]">
-              <option value="">plemeno…</option>
-              {BREEDS.map((b) => (
-                <option key={b.name} value={b.kg}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </Field>
-      )}
-      {a.stage === "brezi" && (
-        <Field label="Týden březosti" hint="1–9">
-          <input type="number" inputMode="numeric" min={1} max={9} value={a.pregnancyWeek ?? ""} onChange={(e) => onChange({ pregnancyWeek: num(e.target.value) || undefined })} placeholder="např. 6" />
-        </Field>
-      )}
-      {a.stage === "kojici" && (
-        <>
-          <Field label="Počet mláďat">
-            <input type="number" inputMode="numeric" min={1} max={14} value={a.litterSize ?? ""} onChange={(e) => onChange({ litterSize: num(e.target.value) || undefined })} placeholder="např. 6" />
-          </Field>
-          <Field label="Týden kojení" hint="1–4">
-            <input type="number" inputMode="numeric" min={1} max={4} value={a.lactationWeek ?? ""} onChange={(e) => onChange({ lactationWeek: num(e.target.value) || undefined })} placeholder="např. 3" />
-          </Field>
-        </>
-      )}
-
-      {!young && !special && (
-        <>
-          <Field label="Aktivita">
-            <select value={a.activity} onChange={(e) => onChange({ activity: e.target.value as Activity })}>
-              {(isDog ? (["nizka", "bezna", "vysoka", "pracovni"] as Activity[]) : (["nizka", "bezna", "vysoka"] as Activity[])).map((k) => (
-                <option key={k} value={k}>
-                  {ACTIVITY_LABEL[a.species][k]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Kastrace">
-            <select value={a.neutered ? "ano" : "ne"} onChange={(e) => onChange({ neutered: e.target.value === "ano" })}>
-              <option value="ano">Kastrovaný</option>
-              <option value="ne">Nekastrovaný</option>
-            </select>
-          </Field>
-        </>
-      )}
-      {!young && (
-        <Field label="Kondice">
-          <select value={a.condition} onChange={(e) => onChange({ condition: e.target.value as Condition })}>
-            {(Object.keys(CONDITION_LABEL) as Condition[]).map((k) => (
-              <option key={k} value={k}>
-                {CONDITION_LABEL[k]}
-              </option>
+            {warnings.map((n) => (
+              <p key={n.text} className="mt-3.5 rounded-control border border-brick-text bg-white p-3 text-small font-semibold text-brick-text">
+                {n.text}
+              </p>
             ))}
-          </select>
-        </Field>
-      )}
-      {isDog && (
-        <Field label="Složení dávky">
-          <select value={a.ration} onChange={(e) => onChange({ ration: e.target.value as AnimalInput["ration"] })}>
-            <option value="pmr">Jen maso, kost a vnitřnosti</option>
-            <option value="zelenina">S 20 % zeleniny</option>
-          </select>
-        </Field>
-      )}
-      <Field label="Začínáme s BARFem?">
-        <select value={a.beginner ? "ano" : "ne"} onChange={(e) => onChange({ beginner: e.target.value === "ano", rawShare: e.target.value === "ano" || young ? a.rawShare : 100 })}>
-          <option value="ne">Už krmíme syrově</option>
-          <option value="ano">Ano, přecházíme</option>
-        </select>
-      </Field>
-      {(young || a.beginner) && (
-        <Field label="Podíl syrové stravy" hint="zbytek granule">
-          <select value={a.rawShare} onChange={(e) => onChange({ rawShare: Number(e.target.value) as AnimalInput["rawShare"] })}>
-            <option value={100}>100 % syrová</option>
-            <option value={75}>75 % syrová, 25 % granule</option>
-            <option value={50}>50 % syrová, 50 % granule</option>
-            <option value={25}>25 % syrová, 75 % granule</option>
-          </select>
-        </Field>
-      )}
-    </div>
-  );
-}
-
-function ResultView({ plan, encoded, defaultEmail }: { plan: Plan; encoded: string; defaultEmail: string }) {
-  const { input: a, result: r } = plan;
-  const who = a.name || (a.species === "pes" ? "Váš pes" : "Vaše kočka");
-  const perMeal = round5(r.dailyGrams / r.mealsPerDay);
-  const comp = r.composition;
-  const parts = [
-    { label: "svalovina", v: comp.muscle, cls: "bg-green" },
-    { label: "kost", v: comp.bone, cls: "bg-brick" },
-    { label: "játra", v: comp.liver, cls: "bg-brick-text" },
-    { label: "vnitřnosti", v: comp.organs, cls: "bg-green-hover" },
-    { label: "zelenina", v: comp.plant, cls: "bg-line" },
-  ].filter((p) => p.v > 0);
-
-  return (
-    <>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[22px]">{who}</h2>
-        <span className="text-xs text-muted">
-          {STAGE_LABEL[a.species][a.stage]} · {a.weightKg} kg{a.condition !== "idealni" && a.stage !== "mlade" ? ` · cíl ${r.idealKg} kg` : ""} · {r.pct} % hmotnosti
-          {r.energyMode ? ` · ${r.kcalPerDay} kcal` : ""}
-        </span>
-      </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile label="Denně" value={`${r.dailyGrams} g`} sub={`rozmezí ${r.rangeGrams[0]}–${r.rangeGrams[1]} g`} />
-        <Tile label="Týdně" value={kgText(r.dailyGrams * 7)} sub="7 dní" />
-        <Tile label="Měsíčně" value={kgText(r.dailyGrams * 30)} sub="30 dní" />
-        <Tile label="Porce" value={`${r.mealsPerDay} × ${perMeal} g`} sub={`${r.mealsPerDay} ${r.mealsPerDay === 2 ? "jídla" : "jídel"} denně${r.kibbleKcal > 0 ? ` · plus granule ${r.kibbleGrams ? `${r.kibbleGrams} g` : `${r.kibbleKcal} kcal`}` : ""}`} />
-      </div>
-      <div className="mt-3 flex h-2.5 overflow-hidden rounded-control border border-line">
-        {parts.map((p) => (
-          <div key={p.label} className={p.cls} style={{ width: `${p.v}%` }} title={`${p.label} ${p.v} %`} />
-        ))}
-      </div>
-      <p className="mt-1 text-xs text-muted">
-        {parts.map((p) => `${p.label} ${p.v} %`).join(" · ")}
-        {plan.bone.fromMix != null ? ` · kost z mixu ${plan.bone.fromMix} %, z Kostí ${plan.bone.fromBones} %` : ""}
-      </p>
-      {plan.notes.length > 0 && (
-        <ul className="mt-3 space-y-1 text-sm">
-          {plan.notes.map((n, i) => (
-            <li key={i} className={n.kind === "warn" ? "text-brick-text" : "text-muted"}>
-              {n.text}
-            </li>
-          ))}
-        </ul>
-      )}
-      <PlanExport plan={plan} encoded={encoded} defaultEmail={defaultEmail} />
-    </>
-  );
-}
-
-function Tile({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="rounded-card border border-line bg-white px-4 py-3">
-      <p className="text-eyebrow uppercase text-muted">{label}</p>
-      <p className="text-[28px] font-semibold leading-tight text-green">{value}</p>
-      <p className="text-xs text-muted">{sub}</p>
-    </div>
-  );
-}
-
-/** Plán krmení: sbalený náhled týdne v misce, stažení, tisk a odeslání PDF. */
-function PlanExport({ plan, encoded, defaultEmail }: { plan: Plan; encoded: string; defaultEmail: string }) {
-  const [open, setOpen] = useState(false);
-  const [emailOpen, setEmailOpen] = useState(false);
-  const [email, setEmail] = useState(defaultEmail);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const [pending, startTransition] = useTransition();
-  const href = `/kalkulacka/plan.pdf?d=${encoded}`;
-  const btn = "inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line bg-white px-3 text-sm text-green hover:border-green";
-
-  return (
-    <div className="mt-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={btn}>
-          {open ? "Skrýt plán krmení" : "Plán krmení na lednici (PDF)"}
-        </button>
-        <span className="text-small">Dávka, porce a rozpis po dnech na {plan.days} dní, balení po balení{plan.input.beginner ? ", postup přechodu" : ""}.</span>
-      </div>
-      {open && (
-        <div className="mt-3 rounded-card border border-line bg-white p-4">
-          <FeedingSchedule plan={plan} />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <a href={`${href}&download=1`} className={btn}>
-              <FileDown strokeWidth={1.75} className="h-4 w-4" /> Stáhnout PDF
-            </a>
-            <a href={href} target="_blank" rel="noopener" className={btn}>
-              <Printer strokeWidth={1.75} className="h-4 w-4" /> Vytisknout
-            </a>
-            <button type="button" onClick={() => setEmailOpen((o) => !o)} aria-expanded={emailOpen} className={btn}>
-              <Mail strokeWidth={1.75} className="h-4 w-4" /> Poslat e-mailem
-            </button>
-          </div>
-          {emailOpen && (
-            <form
-              className="mt-3 flex flex-wrap items-center gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                startTransition(async () => {
-                  const res = await emailPlan(email, encoded);
-                  setMsg(res.ok ? { ok: true, text: `Plán jsme poslali na ${email}.` } : { ok: false, text: res.error });
-                });
-              }}
-            >
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vas@email.cz" required className="w-auto min-w-[220px]" aria-label="E-mail pro zaslání plánu" />
-              <Button type="submit" variant="secondary" disabled={pending}>
-                {pending ? "Odesílám…" : "Odeslat"}
-              </Button>
-            </form>
-          )}
-          {msg && (
-            <p role="status" className={`mt-2 text-sm ${msg.ok ? "text-green" : "text-brick-text"}`}>
-              {msg.text}
+            <p className="mt-3.5 text-small">
+              Výchozí hodnota pro zdravé zvíře podle doporučení FEDIAF. Po dvou až čtyřech týdnech zvíře zvažte: žebra mají být hmatatelná, pas vidět shora. Při zdravotních potížích se poraďte s veterinářem.
             </p>
-          )}
-        </div>
+          </section>
+
+          <section className="rounded-panel border border-line bg-white shadow-card" aria-label="Nákup">
+            <div className="flex flex-wrap items-center justify-between gap-3.5 border-b border-line px-5 py-4 md:px-7">
+              <div>
+                <h3 className="text-heading-lg text-green">Co nakoupit na {days} dní</h3>
+                <p className="text-small">Celá balení, jedno po druhém. Mixy, kosti a olej z naší nabídky.</p>
+              </div>
+              <div className="flex gap-1.25" role="group" aria-label="Období">
+                {DAYS.map((d) => (
+                  <button key={d} type="button" onClick={() => setDays(d)} aria-pressed={days === d} className={chipClass(days === d)}>
+                    {d} dní
+                  </button>
+                ))}
+              </div>
+            </div>
+            {plan.items.length === 0 ? (
+              <p className="px-5 py-5 md:px-7">Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu.</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {plan.items.map((it) => (
+                  <li key={it.product.slug} className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-1 px-5 py-3.5 md:grid-cols-[1fr_auto_auto] md:px-7">
+                    <div className="min-w-0">
+                      <Link href={`/produkt/${it.product.slug}`} className="font-semibold text-green hover:underline">
+                        {productName(it.product)}
+                      </Link>
+                      <p className="text-small">{it.portionText}</p>
+                    </div>
+                    <p className="text-right text-small tabular-nums">
+                      {it.qty} × {formatWeight(it.product.weightGrams)}
+                      {it.periods > 1 && <span className="block text-muted">vydrží ~{it.periods} nákupy</span>}
+                    </p>
+                    <p className="col-start-2 text-right font-semibold text-green tabular-nums md:col-start-3">{formatPrice(it.qty * it.product.priceCzk)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-5 border-t border-line px-5 py-5 md:px-7">
+              <p>
+                <span className="text-price-lg text-green">{formatPrice(plan.totalCzk)}</span>
+                <span className="block text-small">
+                  {formatPrice(plan.perDayCzk)} za den{plan.items.some((it) => it.periods > 1) ? " (balení na víc nákupů rozpočítaná)" : ""}
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-3.5">
+                {added ? (
+                  <ButtonLink href="/kosik" variant="secondary" size="md">
+                    <Check className="size-5" strokeWidth={1.75} aria-hidden /> V košíku, přejít do košíku
+                  </ButtonLink>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="action"
+                    size="md"
+                    disabled={plan.items.length === 0}
+                    onClick={() => {
+                      plan.items.forEach((it) => cart.add(it.product.slug, it.qty));
+                      setAdded(true);
+                    }}
+                  >
+                    <ShoppingBasket className="size-5" strokeWidth={1.75} aria-hidden /> Přidat vše do košíku
+                  </Button>
+                )}
+                <Button type="button" variant="secondary" size="md" onClick={() => router.push("/krmeni-na-miru")}>
+                  <PawPrint className="size-5" strokeWidth={1.75} aria-hidden /> Chci plán a pravidelné dodávky
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <details className="rounded-panel border border-line bg-white p-5 shadow-card md:px-7">
+            <summary className="cursor-pointer text-button text-green">Rozpis po dnech a poznámky k výpočtu</summary>
+            <div className="mt-5 space-y-5">
+              <FeedingSchedule plan={plan} />
+              {infos.length > 0 && (
+                <ul className="list-disc space-y-1 pl-5 text-small">
+                  {infos.map((n) => (
+                    <li key={n.text}>{n.text}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </details>
+        </>
+      ) : (
+        <p className="px-1 text-small">Doplňte váhu{young ? " a věk v měsících" : ""}, výsledek se objeví sám.</p>
       )}
     </div>
   );
 }
 
-function AddonRow({ a, plan, onChange }: { a: AnimalInput; plan: Plan; onChange: (p: Partial<AnimalInput>) => void }) {
-  const keys = (Object.keys(ADDON_LABEL) as AddonKey[]).filter((k) => {
-    if (k === "zelenina") return a.species === "pes" && a.ration === "zelenina";
-    if (k === "rekreacni") return a.species === "pes" && a.stage !== "mlade" && plan.result.idealKg >= 10;
-    if (k === "granule") return a.rawShare < 100;
-    return true;
-  });
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-      <span className="text-eyebrow uppercase text-muted">Přidat</span>
-      {keys.map((k) => (
-        <label key={k} className="flex items-center gap-1">
-          <input type="checkbox" checked={a.addons[k]} onChange={(e) => onChange({ addons: { ...a.addons, [k]: e.target.checked } })} className="h-4 w-4 min-h-0 w-auto accent-green" />
-          {ADDON_LABEL[k]}
-        </label>
-      ))}
+    <div>
+      <p className="mb-2 text-label text-green">{label}</p>
+      <div className="flex flex-wrap items-center gap-1.25">{children}</div>
     </div>
-  );
-}
-
-function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onChange: (p: Partial<AnimalInput>) => void }) {
-  const used = new Set(plan.items.map((i) => i.product.slug));
-  const alternatives = (it: Reco) =>
-    it.role === "zaklad" || it.role === "kosti" ? plan.pool.filter((p) => p.line === it.product.line && !used.has(p.slug) && !(it.role === "zaklad" && /ryb/i.test(p.variant))) : [];
-  /** Náhradu ukládáme pod původním slugem, aby šlo nahradit i už nahrazený produkt. */
-  const originOf = (slug: string) => Object.keys(a.swaps).find((k) => a.swaps[k] === slug) ?? slug;
-
-  if (plan.items.length === 0) return <p className="mt-3 text-sm text-muted">Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu.</p>;
-
-  return (
-    <div className="mt-3 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-line text-left text-eyebrow text-muted uppercase">
-            <th className="py-2 pr-2 font-semibold">Produkt</th>
-            <th className="py-2 pr-2 text-right font-semibold">Porce</th>
-            <th className="py-2 pr-2 text-right font-semibold">Balení</th>
-            <th className="py-2 pr-2 text-right font-semibold">Cena</th>
-            <th className="py-2" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {plan.items.map((it) => {
-            const alts = alternatives(it);
-            return (
-              <tr key={it.product.slug}>
-                <td className="py-2 pr-2">
-                  <Link href={`/produkt/${it.product.slug}`} className="font-semibold hover:underline">
-                    {productName(it.product)}
-                  </Link>
-                  <span className="block text-xs text-muted">
-                    {it.why}
-                    {leftoverText(it) && <> · {leftoverText(it)}</>}
-                    {alts.length > 0 && (
-                      <>
-                        {" · "}
-                        <select value="" onChange={(e) => e.target.value && onChange({ swaps: { ...a.swaps, [originOf(it.product.slug)]: e.target.value } })} aria-label={`Nahradit ${productName(it.product)}`} className="inline-block w-auto min-h-0 border-0 border-b border-dashed border-line bg-transparent px-1 py-0 text-xs text-green">
-                          <option value="">nahradit…</option>
-                          {alts.map((p) => (
-                            <option key={p.slug} value={p.slug}>
-                              {p.variant}
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    )}
-                  </span>
-                </td>
-                <td className="py-2 pr-2 text-right text-small tabular-nums">{it.portionText}</td>
-                <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">
-                  {it.qty} × {formatWeight(it.product.weightGrams)}
-                  {it.periods > 1 && <span className="block text-small text-muted">vydrží ~{it.periods} nákupy</span>}
-                </td>
-                <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">{formatPrice(it.qty * it.product.priceCzk)}</td>
-                <td className="py-2 text-right">
-                  <button type="button" onClick={() => onChange({ removed: [...a.removed, it.product.slug] })} aria-label={`Vyřadit ${productName(it.product)}`} title="Vyřadit" className="inline-flex h-6 w-6 items-center justify-center rounded-control text-muted hover:bg-cream hover:text-brick-text">
-                    <X strokeWidth={1.75} className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-label text-green">
-        {label}
-        {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
-      </span>
-      {children}
-    </label>
   );
 }

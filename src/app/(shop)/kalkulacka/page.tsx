@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarfCalculator } from "@/components/barf/barf-calculator";
 import { JsonLd } from "@/components/seo/json-ld";
-import { PageIntro } from "@/components/ui/page-intro";
+import { SideCards, WizardHero, WizardLayout } from "@/components/plan/wizard-ui";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { StepDisc } from "@/components/ui/field";
 import { getProducts } from "@/lib/products";
@@ -35,16 +35,25 @@ export default async function CalculatorPage() {
   return (
     <>
       <JsonLd data={faqLd} />
-      <PageIntro eyebrow="Kalkulačka dávky" title="Kolik syrové stravy denně?">
-        <p>
-          Zadejte hmotnost, věk, aktivitu a kondici. Kalkulačka spočítá denní dávku, rozdělí ji na maso, kost a vnitřnosti, doporučí produkty z naší
-          aktuální nabídky a sečte nákup na týden, čtrnáct dní nebo měsíc. Umí štěňata, koťata, seniory i březí a kojící zvířata.
-        </p>
-      </PageIntro>
-
-      <Section tone="paper" id="kalkulacka">
+      <WizardHero eyebrow="Kalkulačka dávky" title="Kolik toho denně do misky?" em="Spočítáme to za vás." lead="Tři údaje a hned víte, kolik syrové stravy denně dávat a co si na čtrnáct dní koupit. Umí štěňata, koťata, seniory i březí a kojící zvířata." />
+      <WizardLayout
+        side={
+          <SideCards
+            items={[
+              { icon: "calculator", title: "Tři údaje", text: "Kdo bude jíst, kolik váží a jak je starý. Ostatní má rozumné výchozí hodnoty.", tone: "paper" },
+              { icon: "basket", title: "Nákup v celých baleních", text: "Seznam na 7, 14 nebo 30 dní z naší nabídky, jedním tlačítkem do košíku.", tone: "cream" },
+              { icon: "paw", title: "Chcete víc?", text: "Průvodce Krmení na míru sestaví plán na jméno a nastaví pravidelné dodávky.", tone: "white" },
+            ]}
+            trust={
+              <>
+                <strong>Výpočet podle FEDIAF.</strong> Energie z metabolické hmotnosti, ne jedna tabulka procent.
+              </>
+            }
+          />
+        }
+      >
         <BarfCalculator products={products} />
-      </Section>
+      </WizardLayout>
 
       <Section>
         <SectionHeader eyebrow="Postup" title="Jak počítáme">
