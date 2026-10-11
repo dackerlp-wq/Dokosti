@@ -45,9 +45,9 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
     <form action={applyPrices} className="space-y-4">
       <input type="hidden" name="items" value={JSON.stringify(changes.map((r) => ({ id: r.p.id, price: r.next })))} />
       <input type="hidden" name="reason" value={reason} />
-      <div className="grid gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-3 rounded-card border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-6">
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Řada</span>
+          <span className="mb-1 block text-label text-green">Řada</span>
           <select value={line} onChange={(e) => setLine(e.target.value)} className="min-h-9 py-1">
             <option value="">všechny</option>
             {lines.map(([slug, name]) => (
@@ -58,7 +58,7 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Dodavatel</span>
+          <span className="mb-1 block text-label text-green">Dodavatel</span>
           <select value={supplier} onChange={(e) => setSupplier(e.target.value)} className="min-h-9 py-1">
             <option value="">všichni</option>
             {suppliers.map((s) => (
@@ -69,7 +69,7 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Pravidlo</span>
+          <span className="mb-1 block text-label text-green">Pravidlo</span>
           <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} className="min-h-9 py-1">
             <option value="procent">Změnit o %</option>
             <option value="castka">Změnit o Kč</option>
@@ -77,11 +77,11 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">{mode === "marze" ? "Marže (%)" : mode === "castka" ? "Kč (záporné = zlevnit)" : "% (záporné = zlevnit)"}</span>
+          <span className="mb-1 block text-label text-green">{mode === "marze" ? "Marže (%)" : mode === "castka" ? "Kč (záporné = zlevnit)" : "% (záporné = zlevnit)"}</span>
           <input value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal" className="min-h-9 py-1" />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Zaokrouhlit</span>
+          <span className="mb-1 block text-label text-green">Zaokrouhlit</span>
           <select value={rounding} onChange={(e) => setRounding(e.target.value as "1" | "9" | "10")} className="min-h-9 py-1">
             <option value="1">na koruny</option>
             <option value="9">na …9 Kč</option>
@@ -89,15 +89,15 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Důvod (do deníku)</span>
+          <span className="mb-1 block text-label text-green">Důvod (do deníku)</span>
           <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="např. zdražení od dodavatele" className="min-h-9 py-1" />
         </label>
       </div>
 
-      <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line bg-paper">
+      <div className="overflow-x-auto rounded-card border border-line bg-white">
         <table className="w-full text-sm">
           <thead>
-            <tr className="label border-b border-line text-left text-[10px] text-muted">
+            <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
               <th className="px-3 py-2 font-semibold">Použít</th>
               <th className="px-3 py-2 font-semibold">Produkt</th>
               <th className="px-3 py-2 font-semibold">Nákup</th>
@@ -116,7 +116,7 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
                   </td>
                   <td className="px-3 py-2 font-semibold">
                     {p.name}
-                    {p.inAction && <span className="ml-2 text-xs font-normal text-brick-text">v akci: změní se cena po akci</span>}
+                    {p.inAction && <span className="ml-2 text-small font-normal text-brick-text">v akci: změní se cena po akci</span>}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">{p.purchase_price_czk ? formatPrice(p.purchase_price_czk) : "—"}</td>
                   <td className="px-3 py-2 whitespace-nowrap">{formatPrice(p.price_czk)}</td>

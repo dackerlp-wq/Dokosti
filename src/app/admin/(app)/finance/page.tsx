@@ -59,7 +59,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
         title="Finance"
         subtitle="Od obratu k zisku. Tržby z kasy a webu, náklady na prodané zboží z nákupních cen, odpisy a všechny výdaje. Orientační přehled pro vás, účetní má své."
         actions={
-          <Link href="/admin/finance/splatnosti" className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-green px-3 text-[11px] text-green">
+          <Link href="/admin/finance/splatnosti" className="text-button inline-flex min-h-9 items-center rounded-control border border-green px-3 text-green">
             Peníze a splatnosti
           </Link>
         }
@@ -82,7 +82,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
         <Stat label={`Rok ${year} do konce měsíce`} value={formatPrice(y.profit)} warn={y.profit < 0} sub={`obrat ${formatPrice(y.revenue)}, marže ${pct(y.margin, y.revenue)}`} />
       </div>
 
-      <section className="mt-6 rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <section className="mt-6 rounded-card border border-line bg-white p-4">
         <h2 className="mb-2 text-[18px]">Posledních 12 měsíců</h2>
         <FinanceChart bars={bars} />
       </section>
@@ -138,9 +138,9 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
               <Td className="text-right text-muted">{pct(c.profit, c.revenue)}</Td>
             </tr>
           </Table>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-small text-muted">
             Zboží nakoupené tento měsíc (příjemky): {formatPrice(c.goodsBought)}. Do výsledku jde až prodané zboží v nákupní ceně, zbytek leží na skladě. Mzdy se objeví po uzavření měsíce v{" "}
-            <Link href={`/admin/mzdy?mesic=${month}`} className="text-green underline">
+            <Link href={`/admin/mzdy?mesic=${month}`} className="text-brick-text underline">
               Mzdách
             </Link>
             .
@@ -171,7 +171,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 return (
                   <tr key={r.month} className={r.month === month ? "font-semibold" : ""}>
                     <Td>
-                      <Link href={`/admin/finance?mesic=${r.month}`} className="text-green hover:underline">
+                      <Link href={`/admin/finance?mesic=${r.month}`} className="text-brick-text hover:underline">
                         {monthLabel(r.month)}
                       </Link>
                     </Td>

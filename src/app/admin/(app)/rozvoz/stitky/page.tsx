@@ -20,7 +20,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
   if (den && /^\d{4}-\d{2}-\d{2}$/.test(den)) q = q.eq("delivery_date", den);
   const { data: orders } = await q;
   const chip = (href: string, label: string, on: boolean) => (
-    <Link key={href} href={href} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${on ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+    <Link key={href} href={href} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${on ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
       {label}
     </Link>
   );
@@ -37,7 +37,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <p className="label text-[11px] text-muted">
+          <p className="text-eyebrow uppercase text-muted">
             <Link href="/admin/rozvoz" className="hover:underline">
               Rozvoz a odběry
             </Link>{" "}
@@ -67,10 +67,10 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
             // Kusy jen u kusového zboží; zboží na váhu se do počtu balíků nepočítá.
             const pieces = lines.reduce((n, i) => n + (Number.isInteger(Number(i.qty)) ? Number(i.qty) : 1), 0);
             return (
-              <div key={o.id} className="break-inside-avoid rounded-[var(--radius-card)] border border-line bg-white p-4 text-[13px] print:rounded-none print:border-dashed print:border-ink">
+              <div key={o.id} className="break-inside-avoid rounded-card border border-line bg-white p-4 text-[13px] print:rounded-none print:border-dashed print:border-ink">
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-[22px] font-semibold leading-tight">{o.customer_name}</p>
-                  <p className="label shrink-0 text-[10px] text-muted">{o.order_number}</p>
+                  <p className="text-eyebrow uppercase shrink-0 text-muted">{o.order_number}</p>
                 </div>
                 <p className="mt-1 text-[15px]">{o.customer_phone}</p>
                 {o.street && (
@@ -80,7 +80,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
                     {o.zip} {o.city}
                   </p>
                 )}
-                <p className="mt-2 label text-[10px] text-brick-text">
+                <p className="text-eyebrow uppercase mt-2 text-brick-text">
                   {SHIPPING_LABEL[o.shipping_method]}
                   {o.delivery_date && ` · ${formatDay(o.delivery_date)}`}
                 </p>

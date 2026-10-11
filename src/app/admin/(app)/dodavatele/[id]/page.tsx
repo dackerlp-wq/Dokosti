@@ -39,28 +39,28 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
         }
       />
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
-        <form action={saveSupplier} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveSupplier} className="rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={s.id} />
           <h2 className="text-[18px]">Údaje</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block sm:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Název</span>
+              <span className="mb-1 block text-label text-green">Název</span>
               <input name="name" defaultValue={s.name} required />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Kontaktní osoba</span>
+              <span className="mb-1 block text-label text-green">Kontaktní osoba</span>
               <input name="contact" defaultValue={s.contact} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">E-mail pro objednávky</span>
+              <span className="mb-1 block text-label text-green">E-mail pro objednávky</span>
               <input name="email" type="email" defaultValue={s.email} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Telefon</span>
+              <span className="mb-1 block text-label text-green">Telefon</span>
               <input name="phone" defaultValue={s.phone} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Objednávkový den</span>
+              <span className="mb-1 block text-label text-green">Objednávkový den</span>
               <select name="order_weekday" defaultValue={s.order_weekday ?? ""}>
                 <option value="">kdykoli</option>
                 {DAY_NAMES_SHORT.map((d, i) => (
@@ -71,15 +71,15 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
               </select>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Dodací lhůta (dní)</span>
+              <span className="mb-1 block text-label text-green">Dodací lhůta (dní)</span>
               <input name="lead_days" type="number" min={0} defaultValue={s.lead_days} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Minimální objednávka (Kč)</span>
+              <span className="mb-1 block text-label text-green">Minimální objednávka (Kč)</span>
               <input name="min_order_czk" type="number" min={0} defaultValue={s.min_order_czk} />
             </label>
             <label className="block sm:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+              <span className="mb-1 block text-label text-green">Poznámka</span>
               <textarea name="note" rows={2} defaultValue={s.note} placeholder="např. B2B portál, slevy při odběru nad 10 000 Kč" />
             </label>
             <label className="flex items-center gap-2 text-sm sm:col-span-2">
@@ -94,10 +94,10 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
         </form>
 
         <div className="space-y-5">
-          <form action={assignProducts} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <form action={assignProducts} className="rounded-card border border-line bg-white p-4">
             <input type="hidden" name="supplier_id" value={s.id} />
             <h2 className="text-[18px]">Produkty od tohoto dodavatele</h2>
-            <p className="mt-1 text-xs text-muted">Zaškrtnuté produkty se předvyplní v objednávce a Sklad u nich počítá s dodací lhůtou.</p>
+            <p className="mt-1 text-small text-muted">Zaškrtnuté produkty se předvyplní v objednávce a Sklad u nich počítá s dodací lhůtou.</p>
             <div className="mt-3 max-h-[420px] overflow-y-auto">
               {all.map((p) => {
                 const other = p.supplier_id && p.supplier_id !== id;
@@ -105,9 +105,9 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
                   <label key={p.id} className={`flex items-center gap-2 border-t border-line py-1.5 text-sm first:border-t-0 ${other ? "text-muted" : ""}`}>
                     <input type="checkbox" name="product_id" value={p.id} defaultChecked={p.supplier_id === id} className="h-4 w-4 min-h-0 w-auto accent-green" />
                     <span className="min-w-0 flex-1 truncate">
-                      {productName(p)} <span className="text-xs text-muted">· {LINE_INFO[p.line].name}</span>
+                      {productName(p)} <span className="text-small text-muted">· {LINE_INFO[p.line].name}</span>
                     </span>
-                    {other && <span className="text-xs">jiný dodavatel</span>}
+                    {other && <span className="text-small">jiný dodavatel</span>}
                   </label>
                 );
               })}
@@ -117,7 +117,7 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
             </Button>
           </form>
 
-          <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <section className="rounded-card border border-line bg-white p-4">
             <h2 className="text-[18px]">Objednávky u dodavatele</h2>
             {pos.length === 0 ? (
               <p className="mt-2 text-sm text-muted">Zatím žádná.</p>
@@ -127,7 +127,7 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
                   {pos.map((o) => (
                     <tr key={o.id}>
                       <Td>
-                        <Link href={`/admin/nakup/${o.id}`} className="font-semibold text-green hover:underline">
+                        <Link href={`/admin/nakup/${o.id}`} className="font-semibold text-brick-text hover:underline">
                           {o.number}
                         </Link>
                       </Td>

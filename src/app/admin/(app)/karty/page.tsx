@@ -67,7 +67,7 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
               return (
                 <tr key={b}>
                   <Td>
-                    <Link href={`/admin/karty?davka=${b}`} className="text-green underline">
+                    <Link href={`/admin/karty?davka=${b}`} className="text-brick-text underline">
                       {b === 0 ? "ručně zadané" : `Dávka ${b}`}
                     </Link>
                   </Td>
@@ -78,10 +78,10 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
                   <Td>
                     {b > 0 && (
                       <span className="flex flex-wrap gap-3">
-                        <a href={`/admin/karty/export?davka=${b}`} className="text-green underline">
+                        <a href={`/admin/karty/export?davka=${b}`} className="text-brick-text underline">
                           CSV pro tiskárnu
                         </a>
-                        <a href={`/admin/karty/tisk?davka=${b}`} target="_blank" rel="noopener" className="text-green underline">
+                        <a href={`/admin/karty/tisk?davka=${b}`} target="_blank" rel="noopener" className="text-brick-text underline">
                           Náhled s QR
                         </a>
                       </span>
@@ -105,7 +105,7 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
         ).map(([id, label]) => {
           const p = new URLSearchParams({ ...(davka ? { davka } : {}), ...(id ? { stav: id } : {}) }).toString();
           return (
-            <Link key={id} href={`/admin/karty${p ? `?${p}` : ""}`} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${(stav ?? "") === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+            <Link key={id} href={`/admin/karty${p ? `?${p}` : ""}`} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${(stav ?? "") === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
               {label}
             </Link>
           );
@@ -134,7 +134,7 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
                 </Td>
                 <Td>
                   {c.customer_id ? (
-                    <Link href={`/admin/zakaznici/${c.customer_id}`} className="text-green underline">
+                    <Link href={`/admin/zakaznici/${c.customer_id}`} className="text-brick-text underline">
                       {c.customers?.name || c.customers?.email || "zákazník"}
                     </Link>
                   ) : (
@@ -148,7 +148,7 @@ export default async function CardsPage({ searchParams }: { searchParams: Promis
                       <input type="hidden" name="code" value={c.code} />
                       <input type="hidden" name="blocked" value="0" />
                       <input type="hidden" name="back" value={back} />
-                      <button type="submit" className="text-sm text-green hover:underline">
+                      <button type="submit" className="text-sm text-brick-text hover:underline">
                         Odblokovat
                       </button>
                     </form>

@@ -51,7 +51,7 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
             ...(week !== weekStartOf(today) ? [{ href: "/admin/plan-smen", label: "Tento týden", on: false }] : []),
           ]}
         />
-        <Link href={`/admin/kalendar?mesic=${week.slice(0, 7)}`} className="text-sm text-green hover:underline">
+        <Link href={`/admin/kalendar?mesic=${week.slice(0, 7)}`} className="text-sm text-brick-text hover:underline">
           Kalendář
         </Link>
       </div>
@@ -63,17 +63,17 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
           const off = (attByDay.get(d) ?? []).filter((a) => a.kind !== "prace");
           const isToday = d === today;
           return (
-            <section key={d} className={`rounded-[var(--radius-card)] border bg-paper p-3 ${isToday ? "border-green" : "border-line"}`}>
-              <p className={`label text-[11px] ${isToday ? "text-green" : "text-muted"}`}>
+            <section key={d} className={`rounded-card border bg-paper p-3 ${isToday ? "border-green" : "border-line"}`}>
+              <p className={`text-eyebrow uppercase ${isToday ? "text-green" : "text-muted"}`}>
                 {DAY_NAMES_SHORT[(i + 1) % 7]} {formatDay(d)}
               </p>
               <ul className="mt-2 space-y-1.5 text-sm">
                 {list.map((p) => (
-                  <li key={p.id} className="rounded-[var(--radius-control)] border border-line bg-white px-2 py-1.5">
+                  <li key={p.id} className="rounded-control border border-line bg-white px-2 py-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <span>
                         <b className="font-semibold">{name.get(p.employee_id) ?? "—"}</b>
-                        <span className="block text-xs text-muted">
+                        <span className="block text-small text-muted">
                           {hhmm(p.starts)}–{hhmm(p.ends)}
                           {p.note ? ` · ${p.note}` : ""}
                         </span>
@@ -81,7 +81,7 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
                       {admin.isManager && (
                         <form action={removeShiftPlan}>
                           <input type="hidden" name="id" value={p.id} />
-                          <button type="submit" aria-label="Odebrat z plánu" className="text-xs text-muted hover:text-brick-text">
+                          <button type="submit" aria-label="Odebrat z plánu" className="text-small text-muted hover:text-brick-text">
                             ×
                           </button>
                         </form>
@@ -89,10 +89,10 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
                     </div>
                   </li>
                 ))}
-                {list.length === 0 && <li className="text-xs text-muted">nikdo</li>}
+                {list.length === 0 && <li className="text-small text-muted">nikdo</li>}
               </ul>
               {(real.length > 0 || off.length > 0) && (
-                <div className="mt-2 border-t border-line pt-2 text-xs text-muted">
+                <div className="mt-2 border-t border-line pt-2 text-small text-muted">
                   {real.map((a, j) => (
                     <p key={j}>
                       {name.get(a.employee_id ?? "") ?? "?"}: v kase {time(a.started_at)}–{time(a.ended_at)}
@@ -111,11 +111,11 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
       </div>
 
       {admin.isManager && (
-        <form action={addShiftPlan} className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <p className="label mb-2 text-[11px] text-muted">Naplánovat směnu</p>
+        <form action={addShiftPlan} className="mt-4 rounded-card border border-line bg-white p-4">
+          <p className="mb-2 text-label text-green">Naplánovat směnu</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <label className="block lg:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Kdo</span>
+              <span className="mb-1 block text-label text-green">Kdo</span>
               <select name="employee_id" required className="min-h-9 py-1">
                 {employees.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -126,19 +126,19 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
               </select>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Den</span>
+              <span className="mb-1 block text-label text-green">Den</span>
               <input name="day" type="date" defaultValue={today >= days[0] && today <= days[6] ? today : days[0]} required className="min-h-9 py-1" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Od</span>
+              <span className="mb-1 block text-label text-green">Od</span>
               <input name="starts" type="time" defaultValue="08:00" required className="min-h-9 py-1" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Do</span>
+              <span className="mb-1 block text-label text-green">Do</span>
               <input name="ends" type="time" defaultValue="16:00" required className="min-h-9 py-1" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+              <span className="mb-1 block text-label text-green">Poznámka</span>
               <input name="note" placeholder="rozvoz, zaučení…" className="min-h-9 py-1" />
             </label>
           </div>
@@ -153,18 +153,18 @@ export default async function ShiftPlanPage({ searchParams }: { searchParams: Pr
                 ))}
               </div>
               <label className="block">
-                <span className="label mb-1 block text-[11px] text-muted">Do data</span>
+                <span className="mb-1 block text-label text-green">Do data</span>
                 <input name="until" type="date" className="min-h-9 py-1" />
               </label>
-              <span className="text-xs text-muted">Ode dne výše do zadaného data, jen zaškrtnuté dny.</span>
+              <span className="text-small text-muted">Ode dne výše do zadaného data, jen zaškrtnuté dny.</span>
             </div>
           </details>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <Button type="submit" className="min-h-9">
               Naplánovat
             </Button>
-            {employees.length === 0 && <span className="text-xs text-brick-text">Nejdřív založte zaměstnance.</span>}
-            {perEmp.size > 0 && <span className="text-xs text-muted">Tento týden: {[...perEmp.entries()].map(([id, h]) => `${name.get(id) ?? "?"} ${h.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} h`).join(" · ")}</span>}
+            {employees.length === 0 && <span className="text-small text-brick-text">Nejdřív založte zaměstnance.</span>}
+            {perEmp.size > 0 && <span className="text-small text-muted">Tento týden: {[...perEmp.entries()].map(([id, h]) => `${name.get(id) ?? "?"} ${h.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} h`).join(" · ")}</span>}
           </div>
         </form>
       )}

@@ -27,7 +27,7 @@ export function PasswordForm() {
 function Field({ label, name, hint, autoComplete }: { label: string; name: string; hint?: string; autoComplete: string }) {
   return (
     <label className="block">
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className="mb-1 block text-label text-green">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
       </span>

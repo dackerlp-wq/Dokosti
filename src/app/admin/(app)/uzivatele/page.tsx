@@ -23,8 +23,8 @@ export default async function UsersPage() {
       <PageHeader title="Uživatelé" subtitle="Kdo se dostane do administrace a kasy a co smí. Jméno si každý nastaví v Můj účet, zobrazuje se v deníku změn a u směn." />
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         {(Object.keys(ADMIN_ROLE_LABEL) as AdminRole[]).map((r) => (
-          <div key={r} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-            <p className="label text-[11px] text-muted">{ADMIN_ROLE_LABEL[r]}</p>
+          <div key={r} className="rounded-card border border-line bg-white p-4">
+            <p className="text-eyebrow uppercase text-muted">{ADMIN_ROLE_LABEL[r]}</p>
             <p className="mt-1 text-sm">{ADMIN_ROLE_HINT[r]}</p>
           </div>
         ))}
@@ -35,7 +35,7 @@ export default async function UsersPage() {
             <tr key={u.user_id}>
               <Td className="font-semibold">
                 {u.name || <span className="text-muted">(bez jména)</span>}
-                {u.user_id === admin.id && <span className="ml-2 text-xs text-muted">vy</span>}
+                {u.user_id === admin.id && <span className="ml-2 text-small text-muted">vy</span>}
               </Td>
               <Td className="text-muted">{u.email}</Td>
               <Td>
@@ -70,8 +70,8 @@ export default async function UsersPage() {
           ))}
         </Table>
       </div>
-      <div className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-        <p className="label text-[11px] text-muted">Nový uživatel</p>
+      <div className="mt-4 rounded-card border border-line bg-white p-4 text-sm">
+        <p className="text-eyebrow uppercase text-muted">Nový uživatel</p>
         <p className="mt-1">
           Zatím: v Supabase → Authentication → Users založte uživatele (e-mail a heslo), zkopírujte jeho ID a vložte do tabulky <code>admins</code> s rolí. Pozvánka e-mailem přímo odsud přijde s etapou Provoz (zaměstnanci).
         </p>

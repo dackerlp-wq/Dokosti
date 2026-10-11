@@ -38,7 +38,7 @@ export default async function StockLogPage({ searchParams }: { searchParams: Pro
           <input type="date" name="od" defaultValue={sp.od} aria-label="Od" className="min-h-9 w-auto py-1" />
           <span className="text-muted">–</span>
           <input type="date" name="do" defaultValue={sp.do} aria-label="Do" className="min-h-9 w-auto py-1" />
-          <a href={exportHref} className="label ml-auto text-[11px] text-green underline">
+          <a href={exportHref} className="ml-auto text-small font-semibold text-brick-text underline">
             Export CSV
           </a>
         </StockFilters>
@@ -57,7 +57,7 @@ export default async function StockLogPage({ searchParams }: { searchParams: Pro
                   <Td className="whitespace-nowrap text-muted">{formatDate(m.created_at)}</Td>
                   <Td>
                     {p ? (
-                      <Link href={`/admin/sklad/${m.product_id}`} className="font-semibold text-green hover:underline">
+                      <Link href={`/admin/sklad/${m.product_id}`} className="font-semibold text-brick-text hover:underline">
                         {productName(p)}
                       </Link>
                     ) : (
@@ -72,7 +72,7 @@ export default async function StockLogPage({ searchParams }: { searchParams: Pro
                   {manager && <Td className="whitespace-nowrap text-muted">{m.unit_cost_czk != null ? formatPrice(Number(m.unit_cost_czk)) : ""}</Td>}
                   <Td>
                     {src ? (
-                      <Link href={src.href} className="text-green hover:underline">
+                      <Link href={src.href} className="text-brick-text hover:underline">
                         {src.label}
                       </Link>
                     ) : (
@@ -85,7 +85,7 @@ export default async function StockLogPage({ searchParams }: { searchParams: Pro
             })}
           </Table>
         )}
-        {rows.length >= MOVEMENT_LOG_LIMIT && <p className="mt-1 text-xs text-muted">Zobrazeno posledních {MOVEMENT_LOG_LIMIT} pohybů, zúžte filtr nebo použijte export.</p>}
+        {rows.length >= MOVEMENT_LOG_LIMIT && <p className="mt-1 text-small text-muted">Zobrazeno posledních {MOVEMENT_LOG_LIMIT} pohybů, zúžte filtr nebo použijte export.</p>}
       </div>
     </>
   );

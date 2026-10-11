@@ -27,7 +27,7 @@ export default async function VoucherPage({ params }: { params: Promise<{ id: st
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <p className="label text-[11px] text-muted">
+          <p className="text-eyebrow uppercase text-muted">
             <Link href="/admin/poukazy" className="hover:underline">
               Dárkové poukazy
             </Link>{" "}
@@ -48,15 +48,15 @@ export default async function VoucherPage({ params }: { params: Promise<{ id: st
           <PrintButton />
         </div>
       </div>
-      <div className="mx-auto w-[148mm] rounded-[var(--radius-card)] border-2 border-green bg-paper p-6 print:border-dashed print:rounded-none" style={{ aspectRatio: "148 / 105" }}>
+      <div className="mx-auto w-[148mm] rounded-card border-2 border-green bg-paper p-6 print:border-dashed print:rounded-none" style={{ aspectRatio: "148 / 105" }}>
         <div className="flex h-full flex-col justify-between">
           <div>
-            <p className="label text-[11px] text-brick-text">Dárkový poukaz</p>
+            <p className="text-eyebrow uppercase text-brick-text">Dárkový poukaz</p>
             <p className="text-[44px] font-semibold leading-none text-green">{formatPrice(c.value)}</p>
             {c.recipient && <p className="mt-2 text-[15px]">{c.recipient}</p>}
           </div>
           <div>
-            <p className="label text-[10px] text-muted">Kód poukazu</p>
+            <p className="text-eyebrow uppercase text-muted">Kód poukazu</p>
             <p className="font-mono text-[26px] font-semibold tracking-[0.12em] text-ink">{c.code}</p>
           </div>
           <div className="flex items-end justify-between gap-4 text-[11px] text-muted">
@@ -72,7 +72,7 @@ export default async function VoucherPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </div>
-      <p className="mx-auto mt-3 w-[148mm] text-xs text-muted print:hidden">Tisk na A4, kartička má formát A6 na šířku. Nastřihnout, případně přeložit.</p>
+      <p className="mx-auto mt-3 w-[148mm] text-small text-muted print:hidden">Tisk na A4, kartička má formát A6 na šířku. Nastřihnout, případně přeložit.</p>
     </>
   );
 }

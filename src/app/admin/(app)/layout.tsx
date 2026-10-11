@@ -23,31 +23,31 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
-      <aside className="flex shrink-0 flex-col border-b border-line bg-paper md:w-[232px] md:border-b-0 md:border-r">
+      <aside className="flex shrink-0 flex-col bg-paper md:w-[240px]">
         <div className="flex items-center justify-between px-5 py-3 md:block md:pt-5 md:pb-3">
           <Logo variant="napis" width={100} />
-          <span className="label text-[10px] text-muted md:mt-0.5 md:block">BARF · admin</span>
+          <span className="text-eyebrow text-muted uppercase md:mt-0.5 md:block">Administrace</span>
         </div>
         <div className="px-3 pb-2 md:pb-3">
           <SearchPalette />
         </div>
         <AdminNav role={admin.role} badges={{ "/admin/objednavky": open ?? 0, "/admin/ukoly": tasks ?? 0 }} />
-        <form action={logout} className="mt-auto hidden border-t border-line px-5 py-3.5 text-xs text-muted md:block">
+        <form action={logout} className="mt-auto hidden border-t border-line px-5 py-3.5 text-small md:block">
           <p className="truncate" title={admin.email}>
             {admin.name} · {ADMIN_ROLE_LABEL[admin.role].toLowerCase()}
           </p>
           <p className="mt-0.5">
-            <Link href="/admin/ucet" className="text-green hover:underline">
+            <Link href="/admin/ucet" className="font-semibold text-brick-text hover:underline">
               Můj účet
             </Link>{" "}
             ·{" "}
-            <button type="submit" className="text-green hover:underline">
+            <button type="submit" className="font-semibold text-brick-text hover:underline">
               Odhlásit
             </button>
           </p>
         </form>
       </aside>
-      <main className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-6">
+      <main className="min-w-0 flex-1 bg-white px-5 py-5 md:px-10 md:py-7.5 [&_h1]:font-display [&_h1]:text-display-md [&_h1]:text-green">
         <SectionTabs role={admin.role} />
         {children}
       </main>

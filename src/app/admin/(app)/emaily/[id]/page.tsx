@@ -13,7 +13,7 @@ export default async function EmailPreviewPage({ params }: { params: Promise<{ i
 
   return (
     <>
-      <p className="label mb-1 text-[11px] text-muted">
+      <p className="mb-1 text-label text-green">
         <Link href="/admin/emaily" className="hover:underline">
           E-maily
         </Link>{" "}
@@ -29,7 +29,7 @@ export default async function EmailPreviewPage({ params }: { params: Promise<{ i
       </p>
       <h1 className="text-[24px]">{m.subject}</h1>
       {/* Náhled v iframe, aby styly e-mailu neovlivnily administraci. */}
-      <iframe srcDoc={m.html} title="Náhled e-mailu" sandbox="" className="mt-4 h-[720px] w-full rounded-[var(--radius-card)] border border-line bg-white" />
+      <iframe srcDoc={m.html} title="Náhled e-mailu" sandbox="" className="mt-4 h-[720px] w-full rounded-card border border-line bg-white" />
     </>
   );
 }

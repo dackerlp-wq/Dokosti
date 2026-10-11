@@ -9,12 +9,13 @@ import { ADMIN_SECTIONS, activeSection, canSee, isTabActive, type AdminSection }
 
 const ICON: Record<AdminSection["icon"], typeof Sun> = { dnes: Sun, kasa: Store, prodej: ShoppingBag, zbozi: Boxes, zakaznici: Users, provoz: ClipboardList, finance: Wallet, statistiky: BarChart3, nastaveni: Settings };
 
+/** Položka menu: text-nav v zelené, aktivní na bílé v cihlové, podpoložky odsazené. */
 const item = (on: boolean, sub = false) =>
-  `flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-sm ${sub ? "pl-9 text-[13.5px]" : ""} ${on ? "bg-green text-cream" : sub ? "text-muted hover:bg-cream hover:text-ink" : "text-ink hover:bg-cream"}`;
+  `flex items-center gap-2.5 rounded-control px-2.5 py-2 text-nav transition-colors duration-300 ${sub ? "pl-9 font-semibold" : ""} ${on ? "bg-white text-brick-text shadow-card" : "text-green hover:text-brick-text"}`;
 
-function Badge({ n, on }: { n?: number; on: boolean }) {
+function Badge({ n }: { n?: number }) {
   if (!n) return null;
-  return <span className={`label ml-auto rounded-full px-2 text-[10px] ${on ? "bg-cream text-green" : "bg-brick text-cream"}`}>{n}</span>;
+  return <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brick px-1.5 text-xs font-bold text-white">{n}</span>;
 }
 
 /**
@@ -36,8 +37,8 @@ export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Reco
           if (s.group && tabs.length > 0) {
             return (
               <div key={s.href} className="mt-2.5">
-                <div className="flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-ink">
-                  <Icon strokeWidth={1.75} className="h-4 w-4" />
+                <div className="flex items-center gap-2.5 px-2.5 py-2 text-eyebrow text-muted uppercase">
+                  <Icon strokeWidth={1.75} className="size-4" aria-hidden />
                   {s.label}
                 </div>
                 {tabs.map((t) => {
@@ -45,7 +46,7 @@ export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Reco
                   return (
                     <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={item(on, true)}>
                       {t.label}
-                      <Badge n={badges[t.href]} on={on} />
+                      <Badge n={badges[t.href]} />
                     </Link>
                   );
                 })}
@@ -54,9 +55,9 @@ export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Reco
           }
           return (
             <Link key={s.href} href={s.href} aria-current={sectionOn ? "page" : undefined} className={`${item(sectionOn)} ${s.gap ? "mt-2.5" : ""}`}>
-              <Icon strokeWidth={1.75} className="h-4 w-4" />
+              <Icon strokeWidth={1.75} className="size-4" aria-hidden />
               {s.label}
-              <Badge n={badges[s.href] ?? tabs.reduce((n, t) => n + (badges[t.href] ?? 0), 0)} on={sectionOn} />
+              <Badge n={badges[s.href] ?? tabs.reduce((n, t) => n + (badges[t.href] ?? 0), 0)} />
             </Link>
           );
         })}
@@ -70,15 +71,15 @@ export function AdminNav({ role, badges = {} }: { role: AdminRole; badges?: Reco
           const badge = badges[s.href] ?? tabs.reduce((n, t) => n + (badges[t.href] ?? 0), 0);
           return (
             <Link key={s.href} href={s.href} aria-current={on ? "page" : undefined} className={`shrink-0 ${item(on)}`}>
-              <Icon strokeWidth={1.75} className="h-4 w-4" />
+              <Icon strokeWidth={1.75} className="size-4" aria-hidden />
               {s.label}
-              <Badge n={badge} on={on} />
+              <Badge n={badge} />
             </Link>
           );
         })}
         <form action={logout}>
-          <button type="submit" className="flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm text-brick-text">
-            <LogOut strokeWidth={1.75} className="h-4 w-4" /> Odhlásit
+          <button type="submit" className="flex items-center gap-2 rounded-control px-3 py-2 text-nav text-brick-text">
+            <LogOut strokeWidth={1.75} className="size-4" aria-hidden /> Odhlásit
           </button>
         </form>
       </nav>
@@ -100,7 +101,7 @@ export function SectionTabs({ role }: { role: AdminRole }) {
       {tabs.map((t) => {
         const on = isTabActive(t, path);
         return (
-          <Link key={t.href} href={t.href} role="tab" aria-selected={on} className={`label shrink-0 border-b-[3px] py-2.5 text-[12px] ${on ? "border-green text-green" : "border-transparent text-muted hover:text-green"}`}>
+          <Link key={t.href} href={t.href} role="tab" aria-selected={on} className={`shrink-0 border-b-2 py-2.5 text-nav transition-colors duration-300 ${on ? "border-green text-green" : "border-transparent text-muted hover:text-brick-text"}`}>
             {t.label}
           </Link>
         );

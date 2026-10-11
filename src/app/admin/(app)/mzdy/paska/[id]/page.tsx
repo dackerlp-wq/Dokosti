@@ -25,7 +25,7 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <p className="label text-[11px] text-muted">
+          <p className="text-eyebrow uppercase text-muted">
             {admin.isManager ? (
               <Link href={`/admin/mzdy?mesic=${r.month}`} className="hover:underline">
                 Mzdy
@@ -40,16 +40,16 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
         </div>
         <PrintButton />
       </div>
-      <div className="mx-auto max-w-[700px] rounded-[var(--radius-card)] border border-line bg-white p-6 text-[13px] print:max-w-none print:border-0 print:p-0">
+      <div className="mx-auto max-w-[700px] rounded-card border border-line bg-white p-6 text-[13px] print:max-w-none print:border-0 print:p-0">
         <div className="flex items-start justify-between gap-4 border-b border-line pb-3">
           <div>
             <p className="text-[22px] font-semibold leading-tight">{settings.shop.name}</p>
             <p className="text-muted">{[settings.shop.address, settings.shop.city].filter(Boolean).join(", ")}</p>
           </div>
           <div className="text-right">
-            <p className="label text-[11px] text-muted">Výplatní páska</p>
+            <p className="text-eyebrow uppercase text-muted">Výplatní páska</p>
             <p className="text-[20px] font-semibold">{monthLabel(r.month)}</p>
-            <p className="label text-[10px] text-brick-text">{closed ? "orientační" : "předběžná, orientační"}</p>
+            <p className="text-eyebrow uppercase text-brick-text">{closed ? "orientační" : "předběžná, orientační"}</p>
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1">
@@ -87,14 +87,14 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
             ))}
           </tbody>
         </table>
-        <div className="mt-4 flex items-end justify-between gap-4 rounded-[var(--radius-card)] bg-paper p-4">
+        <div className="mt-4 flex items-end justify-between gap-4 rounded-card bg-paper p-4">
           <div>
-            <p className="label text-[11px] text-muted">K výplatě</p>
-            {r.employees?.bank_account && <p className="text-xs text-muted">na účet {r.employees.bank_account}</p>}
+            <p className="text-eyebrow uppercase text-muted">K výplatě</p>
+            {r.employees?.bank_account && <p className="text-small text-muted">na účet {r.employees.bank_account}</p>}
           </div>
           <p className="text-[28px] font-semibold leading-none">{formatPrice(Number(r.net_czk))}</p>
         </div>
-        {r.note && <p className="mt-3 text-xs italic text-muted">Poznámka: {r.note}</p>}
+        {r.note && <p className="mt-3 text-small italic text-muted">Poznámka: {r.note}</p>}
         <p className="mt-4 text-[11px] text-muted">
           Orientační výpočet z interního systému ({new Date(r.updated_at).toLocaleDateString("cs-CZ")}). Nezohledňuje slevy na děti, exekuce, průměrný výdělek pro náhrady a další individuální položky; závazná je páska od účetní.
         </p>

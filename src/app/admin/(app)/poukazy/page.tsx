@@ -34,23 +34,23 @@ export default async function VouchersPage({ searchParams }: { searchParams: Pro
         <Stat label="Prodáno celkem" value={formatPrice(all.reduce((n, c) => n + (c.sold_czk ?? 0), 0))} small />
         <Stat label="Darováno (bez prodeje)" value={all.filter((c) => c.sold_czk === null).length} small />
       </div>
-      <form action={issueVoucher} className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper p-4">
-        <p className="label mb-2 text-[11px] text-muted">Vystavit poukaz</p>
+      <form action={issueVoucher} className="mt-4 rounded-card border border-line bg-white p-4">
+        <p className="mb-2 text-label text-green">Vystavit poukaz</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Hodnota (Kč)</span>
+            <span className="mb-1 block text-label text-green">Hodnota (Kč)</span>
             <input name="value" type="number" min={100} max={20000} step={50} defaultValue={500} required className="min-h-9 py-1" />
           </label>
           <label className="block lg:col-span-2">
-            <span className="label mb-1 block text-[11px] text-muted">Pro koho (na kartičku)</span>
+            <span className="mb-1 block text-label text-green">Pro koho (na kartičku)</span>
             <input name="recipient" placeholder="např. Pro Alíka a jeho paničku" className="min-h-9 py-1" />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Platí do</span>
+            <span className="mb-1 block text-label text-green">Platí do</span>
             <input name="valid_to" type="date" defaultValue={nextYear} className="min-h-9 py-1" />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka (interní)</span>
+            <span className="mb-1 block text-label text-green">Poznámka (interní)</span>
             <input name="note" placeholder="kdo koupil, jak zaplatil" className="min-h-9 py-1" />
           </label>
         </div>
@@ -66,7 +66,7 @@ export default async function VouchersPage({ searchParams }: { searchParams: Pro
           <Button type="submit" className="min-h-9">
             Vystavit a tisknout
           </Button>
-          <span className="text-xs text-muted">Platbu za poukaz namarkujte v kase jako prodej bez zboží (sleva/poznámka), nebo zapište do Financí jako příjem. Nezaškrtnutý = dar či náhrada za reklamaci.</span>
+          <span className="text-small text-muted">Platbu za poukaz namarkujte v kase jako prodej bez zboží (sleva/poznámka), nebo zapište do Financí jako příjem. Nezaškrtnutý = dar či náhrada za reklamaci.</span>
         </div>
       </form>
       <div className="mt-4">
@@ -85,20 +85,20 @@ export default async function VouchersPage({ searchParams }: { searchParams: Pro
             {rows.map((c) => (
               <tr key={c.id}>
                 <Td>
-                  <Link href={`/admin/poukazy/${c.id}`} className="font-mono font-semibold text-green hover:underline">
+                  <Link href={`/admin/poukazy/${c.id}`} className="font-mono font-semibold text-brick-text hover:underline">
                     {c.code}
                   </Link>
-                  {c.note && <div className="text-xs text-muted">{c.note}</div>}
+                  {c.note && <div className="text-small text-muted">{c.note}</div>}
                 </Td>
                 <Td className="font-semibold">{formatPrice(c.value)}</Td>
                 <Td>{c.recipient || "—"}</Td>
                 <Td className="whitespace-nowrap">{c.valid_to ? formatDay(c.valid_to) : "bez omezení"}</Td>
                 <Td className="text-muted">{c.sold_czk === null ? "dar" : formatPrice(c.sold_czk)}</Td>
                 <Td>
-                  <span className={`label rounded-full px-2 py-0.5 text-[10px] ${state(c) === "platny" ? "bg-green text-cream" : state(c) === "uplatnen" ? "border border-line bg-paper text-muted" : "bg-brick text-cream"}`}>{label[state(c)]}</span>
+                  <span className={`text-button rounded-full px-2 py-0.5 ${state(c) === "platny" ? "bg-green text-cream" : state(c) === "uplatnen" ? "border border-line bg-white text-muted" : "bg-brick text-white"}`}>{label[state(c)]}</span>
                 </Td>
                 <Td className="text-right">
-                  <Link href={`/admin/poukazy/${c.id}`} className="text-sm text-green hover:underline">
+                  <Link href={`/admin/poukazy/${c.id}`} className="text-sm text-brick-text hover:underline">
                     tisk
                   </Link>
                 </Td>

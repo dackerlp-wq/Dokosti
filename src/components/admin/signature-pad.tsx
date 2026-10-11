@@ -75,7 +75,7 @@ export function SignaturePad({ versionId, defaultName }: { versionId: string; de
 
   return (
     <div>
-      <canvas ref={canvas} width={600} height={200} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerLeave={end} className="w-full touch-none rounded-[var(--radius-control)] border border-dashed border-line bg-white" aria-label="Podpisové pole" />
+      <canvas ref={canvas} width={600} height={200} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerLeave={end} className="w-full touch-none rounded-control border border-dashed border-line bg-white" aria-label="Podpisové pole" />
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jméno podepisujícího" aria-label="Jméno podepisujícího" className="min-h-9 w-56 py-1" />
         <Button type="button" onClick={sign} disabled={busy || !dirty} className="min-h-9">
@@ -84,7 +84,7 @@ export function SignaturePad({ versionId, defaultName }: { versionId: string; de
         <Button type="button" variant="secondary" onClick={clear} className="min-h-9">
           Smazat
         </Button>
-        <span className="text-xs text-muted">Uloží se jméno, čas a zařízení.</span>
+        <span className="text-small text-muted">Uloží se jméno, čas a zařízení.</span>
       </div>
       {error && <p className="mt-2 text-sm text-brick-text">{error}</p>}
     </div>

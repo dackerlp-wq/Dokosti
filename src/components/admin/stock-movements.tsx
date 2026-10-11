@@ -9,49 +9,49 @@ import { formatPrice } from "@/lib/format";
 /** Historie pohybů skladu u produktu a formuláře odpisu a inventury. */
 export function StockMovements({ productId, unit, stockQty, movements, manager }: { productId: string; unit: ProductUnit; stockQty: number | null; movements: StockMovementRow[]; manager: boolean }) {
   return (
-    <fieldset className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <legend className="label px-1 text-[11px] text-muted">Sklad · pohyby</legend>
+    <fieldset className="rounded-card border border-line bg-white p-4">
+      <legend className="px-1 text-label text-green">Sklad · pohyby</legend>
       <p className="text-sm">
         Aktuálně skladem <strong>{stockQty === null ? "neevidováno" : formatQty(stockQty, unit)}</strong>.{" "}
-        <Link href={`/admin/sklad/${productId}`} className="text-green underline">
+        <Link href={`/admin/sklad/${productId}`} className="text-brick-text underline">
           Sklad a pohyby
         </Link>{" "}
         ·{" "}
-        <Link href="/admin/sklad/prijemky" className="text-green underline">
+        <Link href="/admin/sklad/prijemky" className="text-brick-text underline">
           Příjemka
         </Link>
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <form action={adjustStock} className="flex flex-wrap items-end gap-2 rounded-[var(--radius-control)] bg-cream p-3">
+        <form action={adjustStock} className="flex flex-wrap items-end gap-2 rounded-control bg-paper p-3">
           <input type="hidden" name="product_id" value={productId} />
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Odpis / interní výdej</span>
+            <span className="mb-1 block text-label text-green">Odpis / interní výdej</span>
             <select name="kind" defaultValue="odpis" className="min-h-9 w-auto py-1">
               <option value="odpis">Odpis</option>
               <option value="interni">Interní výdej</option>
             </select>
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Kolik ubylo</span>
+            <span className="mb-1 block text-label text-green">Kolik ubylo</span>
             <input name="qty" type="number" min={0} step={unit === "kg" ? "0.001" : "1"} required className="w-28 min-h-9 py-1" />
           </label>
           <label className="block flex-1">
-            <span className="label mb-1 block text-[11px] text-muted">Důvod</span>
+            <span className="mb-1 block text-label text-green">Důvod</span>
             <input name="note" placeholder="prošlé, poškozené…" className="min-h-9 py-1" />
           </label>
           <Button type="submit" variant="secondary" className="min-h-9">
             Odepsat
           </Button>
         </form>
-        <form action={adjustStock} className="flex flex-wrap items-end gap-2 rounded-[var(--radius-control)] bg-cream p-3">
+        <form action={adjustStock} className="flex flex-wrap items-end gap-2 rounded-control bg-paper p-3">
           <input type="hidden" name="product_id" value={productId} />
           <input type="hidden" name="kind" value="inventura" />
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Inventura (skutečný stav)</span>
+            <span className="mb-1 block text-label text-green">Inventura (skutečný stav)</span>
             <input name="qty" type="number" min={0} step={unit === "kg" ? "0.001" : "1"} required className="w-28 min-h-9 py-1" />
           </label>
           <label className="block flex-1">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+            <span className="mb-1 block text-label text-green">Poznámka</span>
             <input name="note" className="min-h-9 py-1" />
           </label>
           <Button type="submit" variant="secondary" className="min-h-9">
@@ -73,7 +73,7 @@ export function StockMovements({ productId, unit, stockQty, movements, manager }
                 {manager && <Td className="text-muted">{m.unit_cost_czk != null ? formatPrice(Number(m.unit_cost_czk)) : ""}</Td>}
                 <Td className="text-muted">
                   {m.order_id ? (
-                    <Link href={`/admin/objednavky/${m.order_id}`} className="text-green hover:underline">
+                    <Link href={`/admin/objednavky/${m.order_id}`} className="text-brick-text hover:underline">
                       {m.note}
                     </Link>
                   ) : (

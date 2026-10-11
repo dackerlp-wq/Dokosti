@@ -97,7 +97,7 @@ export default async function StockProductPage({ params, searchParams }: { param
   return (
     <>
       <p className="text-sm">
-        <Link href={`/admin/sklad${query({ typ: undefined })}`} className="text-green hover:underline">
+        <Link href={`/admin/sklad${query({ typ: undefined })}`} className="text-brick-text hover:underline">
           ← Sklad
         </Link>
       </p>
@@ -120,9 +120,9 @@ export default async function StockProductPage({ params, searchParams }: { param
       </div>
 
       {!tracked ? (
-        <p className="mt-5 rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
+        <p className="mt-5 rounded-card border border-line bg-white p-4 text-sm">
           Tento produkt nemá evidované množství, řídí se jen přepínačem Skladem. Evidenci zapnete v{" "}
-          <Link href={`/admin/produkty/${id}`} className="text-green underline">
+          <Link href={`/admin/produkty/${id}`} className="text-brick-text underline">
             úpravě produktu
           </Link>{" "}
           (pole Kusů skladem) nebo první příjemkou.
@@ -130,9 +130,9 @@ export default async function StockProductPage({ params, searchParams }: { param
       ) : (
         <>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="label text-[11px] text-muted">Období prodejů</span>
+            <span className="text-eyebrow uppercase text-muted">Období prodejů</span>
             {STOCK_PERIODS.map((o) => (
-              <Link key={o.id} href={`${base}${query({ obdobi: o.id })}`} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${o.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+              <Link key={o.id} href={`${base}${query({ obdobi: o.id })}`} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${o.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
                 {o.label}
               </Link>
             ))}
@@ -143,8 +143,8 @@ export default async function StockProductPage({ params, searchParams }: { param
             <Stat label={`Prodáno za ${period.label.toLowerCase()}`} value={formatQty(stats.sold, unit)} sub={`${formatQty(stats.weekly.reduce((a, b) => a + b, 0), unit)} za 12 týdnů`} />
             <Stat label="Dní zásoby" value={stats.daysOfStock === Infinity ? "∞" : String(Math.round(stats.daysOfStock))} sub={stats.daysOfStock === Infinity ? "bez prodeje v období" : `při současném tempu dojde ${inDaysLabel(Math.round(stats.daysOfStock))}`} warn={stats.status === "slow" || stats.status === "dead"} />
             <Stat label="Poslední prodej" value={agoLabel(stats.daysSinceSale)} sub={`naskladněno ${agoLabel(stats.daysSinceReceipt, "—")}`} small />
-            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-              <p className="label text-[11px] text-muted">Stav</p>
+            <div className="rounded-card border border-line bg-white p-4">
+              <p className="text-eyebrow uppercase text-muted">Stav</p>
               <p className="mt-2">
                 <StockStatusBadge status={stats.status} />
               </p>
@@ -153,10 +153,10 @@ export default async function StockProductPage({ params, searchParams }: { param
 
           <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
             <div className="min-w-0">
-              <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+              <section className="rounded-card border border-line bg-white p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="text-[20px]">Stav zásoby a prodeje po týdnech</h2>
-                  <span className="text-xs text-muted">posledních 12 týdnů</span>
+                  <span className="text-small text-muted">posledních 12 týdnů</span>
                 </div>
                 <div className="mt-2">
                   <StockChart stock={stockAtEnd} sales={salesInWeek.map((v) => Math.max(0, v))} low={p.low_stock_threshold} unit={unit} weekLabels={weekLabels} />
@@ -168,7 +168,7 @@ export default async function StockProductPage({ params, searchParams }: { param
                   <h2 className="text-[20px]">Pohyby</h2>
                   <div className="flex flex-wrap gap-2">
                     {MOVE_FILTERS.map((f) => (
-                      <Link key={f.id} href={`${base}${query({ typ: f.id || undefined })}`} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${(sp.typ ?? "") === f.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+                      <Link key={f.id} href={`${base}${query({ typ: f.id || undefined })}`} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${(sp.typ ?? "") === f.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
                         {f.label}
                       </Link>
                     ))}
@@ -193,7 +193,7 @@ export default async function StockProductPage({ params, searchParams }: { param
                             {manager && <Td className="whitespace-nowrap text-muted">{m.unit_cost_czk != null ? formatPrice(Number(m.unit_cost_czk)) : ""}</Td>}
                             <Td>
                               {src ? (
-                                <Link href={src.href} className="text-green hover:underline">
+                                <Link href={src.href} className="text-brick-text hover:underline">
                                   {src.label}
                                 </Link>
                               ) : (
@@ -206,18 +206,18 @@ export default async function StockProductPage({ params, searchParams }: { param
                       })}
                     </Table>
                   )}
-                  {rows.length >= 500 && <p className="mt-1 text-xs text-muted">Zobrazeno posledních 500 pohybů.</p>}
+                  {rows.length >= 500 && <p className="mt-1 text-small text-muted">Zobrazeno posledních 500 pohybů.</p>}
                 </div>
               </section>
             </div>
 
             <div className="space-y-5">
-              <form action={adjustStock} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+              <form action={adjustStock} className="rounded-card border border-line bg-white p-4">
                 <h2 className="text-[20px]">Odpis, interní výdej, inventura</h2>
                 <input type="hidden" name="product_id" value={id} />
                 <input type="hidden" name="redirect" value={base} />
                 <label className="mt-3 block">
-                  <span className="label mb-1 block text-[11px] text-muted">Typ pohybu</span>
+                  <span className="mb-1 block text-label text-green">Typ pohybu</span>
                   <select name="kind" defaultValue="odpis">
                     <option value="odpis">Odpis (prošlé, poškozené)</option>
                     <option value="interni">Interní výdej (ochutnávka, vzorek, vlastní psi, dar)</option>
@@ -225,26 +225,26 @@ export default async function StockProductPage({ params, searchParams }: { param
                   </select>
                 </label>
                 <label className="mt-3 block">
-                  <span className="label mb-1 block text-[11px] text-muted">Množství ({unit})</span>
+                  <span className="mb-1 block text-label text-green">Množství ({unit})</span>
                   <input name="qty" type="number" min={0} step={step} required />
                 </label>
                 <label className="mt-3 block">
-                  <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+                  <span className="mb-1 block text-label text-green">Poznámka</span>
                   <input name="note" placeholder="důvod, volitelné" />
                 </label>
                 <Button type="submit" variant="secondary" className="mt-4 w-full">
                   Zapsat pohyb
                 </Button>
-                <p className="mt-2 text-xs text-muted">Příjem zboží jde přes příjemku. Každá změna stavu vytvoří záznam v pohybech, i ruční změna čísla u produktu.</p>
+                <p className="mt-2 text-small text-muted">Příjem zboží jde přes příjemku. Každá změna stavu vytvoří záznam v pohybech, i ruční změna čísla u produktu.</p>
               </form>
 
-              <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+              <section className="rounded-card border border-line bg-white p-4">
                 <h2 className="text-[20px]">Doporučení</h2>
                 <p className="mt-2 text-sm">{stockAdvice(stats, period.days, settings.stock, unit)}</p>
               </section>
 
               {expSoon.length > 0 && (
-                <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+                <section className="rounded-card border border-line bg-white p-4">
                   <h2 className="text-[20px]">Šarže na skladě</h2>
                   <ul className="mt-2 space-y-1 text-sm">
                     {expSoon.map((b) => {
@@ -259,9 +259,9 @@ export default async function StockProductPage({ params, searchParams }: { param
                       );
                     })}
                   </ul>
-                  <p className="mt-2 text-xs text-muted">
+                  <p className="mt-2 text-small text-muted">
                     Šarže se upravují v{" "}
-                    <Link href={`/admin/produkty/${id}`} className="text-green underline">
+                    <Link href={`/admin/produkty/${id}`} className="text-brick-text underline">
                       úpravě produktu
                     </Link>
                     .
@@ -278,10 +278,10 @@ export default async function StockProductPage({ params, searchParams }: { param
 
 function Stat({ label, value, sub, warn, small }: { label: string; value: string; sub?: string; warn?: boolean; small?: boolean }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <p className="label text-[11px] text-muted">{label}</p>
+    <div className="rounded-card border border-line bg-white p-4">
+      <p className="text-eyebrow uppercase text-muted">{label}</p>
       <p className={`font-semibold ${small ? "text-[18px]" : "text-[24px]"} ${warn ? "text-brick-text" : ""}`}>{value}</p>
-      {sub && <p className="text-xs text-muted">{sub}</p>}
+      {sub && <p className="text-small text-muted">{sub}</p>}
     </div>
   );
 }

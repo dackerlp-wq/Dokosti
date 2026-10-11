@@ -106,11 +106,11 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
     <form onSubmit={submit} className="grid gap-4 lg:grid-cols-[1fr_340px]">
       <div className="space-y-4">
         {/* Zákazník */}
-        <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <section className="rounded-card border border-line bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-[18px]">Zákazník</h2>
             {customer ? (
-              <button type="button" onClick={() => { setCustomer(null); setForm(EMPTY); setPointsRedeem(0); }} className="inline-flex items-center gap-1 text-sm text-green underline">
+              <button type="button" onClick={() => { setCustomer(null); setForm(EMPTY); setPointsRedeem(0); }} className="inline-flex items-center gap-1 text-sm text-brick-text underline">
                 <X strokeWidth={1.75} className="h-4 w-4" /> jiný zákazník
               </button>
             ) : (
@@ -137,7 +137,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
         </section>
 
         {/* Položky */}
-        <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <section className="rounded-card border border-line bg-white p-4">
           <h2 className="text-[18px]">Zboží</h2>
           {lines.length > 0 && (
             <table className="mt-3 w-full text-sm">
@@ -148,8 +148,8 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
                     <tr key={l.slug} className="border-b border-line">
                       <td className="py-2 pr-2">
                         {p.name}
-                        {!p.is_published && <span className="ml-2 label text-[10px] text-muted">nezveřejněno</span>}
-                        <span className="block text-xs text-muted">
+                        {!p.is_published && <span className="text-eyebrow uppercase ml-2 text-muted">nezveřejněno</span>}
+                        <span className="block text-small text-muted">
                           {formatPrice(p.price_czk)}
                           {p.unit === "kg" ? "/kg" : ""}
                           {p.stock_qty !== null ? ` · skladem ${formatQty(p.stock_qty, p.unit)}` : ""}
@@ -166,7 +166,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
                           className="min-h-9 py-1"
                         />
                       </td>
-                      <td className="w-10 py-2 text-xs text-muted">{p.unit}</td>
+                      <td className="w-10 py-2 text-small text-muted">{p.unit}</td>
                       <td className="w-24 py-2 text-right font-semibold">{formatPrice(Math.round(l.qty * p.price_czk))}</td>
                       <td className="w-9 py-2 text-right">
                         <button type="button" onClick={() => setLines(lines.filter((x) => x.slug !== l.slug))} aria-label={`Odebrat ${p.name}`} className="text-muted hover:text-brick-text">
@@ -197,11 +197,11 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
         </section>
 
         {/* Dodání a platba */}
-        <section className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <section className="rounded-card border border-line bg-white p-4">
           <h2 className="text-[18px]">Dodání a platba</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Dodání</span>
+              <span className="mb-1 block text-label text-green">Dodání</span>
               <select value={shipping} onChange={(e) => { const id = e.target.value as ShippingId; setShipping(id); if (id === "prepravce" && payment === "hotove") setPayment("prevod"); }}>
                 {SHIPPING.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -212,7 +212,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
             </label>
             {shipping === "rozvoz" && (
               <label className="block">
-                <span className="label mb-1 block text-[11px] text-muted">Den rozvozu</span>
+                <span className="mb-1 block text-label text-green">Den rozvozu</span>
                 <select value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}>
                   {deliveryDays.map((d) => (
                     <option key={d} value={d}>
@@ -223,7 +223,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
               </label>
             )}
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Platba</span>
+              <span className="mb-1 block text-label text-green">Platba</span>
               <select value={payment} onChange={(e) => setPayment(e.target.value as "hotove" | "prevod")}>
                 <option value="hotove" disabled={shipping === "prepravce"}>
                   Na místě (hotově nebo kartou)
@@ -237,14 +237,14 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
             </label>
           </div>
           <label className="mt-3 block">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka k objednávce</span>
+            <span className="mb-1 block text-label text-green">Poznámka k objednávce</span>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="např. zavolat před rozvozem" />
           </label>
         </section>
       </div>
 
       {/* Souhrn */}
-      <aside className="h-fit space-y-3 rounded-[var(--radius-card)] border border-line bg-paper p-4 lg:sticky lg:top-4">
+      <aside className="h-fit space-y-3 rounded-card border border-line bg-white p-4 lg:sticky lg:top-4">
         <h2 className="text-[18px]">Souhrn</h2>
         <div className="flex gap-2">
           <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCoupon(null); }} placeholder="Slevový kód" aria-label="Slevový kód" className="uppercase" />
@@ -252,10 +252,10 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
             Použít
           </Button>
         </div>
-        {coupon && <p className={`text-xs ${coupon.ok ? "text-green" : "text-brick-text"}`}>{coupon.ok ? `${coupon.label}: −${formatPrice(couponCzk)}` : coupon.error}</p>}
+        {coupon && <p className={`text-small ${coupon.ok ? "text-green" : "text-brick-text"}`}>{coupon.ok ? `${coupon.label}: −${formatPrice(couponCzk)}` : coupon.error}</p>}
         {loyalty.enabled && customer && maxSteps > 0 && (
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Uplatnit Kostičky ({customer.points})</span>
+            <span className="mb-1 block text-label text-green">Uplatnit Kostičky ({customer.points})</span>
             <select value={pointsRedeem} onChange={(e) => setPointsRedeem(Number(e.target.value))}>
               <option value={0}>neuplatnit</option>
               {Array.from({ length: maxSteps }, (_, i) => (i + 1) * loyalty.redeemStep).map((p) => (
@@ -299,7 +299,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
         <Button type="submit" variant="action" disabled={pending || lines.length === 0} className="w-full">
           {pending ? "Ukládám…" : "Založit objednávku"}
         </Button>
-        <p className="text-xs text-muted">Konečnou cenu i slevy spočítá databáze stejně jako u objednávky z webu. Objednávka vznikne ve stavu Nová.</p>
+        <p className="text-small text-muted">Konečnou cenu i slevy spočítá databáze stejně jako u objednávky z webu. Objednávka vznikne ve stavu Nová.</p>
       </aside>
     </form>
   );
@@ -318,12 +318,12 @@ function CustomerSearch({ onPick }: { onPick: (c: AdminCustomer) => void }) {
       <Search strokeWidth={1.75} className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Najít stávajícího: jméno, telefon, karta" aria-label="Hledat zákazníka" className="min-h-9 pl-9 text-sm" />
       {results.length > 0 && (
-        <ul className="absolute z-10 mt-1 w-full rounded-[var(--radius-card)] border border-line bg-white">
+        <ul className="absolute z-10 mt-1 w-full rounded-card border border-line bg-white">
           {results.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => { onPick(c); setQ(""); setResults([]); }} className="block w-full px-3 py-2 text-left text-sm hover:bg-cream">
+              <button type="button" onClick={() => { onPick(c); setQ(""); setResults([]); }} className="block w-full px-3 py-2 text-left text-sm hover:bg-paper">
                 <span className="font-semibold">{c.name}</span>
-                <span className="block text-xs text-muted">
+                <span className="block text-small text-muted">
                   {c.phone}
                   {c.email ? ` · ${c.email}` : ""} · {c.points} Kostiček
                 </span>
@@ -339,7 +339,7 @@ function CustomerSearch({ onPick }: { onPick: (c: AdminCustomer) => void }) {
 function Field({ label, value, onChange, className = "", ...rest }: { label: string; value: string; onChange: (v: string) => void; className?: string } & Omit<React.ComponentProps<"input">, "onChange" | "value">) {
   return (
     <label className={`block ${className}`}>
-      <span className="label mb-1 block text-[11px] text-muted">{label}</span>
+      <span className="mb-1 block text-label text-green">{label}</span>
       <input value={value} onChange={(e) => onChange(e.target.value)} {...rest} />
     </label>
   );

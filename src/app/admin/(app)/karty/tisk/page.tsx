@@ -26,11 +26,11 @@ export default async function CardsPrintPage({ searchParams }: { searchParams: P
       </p>
       <div className="grid grid-cols-3 gap-4 md:grid-cols-4 print:grid-cols-4 print:gap-2">
         {codes.map((code, i) => (
-          <div key={code} className="flex break-inside-avoid flex-col items-center rounded-[var(--radius-card)] border border-line p-3 print:rounded-none">
+          <div key={code} className="flex break-inside-avoid flex-col items-center rounded-card border border-line p-3 print:rounded-none">
             {/* eslint-disable-next-line @next/next/no-img-element -- data URL, bez optimalizace */}
             <img src={qrs[i]} alt={`QR karty ${code}`} width={120} height={120} />
             <span className="mt-1 font-mono text-sm tracking-wider">{code}</span>
-            <span className="label text-[9px] text-muted">DoKosti klub</span>
+            <span className="text-eyebrow uppercase text-muted">DoKosti klub</span>
           </div>
         ))}
       </div>

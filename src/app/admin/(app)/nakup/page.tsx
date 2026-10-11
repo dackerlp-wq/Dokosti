@@ -54,7 +54,7 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
             {rows.map((o) => (
               <tr key={o.id}>
                 <Td>
-                  <Link href={`/admin/nakup/${o.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/nakup/${o.id}`} className="font-semibold text-brick-text hover:underline">
                     {o.number}
                   </Link>
                 </Td>
@@ -63,7 +63,7 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
                 <Td>{o.purchase_order_items.length}</Td>
                 <Td className="whitespace-nowrap">{o.expected_on ? formatDay(o.expected_on) : "—"}</Td>
                 <Td>
-                  <span className={`label rounded-full px-2.5 py-0.5 text-[11px] ${o.status === "odeslana" ? "bg-ochre-badge text-ink" : o.status === "prijata" ? "bg-green text-cream" : o.status === "zrusena" ? "border border-line text-muted" : "border border-line bg-paper text-muted"}`}>{PURCHASE_ORDER_STATUS_LABEL[o.status]}</span>
+                  <span className={`text-button rounded-full px-2.5 py-0.5 ${o.status === "odeslana" ? "bg-ochre-badge text-ink" : o.status === "prijata" ? "bg-green text-cream" : o.status === "zrusena" ? "border border-line text-muted" : "border border-line bg-white text-muted"}`}>{PURCHASE_ORDER_STATUS_LABEL[o.status]}</span>
                 </Td>
               </tr>
             ))}

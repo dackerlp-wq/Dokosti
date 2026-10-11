@@ -48,15 +48,15 @@ export function DocumentUpload({ mode, documentId, category, nextVersion = 1, li
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+    <form onSubmit={onSubmit} className="rounded-card border border-line bg-white p-4">
       {mode === "new" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block sm:col-span-2">
-            <span className="label mb-1 block text-[11px] text-muted">Název</span>
+            <span className="mb-1 block text-label text-green">Název</span>
             <input name="title" required placeholder="např. Nájemní smlouva, prodejna" />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Kategorie</span>
+            <span className="mb-1 block text-label text-green">Kategorie</span>
             <select name="category" value={cat} onChange={(e) => setCat(e.target.value as DocumentCategory)}>
               {(Object.keys(DOCUMENT_CATEGORY_LABEL) as DocumentCategory[]).map((c) => (
                 <option key={c} value={c}>
@@ -66,7 +66,7 @@ export function DocumentUpload({ mode, documentId, category, nextVersion = 1, li
             </select>
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Vazba</span>
+            <span className="mb-1 block text-label text-green">Vazba</span>
             <select name="link" defaultValue={initialLink ?? ""} onChange={(e) => { const [t, i] = e.target.value.split(":"); const f = e.currentTarget.form!; (f.elements.namedItem("linked_type") as HTMLInputElement).value = t ?? ""; (f.elements.namedItem("linked_id") as HTMLInputElement).value = i ?? ""; }}>
               <option value="">bez vazby</option>
               <option value="firma:">Firma / provozovna</option>
@@ -80,25 +80,25 @@ export function DocumentUpload({ mode, documentId, category, nextVersion = 1, li
             <input type="hidden" name="linked_id" defaultValue={initialLink?.split(":")[1] ?? ""} />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Platí od</span>
+            <span className="mb-1 block text-label text-green">Platí od</span>
             <input name="valid_from" type="date" />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Platí do</span>
+            <span className="mb-1 block text-label text-green">Platí do</span>
             <input name="valid_to" type="date" />
           </label>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Připomenout (dní předem)</span>
+            <span className="mb-1 block text-label text-green">Připomenout (dní předem)</span>
             <input name="remind_days" type="number" min={0} defaultValue={30} />
           </label>
           <label className="block sm:col-span-2 lg:col-span-3">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+            <span className="mb-1 block text-label text-green">Poznámka</span>
             <input name="note" placeholder="např. výpovědní lhůta 3 měsíce" />
           </label>
         </div>
       ) : (
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Co se změnilo</span>
+          <span className="mb-1 block text-label text-green">Co se změnilo</span>
           <input name="note" placeholder="např. dodatek č. 2, podepsaný sken" />
         </label>
       )}
@@ -107,7 +107,7 @@ export function DocumentUpload({ mode, documentId, category, nextVersion = 1, li
         <Button type="submit" disabled={busy || !file} className="min-h-9">
           {busy ? "Nahrávám…" : mode === "new" ? "Uložit dokument" : `Nahrát verzi v${nextVersion}`}
         </Button>
-        <span className="text-xs text-muted">PDF, Word, Excel nebo fotka, do 25 MB. Soukromé úložiště, přístup jen správce a dotyčný zaměstnanec.</span>
+        <span className="text-small text-muted">PDF, Word, Excel nebo fotka, do 25 MB. Soukromé úložiště, přístup jen správce a dotyčný zaměstnanec.</span>
       </div>
       {error && <p className="mt-2 text-sm text-brick-text">{error}</p>}
     </form>

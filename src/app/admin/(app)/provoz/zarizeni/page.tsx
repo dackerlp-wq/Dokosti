@@ -9,14 +9,14 @@ export const metadata: Metadata = { title: "Zařízení" };
 
 function DeviceForm({ d }: { d?: DeviceRow }) {
   return (
-    <form action={saveDevice} className="grid gap-2 rounded-[var(--radius-card)] border border-line bg-paper p-3 sm:grid-cols-[1fr_140px_90px_90px_90px_auto] sm:items-end">
+    <form action={saveDevice} className="grid gap-2 rounded-card border border-line bg-white p-3 sm:grid-cols-[1fr_140px_90px_90px_90px_auto] sm:items-end">
       {d && <input type="hidden" name="id" value={d.id} />}
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Název</span>
+        <span className="mb-1 block text-label text-green">Název</span>
         <input name="name" defaultValue={d?.name} required placeholder="Mrazák 1 (mixy)" className="min-h-9 py-1" />
       </label>
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Druh</span>
+        <span className="mb-1 block text-label text-green">Druh</span>
         <select name="kind" defaultValue={d?.kind ?? "mrazak"} className="min-h-9 py-1">
           {(Object.keys(DEVICE_KIND_LABEL) as DeviceKind[]).map((k) => (
             <option key={k} value={k}>
@@ -26,20 +26,20 @@ function DeviceForm({ d }: { d?: DeviceRow }) {
         </select>
       </label>
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Min °C</span>
+        <span className="mb-1 block text-label text-green">Min °C</span>
         <input name="min_c" type="number" step="0.5" defaultValue={d?.min_c ?? -25} className="min-h-9 py-1" />
       </label>
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Max °C</span>
+        <span className="mb-1 block text-label text-green">Max °C</span>
         <input name="max_c" type="number" step="0.5" defaultValue={d?.max_c ?? -18} className="min-h-9 py-1" />
       </label>
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Pořadí</span>
+        <span className="mb-1 block text-label text-green">Pořadí</span>
         <input name="sort_order" type="number" defaultValue={d?.sort_order ?? 0} className="min-h-9 py-1" />
       </label>
       <div className="flex items-center gap-3">
         {d && (
-          <label className="flex items-center gap-1 text-xs">
+          <label className="flex items-center gap-1 text-small">
             <input type="checkbox" name="active" value="on" defaultChecked={d.active} className="h-4 w-4 min-h-0 w-auto accent-green" />
             aktivní
           </label>
@@ -65,7 +65,7 @@ export default async function DevicesPage() {
         {devs.map((d) => (
           <DeviceForm key={d.id} d={d} />
         ))}
-        <p className="label mt-4 text-[11px] text-muted">Nové zařízení</p>
+        <p className="text-eyebrow uppercase mt-4 text-muted">Nové zařízení</p>
         <DeviceForm />
       </div>
     </>

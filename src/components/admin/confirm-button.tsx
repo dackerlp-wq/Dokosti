@@ -42,22 +42,22 @@ export function ConfirmButton({
         {children}
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-4" onClick={() => setOpen(false)}>
-          <form action={action} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby={id} className="w-full max-w-md rounded-[var(--radius-card)] border border-line bg-paper p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-5" onClick={() => setOpen(false)}>
+          <form action={action} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby={id} className="w-full max-w-md rounded-card bg-white p-5 shadow-menu">
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <h2 id={id} className="text-[22px]">
+            <h2 id={id} className="text-heading-lg text-green">
               {title}
             </h2>
-            <p className="mt-2 text-sm">{text}</p>
+            <p className="mt-2.5">{text}</p>
             {reasonName && (
               <label className="mt-3 block">
-                <span className="label mb-1 block text-[11px] text-muted">{reasonLabel}</span>
+                <span className="mb-1 block text-label text-green">{reasonLabel}</span>
                 <input name={reasonName} required={reasonRequired} autoFocus />
               </label>
             )}
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-2.5">
               <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                 Zpět
               </Button>

@@ -39,19 +39,19 @@ export default async function PayrollParamsPage({ searchParams }: { searchParams
       <div className="mt-4">
         <Pills items={years.map((y) => ({ href: `/admin/mzdy/parametry?rok=${y}`, label: `${y}${verifiedYears.has(y) ? " ✓" : ""}`, on: y === year }))} />
       </div>
-      <form action={saveParams} className="mt-4 max-w-3xl rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <form action={saveParams} className="mt-4 max-w-3xl rounded-card border border-line bg-white p-4">
         <input type="hidden" name="year" value={year} />
         {!data && <p className="mb-3 text-sm text-brick-text">Pro rok {year} zatím parametry nejsou{p ? `, předvyplněno z roku ${p.year}` : ""}. Uložením je založíte.</p>}
         <div className="grid gap-3 sm:grid-cols-2">
           {FIELDS.map((f) => (
             <label key={f.key} className="block">
-              <span className="label mb-1 block text-[11px] text-muted">{f.label}</span>
+              <span className="mb-1 block text-label text-green">{f.label}</span>
               <input name={f.key} type="number" min={0} step={f.step ?? "1"} defaultValue={p ? String(p[f.key]) : ""} required />
-              {f.hint && <span className="mt-1 block text-xs text-muted">{f.hint}</span>}
+              {f.hint && <span className="mt-1 block text-small text-muted">{f.hint}</span>}
             </label>
           ))}
           <label className="block sm:col-span-2">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+            <span className="mb-1 block text-label text-green">Poznámka</span>
             <input name="note" defaultValue={p?.note ?? ""} placeholder="např. potvrzeno účetní 15. 1." />
           </label>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
@@ -63,7 +63,7 @@ export default async function PayrollParamsPage({ searchParams }: { searchParams
           Uložit parametry {year}
         </Button>
       </form>
-      <p className="mt-3 max-w-3xl text-xs text-muted">Výpočet nezohledňuje progresivní daň, slevy na děti, exekuce, průměrný výdělek pro náhrady ani nemocenskou po 14. dni. To všechno řeší účetní z exportu; tady jde o to vědět dopředu, kolik mzdy budou stát.</p>
+      <p className="mt-3 max-w-3xl text-small text-muted">Výpočet nezohledňuje progresivní daň, slevy na děti, exekuce, průměrný výdělek pro náhrady ani nemocenskou po 14. dni. To všechno řeší účetní z exportu; tady jde o to vědět dopředu, kolik mzdy budou stát.</p>
     </>
   );
 }

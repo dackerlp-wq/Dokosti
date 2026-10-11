@@ -24,7 +24,7 @@ export function StockFilters({ action, hidden = {}, search, selects, children }:
           ))}
         </select>
       ))}
-      <button type="submit" className="label min-h-9 shrink-0 rounded-[var(--radius-control)] border border-green px-3 text-[11px] text-green">
+      <button type="submit" className="text-button min-h-9 shrink-0 rounded-control border border-green px-3 text-green">
         Filtrovat
       </button>
       {children}

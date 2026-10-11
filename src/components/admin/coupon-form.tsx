@@ -11,7 +11,7 @@ export function CouponForm({ coupon: c }: { coupon?: CouponRow }) {
   return (
     <form action={action} className="max-w-2xl space-y-4">
       {c && <input type="hidden" name="id" value={c.id} />}
-      <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+      <div className="rounded-card border border-line bg-white p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Kód" hint="zákazník ho zadá v pokladně">
             <input name="code" defaultValue={c?.code} placeholder="VITEJTE" required className="uppercase" />
@@ -63,7 +63,7 @@ export function CouponForm({ coupon: c }: { coupon?: CouponRow }) {
             type="submit"
             formAction={deleteCoupon}
             formNoValidate
-            className="label ml-auto text-[11px] text-brick-text hover:underline"
+            className="text-eyebrow uppercase ml-auto text-brick-text hover:underline"
             onClick={(e) => {
               if (!confirm("Smazat kód? Nejde to vrátit.")) e.preventDefault();
             }}
@@ -79,7 +79,7 @@ export function CouponForm({ coupon: c }: { coupon?: CouponRow }) {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className="mb-1 block text-label text-green">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
       </span>

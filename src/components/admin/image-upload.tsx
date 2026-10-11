@@ -30,7 +30,7 @@ export function ImageUpload({ name, initialUrl, slug }: { name: string; initialU
   return (
     <div className="space-y-3">
       <input type="hidden" name={name} value={url} />
-      <div className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-card)] bg-cream">
+      <div className="relative aspect-square w-full overflow-hidden rounded-card bg-paper">
         {url ? (
           <Image src={url} alt="" fill sizes="300px" className="object-cover" unoptimized />
         ) : (
@@ -38,10 +38,10 @@ export function ImageUpload({ name, initialUrl, slug }: { name: string; initialU
         )}
       </div>
       <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onChange} disabled={busy} className="text-sm" />
-      <p className="text-xs text-muted">Čtvercová, ideálně 1600 × 1600 px, do 5 MB. {busy && "Nahrávám…"}</p>
+      <p className="text-small text-muted">Čtvercová, ideálně 1600 × 1600 px, do 5 MB. {busy && "Nahrávám…"}</p>
       {error && <p className="text-sm text-brick-text">{error}</p>}
       {url && (
-        <button type="button" onClick={() => setUrl("")} className="label text-[11px] text-brick-text hover:underline">
+        <button type="button" onClick={() => setUrl("")} className="text-small font-semibold text-brick-text hover:underline">
           Odebrat fotku
         </button>
       )}

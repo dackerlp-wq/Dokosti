@@ -304,20 +304,20 @@ export function Pos({
               ["dnes", "Dnes", 0],
             ] as [Tab, string, number][]
           ).map(([id, label, n]) => (
-            <button key={id} type="button" onClick={() => { setTab(id); setPaying(false); }} aria-pressed={tab === id} className={`label inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] px-3 text-[11px] ${tab === id ? "bg-cream text-green" : "text-cream hover:bg-green-hover"}`}>
+            <button key={id} type="button" onClick={() => { setTab(id); setPaying(false); }} aria-pressed={tab === id} className={`text-button inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-control px-3 ${tab === id ? "bg-paper text-green" : "text-cream hover:bg-green-hover"}`}>
               {label}
-              {n > 0 && <span className={`rounded-full px-1.5 text-[10px] ${tab === id ? "bg-green text-cream" : "bg-brick text-cream"}`}>{n}</span>}
+              {n > 0 && <span className={`rounded-full px-1.5 text-[10px] ${tab === id ? "bg-green text-cream" : "bg-brick text-white"}`}>{n}</span>}
             </button>
           ))}
         </nav>
-        <span className="ml-auto hidden truncate text-xs opacity-90 sm:inline">
+        <span className="ml-auto hidden truncate text-small opacity-90 sm:inline">
           {noShift ? "Směna zavřená" : `Směna od ${new Date(shift.shift!.opened_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })}`} · {userEmail.split("@")[0]}
         </span>
-        <button type="button" onClick={() => { setTab("uzaverka"); setPaying(false); }} aria-pressed={tab === "uzaverka"} className={`label min-h-9 rounded-[var(--radius-control)] border border-cream/70 px-3 text-[11px] ${tab === "uzaverka" ? "bg-cream text-green" : noShift ? "border-brick bg-brick text-cream" : "text-cream hover:bg-green-hover"}`}>
+        <button type="button" onClick={() => { setTab("uzaverka"); setPaying(false); }} aria-pressed={tab === "uzaverka"} className={`text-button min-h-9 rounded-control border border-cream/70 px-3 ${tab === "uzaverka" ? "bg-paper text-green" : noShift ? "border-brick bg-brick text-white" : "text-cream hover:bg-green-hover"}`}>
           {noShift ? "Otevřít směnu" : "Uzávěrka"}
         </button>
         <form action={logout}>
-          <button type="submit" className="label min-h-9 rounded-[var(--radius-control)] px-2 text-[11px] text-cream/80 hover:bg-green-hover">
+          <button type="submit" className="text-eyebrow uppercase min-h-9 rounded-control px-2 text-cream/80 hover:bg-green-hover">
             Odhlásit
           </button>
         </form>
@@ -327,7 +327,7 @@ export function Pos({
           </div>
         )}
         {toast && (
-          <span role="status" className="rounded-[var(--radius-control)] bg-cream px-3 py-1 text-sm text-green">
+          <span role="status" className="rounded-control bg-paper px-3 py-1 text-sm text-green">
             {toast}
           </span>
         )}
@@ -339,14 +339,14 @@ export function Pos({
           <aside className="flex min-h-0 flex-col border-r border-line bg-paper" aria-label="Účtenka">
             <div className="flex items-start gap-2 border-b border-line p-3">
               <div className="min-w-0 flex-1">
-                <p className="label text-[11px] text-muted">Zákazník</p>
+                <p className="text-eyebrow uppercase text-muted">Zákazník</p>
                 {customer ? (
                   <>
                     <p className="truncate font-semibold">
                       {customer.name}
                       {customer.card_code && <span className="font-normal text-muted"> · karta {customer.card_code}</span>}
                     </p>
-                    <p className="truncate text-xs text-muted">
+                    <p className="truncate text-small text-muted">
                       {customer.pets && customer.pets.length > 0 && customer.pets.map((p) => `${p.name} (${petSummary(p, MEAT_LABEL)})`).join(" · ")}
                       {customer.pets && customer.pets.length > 0 && loyalty.enabled && " · "}
                       {loyalty.enabled && `${customer.points} Kostiček`}
@@ -369,7 +369,7 @@ export function Pos({
 
             {paying ? (
               <div className="flex-1 overflow-y-auto p-3 text-sm">
-                <p className="label text-[11px] text-muted">Účtenka</p>
+                <p className="text-eyebrow uppercase text-muted">Účtenka</p>
                 <ul className="mt-2 space-y-1.5">
                   {lines.map((l) => (
                     <li key={l.product.id} className="flex justify-between gap-3">
@@ -389,9 +389,9 @@ export function Pos({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">
                         {productName(l.product)}
-                        {l.product.unit === "kg" && <span className="label ml-1 text-[9px] text-brick-text">na váhu</span>}
+                        {l.product.unit === "kg" && <span className="text-eyebrow uppercase ml-1 text-brick-text">na váhu</span>}
                       </p>
-                      <p className="text-xs text-muted">
+                      <p className="text-small text-muted">
                         {fmtQty(l.qty, l.product.unit)} × {formatPrice(l.product.price_czk)}
                         {l.product.unit === "kg" ? "/kg" : ""}
                       </p>
@@ -420,7 +420,7 @@ export function Pos({
               </ul>
             )}
 
-            <div className="border-t border-line bg-cream p-3 text-sm">
+            <div className="border-t border-line bg-paper p-3 text-sm">
               <div className="flex justify-between">
                 <span>Zboží</span>
                 <span className="tabular-nums">{formatPrice(subtotal)}</span>
@@ -446,13 +446,13 @@ export function Pos({
               {!paying && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className="flex items-center gap-1">
-                    <input value={coupon} onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponError(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startTransition(async () => { await applyCoupon(coupon); }); } }} placeholder="Slevový kód" aria-label="Slevový kód" className={`min-h-9 w-28 py-1 text-xs uppercase ${couponError ? "border-brick" : ""}`} />
+                    <input value={coupon} onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponError(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); startTransition(async () => { await applyCoupon(coupon); }); } }} placeholder="Slevový kód" aria-label="Slevový kód" className={`min-h-9 w-28 py-1 text-small uppercase ${couponError ? "border-brick" : ""}`} />
                     <Button type="button" variant="secondary" onClick={() => startTransition(async () => { await applyCoupon(coupon); })} disabled={!coupon || !lines.length || (!couponStale && !!couponInfo)} className="min-h-9 px-2 text-[10px]">
                       {couponInfo && !couponStale ? "Platí" : "Použít"}
                     </Button>
                   </span>
                   {loyalty.enabled && customer && maxSteps > 0 && (
-                    <select value={pointsRedeem} onChange={(e) => setPointsRedeem(Number(e.target.value))} aria-label="Uplatnit Kostičky" className="min-h-9 w-auto py-1 text-xs">
+                    <select value={pointsRedeem} onChange={(e) => setPointsRedeem(Number(e.target.value))} aria-label="Uplatnit Kostičky" className="min-h-9 w-auto py-1 text-small">
                       {Array.from({ length: maxSteps + 1 }, (_, i) => (
                         <option key={i} value={i * loyalty.redeemStep}>
                           {i === 0 ? "Kostičky: neuplatnit" : `${i * loyalty.redeemStep} Kostiček = −${formatPrice(i * loyalty.redeemValueCzk)}`}
@@ -475,10 +475,10 @@ export function Pos({
                   </span>
                 </div>
               )}
-              {couponError && <p className="mt-1 text-xs text-brick-text">{couponError}</p>}
-              {couponStale && !couponError && coupon && lines.length > 0 && <p className="mt-1 text-xs text-muted">Kód ověřte tlačítkem Použít, nebo se ověří při platbě.</p>}
+              {couponError && <p className="mt-1 text-small text-brick-text">{couponError}</p>}
+              {couponStale && !couponError && coupon && lines.length > 0 && <p className="mt-1 text-small text-muted">Kód ověřte tlačítkem Použít, nebo se ověří při platbě.</p>}
               <div className="mt-3 flex items-baseline justify-between">
-                <span className="label text-[11px] text-muted">{paying ? "K zaplacení" : "Celkem"}</span>
+                <span className="text-eyebrow uppercase text-muted">{paying ? "K zaplacení" : "Celkem"}</span>
                 <span className="text-[34px] font-semibold text-green">{formatPrice(total)}</span>
               </div>
               {paying ? (
@@ -520,8 +520,8 @@ export function Pos({
                 </div>
                 <div className="flex gap-1.5 overflow-x-auto">
                   {(["vse", ...LINES] as (LineSlug | "vse")[]).map((l) => (
-                    <button key={l} type="button" onClick={() => setLine(l)} aria-pressed={line === l} className={`label inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-[11px] ${line === l ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
-                      {l !== "vse" && <span className={`h-2.5 w-2.5 rounded-full ${line === l ? "bg-cream" : LINE_DOT[l]}`} />}
+                    <button key={l} type="button" onClick={() => setLine(l)} aria-pressed={line === l} className={`text-button inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 ${line === l ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+                      {l !== "vse" && <span className={`h-2.5 w-2.5 rounded-full ${line === l ? "bg-paper" : LINE_DOT[l]}`} />}
                       {l === "vse" ? "Vše" : LINE_INFO[l].name}
                     </button>
                   ))}
@@ -536,22 +536,22 @@ export function Pos({
                       type="button"
                       onClick={() => addProduct(p)}
                       disabled={!p.in_stock}
-                      className={`flex min-h-[96px] flex-col justify-between rounded-[var(--radius-card)] border bg-paper p-3 text-left hover:border-green disabled:cursor-not-allowed disabled:border-dashed disabled:text-muted ${p.in_stock ? "border-line" : "border-line"}`}
+                      className={`flex min-h-[96px] flex-col justify-between rounded-card border bg-paper p-3 text-left hover:border-green disabled:cursor-not-allowed disabled:border-dashed disabled:text-muted ${p.in_stock ? "border-line" : "border-line"}`}
                     >
                       <span className="flex items-start gap-2 text-[15px] font-semibold leading-tight">
                         <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${LINE_DOT[p.line]}`} />
                         <span>
                           {productName(p)}
-                          {!p.is_published && <span className="label ml-1 text-[9px] text-brick-text">jen prodejna</span>}
-                          {p.unit === "kg" && <span className="label ml-1 text-[9px] text-brick-text">na váhu</span>}
+                          {!p.is_published && <span className="text-eyebrow uppercase ml-1 text-brick-text">jen prodejna</span>}
+                          {p.unit === "kg" && <span className="text-eyebrow uppercase ml-1 text-brick-text">na váhu</span>}
                         </span>
                       </span>
                       <span className="mt-2 flex items-baseline justify-between gap-2">
                         <span className="text-[19px] font-semibold">
                           {formatPrice(p.price_czk)}
-                          {p.unit === "kg" && <span className="font-body text-xs font-normal text-muted">/kg</span>}
+                          {p.unit === "kg" && <span className="font-body text-small font-normal text-muted">/kg</span>}
                         </span>
-                        <span className={`text-xs ${!p.in_stock ? "text-brick-text" : low ? "text-brick-text" : "text-muted"}`}>{!p.in_stock ? "není skladem" : p.stock_qty !== null ? (low ? `poslední ${fmtQty(p.stock_qty, p.unit)}` : fmtQty(p.stock_qty, p.unit)) : ""}</span>
+                        <span className={`text-small ${!p.in_stock ? "text-brick-text" : low ? "text-brick-text" : "text-muted"}`}>{!p.in_stock ? "není skladem" : p.stock_qty !== null ? (low ? `poslední ${fmtQty(p.stock_qty, p.unit)}` : fmtQty(p.stock_qty, p.unit)) : ""}</span>
                       </span>
                     </button>
                   );
@@ -571,14 +571,14 @@ export function Pos({
           ) : (
             <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {pickup.map((o) => (
-                <li key={o.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+                <li key={o.id} className="rounded-card border border-line bg-white p-4">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="font-semibold">{o.customer_name}</p>
-                    <Link href={`/admin/objednavky/${o.id}`} target="_blank" rel="noopener" className="text-xs text-muted hover:underline">
+                    <Link href={`/admin/objednavky/${o.id}`} target="_blank" rel="noopener" className="text-small text-muted hover:underline">
                       {o.order_number}
                     </Link>
                   </div>
-                  <p className="text-xs text-muted">
+                  <p className="text-small text-muted">
                     {formatDate(o.created_at)} · {o.paid_at ? "zaplaceno" : PAYMENT_LABEL[o.payment_method]}
                     {o.customer_phone ? ` · ${o.customer_phone}` : ""}
                   </p>
@@ -610,9 +610,9 @@ export function Pos({
           ) : (
             <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {parked.map((p) => (
-                <li key={p.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+                <li key={p.id} className="rounded-card border border-line bg-white p-4">
                   <p className="font-semibold">{p.name}</p>
-                  <p className="text-xs text-muted">
+                  <p className="text-small text-muted">
                     {formatDate(p.at)} · {p.lines.length} položek
                   </p>
                   <div className="mt-3 flex gap-2">
@@ -667,7 +667,7 @@ export function Pos({
           {!modal.order.paid_at ? (
             <div>
               {modal.order.payment_method !== "hotove" && (
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border border-ochre bg-paper px-3 py-2 text-sm">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-control border border-ochre bg-paper px-3 py-2 text-sm">
                   <span>
                     Objednávka je {PAYMENT_LABEL[modal.order.payment_method].toLowerCase()} a <b>není označená jako zaplacená</b>. Vezměte platbu teď, nebo potvrďte, že převod už dorazil.
                   </span>
@@ -754,7 +754,7 @@ export function Pos({
           {modal.points > 0 && <p className="mt-1 text-sm text-muted">Zákazníkovi přibylo {modal.points} Kostiček.</p>}
           {!pos.autoPrint && <p className="mt-3 text-sm text-muted">Chce zákazník účtenku?</p>}
           <div className="mt-2 flex flex-wrap gap-2">
-            <a href={`/admin/kasa/uctenka/${modal.id}?tisk=1`} target="_blank" rel="noopener" onClick={clearSale} className="label inline-flex min-h-11 items-center rounded-[var(--radius-control)] border-2 border-green px-4 text-[12px] text-green">
+            <a href={`/admin/kasa/uctenka/${modal.id}?tisk=1`} target="_blank" rel="noopener" onClick={clearSale} className="text-button inline-flex min-h-11 items-center rounded-control border-2 border-green px-4 text-green">
               Tisk účtenky
             </a>
             <Button type="button" variant="action" onClick={clearSale} className="min-h-11">
@@ -787,7 +787,7 @@ export function Pos({
 
 function QtyBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line text-green hover:bg-cream">
+    <button type="button" onClick={onClick} aria-label={label} className="inline-flex h-8 w-8 items-center justify-center rounded-control border border-line text-green hover:bg-paper">
       {children}
     </button>
   );
@@ -795,11 +795,11 @@ function QtyBtn({ label, onClick, children }: { label: string; onClick: () => vo
 
 function Modal({ title, onClose, wide = false, children }: { title: string; onClose: () => void; wide?: boolean; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-ink/40 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className={`w-full rounded-[var(--radius-card)] border border-line bg-paper p-5 ${wide ? "max-w-2xl" : "max-w-md"}`}>
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-overlay p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
+      <div className={`w-full rounded-card border border-line bg-white p-5 ${wide ? "max-w-2xl" : "max-w-md"}`}>
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-[20px]">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Zavřít" className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-cream">
+          <button type="button" onClick={onClose} aria-label="Zavřít" className="inline-flex h-9 w-9 items-center justify-center rounded-control text-muted hover:bg-paper">
             <X strokeWidth={1.75} className="h-5 w-5" />
           </button>
         </div>
@@ -820,7 +820,7 @@ function KgForm({ product, initial, onSubmit }: { product: PosProduct; initial?:
       }}
     >
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Navážené množství (g)</span>
+        <span className="mb-1 block text-label text-green">Navážené množství (g)</span>
         <input autoFocus type="number" inputMode="numeric" min={1} step={1} value={grams} onChange={(e) => setGrams(e.target.value)} placeholder="např. 850" className="text-[22px]" />
       </label>
       <p className="mt-2 text-sm text-muted">
@@ -828,7 +828,7 @@ function KgForm({ product, initial, onSubmit }: { product: PosProduct; initial?:
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {[250, 500, 1000, 1500].map((g) => (
-          <button key={g} type="button" onClick={() => setGrams(String(g))} className="rounded-[var(--radius-control)] border border-line px-3 py-1 text-sm hover:border-green">
+          <button key={g} type="button" onClick={() => setGrams(String(g))} className="rounded-control border border-line px-3 py-1 text-sm hover:border-green">
             {g} g
           </button>
         ))}
@@ -857,10 +857,10 @@ function CustomerPicker({ onPick }: { onPick: (c: PosCustomer) => void }) {
       {!creating ? (
         <>
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Jméno, telefon, e-mail nebo karta" aria-label="Hledat zákazníka" />
-          <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto rounded-[var(--radius-control)] border border-line">
+          <ul className="mt-2 max-h-64 divide-y divide-line overflow-y-auto rounded-control border border-line">
             {results.map((c) => (
               <li key={c.id}>
-                <button type="button" onClick={() => onPick(c)} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-cream">
+                <button type="button" onClick={() => onPick(c)} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-paper">
                   <span>
                     <strong>{c.name || "bez jména"}</strong>
                     <span className="text-muted">
@@ -868,13 +868,13 @@ function CustomerPicker({ onPick }: { onPick: (c: PosCustomer) => void }) {
                       · {c.phone || c.email || ""}
                     </span>
                   </span>
-                  <span className="text-xs text-muted">{c.points} K</span>
+                  <span className="text-small text-muted">{c.points} K</span>
                 </button>
               </li>
             ))}
             {q.trim().length >= 2 && results.length === 0 && <li className="px-3 py-2 text-sm text-muted">Nikdo nenalezen.</li>}
           </ul>
-          <button type="button" onClick={() => setCreating(true)} className="mt-3 text-sm text-green underline">
+          <button type="button" onClick={() => setCreating(true)} className="mt-3 text-sm text-brick-text underline">
             Nový zákazník
           </button>
         </>
@@ -922,18 +922,18 @@ function CardAssign({ code, onDone }: { code: string; onDone: (c: PosCustomer) =
   return (
     <div>
       <p className="text-sm text-muted">Tento kód zatím nikomu nepatří. Komu kartu přiřadit?</p>
-      <p className="mt-1 text-xs text-muted">
+      <p className="mt-1 text-small text-muted">
         S e-mailem odejde zákazníkovi „Aktivujte kartu“. Bez e-mailu si kartu aktivuje sám přes QR na kartě, nebo na tabletu:{" "}
-        <a href={`/k/${encodeURIComponent(code)}?kiosk=1`} target="_blank" rel="noopener" className="text-green underline">
+        <a href={`/k/${encodeURIComponent(code)}?kiosk=1`} target="_blank" rel="noopener" className="text-brick-text underline">
           otevřít aktivaci karty
         </a>
         .
       </p>
       <div className="mt-2 flex gap-2">
-        <button type="button" onClick={() => setMode("existing")} aria-pressed={mode === "existing"} className={`rounded-[var(--radius-control)] border px-3 py-1 text-sm ${mode === "existing" ? "border-green bg-green text-cream" : "border-line"}`}>
+        <button type="button" onClick={() => setMode("existing")} aria-pressed={mode === "existing"} className={`rounded-control border px-3 py-1 text-sm ${mode === "existing" ? "border-green bg-green text-cream" : "border-line"}`}>
           Stávající zákazník
         </button>
-        <button type="button" onClick={() => setMode("new")} aria-pressed={mode === "new"} className={`rounded-[var(--radius-control)] border px-3 py-1 text-sm ${mode === "new" ? "border-green bg-green text-cream" : "border-line"}`}>
+        <button type="button" onClick={() => setMode("new")} aria-pressed={mode === "new"} className={`rounded-control border px-3 py-1 text-sm ${mode === "new" ? "border-green bg-green text-cream" : "border-line"}`}>
           Nový zákazník
         </button>
       </div>
@@ -974,16 +974,16 @@ function DiscountForm({ value, onSubmit }: { value: { czk: number; pct: number; 
     >
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Sleva v %</span>
+          <span className="mb-1 block text-label text-green">Sleva v %</span>
           <input type="number" min={0} max={100} value={d.pct || ""} onChange={(e) => setD({ ...d, pct: Number(e.target.value), czk: 0 })} />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">nebo v Kč</span>
+          <span className="mb-1 block text-label text-green">nebo v Kč</span>
           <input type="number" min={0} value={d.czk || ""} onChange={(e) => setD({ ...d, czk: Number(e.target.value), pct: 0 })} />
         </label>
       </div>
       <label className="block">
-        <span className="label mb-1 block text-[11px] text-muted">Důvod (na účtence)</span>
+        <span className="mb-1 block text-label text-green">Důvod (na účtence)</span>
         <input value={d.note} onChange={(e) => setD({ ...d, note: e.target.value })} placeholder="např. poškozený obal" />
       </label>
       <div className="flex gap-2">
@@ -1018,7 +1018,7 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
   }, [method, iban, total, shopName]);
   const key = (k: string) => setReceived((r) => (k === "C" ? "" : (r + k).replace(/^0+(?=\d)/, "").slice(0, 6)));
   const methodBtn = (id: PosPayment, label: string, Icon: typeof Banknote) => (
-    <button type="button" onClick={() => setMethod(id)} aria-pressed={method === id} className={`label flex min-h-[84px] flex-1 flex-col items-center justify-center gap-1.5 rounded-[var(--radius-card)] border-2 text-[12px] ${method === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+    <button type="button" onClick={() => setMethod(id)} aria-pressed={method === id} className={`text-eyebrow uppercase flex min-h-[84px] flex-1 flex-col items-center justify-center gap-1.5 rounded-card border-2 text-[12px] ${method === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
       <Icon strokeWidth={1.75} className="h-6 w-6" />
       {label}
     </button>
@@ -1029,7 +1029,7 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
   return (
     <div className="flex h-full flex-col gap-5">
       <div>
-        <p className="label text-[11px] text-muted">1. Jak zákazník platí</p>
+        <p className="text-eyebrow uppercase text-muted">1. Jak zákazník platí</p>
         <div className="mt-2 flex gap-3">
           {methodBtn("hotove", "Hotově", Banknote)}
           {methodBtn("karta", "Kartou", CreditCard)}
@@ -1040,26 +1040,26 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
       {method === "hotove" && (
         <div className="grid gap-5 md:grid-cols-[1fr_260px]">
           <div>
-            <p className="label text-[11px] text-muted">2. Kolik dal</p>
+            <p className="text-eyebrow uppercase text-muted">2. Kolik dal</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {quick.map((v) => (
-                <button key={v} type="button" onClick={() => setReceived(String(v))} aria-pressed={received === String(v)} className={`label min-h-12 min-w-[96px] rounded-[var(--radius-control)] border-2 px-3 text-[12px] ${received === String(v) ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+                <button key={v} type="button" onClick={() => setReceived(String(v))} aria-pressed={received === String(v)} className={`text-button min-h-12 min-w-[96px] rounded-control border-2 px-3 text-[12px] ${received === String(v) ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
                   {formatPrice(v)}
                 </button>
               ))}
             </div>
             <div className="mt-3 grid max-w-[360px] grid-cols-3 gap-2">
               {["7", "8", "9", "4", "5", "6", "1", "2", "3", "C", "0", "00"].map((k) => (
-                <button key={k} type="button" onClick={() => key(k)} className={`min-h-[56px] rounded-[var(--radius-card)] border border-line bg-paper text-[22px] font-semibold hover:border-green ${k === "C" ? "text-brick-text" : ""}`} aria-label={k === "C" ? "Smazat" : k}>
+                <button key={k} type="button" onClick={() => key(k)} className={`min-h-[56px] rounded-card border border-line bg-white text-[22px] font-semibold hover:border-green ${k === "C" ? "text-brick-text" : ""}`} aria-label={k === "C" ? "Smazat" : k}>
                   {k}
                 </button>
               ))}
             </div>
           </div>
-          <div className="self-start rounded-[var(--radius-card)] border border-line bg-paper p-4">
-            <p className="label text-[11px] text-muted">Přijato</p>
+          <div className="self-start rounded-card border border-line bg-white p-4">
+            <p className="text-eyebrow uppercase text-muted">Přijato</p>
             <p className="text-[32px] font-semibold">{received ? formatPrice(cash) : formatPrice(total)}</p>
-            <p className="label mt-2 text-[11px] text-muted">Vrátit</p>
+            <p className="text-eyebrow uppercase mt-2 text-muted">Vrátit</p>
             <p className={`text-[32px] font-semibold ${change < 0 && received ? "text-brick-text" : "text-brick-text"}`}>{received ? (change < 0 ? "chybí " + formatPrice(-change) : formatPrice(change)) : formatPrice(0)}</p>
           </div>
         </div>
@@ -1070,7 +1070,7 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
           {iban ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element -- data URL z knihovny qrcode */}
-              {qr?.key === qrKey && <img src={qr.url} alt="QR platba" width={220} height={220} className="rounded-[var(--radius-card)] border border-line" />}
+              {qr?.key === qrKey && <img src={qr.url} alt="QR platba" width={220} height={220} className="rounded-card border border-line" />}
               <p className="max-w-xs text-sm text-muted">Zákazník načte kód v bankovní aplikaci. Po potvrzení odeslání dokončete prodej.</p>
             </>
           ) : (
@@ -1084,7 +1084,7 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
           {pending ? "Ukládám…" : `Dokončit prodej ${formatPrice(total)}`}
         </Button>
       </div>
-      <p className="text-xs text-muted">Účtenka se tiskne až po dokončení, jen na přání zákazníka.</p>
+      <p className="text-small text-muted">Účtenka se tiskne až po dokončení, jen na přání zákazníka.</p>
     </div>
   );
 }
@@ -1127,7 +1127,7 @@ function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean;
       {sales.length === 0 ? (
         <p className="mt-2 text-muted">Zatím žádný prodej.</p>
       ) : (
-        <ul className="mt-3 divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+        <ul className="mt-3 divide-y divide-line rounded-card border border-line bg-white text-sm">
           {sales.map((s) => (
             <li key={s.id} className="p-3">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -1137,7 +1137,7 @@ function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean;
                     setOpen(open === s.id ? null : s.id);
                     if (!items[s.id] && !s.order_id) posSaleItems(s.id).then((it) => setItems((m) => ({ ...m, [s.id]: it })));
                   }}
-                  className="font-semibold text-green hover:underline"
+                  className="font-semibold text-brick-text hover:underline"
                 >
                   {s.number}
                 </button>
@@ -1146,18 +1146,18 @@ function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean;
                 {s.customers && <span className="text-muted">{s.customers.name}</span>}
                 {s.order_id && <span className="text-muted">výdej objednávky</span>}
                 <span className={`ml-auto text-[18px] font-semibold ${s.status === "storno" ? "text-muted line-through" : "text-green"}`}>{formatPrice(s.total_czk)}</span>
-                <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="text-xs text-green underline">
+                <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="text-small text-brick-text underline">
                   účtenka
                 </a>
                 {canStorno(s, manager, userId) && (
-                  <button type="button" onClick={() => onStorno(s)} className="text-xs text-brick-text underline">
+                  <button type="button" onClick={() => onStorno(s)} className="text-small text-brick-text underline">
                     storno
                   </button>
                 )}
-                {s.status === "storno" && <span className="label text-[10px] text-brick-text">storno · {s.cancel_reason}</span>}
+                {s.status === "storno" && <span className="text-eyebrow uppercase text-brick-text">storno · {s.cancel_reason}</span>}
               </div>
               {open === s.id && items[s.id] && (
-                <ul className="mt-2 text-xs text-muted">
+                <ul className="mt-2 text-small text-muted">
                   {items[s.id].map((i) => (
                     <li key={i.id}>
                       {Number(i.qty)} {i.unit} × {i.name} · {formatPrice(i.line_total_czk)}
@@ -1218,10 +1218,10 @@ function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (
         <h2 className="text-[20px]">Otevřít směnu</h2>
         <p className="mt-1 text-sm text-muted">Napočítejte hotovost v pokladně a zadejte ji jako počáteční stav. Bez otevřené směny nejde prodávat.</p>
         {shift.lastClosed && (
-          <div className="mt-3 max-w-lg rounded-[var(--radius-card)] border border-line bg-paper p-3 text-sm">
-            <p className="label text-[11px] text-muted">Předávka z minulé směny · {formatDate(shift.lastClosed.closed_at)}</p>
+          <div className="mt-3 max-w-lg rounded-card border border-line bg-white p-3 text-sm">
+            <p className="text-eyebrow uppercase text-muted">Předávka z minulé směny · {formatDate(shift.lastClosed.closed_at)}</p>
             <p className="mt-1">{shift.lastClosed.note || <span className="text-muted">bez vzkazu</span>}</p>
-            {shift.lastClosed.difference !== 0 && <p className="mt-1 text-xs text-brick-text">Rozdíl v hotovosti při uzávěrce: {formatPrice(shift.lastClosed.difference)}.</p>}
+            {shift.lastClosed.difference !== 0 && <p className="mt-1 text-small text-brick-text">Rozdíl v hotovosti při uzávěrce: {formatPrice(shift.lastClosed.difference)}.</p>}
           </div>
         )}
         <form
@@ -1237,7 +1237,7 @@ function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (
           className="mt-3 flex max-w-sm items-end gap-2"
         >
           <label className="block flex-1">
-            <span className="label mb-1 block text-[11px] text-muted">Počáteční hotovost (Kč)</span>
+            <span className="mb-1 block text-label text-green">Počáteční hotovost (Kč)</span>
             <input autoFocus type="number" inputMode="numeric" min={0} value={opening} onChange={(e) => setOpening(e.target.value)} placeholder="např. 2000" />
           </label>
           <Button type="submit" disabled={pending} className="min-h-10">
@@ -1275,7 +1275,7 @@ function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (
             if (move.kind === "vyber") confirm(`Výběr ${formatPrice(Number(move.amount) || 0)} z pokladny?`, "Zapíše se do pohybů směny i do deníku změn se jménem.", "Vybrat", run);
             else run();
           }}
-          className="rounded-[var(--radius-card)] border border-line bg-paper p-4"
+          className="rounded-card border border-line bg-white p-4"
         >
           <h3 className="text-[16px]">Vklad a výběr hotovosti</h3>
           <div className="mt-2 flex flex-wrap items-end gap-2">
@@ -1326,16 +1326,16 @@ function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (
                 }),
             );
           }}
-          className="rounded-[var(--radius-card)] border border-line bg-paper p-4"
+          className="rounded-card border border-line bg-white p-4"
         >
           <h3 className="text-[16px]">Uzávěrka</h3>
-          <p className="mt-1 text-xs text-muted">Napočítejte hotovost v pokladně. Rozdíl proti očekávanému stavu se uloží.</p>
+          <p className="mt-1 text-small text-muted">Napočítejte hotovost v pokladně. Rozdíl proti očekávanému stavu se uloží.</p>
           <label className="mt-2 block">
-            <span className="label mb-1 block text-[11px] text-muted">Napočítaná hotovost (Kč)</span>
+            <span className="mb-1 block text-label text-green">Napočítaná hotovost (Kč)</span>
             <input type="number" inputMode="numeric" min={0} value={counted} onChange={(e) => setCounted(e.target.value)} required />
           </label>
           <label className="mt-2 block">
-            <span className="label mb-1 block text-[11px] text-muted">Vzkaz pro další směnu</span>
+            <span className="mb-1 block text-label text-green">Vzkaz pro další směnu</span>
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="např. Nováková si zítra vyzvedne, chybí drobné" />
           </label>
           <Button type="submit" variant="action" disabled={pending} className="mt-3 min-h-11 w-full">
@@ -1349,8 +1349,8 @@ function ShiftTab({ shift, onChange, say, confirm }: { shift: Shift; onChange: (
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-3">
-      <p className="label text-[11px] text-muted">{label}</p>
+    <div className="rounded-card border border-line bg-white p-3">
+      <p className="text-eyebrow uppercase text-muted">{label}</p>
       <p className="text-[24px] font-semibold text-green">{value}</p>
     </div>
   );

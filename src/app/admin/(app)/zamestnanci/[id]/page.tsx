@@ -67,11 +67,11 @@ export default async function EmployeePage({ params, searchParams }: { params: P
       {tab === "dochazka" && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`/admin/zamestnanci/${id}?karta=dochazka&mesic=${prevMonth.toISOString().slice(0, 7)}`} className="label text-[11px] text-green hover:underline">
+            <Link href={`/admin/zamestnanci/${id}?karta=dochazka&mesic=${prevMonth.toISOString().slice(0, 7)}`} className="text-small font-semibold text-brick-text hover:underline">
               ← předchozí
             </Link>
-            <span className="label text-[11px]">{monthLabel}</span>
-            <Link href={`/admin/zamestnanci/${id}?karta=dochazka&mesic=${nextMonth.toISOString().slice(0, 7)}`} className="label text-[11px] text-green hover:underline">
+            <span className="text-eyebrow uppercase">{monthLabel}</span>
+            <Link href={`/admin/zamestnanci/${id}?karta=dochazka&mesic=${nextMonth.toISOString().slice(0, 7)}`} className="text-small font-semibold text-brick-text hover:underline">
               další →
             </Link>
             <span className="ml-auto text-sm">
@@ -91,16 +91,16 @@ export default async function EmployeePage({ params, searchParams }: { params: P
                   <Td className="text-muted">{r.ended_at ? new Date(r.ended_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" }) : r.started_at ? "běží" : "—"}</Td>
                   <Td>{r.hours !== null ? Number(r.hours).toLocaleString("cs-CZ", { maximumFractionDigits: 2 }) : "—"}</Td>
                   <Td>
-                    <span className={`label rounded-full px-2 py-0.5 text-[10px] ${r.source === "kasa" ? "border border-line text-muted" : "bg-ochre-badge text-ink"}`}>{r.source === "kasa" ? "Kasa" : "Ručně"}</span>
+                    <span className={`text-button rounded-full px-2 py-0.5 ${r.source === "kasa" ? "border border-line text-muted" : "bg-ochre-badge text-ink"}`}>{r.source === "kasa" ? "Kasa" : "Ručně"}</span>
                   </Td>
                   <Td className="text-muted">{r.note}</Td>
                 </tr>
               ))}
             </Table>
           )}
-          <p className="text-xs text-muted">
+          <p className="text-small text-muted">
             Ruční záznamy (rozvoz, dovolená, nemoc) přidáte v{" "}
-            <Link href={`/admin/dochazka?zamestnanec=${id}`} className="text-green underline">
+            <Link href={`/admin/dochazka?zamestnanec=${id}`} className="text-brick-text underline">
               Docházce
             </Link>
             .
@@ -117,14 +117,14 @@ export default async function EmployeePage({ params, searchParams }: { params: P
               {documents.map((d) => (
                 <tr key={d.id}>
                   <Td>
-                    <Link href={`/admin/dokumenty/${d.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/dokumenty/${d.id}`} className="font-semibold text-brick-text hover:underline">
                       {d.title}
                     </Link>
                   </Td>
                   <Td>{DOCUMENT_CATEGORY_LABEL[d.category]}</Td>
                   <Td className="whitespace-nowrap text-muted">{d.valid_to ? `do ${formatDay(d.valid_to)}` : d.valid_from ? `od ${formatDay(d.valid_from)}` : "bez omezení"}</Td>
                   <Td className="text-right">
-                    <Link href={`/admin/dokumenty/${d.id}`} className="text-sm text-green hover:underline">
+                    <Link href={`/admin/dokumenty/${d.id}`} className="text-sm text-brick-text hover:underline">
                       otevřít
                     </Link>
                   </Td>
@@ -136,19 +136,19 @@ export default async function EmployeePage({ params, searchParams }: { params: P
       )}
 
       {tab === "udaje" && (
-        <form action={saveEmployee} className="mt-4 max-w-3xl rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveEmployee} className="mt-4 max-w-3xl rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={e.id} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block sm:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Jméno a příjmení</span>
+              <span className="mb-1 block text-label text-green">Jméno a příjmení</span>
               <input name="name" defaultValue={e.name} required />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Pozice</span>
+              <span className="mb-1 block text-label text-green">Pozice</span>
               <input name="position" defaultValue={e.position} placeholder="obsluha, jednatelka…" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Smlouva</span>
+              <span className="mb-1 block text-label text-green">Smlouva</span>
               <select name="contract_type" defaultValue={e.contract_type}>
                 {(Object.keys(CONTRACT_LABEL) as ContractType[]).map((c) => (
                   <option key={c} value={c}>
@@ -158,43 +158,43 @@ export default async function EmployeePage({ params, searchParams }: { params: P
               </select>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Hodinová sazba (Kč)</span>
+              <span className="mb-1 block text-label text-green">Hodinová sazba (Kč)</span>
               <input name="hourly_rate_czk" type="number" min={0} step="0.01" defaultValue={e.hourly_rate_czk ?? ""} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Měsíční mzda (Kč)</span>
+              <span className="mb-1 block text-label text-green">Měsíční mzda (Kč)</span>
               <input name="monthly_salary_czk" type="number" min={0} step="1" defaultValue={e.monthly_salary_czk ?? ""} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Úvazek (h/týden)</span>
+              <span className="mb-1 block text-label text-green">Úvazek (h/týden)</span>
               <input name="weekly_hours" type="number" min={0} step="0.5" defaultValue={e.weekly_hours ?? ""} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Nástup</span>
+              <span className="mb-1 block text-label text-green">Nástup</span>
               <input name="started_on" type="date" defaultValue={e.started_on ?? ""} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Ukončení</span>
+              <span className="mb-1 block text-label text-green">Ukončení</span>
               <input name="ended_on" type="date" defaultValue={e.ended_on ?? ""} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Telefon</span>
+              <span className="mb-1 block text-label text-green">Telefon</span>
               <input name="phone" defaultValue={e.phone} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">E-mail</span>
+              <span className="mb-1 block text-label text-green">E-mail</span>
               <input name="email" type="email" defaultValue={e.email} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Datum narození</span>
+              <span className="mb-1 block text-label text-green">Datum narození</span>
               <input name="birth_date" type="date" defaultValue={e.birth_date ?? ""} />
             </label>
             <label className="block sm:col-span-2 lg:col-span-3">
-              <span className="label mb-1 block text-[11px] text-muted">Adresa</span>
+              <span className="mb-1 block text-label text-green">Adresa</span>
               <input name="address" defaultValue={e.address} />
             </label>
             <label className="block sm:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Číslo účtu pro výplatu</span>
+              <span className="mb-1 block text-label text-green">Číslo účtu pro výplatu</span>
               <input name="bank_account" defaultValue={e.bank_account} placeholder="123456789/0100" />
             </label>
             <label className="flex items-center gap-2 self-end pb-2 text-sm">
@@ -202,11 +202,11 @@ export default async function EmployeePage({ params, searchParams }: { params: P
               Podepsal prohlášení poplatníka (sleva na dani)
             </label>
             <label className="block sm:col-span-2 lg:col-span-3">
-              <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+              <span className="mb-1 block text-label text-green">Poznámka</span>
               <textarea name="note" rows={2} defaultValue={e.note} />
             </label>
           </div>
-          <p className="mt-3 text-xs text-muted">Osobní údaje vidí jen správce. Sazba, mzda a prohlášení poplatníka jsou podklad pro Mzdy (orientační výpočet), oficiální mzdy počítá účetní.</p>
+          <p className="mt-3 text-small text-muted">Osobní údaje vidí jen správce. Sazba, mzda a prohlášení poplatníka jsou podklad pro Mzdy (orientační výpočet), oficiální mzdy počítá účetní.</p>
           <Button type="submit" className="mt-3">
             Uložit
           </Button>
@@ -215,9 +215,9 @@ export default async function EmployeePage({ params, searchParams }: { params: P
 
       {tab === "pristup" && (
         <div className="mt-4 grid max-w-3xl gap-4 sm:grid-cols-2">
-          <form action={linkEmployeeUser} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <form action={linkEmployeeUser} className="rounded-card border border-line bg-white p-4">
             <input type="hidden" name="id" value={e.id} />
-            <p className="label mb-1 text-[11px] text-muted">Přihlášení do systému</p>
+            <p className="mb-1 text-label text-green">Přihlášení do systému</p>
             <select name="user_id" defaultValue={e.user_id ?? ""}>
               <option value="">bez přihlášení</option>
               {accounts.map((u) => (
@@ -226,15 +226,15 @@ export default async function EmployeePage({ params, searchParams }: { params: P
                 </option>
               ))}
             </select>
-            <p className="mt-2 text-xs text-muted">Účty se zakládají v Nastavení → Uživatelé. Po propojení se otevření a uzávěrka směny v kase zapisují do docházky tohoto člověka.</p>
+            <p className="mt-2 text-small text-muted">Účty se zakládají v Nastavení → Uživatelé. Po propojení se otevření a uzávěrka směny v kase zapisují do docházky tohoto člověka.</p>
             <Button type="submit" variant="secondary" className="mt-3">
               Uložit
             </Button>
           </form>
-          <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-            <p className="label mb-1 text-[11px] text-muted">Role a práva</p>
+          <div className="rounded-card border border-line bg-white p-4 text-sm">
+            <p className="mb-1 text-label text-green">Role a práva</p>
             <p>{e.user_id ? `Role: ${accounts.find((u) => u.user_id === e.user_id)?.role ?? "?"}` : "Bez přihlášení: nemůže do kasy ani do adminu."}</p>
-            <Link href="/admin/uzivatele" className="mt-2 inline-block text-green hover:underline">
+            <Link href="/admin/uzivatele" className="mt-2 inline-block text-brick-text hover:underline">
               Změnit roli v Uživatelích
             </Link>
           </div>
@@ -242,12 +242,12 @@ export default async function EmployeePage({ params, searchParams }: { params: P
       )}
 
       {tab === "zaskoleni" && (
-        <div className="mt-4 max-w-2xl rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <div className="mt-4 max-w-2xl rounded-card border border-line bg-white p-4">
           {!checklist ? (
             <p className="text-muted">Checklist zaškolení není nastavený (Provoz → Teploty a checklisty → Upravit checklisty).</p>
           ) : (
             <>
-              <p className="label text-[11px] text-muted">{checklist.name}</p>
+              <p className="text-eyebrow uppercase text-muted">{checklist.name}</p>
               <ul className="mt-2 divide-y divide-line">
                 {checklist.items.map((it) => {
                   const d = checklistRun?.done?.[it.id];
@@ -259,13 +259,13 @@ export default async function EmployeePage({ params, searchParams }: { params: P
                         <input type="hidden" name="item_id" value={it.id} />
                         <input type="hidden" name="done" value={d ? "0" : "1"} />
                         <input type="hidden" name="back" value={`/admin/zamestnanci/${e.id}?karta=zaskoleni`} />
-                        <button type="submit" aria-label={d ? "Vrátit" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${d ? "border-green bg-green text-cream" : "border-line bg-cream hover:border-green"}`}>
+                        <button type="submit" aria-label={d ? "Vrátit" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${d ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
                           {d ? "✓" : ""}
                         </button>
                       </form>
                       <span className={`flex-1 ${d ? "text-muted line-through" : ""}`}>{it.text}</span>
                       {d && (
-                        <span className="text-xs text-muted">
+                        <span className="text-small text-muted">
                           {d.by} · {formatDate(d.at)}
                         </span>
                       )}
@@ -273,7 +273,7 @@ export default async function EmployeePage({ params, searchParams }: { params: P
                   );
                 })}
               </ul>
-              <p className="mt-3 text-xs text-muted">Odškrtnutí zapíše kdo a kdy ({admin.name}). Po dokončení nahrajte podepsaný záznam o zaškolení do dokumentů zaměstnance.</p>
+              <p className="mt-3 text-small text-muted">Odškrtnutí zapíše kdo a kdy ({admin.name}). Po dokončení nahrajte podepsaný záznam o zaškolení do dokumentů zaměstnance.</p>
             </>
           )}
         </div>

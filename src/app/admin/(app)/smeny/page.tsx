@@ -36,11 +36,11 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
     <>
       <PageHeader title="Směny a uzávěrky" subtitle="Každá směna v kase: kdo, od kdy, tržby hotově, kartou a QR, rozdíl v hotovosti při uzávěrce a vzkaz pro další směnu." actions={admin.isManager ? <a href={`/admin/export/smeny.csv?mesic=${month}`} className={buttonClass("secondary")}>Export pro účetní (CSV)</a> : null} />
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link href={`/admin/smeny?mesic=${prev.toISOString().slice(0, 7)}`} className="label text-[11px] text-green hover:underline">
+        <Link href={`/admin/smeny?mesic=${prev.toISOString().slice(0, 7)}`} className="text-small font-semibold text-brick-text hover:underline">
           ← předchozí
         </Link>
-        <span className="label text-[11px]">{monthLabel}</span>
-        <Link href={`/admin/smeny?mesic=${next.toISOString().slice(0, 7)}`} className="label text-[11px] text-green hover:underline">
+        <span className="text-eyebrow uppercase">{monthLabel}</span>
+        <Link href={`/admin/smeny?mesic=${next.toISOString().slice(0, 7)}`} className="text-small font-semibold text-brick-text hover:underline">
           další →
         </Link>
       </div>
@@ -61,7 +61,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
                 <tr key={s.id}>
                   <Td className="whitespace-nowrap">
                     {formatDate(s.opened_at)}
-                    <span className="block text-xs text-muted">{s.closed_at ? `do ${new Date(s.closed_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })}` : "otevřená"}</span>
+                    <span className="block text-small text-muted">{s.closed_at ? `do ${new Date(s.closed_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })}` : "otevřená"}</span>
                   </Td>
                   <Td>{names.get((s as ShiftRow & { opened_by?: string }).opened_by ?? "") || "—"}</Td>
                   <Td>{s.sales_count}</Td>

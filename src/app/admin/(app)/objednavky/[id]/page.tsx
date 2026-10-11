@@ -34,8 +34,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         badges={
           <>
             <StatusBadge status={o.status} />
-            {o.paid_at && <span className="label rounded-[var(--radius-control)] bg-green px-2 py-1 text-[10px] text-cream">Zaplaceno</span>}
-            {o.created_by && <span className="label text-[10px] text-muted">založeno v adminu</span>}
+            {o.paid_at && <span className="text-small font-semibold rounded-control bg-green px-2 py-1 text-cream">Zaplaceno</span>}
+            {o.created_by && <span className="text-eyebrow uppercase text-muted">založeno v adminu</span>}
           </>
         }
         actions={
@@ -96,18 +96,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="grid gap-4 sm:grid-cols-2">
             <Box title="Zákazník">
               {o.customer_id ? (
-                <Link href={`/admin/zakaznici/${o.customer_id}`} className="font-semibold text-green hover:underline">
+                <Link href={`/admin/zakaznici/${o.customer_id}`} className="font-semibold text-brick-text hover:underline">
                   {o.customer_name}
                 </Link>
               ) : (
                 o.customer_name
               )}
               <br />
-              <a href={`tel:${o.customer_phone}`} className="text-green hover:underline">
+              <a href={`tel:${o.customer_phone}`} className="text-brick-text hover:underline">
                 {o.customer_phone}
               </a>
               <br />
-              <a href={`mailto:${o.customer_email}`} className="text-green hover:underline">
+              <a href={`mailto:${o.customer_email}`} className="text-brick-text hover:underline">
                 {o.customer_email}
               </a>
             </Box>
@@ -131,9 +131,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="space-y-4">
-        <form action={setOrderStatus} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={setOrderStatus} className="h-fit rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={o.id} />
-          <label htmlFor="status" className="label mb-1 block text-[11px] text-muted">
+          <label htmlFor="status" className="mb-1 block text-label text-green">
             Stav objednávky
           </label>
           <select id="status" name="status" defaultValue={o.status}>
@@ -152,7 +152,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             Uložit stav
           </Button>
           {o.points_earned > 0 && (
-            <p className="mt-3 text-xs text-muted">Po označení „Doručeno“ se zákazníkovi připíše {o.points_earned} Kostiček.</p>
+            <p className="mt-3 text-small text-muted">Po označení „Doručeno“ se zákazníkovi připíše {o.points_earned} Kostiček.</p>
           )}
           {o.status !== "zrusena" && o.status !== "doruceno" && (
             <div className="mt-3 border-t border-line pt-3">
@@ -173,10 +173,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </form>
 
-        <form action={setOrderPaid} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={setOrderPaid} className="h-fit rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={o.id} />
           <input type="hidden" name="paid" value={o.paid_at ? "0" : "1"} />
-          <p className="label mb-1 text-[11px] text-muted">Platba</p>
+          <p className="mb-1 text-label text-green">Platba</p>
           <p className="text-sm">{o.paid_at ? `Zaplaceno ${formatDate(o.paid_at)}` : `Nezaplaceno · ${PAYMENT_LABEL[o.payment_method]}`}</p>
           {o.paid_at ? (
             <ConfirmButton action={setOrderPaid} fields={{ id: o.id, paid: "0" }} title="Zrušit označení zaplaceno?" text="Objednávka se zase bude hlídat jako nezaplacená a po třech dnech se objeví mezi upozorněními." confirmLabel="Zrušit označení" variant="secondary" className="mt-3 w-full">
@@ -189,9 +189,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </form>
         {!o.paid_at && o.payment_method === "prevod" && o.status !== "zrusena" && (
-          <form action={sendPaymentReminder} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+          <form action={sendPaymentReminder} className="h-fit rounded-card border border-line bg-white p-4">
             <input type="hidden" name="id" value={o.id} />
-            <p className="label mb-1 text-[11px] text-muted">Připomínka platby</p>
+            <p className="mb-1 text-label text-green">Připomínka platby</p>
             <p className="text-sm text-muted">E-mail s číslem účtu, částkou a variabilním symbolem{o.customer_email ? ` na ${o.customer_email}` : " (zákazník nemá e-mail)"}.</p>
             <Button type="submit" variant="secondary" className="mt-3 w-full" disabled={!o.customer_email}>
               Poslat připomínku
@@ -199,8 +199,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </form>
         )}
 
-        <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <p className="label mb-1 text-[11px] text-muted">Doklad</p>
+        <div className="h-fit rounded-card border border-line bg-white p-4">
+          <p className="mb-1 text-label text-green">Doklad</p>
           {o.invoice_number ? (
             <>
               <p className="text-sm">
@@ -218,9 +218,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
 
-        <form action={saveOrderNote} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveOrderNote} className="h-fit rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={o.id} />
-          <label htmlFor="internal_note" className="label mb-1 block text-[11px] text-muted">
+          <label htmlFor="internal_note" className="mb-1 block text-label text-green">
             Interní poznámka (zákazník nevidí)
           </label>
           <textarea id="internal_note" name="internal_note" rows={3} defaultValue={o.internal_note ?? ""} placeholder="např. volala, chce odeslat až v úterý" />
@@ -229,12 +229,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </Button>
         </form>
 
-        <div className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
-          <p className="label mb-1 text-[11px] text-muted">Historie</p>
+        <div className="h-fit rounded-card border border-line bg-white p-4">
+          <p className="mb-1 text-label text-green">Historie</p>
           <ul className="space-y-2 text-sm">
             <li>
               <span className="font-semibold">Objednávka přijata</span>
-              <span className="block text-xs text-muted">
+              <span className="block text-small text-muted">
                 {formatDate(o.created_at)} · {o.created_by ? "založena v adminu" : o.subscription_id ? "z předplatného" : "z webu"}
               </span>
             </li>
@@ -244,7 +244,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               .map((h) => (
                 <li key={h.id}>
                   <span className="font-semibold">{h.text}</span>
-                  <span className="block text-xs text-muted">
+                  <span className="block text-small text-muted">
                     {formatDate(h.created_at)} · {h.actor_name}
                   </span>
                 </li>
@@ -252,14 +252,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </ul>
           {mails.length > 0 && (
             <>
-              <p className="label mt-3 mb-1 text-[11px] text-muted">E-maily zákazníkovi</p>
+              <p className="mt-3 mb-1 text-label text-green">E-maily zákazníkovi</p>
               <ul className="space-y-1 text-sm">
                 {mails.map((m) => (
                   <li key={m.id} className="flex justify-between gap-2">
                     <Link href={`/admin/emaily/${m.id}`} className="min-w-0 truncate hover:underline">
                       {m.subject}
                     </Link>
-                    <span className="shrink-0 text-xs text-muted">{m.status === "odeslano" ? "odesláno" : m.status === "chyba" ? "chyba" : "čeká"}</span>
+                    <span className="shrink-0 text-small text-muted">{m.status === "odeslano" ? "odesláno" : m.status === "chyba" ? "chyba" : "čeká"}</span>
                   </li>
                 ))}
               </ul>
@@ -274,8 +274,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
 function Box({ title, className = "", children }: { title: string; className?: string; children: React.ReactNode }) {
   return (
-    <div className={`rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm ${className}`}>
-      <p className="label mb-1 text-[11px] text-muted">{title}</p>
+    <div className={`rounded-card border border-line bg-white p-4 text-sm ${className}`}>
+      <p className="mb-1 text-label text-green">{title}</p>
       {children}
     </div>
   );

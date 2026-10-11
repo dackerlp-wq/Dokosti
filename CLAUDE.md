@@ -14,7 +14,7 @@ Vzhled e-shopu se řídí design systémem v `design/DESIGN.md`. Před každou p
 - Stránka je bílá, sekce střídají `white` a `paper`; `cream` nebo `green` sekce nejvýš jedna na stránku (kromě hlavičky a patičky).
 - Amatic SC (`font-display`) jen s `text-display-*` pro H1 a titulky sekcí, nikdy pro ceny, tlačítka a text. Všechno ostatní je Montserrat.
 - Jedna cihlová (`bg-brick text-white`) akce v pohledu: tlačítko, které vede k nákupu.
-- Administrace (`/admin`) sdílí tokeny a základní komponenty, ale design systém se na ni nevztahuje; třída `label` tam zůstává.
+- Administrace (`/admin`) a kasa používají stejné tokeny a primitiva (PageHeader s titulkem v `font-display text-display-md`, Table, Stat, Field, chipClass). Popisky polí `text-label text-green`, drobné nadtitulky `text-eyebrow uppercase`; třída `label` se už nepoužívá.
 
 ## Pravidla
 

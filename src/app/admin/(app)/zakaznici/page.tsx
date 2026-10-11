@@ -40,7 +40,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             ["nejlepsi", "Nejlepší"],
           ] as [string, string][]
         ).map(([id, label]) => (
-          <Link key={id} href={id ? `/admin/zakaznici?filtr=${id}` : "/admin/zakaznici"} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${(filtr ?? "") === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+          <Link key={id} href={id ? `/admin/zakaznici?filtr=${id}` : "/admin/zakaznici"} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${(filtr ?? "") === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
             {label}
           </Link>
         ))}
@@ -48,7 +48,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <form className="mt-3 flex max-w-md gap-2">
         {filtr && <input type="hidden" name="filtr" value={filtr} />}
         <input name="q" defaultValue={q} placeholder="Jméno, e-mail nebo telefon" aria-label="Hledat zákazníka" />
-        <button type="submit" className="label shrink-0 rounded-[var(--radius-control)] border border-green px-3 text-green">
+        <button type="submit" className="text-small font-semibold shrink-0 rounded-control border border-green px-3 text-green">
           Hledat
         </button>
       </form>
@@ -61,13 +61,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
             {customers.map((c) => (
               <tr key={c.id}>
                 <Td>
-                  <Link href={`/admin/zakaznici/${c.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/zakaznici/${c.id}`} className="font-semibold text-brick-text hover:underline">
                     {c.name || "(bez jména)"}
                   </Link>
                 </Td>
                 <Td>{c.email}</Td>
                 <Td>{c.phone}</Td>
-                <Td className="text-xs text-muted">{[c.user_id ? "účet" : "", c.card_code ? "karta" : "", c.consent_marketing_email_at ? "newsletter" : ""].filter(Boolean).join(", ")}</Td>
+                <Td className="text-small text-muted">{[c.user_id ? "účet" : "", c.card_code ? "karta" : "", c.consent_marketing_email_at ? "newsletter" : ""].filter(Boolean).join(", ")}</Td>
                 <Td>{c.orders_count}</Td>
                 <Td>{formatPrice(c.total_spent_czk)}</Td>
                 <Td className="whitespace-nowrap text-muted">{c.last_order_at ? formatDay(c.last_order_at.slice(0, 10)) : `registrace ${formatDate(c.created_at)}`}</Td>
@@ -76,7 +76,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                     <form action={createTask}>
                       <input type="hidden" name="title" value={`Ozvat se: ${c.name || c.email}`} />
                       <input type="hidden" name="detail" value={`Naposledy nakoupil ${c.last_order_at ? formatDay(c.last_order_at.slice(0, 10)) : "—"}, celkem ${c.orders_count}× za ${formatPrice(c.total_spent_czk)}. ${c.phone || c.email || ""} · /admin/zakaznici/${c.id}`} />
-                      <button type="submit" className="label min-h-8 rounded-[var(--radius-control)] border border-line px-2 text-[10px] text-green hover:border-green">
+                      <button type="submit" className="text-button min-h-8 rounded-control border border-line px-2 text-green hover:border-green">
                         ozvat se
                       </button>
                     </form>

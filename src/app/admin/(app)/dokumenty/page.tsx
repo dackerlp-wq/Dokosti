@@ -108,10 +108,10 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
               return (
                 <tr key={d.id}>
                   <Td>
-                    <Link href={`/admin/dokumenty/${d.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/dokumenty/${d.id}`} className="font-semibold text-brick-text hover:underline">
                       {d.title}
                     </Link>
-                    {d.note && <div className="max-w-md truncate text-xs text-muted">{d.note}</div>}
+                    {d.note && <div className="max-w-md truncate text-small text-muted">{d.note}</div>}
                   </Td>
                   <Td>{DOCUMENT_CATEGORY_LABEL[d.category]}</Td>
                   <Td className="text-muted">{d.linked_type ? `${DOCUMENT_LINK_LABEL[d.linked_type]}${d.linked_id ? `: ${linkLabel.get(`${d.linked_type}:${d.linked_id}`) ?? ""}` : ""}` : "—"}</Td>

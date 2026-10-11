@@ -61,7 +61,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
 
   if (review) {
     return (
-      <form action={applyInventory} className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+      <form action={applyInventory} className="rounded-card border border-line bg-white p-5">
         <input type="hidden" name="items" value={JSON.stringify(products.filter((p) => counted(p) !== null).map((p) => ({ product_id: p.id, qty: counted(p) })))} />
         <h2 className="text-[20px]">Rozdíly před zapsáním</h2>
         <p className="mt-1 text-sm text-muted">
@@ -70,10 +70,10 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
         {diffs.length === 0 ? (
           <p className="mt-4 text-sm text-green">Všechno sedí, žádný rozdíl.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-[var(--radius-card)] border border-line">
+          <div className="mt-4 overflow-x-auto rounded-card border border-line">
             <table className="w-full text-sm">
               <thead>
-                <tr className="label border-b border-line text-left text-[10px] text-muted">
+                <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
                   <th className="px-3 py-2 font-semibold">Produkt</th>
                   <th className="px-3 py-2 font-semibold">V systému</th>
                   <th className="px-3 py-2 font-semibold">Spočítáno</th>
@@ -96,7 +96,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-line bg-cream font-semibold">
+                <tr className="border-t border-line bg-paper font-semibold">
                   <td className="px-3 py-2" colSpan={4}>
                     Celkem {diffs.length} rozdílů
                   </td>
@@ -107,7 +107,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
           </div>
         )}
         <label className="mt-4 block max-w-md">
-          <span className="label mb-1 block text-[11px] text-muted">Poznámka k inventuře</span>
+          <span className="mb-1 block text-label text-green">Poznámka k inventuře</span>
           <input name="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="např. měsíční inventura mrazáků" />
         </label>
         <div className="mt-4 flex justify-between">
@@ -123,14 +123,14 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
   }
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+    <div className="rounded-card border border-line bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {lines.map(([slug, name], i) => {
             const n = products.filter((p) => p.line === slug).length;
             const d = products.filter((p) => p.line === slug && counted(p) !== null).length;
             return (
-              <button key={slug} type="button" onClick={() => setLineIdx(i)} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${i === lineIdx ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+              <button key={slug} type="button" onClick={() => setLineIdx(i)} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${i === lineIdx ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
                 {name} · {d}/{n}
               </button>
             );
@@ -144,7 +144,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="label border-b border-line text-left text-[10px] text-muted">
+            <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
               <th className="py-2 pr-2 font-semibold">Produkt</th>
               <th className="py-2 pr-2 font-semibold">V systému</th>
               <th className="py-2 pr-2 font-semibold">Spočítáno</th>
@@ -162,7 +162,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
                   <td className="py-2 pr-2">
                     <span className="flex items-center gap-1">
                       <input type="number" min={0} step={p.unit === "kg" ? "0.001" : "1"} inputMode="decimal" value={counts[p.id] ?? ""} onChange={(e) => setCount(p.id, e.target.value)} placeholder={String(p.stock)} aria-label={`Spočítáno ${p.name}`} className="w-28 min-h-9 py-1" />
-                      <button type="button" onClick={() => setCount(p.id, String(p.stock))} className="text-xs text-muted hover:text-green" title="Sedí se systémem">
+                      <button type="button" onClick={() => setCount(p.id, String(p.stock))} className="text-small text-muted hover:text-green" title="Sedí se systémem">
                         sedí
                       </button>
                     </span>
@@ -184,7 +184,7 @@ export function InventoryWizard({ products }: { products: InventoryProduct[] }) 
           </Button>
         </div>
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => save({})} className="text-xs text-muted hover:underline">
+          <button type="button" onClick={() => save({})} className="text-small text-muted hover:underline">
             Začít znovu
           </button>
           <Button type="button" onClick={() => setReview(true)} disabled={done === 0}>

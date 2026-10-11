@@ -58,7 +58,7 @@ export default async function ProvozPage() {
         <p className="text-muted">
           Zatím žádné zařízení.{" "}
           {admin.isManager ? (
-            <Link href="/admin/provoz/zarizeni" className="text-green underline">
+            <Link href="/admin/provoz/zarizeni" className="text-brick-text underline">
               Přidejte mrazáky a chladničky s povoleným rozsahem.
             </Link>
           ) : (
@@ -72,15 +72,15 @@ export default async function ProvozPage() {
             const last = t[0];
             const bad = t.some((x) => !x.ok);
             return (
-              <div key={d.id} className={`rounded-[var(--radius-card)] border bg-paper p-4 ${bad ? "border-brick" : t.length === 0 ? "border-ochre" : "border-line"}`}>
-                <p className="label text-[11px] text-muted">{d.name}</p>
+              <div key={d.id} className={`rounded-card border bg-paper p-4 ${bad ? "border-brick" : t.length === 0 ? "border-ochre" : "border-line"}`}>
+                <p className="text-eyebrow uppercase text-muted">{d.name}</p>
                 <p className="text-[26px] font-semibold">{last ? fmtT(last.value_c) : <span className="text-muted">—</span>}</p>
-                <p className="text-xs text-muted">
+                <p className="text-small text-muted">
                   rozsah {Number(d.min_c)} až {Number(d.max_c)} °C
                   {last ? ` · ${new Date(last.measured_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })} ${last.created_by_name}` : ""}
                 </p>
                 <p className="mt-1">
-                  <span className={`label rounded-full px-2 py-0.5 text-[10px] ${bad ? "bg-brick text-cream" : t.length >= 2 ? "bg-green text-cream" : t.length === 1 ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{bad ? "Mimo rozsah" : t.length >= 2 ? "Ráno i večer" : t.length === 1 ? "Zapsáno 1×" : "Chybí zápis"}</span>
+                  <span className={`text-button rounded-full px-2 py-0.5 ${bad ? "bg-brick text-white" : t.length >= 2 ? "bg-green text-cream" : t.length === 1 ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{bad ? "Mimo rozsah" : t.length >= 2 ? "Ráno i večer" : t.length === 1 ? "Zapsáno 1×" : "Chybí zápis"}</span>
                 </p>
                 <form action={logTemperature} className="mt-3 flex items-end gap-2">
                   <input type="hidden" name="device_id" value={d.id} />
@@ -95,15 +95,15 @@ export default async function ProvozPage() {
           })}
         </div>
       )}
-      <p className="mt-2 text-xs text-muted">Hodnota mimo rozsah jde zapsat jen s poznámkou, co jste udělali, a správce dostane upozornění na Dnes.</p>
+      <p className="mt-2 text-small text-muted">Hodnota mimo rozsah jde zapsat jen s poznámkou, co jste udělali, a správce dostane upozornění na Dnes.</p>
 
       {devs.length > 0 && (
         <section className="mt-6">
           <h3 className="mb-2 text-[16px]">Posledních 7 dní (ráno / večer)</h3>
-          <div className="overflow-x-auto rounded-[var(--radius-card)] border border-line bg-paper">
+          <div className="overflow-x-auto rounded-card border border-line bg-white">
             <table className="w-full text-sm">
               <thead>
-                <tr className="label border-b border-line text-left text-[10px] text-muted">
+                <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
                   <th className="px-3 py-2 font-semibold">Den</th>
                   {devs.map((d) => (
                     <th key={d.id} className="px-3 py-2 font-semibold">
@@ -145,7 +145,7 @@ export default async function ProvozPage() {
             </table>
           </div>
           {logs.some((l) => !l.ok) && (
-            <ul className="mt-2 space-y-1 text-xs text-muted">
+            <ul className="mt-2 space-y-1 text-small text-muted">
               {logs
                 .filter((l) => !l.ok)
                 .map((l) => (
@@ -168,10 +168,10 @@ export default async function ProvozPage() {
             const run = runRows.find((r) => r.checklist_id === cl.id && r.period_key === key);
             const doneCount = cl.items.filter((i) => run?.done?.[i.id]).length;
             return (
-              <section key={cl.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+              <section key={cl.id} className="rounded-card border border-line bg-white p-4">
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-[16px]">{cl.name}</h3>
-                  <span className={`label rounded-full px-2.5 py-0.5 text-[11px] ${doneCount === cl.items.length ? "bg-green text-cream" : doneCount > 0 ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>
+                  <span className={`text-button rounded-full px-2.5 py-0.5 ${doneCount === cl.items.length ? "bg-green text-cream" : doneCount > 0 ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>
                     {doneCount} / {cl.items.length} · {CHECKLIST_PERIOD_LABEL[cl.period].toLowerCase()}
                   </span>
                 </div>
@@ -185,13 +185,13 @@ export default async function ProvozPage() {
                           <input type="hidden" name="period_key" value={key} />
                           <input type="hidden" name="item_id" value={it.id} />
                           <input type="hidden" name="done" value={d ? "0" : "1"} />
-                          <button type="submit" aria-label={d ? "Vrátit" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${d ? "border-green bg-green text-cream" : "border-line bg-cream hover:border-green"}`}>
+                          <button type="submit" aria-label={d ? "Vrátit" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${d ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
                             {d ? "✓" : ""}
                           </button>
                         </form>
                         <span className={`flex-1 ${d ? "text-muted line-through" : ""}`}>{it.text}</span>
                         {d && (
-                          <span className="whitespace-nowrap text-xs text-muted">
+                          <span className="whitespace-nowrap text-small text-muted">
                             {d.by} · {new Date(d.at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })}
                           </span>
                         )}

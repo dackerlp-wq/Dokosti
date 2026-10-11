@@ -46,10 +46,10 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         subtitle="Podklady z docházky a sazeb, orientační výpočet čisté mzdy a nákladů. Odměny a srážky doplníte v řádku. Uzavření měsíce zmrazí podklady a zapíše mzdy do výdajů; oficiální výpočet dělá účetní z exportu."
         actions={
           <>
-            <Link href={`/admin/mzdy/parametry?rok=${month.slice(0, 4)}`} className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-line px-3 text-[11px] text-green hover:border-green">
+            <Link href={`/admin/mzdy/parametry?rok=${month.slice(0, 4)}`} className="text-button inline-flex min-h-9 items-center rounded-control border border-line px-3 text-green hover:border-green">
               Parametry {month.slice(0, 4)}{p?.verified ? " ✓" : ""}
             </Link>
-            <a href={`/admin/export/mzdy.csv?mesic=${month}`} className="label inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-green px-3 text-[11px] text-green">
+            <a href={`/admin/export/mzdy.csv?mesic=${month}`} className="text-button inline-flex min-h-9 items-center rounded-control border border-green px-3 text-green">
               Export pro účetní
             </a>
             {!closed && (
@@ -75,7 +75,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             )}
           </>
         }
-        badges={closed ? <span className="label rounded-full bg-green px-2 py-0.5 text-[10px] text-cream">uzavřeno {pm?.closed_at ? formatDate(pm.closed_at) : ""}</span> : pm ? <span className="label rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] text-muted">otevřený měsíc</span> : null}
+        badges={closed ? <span className="text-small font-semibold rounded-control bg-green px-2 py-0.5 text-cream">uzavřeno {pm?.closed_at ? formatDate(pm.closed_at) : ""}</span> : pm ? <span className="text-small font-semibold rounded-control border border-line bg-white px-2 py-0.5 text-muted">otevřený měsíc</span> : null}
       />
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Pills
@@ -88,13 +88,13 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         />
       </div>
       {warnings.size > 0 && (
-        <ul className="mt-3 space-y-1 rounded-[var(--radius-card)] border border-brick bg-paper px-4 py-3 text-sm text-brick-text">
+        <ul className="mt-3 space-y-1 rounded-card border border-brick bg-paper px-4 py-3 text-sm text-brick-text">
           {[...warnings].map((w) => (
             <li key={w}>{w}</li>
           ))}
           <li className="text-muted">
             Parametry upravíte v{" "}
-            <Link href={`/admin/mzdy/parametry?rok=${month.slice(0, 4)}`} className="text-green underline">
+            <Link href={`/admin/mzdy/parametry?rok=${month.slice(0, 4)}`} className="text-brick-text underline">
               Parametrech mezd
             </Link>
             , sazby na kartě zaměstnance.
@@ -119,15 +119,15 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             {rows.map((r) => (
               <tr key={r.id}>
                 <Td>
-                  <Link href={`/admin/zamestnanci/${r.employee_id}?karta=dochazka&mesic=${month}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/zamestnanci/${r.employee_id}?karta=dochazka&mesic=${month}`} className="font-semibold text-brick-text hover:underline">
                     {r.employee_name}
                   </Link>
-                  <div className="text-xs text-muted">{CONTRACT_LABEL[r.contract_type]}</div>
+                  <div className="text-small text-muted">{CONTRACT_LABEL[r.contract_type]}</div>
                 </Td>
                 <Td className="whitespace-nowrap">
                   {Number(r.hours_work).toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} h
                   {(Number(r.hours_vacation) > 0 || Number(r.hours_sick) > 0 || Number(r.hours_holiday) > 0) && (
-                    <div className="text-xs text-muted">{[Number(r.hours_vacation) > 0 && `dov. ${r.hours_vacation}`, Number(r.hours_sick) > 0 && `nemoc ${r.hours_sick}`, Number(r.hours_holiday) > 0 && `svátek ${r.hours_holiday}`].filter(Boolean).join(", ")}</div>
+                    <div className="text-small text-muted">{[Number(r.hours_vacation) > 0 && `dov. ${r.hours_vacation}`, Number(r.hours_sick) > 0 && `nemoc ${r.hours_sick}`, Number(r.hours_holiday) > 0 && `svátek ${r.hours_holiday}`].filter(Boolean).join(", ")}</div>
                   )}
                 </Td>
                 <Td className="whitespace-nowrap text-muted">{r.monthly_salary_czk ? `${Number(r.monthly_salary_czk).toLocaleString("cs-CZ")} Kč/měs.` : r.hourly_rate_czk ? `${Number(r.hourly_rate_czk).toLocaleString("cs-CZ")} Kč/h` : "—"}</Td>
@@ -144,14 +144,14 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                       <input name="bonus_czk" type="number" min={0} step="1" defaultValue={Number(r.bonus_czk) || ""} placeholder="+ odměna" aria-label="Odměna" className="min-h-8 w-24 py-0.5 text-sm" />
                       <input name="deduction_czk" type="number" min={0} step="1" defaultValue={Number(r.deduction_czk) || ""} placeholder="− srážka" aria-label="Srážka" className="min-h-8 w-24 py-0.5 text-sm" />
                       <input name="note" defaultValue={r.note} placeholder="poznámka" aria-label="Poznámka" className="min-h-8 w-32 py-0.5 text-sm" />
-                      <button type="submit" className="label min-h-8 rounded-[var(--radius-control)] border border-line px-2 text-[10px] text-green hover:border-green">
+                      <button type="submit" className="text-button min-h-8 rounded-control border border-line px-2 text-green hover:border-green">
                         Uložit
                       </button>
                     </form>
                   )}
                 </Td>
                 <Td className="whitespace-nowrap text-right">
-                  <Link href={`/admin/mzdy/paska/${r.id}`} className="text-sm text-green hover:underline">
+                  <Link href={`/admin/mzdy/paska/${r.id}`} className="text-sm text-brick-text hover:underline">
                     páska
                   </Link>
                 </Td>
@@ -160,7 +160,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
           </Table>
         )}
       </div>
-      <p className="mt-3 text-xs text-muted">
+      <p className="mt-3 text-small text-muted">
         Výpočet je orientační: dovolená a svátek sazbou, nemoc 60 % sazby, daň {p ? p.tax_rate_pct : 15} % bez progrese, u DPP a DPČ odvody až od rozhodné částky. Hodiny se berou z docházky, tam je i opravíte (po přepočtu se promítnou).
       </p>
     </>

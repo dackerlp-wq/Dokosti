@@ -46,17 +46,17 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         />
       </div>
 
-      <form action={createTask} className="mt-4 flex flex-wrap items-end gap-2 rounded-[var(--radius-card)] border border-line bg-paper p-3">
+      <form action={createTask} className="mt-4 flex flex-wrap items-end gap-2 rounded-card border border-line bg-white p-3">
         <label className="min-w-[240px] flex-1">
-          <span className="label mb-1 block text-[11px] text-muted">Nový úkol</span>
+          <span className="mb-1 block text-label text-green">Nový úkol</span>
           <input name="title" required placeholder="např. objednat technika na revizi hasicích přístrojů" className="min-h-9 py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Termín</span>
+          <span className="mb-1 block text-label text-green">Termín</span>
           <input name="due_on" type="date" className="min-h-9 w-auto py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Komu</span>
+          <span className="mb-1 block text-label text-green">Komu</span>
           <select name="assigned_to" defaultValue={admin.id} className="min-h-9 w-auto py-1">
             <option value="">kdokoli</option>
             {[...names.entries()].map(([id, n]) => (
@@ -71,7 +71,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         </Button>
       </form>
 
-      <div className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper">
+      <div className="mt-4 rounded-card border border-line bg-white">
         {tasks.length === 0 ? (
           <p className="px-4 py-8 text-center text-muted">{view === "hotove" ? "Zatím nic hotového." : "Nic nečeká. Máte hotovo."}</p>
         ) : (
@@ -83,22 +83,22 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                   <form action={toggleTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <input type="hidden" name="done" value={t.done_at ? "0" : "1"} />
-                    <button type="submit" aria-label={t.done_at ? "Vrátit mezi otevřené" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${t.done_at ? "border-green bg-green text-cream" : "border-line bg-cream hover:border-green"}`}>
+                    <button type="submit" aria-label={t.done_at ? "Vrátit mezi otevřené" : "Hotovo"} className={`flex h-6 w-6 items-center justify-center rounded border ${t.done_at ? "border-green bg-green text-cream" : "border-line bg-paper hover:border-green"}`}>
                       {t.done_at ? "✓" : ""}
                     </button>
                   </form>
                   <div className="min-w-0 flex-1">
                     <p className={`font-semibold ${t.done_at ? "text-muted line-through" : ""}`}>{t.title}</p>
-                    <p className="text-xs text-muted">
+                    <p className="text-small text-muted">
                       {t.detail && `${t.detail} · `}
                       {t.kind === "auto" ? "automaticky" : `zadal ${names.get(t.created_by ?? "") ?? "kolega"}`}
                       {t.assigned_to && ` · pro ${names.get(t.assigned_to) ?? "kolegu"}`}
                       {t.done_at && ` · hotovo ${formatDate(t.done_at)} (${names.get(t.done_by ?? "") ?? ""})`}
                     </p>
                   </div>
-                  {t.due_on && !t.done_at && <span className={`label text-[11px] ${overdue ? "text-brick-text" : "text-muted"}`}>{overdue ? "po termínu · " : "do "}{formatDay(t.due_on)}</span>}
+                  {t.due_on && !t.done_at && <span className={`text-eyebrow uppercase ${overdue ? "text-brick-text" : "text-muted"}`}>{overdue ? "po termínu · " : "do "}{formatDay(t.due_on)}</span>}
                   {t.href && (
-                    <Link href={t.href} className="text-sm text-green hover:underline">
+                    <Link href={t.href} className="text-sm text-brick-text hover:underline">
                       Otevřít
                     </Link>
                   )}

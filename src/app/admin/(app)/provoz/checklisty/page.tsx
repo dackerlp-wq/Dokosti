@@ -9,15 +9,15 @@ export const metadata: Metadata = { title: "Checklisty" };
 
 function ChecklistForm({ c }: { c?: ChecklistRow }) {
   return (
-    <form action={saveChecklist} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+    <form action={saveChecklist} className="rounded-card border border-line bg-white p-4">
       {c && <input type="hidden" name="id" value={c.id} />}
       <div className="grid gap-3 sm:grid-cols-[1fr_160px_90px]">
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Název</span>
+          <span className="mb-1 block text-label text-green">Název</span>
           <input name="name" defaultValue={c?.name} required />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Období</span>
+          <span className="mb-1 block text-label text-green">Období</span>
           <select name="period" defaultValue={c?.period ?? "denne"}>
             {(Object.keys(CHECKLIST_PERIOD_LABEL) as ChecklistPeriod[]).map((p) => (
               <option key={p} value={p}>
@@ -27,12 +27,12 @@ function ChecklistForm({ c }: { c?: ChecklistRow }) {
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Pořadí</span>
+          <span className="mb-1 block text-label text-green">Pořadí</span>
           <input name="sort_order" type="number" defaultValue={c?.sort_order ?? 0} />
         </label>
       </div>
       <label className="mt-3 block">
-        <span className="label mb-1 block text-[11px] text-muted">Položky (každá na řádek)</span>
+        <span className="mb-1 block text-label text-green">Položky (každá na řádek)</span>
         <textarea name="items" rows={Math.max(4, (c?.items.length ?? 3) + 1)} defaultValue={c?.items.map((i) => i.text).join("\n")} required />
       </label>
       <div className="mt-3 flex items-center gap-3">

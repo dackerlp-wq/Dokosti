@@ -52,9 +52,9 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
         }
       />
 
-      <form action={createPriceAction} className="mt-5 grid gap-3 rounded-[var(--radius-card)] border border-line bg-paper p-4 sm:grid-cols-[1fr_140px_150px_150px_1fr_auto] sm:items-end">
+      <form action={createPriceAction} className="mt-5 grid gap-3 rounded-card border border-line bg-white p-4 sm:grid-cols-[1fr_140px_150px_150px_1fr_auto] sm:items-end">
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Produkt</span>
+          <span className="mb-1 block text-label text-green">Produkt</span>
           <select name="product_id" defaultValue={produkt ?? ""} required className="min-h-9 py-1">
             <option value="">vyberte…</option>
             {list.map((p) => (
@@ -66,19 +66,19 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
           </select>
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Akční cena (Kč)</span>
+          <span className="mb-1 block text-label text-green">Akční cena (Kč)</span>
           <input name="sale_price_czk" type="number" min={0} required className="min-h-9 py-1" />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Od</span>
+          <span className="mb-1 block text-label text-green">Od</span>
           <input name="starts_on" type="date" defaultValue={today} required className="min-h-9 py-1" />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Do (včetně)</span>
+          <span className="mb-1 block text-label text-green">Do (včetně)</span>
           <input name="ends_on" type="date" defaultValue={next} required className="min-h-9 py-1" />
         </label>
         <label className="block">
-          <span className="label mb-1 block text-[11px] text-muted">Název (volitelně)</span>
+          <span className="mb-1 block text-label text-green">Název (volitelně)</span>
           <input name="name" placeholder="např. Podzimní sleva" className="min-h-9 py-1" />
         </label>
         <Button type="submit" className="min-h-9">
@@ -96,13 +96,13 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
                 <Td className="font-semibold">{a.products ? productName(a.products) : "—"}</Td>
                 <Td>{a.name || "—"}</Td>
                 <Td className="whitespace-nowrap">
-                  {formatPrice(a.sale_price_czk)} <span className="text-xs text-muted">místo {formatPrice(a.original_price_czk ?? a.products?.price_czk ?? 0)}</span>
+                  {formatPrice(a.sale_price_czk)} <span className="text-small text-muted">místo {formatPrice(a.original_price_czk ?? a.products?.price_czk ?? 0)}</span>
                 </Td>
                 <Td className="whitespace-nowrap">
                   {formatDay(a.starts_on)} – {formatDay(a.ends_on)}
                 </Td>
                 <Td>
-                  <span className={`label rounded-full px-2.5 py-0.5 text-[11px] ${a.status === "aktivni" ? "bg-brick text-cream" : a.status === "planovana" ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{PRICE_ACTION_STATUS_LABEL[a.status]}</span>
+                  <span className={`text-button rounded-full px-2.5 py-0.5 ${a.status === "aktivni" ? "bg-brick text-white" : a.status === "planovana" ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{PRICE_ACTION_STATUS_LABEL[a.status]}</span>
                 </Td>
                 <Td className="text-right">
                   {(a.status === "aktivni" || a.status === "planovana") && (
@@ -116,7 +116,7 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
           </Table>
         )}
       </div>
-      <p className="mt-3 text-xs text-muted">Kontrola běží každý den ráno spolu s předplatným. Když akci založíte s dnešním datem, spustí se hned. Slevy na celou řadu nebo dopravu zdarma: doprava zdarma je v Nastavení → Doprava, sleva na řadu se zatím dělá kódem.</p>
+      <p className="mt-3 text-small text-muted">Kontrola běží každý den ráno spolu s předplatným. Když akci založíte s dnešním datem, spustí se hned. Slevy na celou řadu nebo dopravu zdarma: doprava zdarma je v Nastavení → Doprava, sleva na řadu se zatím dělá kódem.</p>
     </>
   );
 }

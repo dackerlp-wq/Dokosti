@@ -32,7 +32,7 @@ export default async function NewPurchaseOrderPage({ searchParams }: { searchPar
         {list.length === 0 ? (
           <p className="text-muted">
             Nejdřív založte dodavatele v{" "}
-            <Link href="/admin/dodavatele" className="text-green underline">
+            <Link href="/admin/dodavatele" className="text-brick-text underline">
               Dodavatelích
             </Link>
             .

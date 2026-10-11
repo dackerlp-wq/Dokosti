@@ -65,7 +65,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             <Link
               key={p.id}
               href={`/admin/statistiky?obdobi=${p.id}`}
-              className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${
+              className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${
                 p.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"
               }`}
             >
@@ -82,11 +82,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <Stat label="Odběr / rozvoz / přepravce" value={`${byMethod.odber} / ${byMethod.rozvoz} / ${byMethod.prepravce}`} />
         <Stat label="Hrubý zisk" value={cost > 0 ? `${formatPrice(Math.round(revenue - cost))} (${Math.round(((revenue - cost) / revenue) * 100)} %)` : "—"} />
       </div>
-      {cost === 0 && <p className="mt-2 text-xs text-muted">Hrubý zisk se počítá z nákupních cen zapsaných při příjmu zboží. Zatím žádná příjemka s cenou.</p>}
+      {cost === 0 && <p className="mt-2 text-small text-muted">Hrubý zisk se počítá z nákupních cen zapsaných při příjmu zboží. Zatím žádná příjemka s cenou.</p>}
 
       <p className="mt-3 text-sm text-muted">
         Zrušené objednávky se nepočítají.{" "}
-        <a href={`/admin/export/objednavky.csv?od=${fromIso}`} className="text-green underline">
+        <a href={`/admin/export/objednavky.csv?od=${fromIso}`} className="text-brick-text underline">
           Stáhnout objednávky za období (CSV pro účetní)
         </a>
       </p>
@@ -148,8 +148,8 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <p className="label text-[11px] text-muted">{label}</p>
+    <div className="rounded-card border border-line bg-white p-4">
+      <p className="text-eyebrow uppercase text-muted">{label}</p>
       <p className="text-[24px] font-semibold">{value}</p>
     </div>
   );

@@ -37,11 +37,11 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         <PrintButton />
       </div>
 
-      <article className="rounded-[var(--radius-card)] border border-line bg-white p-8 text-[13px] leading-snug text-ink print:border-0 print:p-0">
+      <article className="rounded-card border border-line bg-white p-8 text-[13px] leading-snug text-ink print:border-0 print:p-0">
         <header className="flex items-start justify-between gap-6 border-b border-line pb-4">
           <div>
             <p className="text-[26px] font-bold text-green">DoKosti</p>
-            <p className="label text-[10px] text-muted">BARF · krmivo pro psy a kočky</p>
+            <p className="text-eyebrow uppercase text-muted">BARF · krmivo pro psy a kočky</p>
           </div>
           <div className="text-right">
             <p className="text-[20px] font-semibold">{vat ? "Faktura – daňový doklad" : "Doklad o prodeji"}</p>
@@ -51,7 +51,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         <section className="grid grid-cols-2 gap-6 py-4">
           <div>
-            <p className="label mb-1 text-[10px] text-muted">Dodavatel</p>
+            <p className="mb-1 text-label text-green">Dodavatel</p>
             <p className="font-semibold">{shop.name}</p>
             <p>
               {shop.address}
@@ -62,7 +62,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             <p className="text-muted">{vat ? "Plátce DPH" : "Neplátce DPH"}</p>
           </div>
           <div>
-            <p className="label mb-1 text-[10px] text-muted">Odběratel</p>
+            <p className="mb-1 text-label text-green">Odběratel</p>
             <p className="font-semibold">{o.customer_name}</p>
             {o.street && (
               <p>
@@ -102,7 +102,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         <table className="mt-4 w-full">
           <thead>
-            <tr className="label text-left text-[10px] text-muted">
+            <tr className="text-left text-eyebrow uppercase text-muted">
               <th className="py-1 font-semibold">Položka</th>
               <th className="py-1 text-right font-semibold">Množství</th>
               <th className="py-1 text-right font-semibold">Cena / ks</th>

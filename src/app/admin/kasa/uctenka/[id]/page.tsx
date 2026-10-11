@@ -39,7 +39,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
     <div className="mx-auto max-w-[360px] px-4 py-6 print:max-w-none print:p-0">
       {tisk === "1" && <AutoPrint />}
       <div className="mb-4 flex items-center justify-between gap-3 print:hidden">
-        <Link href="/admin/kasa" className="label text-[11px] text-green hover:underline">
+        <Link href="/admin/kasa" className="text-small font-semibold text-brick-text hover:underline">
           ← Zpět do kasy
         </Link>
         <AutoPrint button />

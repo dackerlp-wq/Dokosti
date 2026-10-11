@@ -70,7 +70,7 @@ export default async function CashPage() {
 
       <section className="mt-6">
         <h2 className="mb-2 text-[20px]">Co ještě přijde</h2>
-        <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-white text-sm">
+        <ul className="divide-y divide-line rounded-card border border-line bg-white text-sm">
           {expectedRecurring.map((r) => (
             <li key={r.id} className="flex justify-between px-4 py-2">
               <span>
@@ -82,7 +82,7 @@ export default async function CashPage() {
           {payrollMonths.map((m) => (
             <li key={m} className="flex justify-between px-4 py-2">
               <span>
-                <Link href={`/admin/mzdy?mesic=${m}`} className="text-green hover:underline">
+                <Link href={`/admin/mzdy?mesic=${m}`} className="text-brick-text hover:underline">
                   Mzdy a odvody {monthLabel(m)}
                 </Link>{" "}
                 <span className="text-muted">· zatím otevřený měsíc, odhad</span>
@@ -103,10 +103,10 @@ export default async function CashPage() {
             {debtors.map((o) => (
               <tr key={o.id}>
                 <Td>
-                  <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-brick-text hover:underline">
                     {o.order_number}
                   </Link>
-                  <div className="text-xs text-muted">{formatDay(o.created_at.slice(0, 10))}</div>
+                  <div className="text-small text-muted">{formatDay(o.created_at.slice(0, 10))}</div>
                 </Td>
                 <Td>{o.customer_name}</Td>
                 <Td>{PAYMENT_LABEL[o.payment_method]}</Td>
@@ -129,14 +129,14 @@ function ExpenseRows({ list, today }: { list: ExpenseRow[]; today: string }) {
           <Td className={`whitespace-nowrap ${e.due_on && e.due_on < today ? "font-semibold text-brick-text" : ""}`}>{e.due_on ? formatDay(e.due_on) : <span className="text-muted">bez termínu</span>}</Td>
           <Td>
             <span className="font-semibold">{e.description}</span>
-            {(e.supplier || e.document_no) && <div className="text-xs text-muted">{[e.supplier, e.document_no].filter(Boolean).join(" · ")}</div>}
+            {(e.supplier || e.document_no) && <div className="text-small text-muted">{[e.supplier, e.document_no].filter(Boolean).join(" · ")}</div>}
           </Td>
           <Td>{EXPENSE_CATEGORY_LABEL[e.category]}</Td>
           <Td className="whitespace-nowrap text-right font-semibold">{formatPrice(Number(e.amount_czk))}</Td>
           <Td className="text-right">
             <form action={markExpensePaid} className="inline">
               <input type="hidden" name="id" value={e.id} />
-              <button type="submit" className="text-sm text-green hover:underline">
+              <button type="submit" className="text-sm text-brick-text hover:underline">
                 zaplaceno
               </button>
             </form>

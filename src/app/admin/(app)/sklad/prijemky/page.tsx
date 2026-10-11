@@ -74,7 +74,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
                 <Td className="font-semibold">
                   {r.number}
                   {r.purchase_order_id && (
-                    <Link href={`/admin/nakup/${r.purchase_order_id}`} className="ml-2 text-xs font-normal text-green hover:underline">
+                    <Link href={`/admin/nakup/${r.purchase_order_id}`} className="ml-2 text-small font-normal text-brick-text hover:underline">
                       objednávka
                     </Link>
                   )}
@@ -86,7 +86,7 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
                 {manager && <Td className="whitespace-nowrap">{formatPrice(Math.round(Number(r.total_czk)))}</Td>}
                 <Td className={`whitespace-nowrap ${overdue ? "text-brick-text" : r.paid_at ? "text-muted" : ""}`}>
                   {r.paid_at ? `zaplaceno ${formatDay(r.paid_at.slice(0, 10))}` : r.due_on ? `${overdue ? "po splatnosti" : "splatná"} ${formatDay(r.due_on)}` : "—"}
-                  {manager && r.invoice_total_czk ? <span className="block text-xs text-muted">{formatPrice(Math.round(Number(r.invoice_total_czk)))}</span> : null}
+                  {manager && r.invoice_total_czk ? <span className="block text-small text-muted">{formatPrice(Math.round(Number(r.invoice_total_czk)))}</span> : null}
                 </Td>
                 <Td className="text-right">
                   {r.due_on && !r.paid_at && (

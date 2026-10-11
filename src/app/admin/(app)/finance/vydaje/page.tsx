@@ -68,7 +68,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       </div>
 
       {sp.novy && (
-        <form action={saveExpense} className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveExpense} className="mt-4 rounded-card border border-line bg-white p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-[18px]">Nový výdaj</h2>
             <Link href={base({ novy: undefined })} className="text-sm text-muted hover:underline">
@@ -77,11 +77,11 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <label className="block lg:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Co</span>
+              <span className="mb-1 block text-label text-green">Co</span>
               <input name="description" required placeholder="např. Servis mrazáku, Sáčky a obaly" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Kategorie</span>
+              <span className="mb-1 block text-label text-green">Kategorie</span>
               <select name="category" defaultValue="sluzby">
                 {(Object.keys(EXPENSE_CATEGORY_LABEL) as ExpenseCategory[]).filter((k) => !["mzdy", "odvody"].includes(k)).map((k) => (
                   <option key={k} value={k}>
@@ -91,27 +91,27 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
               </select>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Částka (Kč, s DPH)</span>
+              <span className="mb-1 block text-label text-green">Částka (Kč, s DPH)</span>
               <input name="amount_czk" type="number" min={0} step="0.01" required />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Datum</span>
+              <span className="mb-1 block text-label text-green">Datum</span>
               <input name="day" type="date" defaultValue={today} required />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Dodavatel</span>
+              <span className="mb-1 block text-label text-green">Dodavatel</span>
               <input name="supplier" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Číslo dokladu</span>
+              <span className="mb-1 block text-label text-green">Číslo dokladu</span>
               <input name="document_no" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Splatnost (když není zaplaceno)</span>
+              <span className="mb-1 block text-label text-green">Splatnost (když není zaplaceno)</span>
               <input name="due_on" type="date" />
             </label>
             <label className="block sm:col-span-2 lg:col-span-3">
-              <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+              <span className="mb-1 block text-label text-green">Poznámka</span>
               <input name="note" />
             </label>
             <label className="flex items-center gap-2 self-end pb-2 text-sm">
@@ -123,9 +123,9 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
             <Button type="submit" className="min-h-9">
               Uložit výdaj
             </Button>
-            <span className="text-xs text-muted">
+            <span className="text-small text-muted">
               Účtenku nebo fakturu uložte do{" "}
-              <Link href="/admin/dokumenty?novy=1" className="text-green underline">
+              <Link href="/admin/dokumenty?novy=1" className="text-brick-text underline">
                 Dokumentů
               </Link>{" "}
               (kategorie Faktury), zboží od dodavatele zapisujte příjemkou, ne sem.
@@ -135,7 +135,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       )}
 
       {sp.opakovane && (
-        <section className="mt-4 rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <section className="mt-4 rounded-card border border-line bg-white p-4">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-[18px]">Opakované výdaje</h2>
             <Link href={base({ opakovane: undefined })} className="text-sm text-muted hover:underline">
@@ -163,7 +163,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                       <input type="hidden" name="supplier" value={r.supplier} />
                       <input type="hidden" name="note" value={r.note} />
                       <input type="hidden" name="active" value={r.active ? "0" : "1"} />
-                      <button type="submit" className="text-sm text-green hover:underline">
+                      <button type="submit" className="text-sm text-brick-text hover:underline">
                         {r.active ? "vypnout" : "zapnout"}
                       </button>
                     </form>
@@ -174,11 +174,11 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
           )}
           <form action={saveRecurring} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
             <label className="block lg:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Nový opakovaný výdaj</span>
+              <span className="mb-1 block text-label text-green">Nový opakovaný výdaj</span>
               <input name="name" required placeholder="např. Nájem prodejny" className="min-h-9 py-1" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Kategorie</span>
+              <span className="mb-1 block text-label text-green">Kategorie</span>
               <select name="category" defaultValue="najem" className="min-h-9 py-1">
                 {(Object.keys(EXPENSE_CATEGORY_LABEL) as ExpenseCategory[]).filter((k) => !["zbozi", "mzdy", "odvody"].includes(k)).map((k) => (
                   <option key={k} value={k}>
@@ -188,11 +188,11 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
               </select>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Částka (Kč)</span>
+              <span className="mb-1 block text-label text-green">Částka (Kč)</span>
               <input name="amount_czk" type="number" min={0} step="1" required className="min-h-9 py-1" />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Den v měsíci</span>
+              <span className="mb-1 block text-label text-green">Den v měsíci</span>
               <input name="day_of_month" type="number" min={1} max={28} defaultValue={1} className="min-h-9 py-1" />
             </label>
             <div className="flex items-end">
@@ -220,7 +220,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
           search={{ name: "q", value: sp.q, placeholder: "Hledat popis, dodavatele, doklad" }}
           selects={[{ name: "kategorie", value: sp.kategorie, label: "Kategorie", options: [{ value: "", label: "Všechny kategorie" }, ...(Object.keys(EXPENSE_CATEGORY_LABEL) as ExpenseCategory[]).map((k) => ({ value: k, label: `${EXPENSE_CATEGORY_LABEL[k]}${byCat.get(k) ? ` · ${formatPrice(byCat.get(k)!)}` : ""}` }))] }]}
         >
-          <a href={`/admin/export/vydaje.csv${month ? `?mesic=${month}` : ""}`} className="label min-h-9 inline-flex items-center rounded-[var(--radius-control)] border border-line px-3 text-[11px] text-green">
+          <a href={`/admin/export/vydaje.csv${month ? `?mesic=${month}` : ""}`} className="text-button min-h-9 inline-flex items-center rounded-control border border-line px-3 text-green">
             Export CSV
           </a>
         </StockFilters>
@@ -238,17 +238,17 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                   <Td className="whitespace-nowrap text-muted">{formatDay(r.day)}</Td>
                   <Td>
                     <span className="font-semibold">{r.description}</span>
-                    {(r.supplier || r.document_no) && <div className="text-xs text-muted">{[r.supplier, r.document_no].filter(Boolean).join(" · ")}</div>}
-                    {r.note && <div className="max-w-md truncate text-xs italic text-muted">{r.note}</div>}
+                    {(r.supplier || r.document_no) && <div className="text-small text-muted">{[r.supplier, r.document_no].filter(Boolean).join(" · ")}</div>}
+                    {r.note && <div className="max-w-md truncate text-small italic text-muted">{r.note}</div>}
                   </Td>
                   <Td>{EXPENSE_CATEGORY_LABEL[r.category]}</Td>
                   <Td className="text-muted">
                     {r.source_type === "receipt" && r.source_id ? (
-                      <Link href={`/admin/sklad/prijemky#${r.source_id}`} className="text-green hover:underline">
+                      <Link href={`/admin/sklad/prijemky#${r.source_id}`} className="text-brick-text hover:underline">
                         Příjemka
                       </Link>
                     ) : r.source_type === "payroll" ? (
-                      <Link href={`/admin/mzdy?mesic=${r.source_id?.slice(0, 7)}`} className="text-green hover:underline">
+                      <Link href={`/admin/mzdy?mesic=${r.source_id?.slice(0, 7)}`} className="text-brick-text hover:underline">
                         Mzdy
                       </Link>
                     ) : (

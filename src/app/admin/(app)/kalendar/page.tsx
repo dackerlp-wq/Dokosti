@@ -59,7 +59,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     add(a.starts_on, { kind: "akce", text: `akce začíná: ${a.name || a.products?.variant || ""}`, href: "/admin/akce" });
     add(a.ends_on, { kind: "akce", text: `akce končí: ${a.name || a.products?.variant || ""}`, href: "/admin/akce" });
   }
-  const style: Record<Ev["kind"], string> = { smena: "bg-green text-cream", rozvoz: "bg-ochre-badge text-ink", odber: "border border-line bg-white text-ink", ukol: "border border-line bg-paper text-ink", dokument: "bg-brick text-cream", vydaj: "border border-brick bg-white text-brick-text", akce: "bg-olive text-cream", volno: "border border-dashed border-line bg-white text-muted" };
+  const style: Record<Ev["kind"], string> = { smena: "bg-green text-cream", rozvoz: "bg-ochre-badge text-ink", odber: "border border-line bg-white text-ink", ukol: "border border-line bg-white text-ink", dokument: "bg-brick text-white", vydaj: "border border-brick bg-white text-brick-text", akce: "bg-olive text-cream", volno: "border border-dashed border-line bg-white text-muted" };
 
   return (
     <>
@@ -73,20 +73,20 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             ...(month !== today.slice(0, 7) ? [{ href: "/admin/kalendar", label: "Tento měsíc", on: false }] : []),
           ]}
         />
-        <Link href="/admin/plan-smen" className="text-sm text-green hover:underline">
+        <Link href="/admin/plan-smen" className="text-sm text-brick-text hover:underline">
           Plán směn
         </Link>
         <span className="ml-auto flex flex-wrap gap-1.5 text-[10px]">
           {(["smena", "rozvoz", "odber", "ukol", "dokument", "vydaj", "akce", "volno"] as Ev["kind"][]).map((k) => (
-            <span key={k} className={`label rounded-full px-2 py-0.5 ${style[k]}`}>
+            <span key={k} className={`text-button rounded-full px-2 py-0.5 ${style[k]}`}>
               {{ smena: "směna", rozvoz: "rozvoz", odber: "odběr", ukol: "úkol", dokument: "dokument", vydaj: "splatnost", akce: "akce", volno: "volno" }[k]}
             </span>
           ))}
         </span>
       </div>
-      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-[var(--radius-card)] border border-line bg-line">
+      <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-card border border-line bg-line">
         {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-          <div key={d} className="label bg-paper px-2 py-1.5 text-[11px] text-muted">
+          <div key={d} className="text-small font-semibold bg-paper px-2 py-1.5 text-muted">
             {DAY_NAMES_SHORT[d]}
           </div>
         ))}
@@ -95,10 +95,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           const list = ev.get(d) ?? [];
           return (
             <div key={d} className={`min-h-[96px] p-1.5 ${inMonth ? "bg-white" : "bg-paper"} ${d === today ? "outline outline-2 -outline-offset-2 outline-green" : ""}`}>
-              <p className={`text-xs ${d === today ? "font-semibold text-green" : inMonth ? "text-ink" : "text-muted"}`}>{Number(d.slice(8, 10))}</p>
+              <p className={`text-small ${d === today ? "font-semibold text-green" : inMonth ? "text-ink" : "text-muted"}`}>{Number(d.slice(8, 10))}</p>
               <ul className="mt-1 space-y-0.5">
                 {list.slice(0, 6).map((e, i) => (
-                  <li key={i} className={`label truncate rounded px-1.5 py-0.5 text-[10px] ${style[e.kind]} ${e.hot ? "font-bold" : ""}`} title={e.text}>
+                  <li key={i} className={`text-eyebrow uppercase truncate rounded px-1.5 py-0.5 ${style[e.kind]} ${e.hot ? "font-bold" : ""}`} title={e.text}>
                     {e.href ? (
                       <Link href={e.href} className="hover:underline">
                         {e.text}

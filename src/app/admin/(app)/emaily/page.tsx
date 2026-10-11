@@ -28,7 +28,7 @@ export default async function EmailsPage() {
       {configured ? (
         <p className="mt-1 text-sm text-muted">Odesílá se přes Resend z adresy {process.env.EMAIL_FROM}.</p>
       ) : (
-        <p className="mt-2 rounded-[var(--radius-card)] border border-brick bg-paper p-3 text-sm">
+        <p className="mt-2 rounded-card border border-brick bg-paper p-3 text-sm">
           Odesílání zatím není zapnuté (chybí doména). E-maily se ukládají sem se stavem „Čeká“, můžete si je prohlédnout.
           Po ověření domény v Resendu se doplní klíč a začnou odcházet.
         </p>
@@ -43,14 +43,14 @@ export default async function EmailsPage() {
                 <Td>{formatDate(r.created_at)}</Td>
                 <Td>{r.to_email}</Td>
                 <Td>
-                  <Link href={`/admin/emaily/${r.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/emaily/${r.id}`} className="font-semibold text-brick-text hover:underline">
                     {r.subject}
                   </Link>
                 </Td>
                 <Td className="text-muted">{r.kind}</Td>
                 <Td>
                   <Badge kind={STATUS[r.status].kind}>{STATUS[r.status].label}</Badge>
-                  {r.error && <span className="block text-xs text-brick-text">{r.error}</span>}
+                  {r.error && <span className="block text-small text-brick-text">{r.error}</span>}
                 </Td>
               </tr>
             ))}

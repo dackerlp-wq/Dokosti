@@ -10,11 +10,12 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
   const { next } = await searchParams;
   if (await getAdmin()) redirect(next?.startsWith("/admin") ? next : "/admin");
   return (
-    <div className="container-dk flex flex-col items-center py-16">
+    <div className="mx-auto flex max-w-site flex-col items-center px-5 py-15">
       <Logo variant="barevne" width={200} />
-      <div className="mt-8 w-full max-w-sm rounded-[var(--radius-card)] border border-line bg-paper p-6">
-        <h1 className="text-[24px]">Administrace</h1>
-        <p className="mt-1 text-sm text-muted">Přihlášení pro obsluhu prodejny.</p>
+      <div className="mt-7.5 w-full max-w-[560px] rounded-card border border-line bg-white p-6 shadow-card">
+        <p className="text-eyebrow text-muted uppercase">Administrace</p>
+        <h1 className="font-display text-display-md text-green">Přihlášení</h1>
+        <p className="mt-1">Pro obsluhu prodejny.</p>
         <div className="mt-5">
           <LoginForm next={next?.startsWith("/admin") ? next : ""} />
         </div>

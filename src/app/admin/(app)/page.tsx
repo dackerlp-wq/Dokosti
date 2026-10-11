@@ -97,8 +97,8 @@ export default async function AdminHome() {
     .slice(0, 6);
 
   const dayName = new Intl.DateTimeFormat("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" }).format(now);
-  const card = "rounded-[var(--radius-card)] border border-line bg-paper";
-  const kindClass = { brick: "bg-brick text-cream", ochre: "bg-ochre-badge text-ink", plain: "border border-line bg-paper text-muted" };
+  const card = "rounded-card border border-line bg-white";
+  const kindClass = { brick: "bg-brick text-white", ochre: "bg-ochre-badge text-ink", plain: "border border-line bg-white text-muted" };
 
   return (
     <>
@@ -127,15 +127,15 @@ export default async function AdminHome() {
       {alerts.length > 0 && (
         <ul className="mt-5 flex flex-col gap-1.5">
           {alerts.slice(0, 6).map((a) => (
-            <li key={a.id} className={`flex flex-wrap items-center gap-3 rounded-[var(--radius-control)] border bg-paper px-3 py-2 text-sm ${a.level === "hot" ? "border-brick" : a.level === "warn" ? "border-ochre" : "border-line"}`}>
-              <span className={`label w-20 shrink-0 text-[10px] ${a.level === "hot" ? "text-brick-text" : "text-muted"}`}>{a.kind}</span>
+            <li key={a.id} className={`flex flex-wrap items-center gap-3 rounded-control border bg-paper px-3 py-2 text-sm ${a.level === "hot" ? "border-brick" : a.level === "warn" ? "border-ochre" : "border-line"}`}>
+              <span className={`text-eyebrow uppercase w-20 shrink-0 ${a.level === "hot" ? "text-brick-text" : "text-muted"}`}>{a.kind}</span>
               <span className="min-w-0 flex-1">{a.text}</span>
-              <Link href={a.href} className="shrink-0 text-green hover:underline">
+              <Link href={a.href} className="shrink-0 text-brick-text hover:underline">
                 {a.action}
               </Link>
             </li>
           ))}
-          {alerts.length > 6 && <li className="px-3 text-xs text-muted">a {alerts.length - 6} dalších upozornění</li>}
+          {alerts.length > 6 && <li className="px-3 text-small text-muted">a {alerts.length - 6} dalších upozornění</li>}
         </ul>
       )}
 
@@ -154,7 +154,7 @@ export default async function AdminHome() {
         <section className={`${card} overflow-hidden`}>
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <h2 className="text-[18px]">Co je potřeba udělat</h2>
-            <Link href="/admin/objednavky" className="text-sm text-green hover:underline">
+            <Link href="/admin/objednavky" className="text-sm text-brick-text hover:underline">
               Všechny objednávky
             </Link>
           </div>
@@ -164,10 +164,10 @@ export default async function AdminHome() {
             <ul className="divide-y divide-line">
               {todos.map((t, i) => (
                 <li key={i} className="flex items-center gap-3 px-4 py-3">
-                  <span className={`label shrink-0 rounded-full px-2.5 py-0.5 text-[10px] ${kindClass[t.kindStyle]}`}>{t.kind}</span>
+                  <span className={`text-button shrink-0 rounded-full px-2.5 py-0.5 ${kindClass[t.kindStyle]}`}>{t.kind}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{t.title}</p>
-                    <p className="truncate text-xs text-muted">{t.detail}</p>
+                    <p className="truncate text-small text-muted">{t.detail}</p>
                   </div>
                   <Link href={t.href} className={buttonClass("secondary", "min-h-8 shrink-0 px-3 text-[11px]")}>
                     {t.action} <ArrowRight strokeWidth={1.75} className="h-3.5 w-3.5" />
@@ -182,7 +182,7 @@ export default async function AdminHome() {
           <section className={`${card} p-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-[18px]">Kdo je dnes v práci</h2>
-              <Link href="/admin/plan-smen" className="text-sm text-green hover:underline">
+              <Link href="/admin/plan-smen" className="text-sm text-brick-text hover:underline">
                 Plán směn
               </Link>
             </div>
@@ -206,7 +206,7 @@ export default async function AdminHome() {
                       <span>
                         <b className="font-semibold">{r.name}</b> <span className="text-muted">· {r.plan}</span>
                       </span>
-                      <span className={`label shrink-0 text-[10px] ${r.state.startsWith("v práci") ? "rounded-full bg-green px-2 py-0.5 text-cream" : "text-muted"}`}>{r.state}</span>
+                      <span className={`text-button shrink-0 ${r.state.startsWith("v práci") ? "rounded-full bg-green px-2 py-0.5 text-cream" : "text-muted"}`}>{r.state}</span>
                     </li>
                   ))}
                 </ul>
@@ -216,7 +216,7 @@ export default async function AdminHome() {
           <section className={`${card} p-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-[18px]">Úkoly</h2>
-              <Link href="/admin/ukoly" className="text-sm text-green hover:underline">
+              <Link href="/admin/ukoly" className="text-sm text-brick-text hover:underline">
                 Všechny
               </Link>
             </div>
@@ -231,7 +231,7 @@ export default async function AdminHome() {
                       <form action={toggleTask}>
                         <input type="hidden" name="id" value={t.id} />
                         <input type="hidden" name="done" value="1" />
-                        <button type="submit" aria-label="Hotovo" className="flex h-5 w-5 items-center justify-center rounded border border-line bg-cream hover:border-green" />
+                        <button type="submit" aria-label="Hotovo" className="flex h-5 w-5 items-center justify-center rounded border border-line bg-paper hover:border-green" />
                       </form>
                       {t.href ? (
                         <Link href={t.href} className="min-w-0 flex-1 truncate hover:underline">
@@ -240,7 +240,7 @@ export default async function AdminHome() {
                       ) : (
                         <span className="min-w-0 flex-1 truncate">{t.title}</span>
                       )}
-                      {t.due_on && <span className={`label shrink-0 text-[10px] ${overdue ? "text-brick-text" : "text-muted"}`}>{formatDay(t.due_on)}</span>}
+                      {t.due_on && <span className={`text-eyebrow uppercase shrink-0 ${overdue ? "text-brick-text" : "text-muted"}`}>{formatDay(t.due_on)}</span>}
                     </li>
                   );
                 })}
@@ -259,27 +259,27 @@ export default async function AdminHome() {
               <h2 className="text-[18px]">Tento týden</h2>
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="label text-[11px] text-muted">Tržby</dt>
+                  <dt className="text-eyebrow uppercase text-muted">Tržby</dt>
                   <dd className="text-[20px] font-semibold">{formatPrice(weekRevenue)}</dd>
                 </div>
                 <div>
-                  <dt className="label text-[11px] text-muted">Prodejů</dt>
+                  <dt className="text-eyebrow uppercase text-muted">Prodejů</dt>
                   <dd className="text-[20px] font-semibold">{weekCount}</dd>
                 </div>
                 <div>
-                  <dt className="label text-[11px] text-muted">Průměrný nákup</dt>
+                  <dt className="text-eyebrow uppercase text-muted">Průměrný nákup</dt>
                   <dd className="text-[20px] font-semibold">{weekCount ? formatPrice(Math.round(weekRevenue / weekCount)) : "–"}</dd>
                 </div>
                 <div>
-                  <dt className="label text-[11px] text-muted">Nejprodávanější v kase</dt>
+                  <dt className="text-eyebrow uppercase text-muted">Nejprodávanější v kase</dt>
                   <dd className="mt-1">{top ? `${top[0]}, ${top[1]} ks` : "zatím nic"}</dd>
                 </div>
               </dl>
-              <Link href="/admin/statistiky" className="mt-3 inline-block text-sm text-green hover:underline">
+              <Link href="/admin/statistiky" className="mt-3 inline-block text-sm text-brick-text hover:underline">
                 Celé statistiky
               </Link>
               <span className="mx-2 text-muted">·</span>
-              <Link href="/admin/finance" className="mt-3 inline-block text-sm text-green hover:underline">
+              <Link href="/admin/finance" className="mt-3 inline-block text-sm text-brick-text hover:underline">
                 Finance a zisk
               </Link>
             </section>
@@ -287,7 +287,7 @@ export default async function AdminHome() {
           <section className={`${card} p-4`}>
             <div className="flex items-center justify-between">
               <h2 className="text-[18px]">Poslední změny</h2>
-              <Link href="/admin/denik" className="text-sm text-green hover:underline">
+              <Link href="/admin/denik" className="text-sm text-brick-text hover:underline">
                 Deník
               </Link>
             </div>
@@ -304,7 +304,7 @@ export default async function AdminHome() {
                       ) : (
                         <span className="min-w-0 truncate">{a.text}</span>
                       )}
-                      <span className="shrink-0 text-xs text-muted">
+                      <span className="shrink-0 text-small text-muted">
                         {formatDate(a.created_at)} · {a.actor_name}
                       </span>
                     </li>
@@ -322,7 +322,7 @@ export default async function AdminHome() {
                     <Link href={m.href} className="min-w-0 truncate hover:underline">
                       {m.text}
                     </Link>
-                    <span className="shrink-0 text-xs text-muted">
+                    <span className="shrink-0 text-small text-muted">
                       {formatDate(m.at)}
                       {m.right && ` · ${m.right}`}
                     </span>

@@ -29,12 +29,12 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
       {p && <input type="hidden" name="id" value={p.id} />}
 
       <div className="space-y-5">
-        <ol className="flex overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper">
+        <ol className="flex overflow-hidden rounded-card border border-line bg-white">
           {STEPS.map((label, i) => {
             const n = i + 1;
             return (
               <li key={label} className="flex-1">
-                <button type="button" onClick={() => setStep(n)} className={`flex w-full items-center gap-2 border-r border-line px-3 py-2 text-left text-xs last:border-r-0 ${n === step ? "bg-cream text-ink" : "text-muted hover:text-ink"}`}>
+                <button type="button" onClick={() => setStep(n)} className={`flex w-full items-center gap-2 border-r border-line px-3 py-2 text-left text-small last:border-r-0 ${n === step ? "bg-paper text-ink" : "text-muted hover:text-ink"}`}>
                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${n === step ? "bg-green text-cream" : "border border-line"}`}>{n}</span>
                   <span className="hidden sm:inline">{label}</span>
                 </button>
@@ -150,7 +150,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               </Field>
             )}
           </div>
-          {unit === "kg" && <p className="mt-2 text-xs text-muted">Zboží na váhu se prodává jen v prodejně. Na webu se zobrazí s cenou za kg a bez košíku.</p>}
+          {unit === "kg" && <p className="mt-2 text-small text-muted">Zboží na váhu se prodává jen v prodejně. Na webu se zobrazí s cenou za kg a bez košíku.</p>}
         </Fieldset>
         <div className="flex justify-between">
           <Button type="button" variant="secondary" onClick={() => setStep(1)}>
@@ -175,7 +175,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               <input name="pack_size" type="number" min={0} step={unit === "kg" ? "0.5" : "1"} defaultValue={p?.pack_size ?? ""} />
             </Field>
           </div>
-          <p className="mt-2 text-xs text-muted">Počáteční množství u nového produktu raději nezadávejte sem: naskladněte ho příjemkou, aby vznikla šarže s expirací a nákupní cena. Ruční číslo tady se zapíše do pohybů jako oprava.</p>
+          <p className="mt-2 text-small text-muted">Počáteční množství u nového produktu raději nezadávejte sem: naskladněte ho příjemkou, aby vznikla šarže s expirací a nákupní cena. Ruční číslo tady se zapíše do pohybů jako oprava.</p>
         </Fieldset>
         <Fieldset title="Dodavatel">
           <Field label="Od koho zboží bereme" hint="předvyplní příjemku a objednávku">
@@ -188,7 +188,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               ))}
             </select>
           </Field>
-          {suppliers.length === 0 && <p className="mt-2 text-xs text-muted">Zatím žádný dodavatel. Založte ho v Zboží → Dodavatelé.</p>}
+          {suppliers.length === 0 && <p className="mt-2 text-small text-muted">Zatím žádný dodavatel. Založte ho v Zboží → Dodavatelé.</p>}
         </Fieldset>
         <div className="flex justify-between">
           <Button type="button" variant="secondary" onClick={() => setStep(2)}>
@@ -219,7 +219,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
         </Fieldset>
 
         <Fieldset title="Údaje z etikety pro kalkulačku">
-          <p className="mb-3 text-xs text-muted">
+          <p className="mb-3 text-small text-muted">
             Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u BARF mixů chybí, kalkulačka počítá orientačně procentem
             hmotnosti; s energií počítá přesněji a zobrazí i kcal. Podíl kosti se používá pro bilanci kostí v dávce.
           </p>
@@ -255,7 +255,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
           </div>
         </Fieldset>
         <Fieldset title="Doporučení">
-          <p className="mb-2 text-xs text-muted">Zobrazí se na detailu produktu. Upsell jako „Lepší volba“, cross-sell jako „Hodí se k tomu“ (i v košíku).</p>
+          <p className="mb-2 text-small text-muted">Zobrazí se na detailu produktu. Upsell jako „Lepší volba“, cross-sell jako „Hodí se k tomu“ (i v košíku).</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Picker name="upsell" label="Upsell (větší balení, vyšší řada)" options={others} selected={p?.upsell_slugs ?? []} />
             <Picker name="crosssell" label="Cross-sell (doplňky, pamlsky, olej)" options={others} selected={p?.crosssell_slugs ?? []} />
@@ -284,42 +284,42 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
 
       <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
         <div>
-          <p className="label mb-1 text-[11px] text-muted">Náhled na webu</p>
-          <div className="overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper">
-            <div className="flex h-36 items-center justify-center bg-cream text-xs text-muted">
+          <p className="mb-1 text-label text-green">Náhled na webu</p>
+          <div className="overflow-hidden rounded-card border border-line bg-white">
+            <div className="flex h-36 items-center justify-center bg-paper text-small text-muted">
               {/* eslint-disable-next-line @next/next/no-img-element -- náhled nahrané fotky z úložiště, bez optimalizace */}
               {p?.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : "fotka produktu"}
             </div>
             <div className="p-3">
               <div className="flex flex-wrap gap-1">
-                <span className="label rounded-full border border-line px-2 py-0.5 text-[10px] text-muted">{LINE_INFO[preview.line].name}</span>
-                {preview.isNew && <span className="label rounded-full bg-ochre-badge px-2 py-0.5 text-[10px] text-ink">Novinka</span>}
-                {!preview.published && <span className="label rounded-full border border-line px-2 py-0.5 text-[10px] text-muted">skryté</span>}
+                <span className="text-small font-semibold rounded-control border border-line px-2 py-0.5 text-muted">{LINE_INFO[preview.line].name}</span>
+                {preview.isNew && <span className="text-small font-semibold rounded-control bg-ochre-badge px-2 py-0.5 text-ink">Novinka</span>}
+                {!preview.published && <span className="text-small font-semibold rounded-control border border-line px-2 py-0.5 text-muted">skryté</span>}
               </div>
               <p className="mt-1 text-[20px] font-semibold leading-tight">{name}</p>
-              <p className="text-xs text-muted">
+              <p className="text-small text-muted">
                 {unit === "kg" ? "na váhu" : preview.weight >= 1000 ? `${preview.weight / 1000} kg` : `${preview.weight} g`}
                 {preview.producer ? ` · ${preview.producer}` : ""}
               </p>
               <p className="mt-2 text-[22px]">
                 {preview.price} Kč{unit === "kg" && <span className="text-sm">/kg</span>}
-                {unit === "ks" && preview.weight > 0 && <span className="ml-2 font-body text-xs text-muted">{Math.round((preview.price / preview.weight) * 1000)} Kč/kg</span>}
+                {unit === "ks" && preview.weight > 0 && <span className="ml-2 font-body text-small text-muted">{Math.round((preview.price / preview.weight) * 1000)} Kč/kg</span>}
               </p>
-              {preview.intro && <p className="mt-1 text-xs">{preview.intro}</p>}
-              <p className="mt-2 text-xs text-muted">{preview.stock === null ? "sklad se neeviduje" : preview.stock > 0 ? `skladem ${preview.stock} ${unit}` : "Momentálně není"}</p>
-              {manager && margin !== null && <p className={`mt-1 text-xs ${margin < 20 ? "text-brick-text" : "text-muted"}`}>marže {margin} %</p>}
+              {preview.intro && <p className="mt-1 text-small">{preview.intro}</p>}
+              <p className="mt-2 text-small text-muted">{preview.stock === null ? "sklad se neeviduje" : preview.stock > 0 ? `skladem ${preview.stock} ${unit}` : "Momentálně není"}</p>
+              {manager && margin !== null && <p className={`mt-1 text-small ${margin < 20 ? "text-brick-text" : "text-muted"}`}>marže {margin} %</p>}
             </div>
           </div>
         </div>
         {missing.length > 0 && (
-          <div className="rounded-[var(--radius-card)] border border-line bg-paper p-3 text-xs">
-            <p className="label text-[11px] text-muted">Co ještě chybí</p>
+          <div className="rounded-card border border-line bg-white p-3 text-small">
+            <p className="text-eyebrow uppercase text-muted">Co ještě chybí</p>
             <p className="mt-1">{missing.join(", ")}</p>
           </div>
         )}
 
         {state?.error && (
-          <p role="alert" className="rounded-[var(--radius-control)] bg-paper p-3 text-sm text-brick-text">
+          <p role="alert" className="rounded-control bg-paper p-3 text-sm text-brick-text">
             {state.error}
           </p>
         )}
@@ -338,7 +338,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
             type="submit"
             formAction={deleteProduct}
             formNoValidate
-            className="label text-[11px] text-brick-text hover:underline"
+            className="text-small font-semibold text-brick-text hover:underline"
             onClick={(e) => {
               if (!confirm("Opravdu smazat produkt? Nejde to vrátit.")) e.preventDefault();
             }}
@@ -353,8 +353,8 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
 
 function Fieldset({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <legend className="label px-1 text-[11px] text-muted">{title}</legend>
+    <fieldset className="rounded-card border border-line bg-white p-4">
+      <legend className="px-1 text-label text-green">{title}</legend>
       {children}
     </fieldset>
   );
@@ -363,7 +363,7 @@ function Fieldset({ title, children }: { title: string; children: React.ReactNod
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className="mb-1 block text-label text-green">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
       </span>
@@ -384,7 +384,7 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
 function Picker({ name, label, options, selected }: { name: string; label: string; options: { slug: string; name: string }[]; selected: string[] }) {
   return (
     <label className="mt-2 block">
-      <span className="label mb-1 block text-[11px] text-muted">{label}</span>
+      <span className="mb-1 block text-label text-green">{label}</span>
       <select name={name} multiple size={Math.min(6, Math.max(3, options.length))} defaultValue={selected} className="min-h-0 py-1 text-sm">
         {options.map((o) => (
           <option key={o.slug} value={o.slug}>

@@ -77,10 +77,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             {products.map((p) => (
               <tr key={p.id}>
                 <Td>
-                  <Link href={`/admin/produkty/${p.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/produkty/${p.id}`} className="font-semibold text-brick-text hover:underline">
                     {productName(p)}
                   </Link>
-                  {p.ean && <div className="text-xs text-muted">{p.ean}</div>}
+                  {p.ean && <div className="text-small text-muted">{p.ean}</div>}
                 </Td>
                 <Td>{LINE_INFO[p.line].name}</Td>
                 <Td>{p.unit === "kg" ? <span className="text-muted">na váhu</span> : formatWeight(p.weight_grams)}</Td>

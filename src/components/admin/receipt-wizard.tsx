@@ -90,7 +90,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
 
   if (state?.ok) {
     return (
-      <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+      <div className="rounded-card border border-line bg-white p-5">
         <Steps step={4} />
         <h2 className="mt-4 text-[22px]">Příjemka {state.number} je zaúčtovaná</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
@@ -113,7 +113,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
   }
 
   return (
-    <form action={action} className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+    <form action={action} className="rounded-card border border-line bg-white p-5">
       <input type="hidden" name="lines" value={JSON.stringify(valid.map(({ product_id, qty, unit_cost_czk, batch_no, expires_on, ordered_qty }) => ({ product_id, qty, unit_cost_czk, batch_no, expires_on, ordered_qty })))} />
       <input type="hidden" name="purchase_order_id" value={orderId} />
       <input type="hidden" name="supplier" value={supplier} />
@@ -131,7 +131,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
           </div>
           {orders.length > 0 && (
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Objednávka u dodavatele</span>
+              <span className="mb-1 block text-label text-green">Objednávka u dodavatele</span>
               <select
                 value={orderId}
                 onChange={(e) => {
@@ -154,7 +154,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
           )}
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Dodavatel</span>
+              <span className="mb-1 block text-label text-green">Dodavatel</span>
               <input list="dodavatele" value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="např. Yoggies" required />
               <datalist id="dodavatele">
                 {suppliers.map((s) => (
@@ -163,28 +163,28 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
               </datalist>
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Číslo dodacího listu / faktury</span>
+              <span className="mb-1 block text-label text-green">Číslo dodacího listu / faktury</span>
               <input value={docNo} onChange={(e) => setDocNo(e.target.value)} />
             </label>
             <label className="block">
-              <span className="label mb-1 block text-[11px] text-muted">Splatnost faktury</span>
+              <span className="mb-1 block text-label text-green">Splatnost faktury</span>
               <input type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />
-              <span className="mt-1 block text-xs text-muted">Vznikne úkol zaplatit.</span>
+              <span className="mt-1 block text-small text-muted">Vznikne úkol zaplatit.</span>
             </label>
             {manager && (
               <label className="block">
-                <span className="label mb-1 block text-[11px] text-muted">Částka na faktuře (Kč)</span>
+                <span className="mb-1 block text-label text-green">Částka na faktuře (Kč)</span>
                 <input type="number" min={0} step="0.01" value={invoiceTotal} onChange={(e) => setInvoiceTotal(e.target.value)} />
-                <span className="mt-1 block text-xs text-muted">Porovná se se součtem položek.</span>
+                <span className="mt-1 block text-small text-muted">Porovná se se součtem položek.</span>
               </label>
             )}
             <label className="block sm:col-span-2">
-              <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+              <span className="mb-1 block text-label text-green">Poznámka</span>
               <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="např. jedna krabice promáčklá, řešeno s řidičem" />
             </label>
           </div>
           <div className="flex justify-between">
-            <span className="text-xs text-muted">Krok 1 ze 3</span>
+            <span className="text-small text-muted">Krok 1 ze 3</span>
             <Button type="button" onClick={() => { setStep(2); setTimeout(() => scanRef.current?.focus(), 0); }} disabled={!supplier.trim()}>
               Pokračovat na položky
             </Button>
@@ -209,23 +209,23 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
               className="min-h-11 text-base"
             />
             {suggestions.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full rounded-[var(--radius-control)] border border-line bg-paper">
+              <ul className="absolute z-10 mt-1 w-full rounded-control border border-line bg-white">
                 {suggestions.map((p) => (
                   <li key={p.id}>
-                    <button type="button" onClick={() => addProduct(p)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-cream">
+                    <button type="button" onClick={() => addProduct(p)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-paper">
                       <span>{p.name}</span>
-                      <span className="text-xs text-muted">{p.ean ?? ""}</span>
+                      <span className="text-small text-muted">{p.ean ?? ""}</span>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          {scanMsg && <p className="text-xs text-muted">{scanMsg}</p>}
+          {scanMsg && <p className="text-small text-muted">{scanMsg}</p>}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="label border-b border-line text-left text-[10px] text-muted">
+                <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
                   <th className="py-2 pr-2 font-semibold">Produkt</th>
                   {orderId && <th className="py-2 pr-2 font-semibold">Objednáno</th>}
                   <th className="py-2 pr-2 font-semibold">Přijato</th>
@@ -274,7 +274,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
                         <input type="date" value={l.expires_on} onChange={(e) => set(l.key, { expires_on: e.target.value })} aria-label="Expirace" className="min-h-9 py-1" disabled={p ? p.storage === "suche" : false} />
                       </td>
                       <td className="py-2 text-right">
-                        <button type="button" onClick={() => setLines(lines.length > 1 ? lines.filter((x) => x.key !== l.key) : [newLine()])} aria-label="Odebrat řádek" className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-cream hover:text-brick-text">
+                        <button type="button" onClick={() => setLines(lines.length > 1 ? lines.filter((x) => x.key !== l.key) : [newLine()])} aria-label="Odebrat řádek" className="inline-flex h-8 w-8 items-center justify-center rounded-control text-muted hover:bg-paper hover:text-brick-text">
                           <Trash2 strokeWidth={1.75} className="h-4 w-4" />
                         </button>
                       </td>
@@ -285,7 +285,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
             </table>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <button type="button" onClick={() => setLines([...lines, newLine()])} className="inline-flex items-center gap-1 text-sm text-green hover:underline">
+            <button type="button" onClick={() => setLines([...lines, newLine()])} className="inline-flex items-center gap-1 text-sm text-brick-text hover:underline">
               <Plus strokeWidth={1.75} className="h-4 w-4" /> Přidat řádek ručně
             </button>
             <span className="text-sm text-muted">
@@ -310,29 +310,29 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
             <p className="text-sm text-muted">Zaúčtování zvýší sklad, založí šarže a uloží nákupní ceny. Zpět to jde jen opravou přes odpis nebo inventuru.</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-3 text-sm">
-              <p className="label text-[11px] text-muted">Dodavatel</p>
+            <div className="rounded-card border border-line bg-paper p-3 text-sm">
+              <p className="text-eyebrow uppercase text-muted">Dodavatel</p>
               <p className="font-semibold">{supplier}</p>
-              <p className="text-xs text-muted">{docNo ? `doklad ${docNo}` : "bez čísla dokladu"}{dueOn ? ` · splatnost ${dueOn}` : ""}</p>
+              <p className="text-small text-muted">{docNo ? `doklad ${docNo}` : "bez čísla dokladu"}{dueOn ? ` · splatnost ${dueOn}` : ""}</p>
             </div>
-            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-3 text-sm">
-              <p className="label text-[11px] text-muted">Položek</p>
+            <div className="rounded-card border border-line bg-paper p-3 text-sm">
+              <p className="text-eyebrow uppercase text-muted">Položek</p>
               <p className="font-semibold">{valid.length}</p>
-              <p className="text-xs text-muted">{valid.filter((l) => l.expires_on).length} šarží s expirací</p>
+              <p className="text-small text-muted">{valid.filter((l) => l.expires_on).length} šarží s expirací</p>
             </div>
-            <div className="rounded-[var(--radius-card)] border border-line bg-cream p-3 text-sm">
-              <p className="label text-[11px] text-muted">{manager ? "Nákup celkem" : "Objednávka"}</p>
+            <div className="rounded-card border border-line bg-paper p-3 text-sm">
+              <p className="text-eyebrow uppercase text-muted">{manager ? "Nákup celkem" : "Objednávka"}</p>
               <p className="font-semibold">{manager ? formatPrice(Math.round(total)) : orderId ? orders.find((o) => o.id === orderId)?.number : "bez objednávky"}</p>
-              {manager && invoiceTotal && <p className="text-xs text-muted">faktura {formatPrice(Number(invoiceTotal))}</p>}
+              {manager && invoiceTotal && <p className="text-small text-muted">faktura {formatPrice(Number(invoiceTotal))}</p>}
             </div>
           </div>
           {checks.length === 0 ? (
             <p className="text-sm text-green">Všechno sedí: množství podle objednávky, ceny bez změny.</p>
           ) : (
-            <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line">
+            <ul className="divide-y divide-line rounded-card border border-line">
               {checks.map((c, i) => (
                 <li key={i} className="flex items-start gap-3 px-3 py-2 text-sm">
-                  <span className={`label shrink-0 rounded-full px-2 py-0.5 text-[10px] ${c.warn ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{c.kind}</span>
+                  <span className={`text-button shrink-0 rounded-full px-2 py-0.5 ${c.warn ? "bg-ochre-badge text-ink" : "border border-line text-muted"}`}>{c.kind}</span>
                   <span>{c.text}</span>
                 </li>
               ))}
@@ -360,13 +360,13 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
 function Steps({ step }: { step: number }) {
   const items = ["Dodavatel a doklad", "Položky", "Kontrola", "Zaúčtováno"];
   return (
-    <ol className="flex overflow-hidden rounded-[var(--radius-card)] border border-line">
+    <ol className="flex overflow-hidden rounded-card border border-line">
       {items.map((label, i) => {
         const n = i + 1;
         const on = n === step;
         const done = n < step;
         return (
-          <li key={label} className={`flex flex-1 items-center gap-2 border-r border-line px-3 py-2 text-xs last:border-r-0 ${on ? "bg-cream text-ink" : "text-muted"}`}>
+          <li key={label} className={`flex flex-1 items-center gap-2 border-r border-line px-3 py-2 text-small last:border-r-0 ${on ? "bg-paper text-ink" : "text-muted"}`}>
             <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${on ? "bg-green text-cream" : done ? "bg-olive text-cream" : "border border-line"}`}>{done ? "✓" : n}</span>
             <span className="hidden sm:inline">{label}</span>
           </li>

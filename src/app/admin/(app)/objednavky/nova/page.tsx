@@ -29,7 +29,7 @@ export default async function NewOrderPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <p className="label mb-1 text-[11px] text-muted">
+      <p className="mb-1 text-label text-green">
         <Link href="/admin/objednavky" className="hover:underline">
           Objednávky
         </Link>

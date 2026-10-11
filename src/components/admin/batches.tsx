@@ -14,8 +14,8 @@ export function Batches({ productId, batches }: { productId: string; batches: Ba
   const soonIso = soon.toISOString().slice(0, 10);
 
   return (
-    <fieldset className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <legend className="label px-1 text-[11px] text-muted">Šarže a expirace</legend>
+    <fieldset className="rounded-card border border-line bg-white p-4">
+      <legend className="px-1 text-label text-green">Šarže a expirace</legend>
       {batches.length > 0 && (
         <div className="mb-3">
           <Table head={["Šarže", "Expirace", "Kusů", "Poznámka", ""]}>
@@ -33,7 +33,7 @@ export function Batches({ productId, batches }: { productId: string; batches: Ba
                       <input type="hidden" name="id" value={b.id} />
                       <input type="hidden" name="product_id" value={productId} />
                       <input name="qty" type="number" min={0} defaultValue={b.qty} className="w-20 min-h-8 text-sm" aria-label="Kusů" />
-                      <button type="submit" className="label text-[10px] text-green hover:underline">
+                      <button type="submit" className="text-small font-semibold text-brick-text hover:underline">
                         Uložit
                       </button>
                     </form>
@@ -60,7 +60,7 @@ export function Batches({ productId, batches }: { productId: string; batches: Ba
           Přidat
         </Button>
       </form>
-      <p className="mt-2 text-xs text-muted">Šarže s expirací do 14 dnů svítí na Přehledu. Příjemka šarži založí sama; ručně přidaná šarže celkový sklad nemění.</p>
+      <p className="mt-2 text-small text-muted">Šarže s expirací do 14 dnů svítí na Přehledu. Příjemka šarži založí sama; ručně přidaná šarže celkový sklad nemění.</p>
     </fieldset>
   );
 }

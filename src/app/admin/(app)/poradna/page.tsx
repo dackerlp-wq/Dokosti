@@ -21,11 +21,11 @@ export default async function InquiriesPage() {
       <div className="mt-4 space-y-3">
         {rows.length === 0 && <p className="text-muted">Zatím žádné dotazy.</p>}
         {rows.map((r) => (
-          <article key={r.id} className={`rounded-[var(--radius-card)] border bg-paper p-4 ${r.answered ? "border-line opacity-70" : "border-brick"}`}>
+          <article key={r.id} className={`rounded-card border bg-paper p-4 ${r.answered ? "border-line opacity-70" : "border-brick"}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm">
                 <strong>{r.name}</strong> ·{" "}
-                <a href={`mailto:${r.email}?subject=${encodeURIComponent("Odpověď z poradny DoKosti")}`} className="text-green hover:underline">
+                <a href={`mailto:${r.email}?subject=${encodeURIComponent("Odpověď z poradny DoKosti")}`} className="text-brick-text hover:underline">
                   {r.email}
                 </a>
                 <span className="text-muted">
@@ -38,7 +38,7 @@ export default async function InquiriesPage() {
                 <input type="hidden" name="id" value={r.id} />
                 <input type="hidden" name="answered" value={r.answered ? "0" : "1"} />
                 {r.answered ? <Badge kind="skladem">Zodpovězeno</Badge> : <Badge kind="novinka">Čeká</Badge>}
-                <button type="submit" className="label text-[11px] text-green hover:underline">
+                <button type="submit" className="text-small font-semibold text-brick-text hover:underline">
                   {r.answered ? "Vrátit" : "Označit jako zodpovězené"}
                 </button>
               </form>

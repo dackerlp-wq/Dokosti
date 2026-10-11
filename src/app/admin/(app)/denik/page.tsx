@@ -60,7 +60,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
             })}
           </Table>
         )}
-        {rows.length >= 300 && <p className="mt-1 text-xs text-muted">Zobrazeno posledních 300 záznamů, zúžte filtr.</p>}
+        {rows.length >= 300 && <p className="mt-1 text-small text-muted">Zobrazeno posledních 300 záznamů, zúžte filtr.</p>}
       </div>
     </>
   );

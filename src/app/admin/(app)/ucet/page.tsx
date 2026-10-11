@@ -14,18 +14,18 @@ export default async function AccountPage() {
     <>
       <PageHeader title="Můj účet" subtitle={`Přihlášení jako ${admin.email} · ${ADMIN_ROLE_LABEL[admin.role]}: ${ADMIN_ROLE_HINT[admin.role]}.`} />
       <div className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2">
-        <form action={saveMyName} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveMyName} className="rounded-card border border-line bg-white p-4">
           <h2 className="mb-3 text-[18px]">Jméno</h2>
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Jak vás uvidí kolegové</span>
+            <span className="mb-1 block text-label text-green">Jak vás uvidí kolegové</span>
             <input name="name" defaultValue={admin.name} minLength={2} maxLength={60} required />
           </label>
-          <p className="mt-2 text-xs text-muted">Ukazuje se v deníku změn, u směn v kase a v docházce.</p>
+          <p className="mt-2 text-small text-muted">Ukazuje se v deníku změn, u směn v kase a v docházce.</p>
           <Button type="submit" className="mt-3 w-full">
             Uložit jméno
           </Button>
         </form>
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <div className="rounded-card border border-line bg-white p-4">
           <h2 className="mb-3 text-[18px]">Změna hesla</h2>
           <PasswordForm />
         </div>

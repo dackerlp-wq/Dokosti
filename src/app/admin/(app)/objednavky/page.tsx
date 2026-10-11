@@ -78,7 +78,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
           <input type="date" name="od" defaultValue={sp.od} aria-label="Od" className="min-h-9 w-auto py-1" />
           <span className="text-muted">–</span>
           <input type="date" name="do" defaultValue={sp.do} aria-label="Do" className="min-h-9 w-auto py-1" />
-          <a href={exportHref} className="label ml-auto text-[11px] text-green underline">
+          <a href={exportHref} className="ml-auto text-small font-semibold text-brick-text underline">
             Export CSV
           </a>
         </StockFilters>
@@ -93,12 +93,12 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
               const items = itemsByOrder.get(o.id) ?? [];
               const isToday = o.delivery_date === today && OPEN.includes(o.status);
               return (
-                <tr key={o.id} className={isToday ? "bg-cream/60" : ""}>
+                <tr key={o.id} className={isToday ? "bg-paper/60" : ""}>
                   <Td>
-                    <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-brick-text hover:underline">
                       {o.order_number}
                     </Link>
-                    <div className="text-xs text-muted">
+                    <div className="text-small text-muted">
                       {formatDate(o.created_at)}
                       {o.subscription_id && " · předplatné"}
                       {o.created_by && " · z adminu"}
@@ -112,7 +112,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                     ) : (
                       o.customer_name
                     )}
-                    <div className="text-xs text-muted">
+                    <div className="text-small text-muted">
                       <a href={`tel:${o.customer_phone}`} className="hover:underline">
                         {o.customer_phone}
                       </a>
@@ -120,7 +120,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   </Td>
                   <Td>
                     <span className="font-semibold">{SHIPPING_LABEL[o.shipping_method]}</span>
-                    <div className={`text-xs ${isToday ? "font-semibold text-brick-text" : "text-muted"}`}>{o.delivery_date ? (isToday ? "dnes" : formatDay(o.delivery_date)) : o.shipping_method === "rozvoz" ? "bez termínu" : ""}</div>
+                    <div className={`text-small ${isToday ? "font-semibold text-brick-text" : "text-muted"}`}>{o.delivery_date ? (isToday ? "dnes" : formatDay(o.delivery_date)) : o.shipping_method === "rozvoz" ? "bez termínu" : ""}</div>
                   </Td>
                   <Td className="max-w-[260px]">
                     {items.slice(0, 2).map((i) => (
@@ -128,11 +128,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                         {i.qty}× {i.name}
                       </div>
                     ))}
-                    {items.length > 2 && <div className="text-xs text-muted">a další {items.length - 2}</div>}
+                    {items.length > 2 && <div className="text-small text-muted">a další {items.length - 2}</div>}
                   </Td>
                   <Td className="whitespace-nowrap">
                     <span className="font-semibold">{formatPrice(o.total_czk)}</span>
-                    <div className={`text-xs ${o.paid_at || o.payment_method === "hotove" ? "text-muted" : "text-brick-text"}`}>{o.paid_at ? "zaplaceno" : o.payment_method === "hotove" ? "na místě" : `${PAYMENT_LABEL[o.payment_method].toLowerCase()}, nezaplaceno`}</div>
+                    <div className={`text-small ${o.paid_at || o.payment_method === "hotove" ? "text-muted" : "text-brick-text"}`}>{o.paid_at ? "zaplaceno" : o.payment_method === "hotove" ? "na místě" : `${PAYMENT_LABEL[o.payment_method].toLowerCase()}, nezaplaceno`}</div>
                   </Td>
                   <Td>
                     <StatusBadge status={o.status} />
@@ -145,7 +145,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
             })}
           </Table>
         )}
-        {orders.length >= 200 && <p className="mt-1 text-xs text-muted">Zobrazeno prvních 200, zúžte filtr nebo použijte export.</p>}
+        {orders.length >= 200 && <p className="mt-1 text-small text-muted">Zobrazeno prvních 200, zúžte filtr nebo použijte export.</p>}
       </div>
     </>
   );

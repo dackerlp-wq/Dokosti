@@ -39,9 +39,9 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
       <input type="hidden" name="supplier_id" value={supplierId} />
       <input type="hidden" name="lines" value={JSON.stringify(lines.map(({ product_id, qty, unit_cost_czk }) => ({ product_id, qty, unit_cost_czk })))} />
       <div className="space-y-4">
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <div className="rounded-card border border-line bg-white p-4">
           <label className="block">
-            <span className="label mb-1 block text-[11px] text-muted">Dodavatel</span>
+            <span className="mb-1 block text-label text-green">Dodavatel</span>
             <select
               value={supplierId}
               onChange={(e) => {
@@ -57,22 +57,22 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
             </select>
           </label>
           {supplier && (
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-small text-muted">
               Dodací lhůta {supplier.lead_days} dní{supplier.min_order_czk ? `, minimální objednávka ${formatPrice(supplier.min_order_czk)}` : ""}
               {supplier.email ? `, objednávka odejde na ${supplier.email}` : ", dodavatel nemá e-mail: objednávku vytisknete nebo nadiktujete"}.
             </p>
           )}
         </div>
 
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <div className="rounded-card border border-line bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-[18px]">Položky</h2>
-            <span className="text-xs text-muted">Předvyplněno podle Skladu: co dochází, zásoba na {reorderDays} dní plus dodací lhůta, zaokrouhleno na balení.</span>
+            <span className="text-small text-muted">Předvyplněno podle Skladu: co dochází, zásoba na {reorderDays} dní plus dodací lhůta, zaokrouhleno na balení.</span>
           </div>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="label border-b border-line text-left text-[10px] text-muted">
+                <tr className="border-b border-line text-left text-eyebrow uppercase text-muted">
                   <th className="py-2 pr-2 font-semibold">Produkt</th>
                   <th className="py-2 pr-2 font-semibold">Skladem</th>
                   <th className="py-2 pr-2 font-semibold">Objednat</th>
@@ -94,12 +94,12 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
                     <tr key={l.key}>
                       <td className="py-2 pr-2">
                         <span className="font-semibold">{p?.name ?? "?"}</span>
-                        {p?.pack_size ? <span className="block text-xs text-muted">balení {p.pack_size} {p.unit}</span> : null}
+                        {p?.pack_size ? <span className="block text-small text-muted">balení {p.pack_size} {p.unit}</span> : null}
                       </td>
                       <td className="py-2 pr-2 whitespace-nowrap">
                         {p?.stock === null || p?.stock === undefined ? <span className="text-muted">—</span> : `${p.stock} ${p.unit}`}
-                        {p?.status === "out" && <span className="ml-1 text-xs text-brick-text">vyprodáno</span>}
-                        {p?.status === "low" && <span className="ml-1 text-xs text-brick-text">dochází</span>}
+                        {p?.status === "out" && <span className="ml-1 text-small text-brick-text">vyprodáno</span>}
+                        {p?.status === "low" && <span className="ml-1 text-small text-brick-text">dochází</span>}
                       </td>
                       <td className="py-2 pr-2">
                         <span className="flex items-center gap-1">
@@ -113,7 +113,7 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
                         </td>
                       )}
                       <td className="py-2 text-right">
-                        <button type="button" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Odebrat" className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-cream hover:text-brick-text">
+                        <button type="button" onClick={() => setLines(lines.filter((x) => x.key !== l.key))} aria-label="Odebrat" className="inline-flex h-8 w-8 items-center justify-center rounded-control text-muted hover:bg-paper hover:text-brick-text">
                           <Trash2 strokeWidth={1.75} className="h-4 w-4" />
                         </button>
                       </td>
@@ -147,30 +147,30 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
             >
               <Plus strokeWidth={1.75} className="h-4 w-4" /> Přidat
             </Button>
-            {mine.length === 0 && <span className="text-xs text-muted">Dodavatel nemá přiřazené produkty, nabízí se všechny. Přiřaďte je v detailu dodavatele.</span>}
+            {mine.length === 0 && <span className="text-small text-muted">Dodavatel nemá přiřazené produkty, nabízí se všechny. Přiřaďte je v detailu dodavatele.</span>}
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <div className="rounded-card border border-line bg-white p-4">
           <h2 className="text-[18px]">Souhrn</h2>
           <p className="mt-2 text-sm">
             {lines.length} položek{manager ? ` · nákup ${formatPrice(Math.round(total))}` : ""}
           </p>
-          {manager && supplier && supplier.min_order_czk > 0 && total < supplier.min_order_czk && <p className="mt-1 text-xs text-brick-text">Pod minimální objednávkou dodavatele ({formatPrice(supplier.min_order_czk)}).</p>}
+          {manager && supplier && supplier.min_order_czk > 0 && total < supplier.min_order_czk && <p className="mt-1 text-small text-brick-text">Pod minimální objednávkou dodavatele ({formatPrice(supplier.min_order_czk)}).</p>}
           <label className="mt-3 block">
-            <span className="label mb-1 block text-[11px] text-muted">Požadované dodání</span>
+            <span className="mb-1 block text-label text-green">Požadované dodání</span>
             <input name="expected_on" type="date" defaultValue={expected} />
           </label>
           <label className="mt-3 block">
-            <span className="label mb-1 block text-[11px] text-muted">Poznámka pro dodavatele</span>
+            <span className="mb-1 block text-label text-green">Poznámka pro dodavatele</span>
             <textarea name="note" rows={3} placeholder="např. doručit dopoledne, zavolat předem" />
           </label>
           <Button type="submit" className="mt-4 w-full" disabled={lines.length === 0}>
             Uložit návrh objednávky
           </Button>
-          <p className="mt-2 text-xs text-muted">Návrh ještě nikam neodejde. Odeslání dodavateli potvrdíte v dalším kroku.</p>
+          <p className="mt-2 text-small text-muted">Návrh ještě nikam neodejde. Odeslání dodavateli potvrdíte v dalším kroku.</p>
         </div>
       </div>
     </form>

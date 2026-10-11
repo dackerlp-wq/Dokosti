@@ -29,7 +29,7 @@ export function SettingsForms({ settings }: { settings: Settings }) {
             type="button"
             onClick={() => setTab(t.id)}
             aria-pressed={tab === t.id}
-            className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${
+            className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${
               tab === t.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"
             }`}
           >
@@ -77,7 +77,7 @@ function SectionForm({ section, children }: { section: string; children: React.R
 function Field({ label, hint, children, className = "" }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (
     <label className={`block ${className}`}>
-      <span className="label mb-1 block text-[11px] text-muted">
+      <span className="mb-1 block text-label text-green">
         {label}
         {hint && <span className="ml-1 normal-case tracking-normal">({hint})</span>}
       </span>
@@ -97,8 +97,8 @@ function Check({ name, label, defaultChecked }: { name: string; label: string; d
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
-      <legend className="label px-1 text-[11px] text-muted">{title}</legend>
+    <fieldset className="rounded-card border border-line bg-white p-4">
+      <legend className="px-1 text-label text-green">{title}</legend>
       {children}
     </fieldset>
   );
@@ -140,7 +140,7 @@ function ShopForm({ s }: { s: Settings["shop"] }) {
         </div>
       </Card>
       <Card title="Otevírací doba">
-        <p className="mb-2 text-xs text-muted">Prázdný řádek se neuloží. Pro přidání vyplňte poslední řádek.</p>
+        <p className="mb-2 text-small text-muted">Prázdný řádek se neuloží. Pro přidání vyplňte poslední řádek.</p>
         <div className="space-y-2">
           {rows.map((o, i) => (
             <div key={i} className="grid grid-cols-[1fr_2fr] gap-2">
@@ -226,7 +226,7 @@ function PaymentForm({ s }: { s: Settings["payment"] }) {
         <Field label="Popis" className="mt-3">
           <input name="karta_description" defaultValue={s.karta.description} />
         </Field>
-        <p className="mt-2 text-xs text-muted">Zapněte až po napojení platební brány.</p>
+        <p className="mt-2 text-small text-muted">Zapněte až po napojení platební brány.</p>
       </Card>
       <Card title="Bankovním převodem">
         <Check name="prevod_enabled" label="Nabízet" defaultChecked={s.prevod.enabled} />
@@ -283,7 +283,7 @@ function LoyaltyForm({ s }: { s: Settings["loyalty"] }) {
             <input name="redeemValueCzk" type="number" min={1} defaultValue={s.redeemValueCzk} />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small text-muted">
           Teď: 1 Kostička za každých {s.czkPerPoint} Kč, {s.redeemStep} Kostiček = sleva {s.redeemValueCzk} Kč. Kostičky se
           připisují, když objednávku označíte jako doručenou. Zákazník je uplatní v pokladně zadáním svého e-mailu.
         </p>
@@ -311,7 +311,7 @@ function SubscriptionForm({ s }: { s: Settings["subscription"] }) {
             <input name="cutoffDaysBefore" type="number" min={0} max={7} defaultValue={s.cutoffDaysBefore} />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small text-muted">
           Teď: {s.reminderDaysBefore} dny před dodáním přijde zákazníkovi e-mail s obsahem a odkazem Přeskočit nebo Změnit, {s.cutoffDaysBefore}{" "}
           {s.cutoffDaysBefore === 1 ? "den" : "dny"} před dodáním vznikne objednávka a objeví se v Objednávkách i v plánu rozvozu. Platí se za každou
           objednávku zvlášť (převodem nebo při převzetí). Když se objednávku nepodaří vytvořit (zboží není skladem), předplatné se pozastaví a
@@ -332,7 +332,7 @@ function PosForm({ s }: { s: Settings["pos"] }) {
             <input name="receiptFooter" defaultValue={s.receiptFooter} />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small text-muted">
           Kasa je na adrese /admin/kasa a jde přidat na plochu tabletu jako aplikace. QR platba používá číslo účtu z karty Platba. Účtenky mají řadu U + rok + pořadí.
         </p>
       </Card>
@@ -360,7 +360,7 @@ function ClubForm({ s }: { s: Settings["club"] }) {
             <input name="termsVersion" defaultValue={s.termsVersion} />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small text-muted">
           Registrace je na /registrace (jméno, e-mail, kód z e-mailu), pro tablet v prodejně /registrace?kiosk=1 (po dokončení se odhlásí). QR na kartě vede na /k/KÓD,
           karty se tvoří v Admin → Karty. Úplný profil zvířete = druh, jméno, váha a datum narození; odměna za něj se připisuje v účtu.
         </p>
@@ -387,7 +387,7 @@ function StockForm({ s }: { s: Settings["stock"] }) {
             <input name="leadDays" type="number" min={0} max={90} defaultValue={s.leadDays} />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">
+        <p className="mt-3 text-small text-muted">
           Ležák je zboží skladem bez prodeje déle než {s.deadDays} dní. Pomalé je zboží, kterého je při současném tempu prodeje na víc než {s.slowDays} dní.
           Docházející se řídí limitem u každého produktu. Období prodejů (30, 90 nebo 365 dní) se přepíná přímo v přehledu.
         </p>
@@ -406,7 +406,7 @@ function NotificationsForm({ s }: { s: Settings["notifications"] }) {
             <input name="email" type="email" defaultValue={s.email} placeholder="majitel@dokosti.cz" />
           </Field>
         </div>
-        <p className="mt-3 text-xs text-muted">Odchází s denním cronem kolem 7:00. Stejná upozornění vidíte na Dnes; e-mail je pro dny, kdy se do systému nedostanete.</p>
+        <p className="mt-3 text-small text-muted">Odchází s denním cronem kolem 7:00. Stejná upozornění vidíte na Dnes; e-mail je pro dny, kdy se do systému nedostanete.</p>
       </Card>
     </SectionForm>
   );

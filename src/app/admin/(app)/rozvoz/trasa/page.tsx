@@ -26,7 +26,7 @@ export default async function RoutePage({ searchParams }: { searchParams: Promis
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <p className="label text-[11px] text-muted">
+          <p className="text-eyebrow uppercase text-muted">
             <Link href="/admin/rozvoz" className="hover:underline">
               Rozvoz a odběry
             </Link>{" "}
@@ -44,7 +44,7 @@ export default async function RoutePage({ searchParams }: { searchParams: Promis
       {list.length === 0 ? (
         <p className="text-muted">Na tento den není žádný rozvoz.</p>
       ) : (
-        <ol className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-white print:rounded-none print:border-0">
+        <ol className="divide-y divide-line rounded-card border border-line bg-white print:rounded-none print:border-0">
           {list.map((o, i) => {
             const lines = byOrder.get(o.id) ?? [];
             return (
@@ -59,7 +59,7 @@ export default async function RoutePage({ searchParams }: { searchParams: Promis
                   {o.note && <p className="italic text-muted">„{o.note}“</p>}
                 </div>
                 <div className="text-right">
-                  <p className="label text-[10px] text-muted">{o.order_number}</p>
+                  <p className="text-eyebrow uppercase text-muted">{o.order_number}</p>
                   <p className={o.payment_method === "hotove" && !o.paid_at ? "font-semibold text-brick-text" : "text-muted"}>{o.paid_at ? "zaplaceno" : o.payment_method === "hotove" ? `vybrat ${formatPrice(o.total_czk)}` : "nezaplaceno, převod"}</p>
                   <p className="mt-3 border-b border-line text-[10px] text-muted">podpis / čas</p>
                 </div>

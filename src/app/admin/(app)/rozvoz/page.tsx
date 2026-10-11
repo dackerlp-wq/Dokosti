@@ -95,7 +95,7 @@ export default async function DeliveryPage({ searchParams }: { searchParams: Pro
                   <Row key={o.id} o={o} index={i + 1} address />
                 ))}
               </Table>
-              {stops.length > 9 && <p className="mt-1 text-xs text-muted">Navigace zvládne nejvýš 10 zastávek, další zadejte zvlášť.</p>}
+              {stops.length > 9 && <p className="mt-1 text-small text-muted">Navigace zvládne nejvýš 10 zastávek, další zadejte zvlášť.</p>}
             </section>
           );
         })
@@ -133,14 +133,14 @@ function Row({ o, index, address, pickup }: { o: OrderRow; index: number; addres
     <tr>
       <Td className="text-muted">{index}</Td>
       <Td>
-        <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-green hover:underline">
+        <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-brick-text hover:underline">
           {o.order_number}
         </Link>
-        <div className="text-xs text-muted">{formatPrice(o.total_czk)}</div>
+        <div className="text-small text-muted">{formatPrice(o.total_czk)}</div>
       </Td>
       <Td>
         {o.customer_name}
-        <div className="text-xs text-muted">
+        <div className="text-small text-muted">
           <a href={`tel:${o.customer_phone}`} className="hover:underline">
             {o.customer_phone}
           </a>
@@ -155,7 +155,7 @@ function Row({ o, index, address, pickup }: { o: OrderRow; index: number; addres
           ) : (
             <span className="text-muted">bez adresy</span>
           )}
-          {o.note && <div className="text-xs italic text-muted">{o.note}</div>}
+          {o.note && <div className="text-small italic text-muted">{o.note}</div>}
         </Td>
       )}
       {pickup && <Td>{o.delivery_date ? formatDay(o.delivery_date) : <span className="text-muted">kdykoli</span>}</Td>}

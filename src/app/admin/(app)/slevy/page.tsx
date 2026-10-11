@@ -33,10 +33,10 @@ export default async function CouponsPage() {
               return (
                 <tr key={c.id}>
                   <Td>
-                    <Link href={`/admin/slevy/${c.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/slevy/${c.id}`} className="font-semibold text-brick-text hover:underline">
                       {c.code}
                     </Link>
-                    {c.note && <span className="block text-xs text-muted">{c.note}</span>}
+                    {c.note && <span className="block text-small text-muted">{c.note}</span>}
                   </Td>
                   <Td>{c.type === "percent" ? `${c.value} %` : formatPrice(c.value)}</Td>
                   <Td>{c.min_order_czk ? formatPrice(c.min_order_czk) : ""}</Td>

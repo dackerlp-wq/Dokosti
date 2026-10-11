@@ -59,15 +59,15 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
           <p className="mt-1 text-sm text-muted">Co se prodává, co leží a co dochází. Prodeje z webu i kasy za zvolené období.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/sklad/inventura" className="label mr-2 text-[11px] text-green underline">
+          <Link href="/admin/sklad/inventura" className="mr-2 text-small font-semibold text-brick-text underline">
             Inventura
           </Link>
-          <Link href="/admin/nakup/nova" className="label mr-2 text-[11px] text-green underline">
+          <Link href="/admin/nakup/nova" className="mr-2 text-small font-semibold text-brick-text underline">
             Objednat u dodavatele
           </Link>
-          <span className="label text-[11px] text-muted">Období prodejů</span>
+          <span className="text-eyebrow uppercase text-muted">Období prodejů</span>
           {STOCK_PERIODS.map((p) => (
-            <Link key={p.id} href={`/admin/sklad${query({ obdobi: p.id })}`} className={`label inline-flex min-h-8 items-center rounded-full border px-3 text-[11px] ${p.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
+            <Link key={p.id} href={`/admin/sklad${query({ obdobi: p.id })}`} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${p.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
               {p.label}
             </Link>
           ))}
@@ -92,7 +92,7 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
             { name: "razeni", value: sp.razeni, label: "Řazení", options: STOCK_SORTS.map((s) => ({ value: s.id, label: `Řadit: ${s.label.toLowerCase()}` })) },
           ]}
         >
-          <a href={exportHref} className="label ml-auto text-[11px] text-green underline">
+          <a href={exportHref} className="ml-auto text-small font-semibold text-brick-text underline">
             Export CSV
           </a>
         </StockFilters>
@@ -113,10 +113,10 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
               list.map((s) => (
                 <tr key={s.product.id}>
                   <Td>
-                    <Link href={`/admin/sklad/${s.product.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/sklad/${s.product.id}`} className="font-semibold text-brick-text hover:underline">
                       {s.name}
                     </Link>
-                    <div className="text-xs text-muted">
+                    <div className="text-small text-muted">
                       {LINE_INFO[s.product.line].name} · {STORAGE_LABEL[s.product.storage]}
                       {!s.product.is_published && " · nezveřejněno"}
                     </div>
@@ -138,7 +138,7 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
             )}
           </Table>
         )}
-        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
+        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-small text-muted">
           <span>
             <strong className="font-semibold text-ink">Dní zásoby</strong> = skladem ÷ průměrný denní prodej za období (∞ = bez prodeje)
           </span>
@@ -154,7 +154,7 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
           {untracked > 0 && (
             <span>
               {untracked} {untracked === 1 ? "produkt nemá" : untracked < 5 ? "produkty nemají" : "produktů nemá"} evidované množství a v přehledu není.{" "}
-              <Link href="/admin/produkty" className="text-green underline">
+              <Link href="/admin/produkty" className="text-brick-text underline">
                 Produkty
               </Link>
             </span>
@@ -168,12 +168,12 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
 function Stat({ label, value, sub, warn, href }: { label: string; value: string; sub?: string; warn?: boolean; href?: string }) {
   const body = (
     <>
-      <p className="label text-[11px] text-muted">{label}</p>
+      <p className="text-eyebrow uppercase text-muted">{label}</p>
       <p className={`text-[24px] font-semibold ${warn ? "text-brick-text" : ""}`}>{value}</p>
-      {sub && <p className="text-xs text-muted">{sub}</p>}
+      {sub && <p className="text-small text-muted">{sub}</p>}
     </>
   );
-  const cls = "block rounded-[var(--radius-card)] border border-line bg-paper p-4";
+  const cls = "block rounded-card border border-line bg-white p-4";
   return href ? (
     <Link href={href} className={`${cls} hover:border-green`}>
       {body}

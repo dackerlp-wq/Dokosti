@@ -34,13 +34,13 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
           ]}
         />
       </div>
-      <form action={saveEmployee} className="mt-4 flex flex-wrap items-end gap-2 rounded-[var(--radius-card)] border border-line bg-paper p-3">
+      <form action={saveEmployee} className="mt-4 flex flex-wrap items-end gap-2 rounded-card border border-line bg-white p-3">
         <label className="min-w-[200px] flex-1">
-          <span className="label mb-1 block text-[11px] text-muted">Nový zaměstnanec</span>
+          <span className="mb-1 block text-label text-green">Nový zaměstnanec</span>
           <input name="name" required placeholder="Jméno a příjmení" className="min-h-9 py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Smlouva</span>
+          <span className="mb-1 block text-label text-green">Smlouva</span>
           <select name="contract_type" defaultValue="dpp" className="min-h-9 w-auto py-1">
             {(Object.keys(CONTRACT_LABEL) as ContractType[]).map((c) => (
               <option key={c} value={c}>
@@ -50,7 +50,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
           </select>
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Nástup</span>
+          <span className="mb-1 block text-label text-green">Nástup</span>
           <input name="started_on" type="date" className="min-h-9 w-auto py-1" />
         </label>
         <Button type="submit" className="min-h-9">
@@ -65,14 +65,14 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
             {rows.map((e) => (
               <tr key={e.id}>
                 <Td>
-                  <Link href={`/admin/zamestnanci/${e.id}`} className="font-semibold text-green hover:underline">
+                  <Link href={`/admin/zamestnanci/${e.id}`} className="font-semibold text-brick-text hover:underline">
                     {e.name}
                   </Link>
                 </Td>
                 <Td className="text-muted">{e.position || "—"}</Td>
                 <Td>{CONTRACT_LABEL[e.contract_type]}</Td>
                 <Td className="whitespace-nowrap">{e.hourly_rate_czk ? `${e.hourly_rate_czk} Kč/h` : e.monthly_salary_czk ? `${e.monthly_salary_czk} Kč/měs.` : <span className="text-muted">—</span>}</Td>
-                <Td>{e.user_id ? <span className="label rounded-full bg-green px-2 py-0.5 text-[10px] text-cream">{userRole.get(e.user_id) ?? "účet"}</span> : <span className="text-muted">bez přihlášení</span>}</Td>
+                <Td>{e.user_id ? <span className="text-small font-semibold rounded-control bg-green px-2 py-0.5 text-cream">{userRole.get(e.user_id) ?? "účet"}</span> : <span className="text-muted">bez přihlášení</span>}</Td>
                 <Td>{(hours.get(e.id) ?? 0).toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} h</Td>
                 <Td className="text-muted">{e.started_on ? formatDay(e.started_on) : "—"}{e.ended_on ? ` · do ${formatDay(e.ended_on)}` : ""}</Td>
               </tr>

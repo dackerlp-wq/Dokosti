@@ -66,11 +66,11 @@ function List({ rows }: { rows: Row[] }) {
       {rows.map((r) => (
         <tr key={r.id}>
           <Td>
-            <Link href={`/admin/predplatne/${r.id}`} className="font-semibold text-green hover:underline">
+            <Link href={`/admin/predplatne/${r.id}`} className="font-semibold text-brick-text hover:underline">
               {r.customer_name}
             </Link>
             <br />
-            <span className="text-xs text-muted">{r.customer_email}</span>
+            <span className="text-small text-muted">{r.customer_email}</span>
           </Td>
           <Td>{SHIPPING_LABEL[r.shipping_method]}</Td>
           <Td>
@@ -78,12 +78,12 @@ function List({ rows }: { rows: Row[] }) {
           </Td>
           <Td>
             {r.status === "aktivni" ? formatDay(r.next_date) : "—"}
-            {r.skip_next && <span className="ml-1 text-xs text-brick-text">přeskočí</span>}
+            {r.skip_next && <span className="ml-1 text-small text-brick-text">přeskočí</span>}
           </Td>
           <Td>{r.subscription_items.reduce((n, i) => n + i.qty, 0)} ks</Td>
           <Td>
             <Badge kind={KIND[r.status]}>{SUBSCRIPTION_STATUS_LABEL[r.status]}</Badge>
-            {r.last_error && <span className="ml-1 text-xs text-brick-text">{r.last_error}</span>}
+            {r.last_error && <span className="ml-1 text-small text-brick-text">{r.last_error}</span>}
           </Td>
         </tr>
       ))}

@@ -36,7 +36,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
 
   return (
     <>
-      <p className="label mb-1 text-[11px] text-muted">
+      <p className="mb-1 text-label text-green">
         <Link href="/admin/zakaznici" className="hover:underline">
           Zákazníci
         </Link>
@@ -58,13 +58,13 @@ export default async function CustomerPage({ params, searchParams }: { params: P
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-              <p className="label mb-1 text-[11px] text-muted">Kontakt</p>
-              <a href={`mailto:${c.email}`} className="text-green hover:underline">
+            <div className="rounded-card border border-line bg-white p-4 text-sm">
+              <p className="mb-1 text-label text-green">Kontakt</p>
+              <a href={`mailto:${c.email}`} className="text-brick-text hover:underline">
                 {c.email}
               </a>
               <br />
-              <a href={`tel:${c.phone}`} className="text-green hover:underline">
+              <a href={`tel:${c.phone}`} className="text-brick-text hover:underline">
                 {c.phone}
               </a>
               {c.street && (
@@ -73,16 +73,16 @@ export default async function CustomerPage({ params, searchParams }: { params: P
                 </p>
               )}
             </div>
-            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-              <p className="label mb-1 text-[11px] text-muted">Nákupy</p>
+            <div className="rounded-card border border-line bg-white p-4 text-sm">
+              <p className="mb-1 text-label text-green">Nákupy</p>
               <p>
                 {c.orders_count} objednávek · {formatPrice(c.total_spent_czk)}
               </p>
               <p className="text-muted">Zákazník od {formatDate(c.created_at)}</p>
               <p className="mt-2 text-[22px] font-semibold">{c.points} Kostiček</p>
             </div>
-            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm sm:col-span-2">
-              <p className="label mb-1 text-[11px] text-muted">Klub</p>
+            <div className="rounded-card border border-line bg-white p-4 text-sm sm:col-span-2">
+              <p className="mb-1 text-label text-green">Klub</p>
               <p>
                 {c.user_id ? `Účet registrovaný ${c.registered_at ? formatDate(c.registered_at) : ""}` : "Bez účtu"} · zdroj {c.source}
                 {c.heard_from ? ` · ví o nás z: ${c.heard_from}` : ""}
@@ -98,11 +98,11 @@ export default async function CustomerPage({ params, searchParams }: { params: P
           {petList.length === 0 ? (
             <p className="text-muted">Zatím žádná.</p>
           ) : (
-            <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper text-sm">
+            <ul className="divide-y divide-line rounded-card border border-line bg-white text-sm">
               {petList.map((p) => (
                 <li key={p.id} className="p-3">
                   <strong>{p.name}</strong> <span className="text-muted">· {petSummary(p, MEAT_LABEL)}</span>
-                  <p className="text-xs text-muted">
+                  <p className="text-small text-muted">
                     {[p.breed, p.feeding_now ? FEEDING_LABEL[p.feeding_now as Exclude<FeedingNow, "">] : "", p.current_food, p.note].filter(Boolean).join(" · ") || "bez dalších údajů"}
                     {p.rewarded_at ? " · odměněno" : ""}
                   </p>
@@ -119,7 +119,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
               {list.map((o) => (
                 <tr key={o.id}>
                   <Td>
-                    <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-green hover:underline">
+                    <Link href={`/admin/objednavky/${o.id}`} className="font-semibold text-brick-text hover:underline">
                       {o.order_number}
                     </Link>
                   </Td>
@@ -142,14 +142,14 @@ export default async function CustomerPage({ params, searchParams }: { params: P
               {pos.map((s) => (
                 <tr key={s.id}>
                   <Td>
-                    <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="font-semibold text-green hover:underline">
+                    <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="font-semibold text-brick-text hover:underline">
                       {s.number}
                     </a>
                   </Td>
                   <Td>{formatDate(s.created_at)}</Td>
                   <Td>{POS_PAYMENT_LABEL[s.payment]}</Td>
                   <Td className={s.status === "storno" ? "line-through text-muted" : ""}>{formatPrice(s.total_czk)}</Td>
-                  <Td>{s.status === "storno" ? <span className="label text-[10px] text-brick-text">storno</span> : <span className="label text-[10px] text-green">zaplaceno</span>}</Td>
+                  <Td>{s.status === "storno" ? <span className="text-eyebrow uppercase text-brick-text">storno</span> : <span className="text-eyebrow uppercase text-green">zaplaceno</span>}</Td>
                 </tr>
               ))}
             </Table>
@@ -157,11 +157,11 @@ export default async function CustomerPage({ params, searchParams }: { params: P
         </div>
 
         <div className="space-y-4">
-        <form action={saveCardCode} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveCardCode} className="rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={c.id} />
-          <p className="label mb-2 text-[11px] text-muted">Zákaznická karta</p>
+          <p className="mb-2 text-label text-green">Zákaznická karta</p>
           {barcode ? (
-            <div className="mb-3 overflow-x-auto rounded-[var(--radius-control)] border border-line bg-white p-2" dangerouslySetInnerHTML={{ __html: barcode }} />
+            <div className="mb-3 overflow-x-auto rounded-control border border-line bg-white p-2" dangerouslySetInnerHTML={{ __html: barcode }} />
           ) : (
             <p className="mb-3 text-sm text-muted">Bez karty. Kartu přiřadí kasa při prvním načtení, nebo zapište kód zde.</p>
           )}
@@ -172,12 +172,12 @@ export default async function CustomerPage({ params, searchParams }: { params: P
             </Button>
           </div>
           {karta === "obsazena" && <p className="mt-2 text-sm text-brick-text">Tento kód už má jiný zákazník.</p>}
-          <p className="mt-2 text-xs text-muted">Kód z čárového kódu na kartě (Code 128). Prázdné pole kartu odebere. Tisk štítku: pravým tlačítkem na kód → uložit obrázek.</p>
+          <p className="mt-2 text-small text-muted">Kód z čárového kódu na kartě (Code 128). Prázdné pole kartu odebere. Tisk štítku: pravým tlačítkem na kód → uložit obrázek.</p>
         </form>
 
-        <form action={saveCustomerNote} className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={saveCustomerNote} className="h-fit rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={c.id} />
-          <label htmlFor="note" className="label mb-1 block text-[11px] text-muted">
+          <label htmlFor="note" className="mb-1 block text-label text-green">
             Poznámka
           </label>
           <textarea id="note" name="note" rows={6} defaultValue={c.note} placeholder="Jméno psa, alergie, jak se k nim dostat…" />
@@ -186,8 +186,8 @@ export default async function CustomerPage({ params, searchParams }: { params: P
           </Button>
         </form>
         {admin.isManager && (
-          <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-            <p className="label text-[11px] text-muted">GDPR</p>
+          <div className="rounded-card border border-line bg-white p-4 text-sm">
+            <p className="text-eyebrow uppercase text-muted">GDPR</p>
             <p className="mt-1 text-muted">Když zákazník požádá o výmaz, anonymizujte ho: jméno, kontakty a adresa se přepíší na všech dokladech, mazlíčci se vyprázdní, karta zablokuje. Čísla dokladů a částky zůstanou kvůli účetnictví. Nevratné.</p>
             <ConfirmButton action={anonymizeCustomer} fields={{ id: c.id }} title="Anonymizovat zákazníka" text={`${c.name || c.email || "Zákazník"}: osobní údaje se nevratně přepíší na zákazníkovi, objednávkách, předplatném a mazlíčcích. Účet a karta se odpojí.`} confirmLabel="Anonymizovat" reasonName="reason" reasonLabel="Důvod (žádost ze dne…)" reasonRequired variant="ghost" className="mt-2 min-h-9 text-[11px] text-brick-text">
               Anonymizovat
@@ -195,9 +195,9 @@ export default async function CustomerPage({ params, searchParams }: { params: P
           </div>
         )}
 
-        <form action={adjustPoints} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+        <form action={adjustPoints} className="rounded-card border border-line bg-white p-4">
           <input type="hidden" name="id" value={c.id} />
-          <p className="label mb-2 text-[11px] text-muted">Kostičky ručně</p>
+          <p className="mb-2 text-label text-green">Kostičky ručně</p>
           <div className="grid grid-cols-[100px_1fr] gap-2">
             <input name="points" type="number" placeholder="+50" aria-label="Počet Kostiček, záporné odečte" required />
             <input name="reason" placeholder="Nákup v prodejně" aria-label="Důvod" />
@@ -206,7 +206,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
             Připsat / odepsat
           </Button>
           {points.length > 0 && (
-            <ul className="mt-3 divide-y divide-line text-xs">
+            <ul className="mt-3 divide-y divide-line text-small">
               {points.map((t) => (
                 <li key={t.id} className="flex justify-between gap-2 py-1.5">
                   <span className="text-muted">{t.reason}</span>

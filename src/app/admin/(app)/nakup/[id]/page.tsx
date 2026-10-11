@@ -32,7 +32,7 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
         <PageHeader
           crumbs={[{ href: "/admin/nakup", label: "Objednávky u dodavatelů" }]}
           title={o.number}
-          badges={<span className="label rounded-full border border-line bg-paper px-2.5 py-0.5 text-[11px] text-muted">{PURCHASE_ORDER_STATUS_LABEL[o.status]}</span>}
+          badges={<span className="text-small font-semibold rounded-control border border-line bg-white px-2.5 py-0.5 text-muted">{PURCHASE_ORDER_STATUS_LABEL[o.status]}</span>}
           subtitle={`${o.suppliers.name} · vytvořena ${formatDate(o.created_at)}${o.sent_at ? ` · odeslána ${formatDate(o.sent_at)}` : ""}${o.expected_on ? ` · očekáváno ${formatDay(o.expected_on)}` : ""}`}
           actions={
             <>
@@ -73,9 +73,9 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
 
         <div className="space-y-4 print:hidden">
           {o.status === "navrh" && (
-            <form action={sendPurchaseOrder} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
+            <form action={sendPurchaseOrder} className="rounded-card border border-line bg-white p-4">
               <input type="hidden" name="id" value={o.id} />
-              <p className="label mb-1 text-[11px] text-muted">Odeslat dodavateli</p>
+              <p className="mb-1 text-label text-green">Odeslat dodavateli</p>
               {o.suppliers.email ? (
                 <>
                   <p className="text-sm">E-mail s položkami odejde na {o.suppliers.email}.</p>
@@ -94,8 +94,8 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
             </form>
           )}
           {o.status === "odeslana" && (
-            <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-              <p className="label mb-1 text-[11px] text-muted">Na cestě</p>
+            <div className="rounded-card border border-line bg-white p-4 text-sm">
+              <p className="mb-1 text-label text-green">Na cestě</p>
               <p>Až zboží přijede, zaúčtujte ho příjemkou z této objednávky: položky se předvyplní a rozdíly uvidíte před zaúčtováním.</p>
             </div>
           )}
@@ -104,9 +104,9 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
               Zrušit objednávku
             </ConfirmButton>
           )}
-          <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
-            <p className="label mb-1 text-[11px] text-muted">Dodavatel</p>
-            <Link href={`/admin/dodavatele/${o.supplier_id}`} className="font-semibold text-green hover:underline">
+          <div className="rounded-card border border-line bg-white p-4 text-sm">
+            <p className="mb-1 text-label text-green">Dodavatel</p>
+            <Link href={`/admin/dodavatele/${o.supplier_id}`} className="font-semibold text-brick-text hover:underline">
               {o.suppliers.name}
             </Link>
             <p className="text-muted">{[o.suppliers.contact, o.suppliers.email, o.suppliers.phone].filter(Boolean).join(" · ")}</p>

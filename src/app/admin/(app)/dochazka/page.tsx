@@ -54,11 +54,11 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
         actions={admin.isManager ? <a href={`/admin/export/dochazka.csv?mesic=${month}`} className={buttonClass("secondary")}>Podklady pro mzdy (CSV)</a> : null}
       />
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link href={`/admin/dochazka?mesic=${prev.toISOString().slice(0, 7)}${sp.zamestnanec ? `&zamestnanec=${sp.zamestnanec}` : ""}`} className="label text-[11px] text-green hover:underline">
+        <Link href={`/admin/dochazka?mesic=${prev.toISOString().slice(0, 7)}${sp.zamestnanec ? `&zamestnanec=${sp.zamestnanec}` : ""}`} className="text-small font-semibold text-brick-text hover:underline">
           ← předchozí
         </Link>
-        <span className="label text-[11px]">{monthLabel}</span>
-        <Link href={`/admin/dochazka?mesic=${next.toISOString().slice(0, 7)}${sp.zamestnanec ? `&zamestnanec=${sp.zamestnanec}` : ""}`} className="label text-[11px] text-green hover:underline">
+        <span className="text-eyebrow uppercase">{monthLabel}</span>
+        <Link href={`/admin/dochazka?mesic=${next.toISOString().slice(0, 7)}${sp.zamestnanec ? `&zamestnanec=${sp.zamestnanec}` : ""}`} className="text-small font-semibold text-brick-text hover:underline">
           další →
         </Link>
         {admin.isManager && emps.length > 0 && (
@@ -82,10 +82,10 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
       {admin.isManager && summary.size > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[...summary.entries()].map(([k, s]) => (
-            <div key={k} className="rounded-[var(--radius-card)] border border-line bg-paper p-3">
-              <p className="label text-[11px] text-muted">{empName.get(k) ?? "bez zaměstnance"}</p>
+            <div key={k} className="rounded-card border border-line bg-white p-3">
+              <p className="text-eyebrow uppercase text-muted">{empName.get(k) ?? "bez zaměstnance"}</p>
               <p className="text-[22px] font-semibold">{fmtH(s.prace)} h</p>
-              <p className="text-xs text-muted">
+              <p className="text-small text-muted">
                 {s.dovolena ? `dovolená ${fmtH(s.dovolena)} h · ` : ""}
                 {s.nemoc ? `nemoc ${fmtH(s.nemoc)} h · ` : ""}
                 {s.other ? `ostatní ${fmtH(s.other)} h` : ""}
@@ -95,10 +95,10 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
         </div>
       )}
 
-      <form action={addAttendance} className="mt-4 flex flex-wrap items-end gap-2 rounded-[var(--radius-card)] border border-line bg-paper p-3">
+      <form action={addAttendance} className="mt-4 flex flex-wrap items-end gap-2 rounded-card border border-line bg-white p-3">
         {admin.isManager && (
           <label>
-            <span className="label mb-1 block text-[11px] text-muted">Kdo</span>
+            <span className="mb-1 block text-label text-green">Kdo</span>
             <select name="employee_id" defaultValue={sp.zamestnanec ?? emps.find((e) => e.user_id === admin.id)?.id ?? ""} className="min-h-9 w-auto py-1">
               {emps.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -109,11 +109,11 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
           </label>
         )}
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Den</span>
+          <span className="mb-1 block text-label text-green">Den</span>
           <input name="day" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} className="min-h-9 w-auto py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Druh</span>
+          <span className="mb-1 block text-label text-green">Druh</span>
           <select name="kind" defaultValue="prace" className="min-h-9 w-auto py-1">
             {(Object.keys(ATTENDANCE_KIND_LABEL) as AttendanceKind[]).map((k) => (
               <option key={k} value={k}>
@@ -123,26 +123,26 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
           </select>
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Od</span>
+          <span className="mb-1 block text-label text-green">Od</span>
           <input name="from" type="time" className="min-h-9 w-auto py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">Do</span>
+          <span className="mb-1 block text-label text-green">Do</span>
           <input name="to" type="time" className="min-h-9 w-auto py-1" />
         </label>
         <label>
-          <span className="label mb-1 block text-[11px] text-muted">nebo hodin</span>
+          <span className="mb-1 block text-label text-green">nebo hodin</span>
           <input name="hours" type="number" min={0} step="0.25" placeholder="8" className="min-h-9 w-20 py-1" />
         </label>
         <label className="min-w-[160px] flex-1">
-          <span className="label mb-1 block text-[11px] text-muted">Poznámka</span>
+          <span className="mb-1 block text-label text-green">Poznámka</span>
           <input name="note" placeholder="rozvoz, úklid, lékař…" className="min-h-9 py-1" />
         </label>
         <Button type="submit" className="min-h-9">
           Přidat
         </Button>
       </form>
-      {!admin.isManager && emps.length === 0 && <p className="mt-2 text-xs text-muted">Nejste zatím propojeni se zaměstnancem, záznamy se ukládají k vašemu přihlášení a správce je dopojí.</p>}
+      {!admin.isManager && emps.length === 0 && <p className="mt-2 text-small text-muted">Nejste zatím propojeni se zaměstnancem, záznamy se ukládají k vašemu přihlášení a správce je dopojí.</p>}
 
       <div className="mt-4">
         {list.length === 0 ? (
@@ -158,11 +158,11 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
                 <Td className="text-muted">{r.ended_at ? new Date(r.ended_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" }) : r.started_at ? "běží" : "—"}</Td>
                 <Td>{r.hours !== null ? fmtH(Number(r.hours)) : "—"}</Td>
                 <Td>
-                  <span className={`label rounded-full px-2 py-0.5 text-[10px] ${r.source === "kasa" ? "border border-line text-muted" : "bg-ochre-badge text-ink"}`}>{r.source === "kasa" ? "Kasa" : "Ručně"}</span>
+                  <span className={`text-button rounded-full px-2 py-0.5 ${r.source === "kasa" ? "border border-line text-muted" : "bg-ochre-badge text-ink"}`}>{r.source === "kasa" ? "Kasa" : "Ručně"}</span>
                 </Td>
                 <Td className="text-muted">
                   {r.note}
-                  {r.break_minutes ? <span className="block text-xs">pauza {r.break_minutes} min</span> : null}
+                  {r.break_minutes ? <span className="block text-small">pauza {r.break_minutes} min</span> : null}
                 </Td>
                 {admin.isManager && (
                   <Td className="text-right">

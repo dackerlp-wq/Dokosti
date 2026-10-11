@@ -16,5 +16,5 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, maxi
 export default async function PosLayout({ children }: { children: React.ReactNode }) {
   const admin = await getAdmin();
   if (!admin) redirect("/admin/login?next=/admin/kasa");
-  return <div className="flex min-h-full flex-1 flex-col bg-cream">{children}</div>;
+  return <div className="flex min-h-full flex-1 flex-col bg-paper">{children}</div>;
 }

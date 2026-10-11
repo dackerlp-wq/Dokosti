@@ -39,7 +39,7 @@ export function Flash() {
 
   if (!msg) return null;
   return (
-    <div role={msg.kind === "error" ? "alert" : "status"} className={`fixed top-4 right-4 z-50 max-w-md rounded-[var(--radius-control)] px-4 py-3 text-sm ${msg.kind === "error" ? "bg-brick text-cream" : "bg-green text-cream"}`}>
+    <div role={msg.kind === "error" ? "alert" : "status"} className={`fixed top-5 right-5 z-50 max-w-md rounded-control px-5 py-3 text-button shadow-menu ${msg.kind === "error" ? "bg-brick text-white" : "bg-green text-cream"}`}>
       {msg.text}
       <button type="button" onClick={() => setMsg(null)} aria-label="Zavřít" className="ml-3 opacity-70 hover:opacity-100">
         ×
