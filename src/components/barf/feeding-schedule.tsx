@@ -40,8 +40,8 @@ export function FeedingSchedule({ plan }: { plan: Plan }) {
 }
 
 /** Kolik z posledního balení zbyde do příště, k řádku nákupu. */
-export function leftoverText(item: { leftoverGrams: number; role: string }) {
-  if (!["zaklad", "ryba", "kosti", "vnitrnosti"].includes(item.role) || item.leftoverGrams < 50) return null;
+export function leftoverText(item: { leftoverGrams: number; role: string; periods: number }) {
+  if (item.periods > 1 || !["zaklad", "ryba", "kosti", "vnitrnosti"].includes(item.role) || item.leftoverGrams < 50) return null;
   const g = Math.round(item.leftoverGrams / 10) * 10;
   return `z posledního balení zbyde ~${g >= 1000 ? `${(g / 1000).toFixed(1).replace(".", ",")} kg` : `${g} g`} do příště`;
 }

@@ -146,10 +146,9 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     const out: Record<string, number> = {};
     if (!plan) return out;
     for (const i of plan.items) {
-      if (i.gramsPerDay <= 0) continue;
-      const lasts = (i.qty * i.product.weightGrams) / i.gramsPerDay;
-      const usable = Math.min(lasts, shelfDays(i.product));
-      if (usable >= days * 2) out[i.product.slug] = Math.min(12, Math.floor(usable / days));
+      // Balení na víc nákupů (olej, sáček kostí): v dalších dodávkách jen každou N., nejvýš po dobu trvanlivosti.
+      const every = Math.min(12, i.periods, Math.max(1, Math.floor(shelfDays(i.product) / days)));
+      if (every >= 2) out[i.product.slug] = every;
     }
     return out;
   }, [plan, days]);
@@ -712,7 +711,7 @@ function PlanStep({
                     </p>
                   </div>
                   <span className="text-xs text-muted">
-                    {i.gramsPerDay > 0 ? `${Math.round(i.gramsPerDay)} g/den` : ""}
+                    {i.portionText}
                     {everyNth[i.product.slug] && <Durability item={i} every={everyNth[i.product.slug]} oneTime={oneTime} />}
                   </span>
                   <span className="w-12 text-right font-semibold">{i.qty} ks</span>

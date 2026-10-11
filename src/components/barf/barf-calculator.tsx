@@ -215,7 +215,7 @@ export function BarfCalculator({
           <ShoppingTable plan={plan} a={a} onChange={patch} />
           <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-xs text-muted">
-              Na {days} dní · {formatPrice(plan.perDayCzk)} za den
+              Na {days} dní · {formatPrice(plan.perDayCzk)} za den{plan.items.some((it) => it.periods > 1) ? " (balení na víc nákupů rozpočítaná)" : ""}
               {a.removed.length + Object.keys(a.swaps).length > 0 && (
                 <>
                   {" · "}
@@ -555,7 +555,7 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
         <thead>
           <tr className="border-b border-line text-left text-eyebrow text-muted uppercase">
             <th className="py-2 pr-2 font-semibold">Produkt</th>
-            <th className="py-2 pr-2 text-right font-semibold">Denně</th>
+            <th className="py-2 pr-2 text-right font-semibold">Porce</th>
             <th className="py-2 pr-2 text-right font-semibold">Balení</th>
             <th className="py-2 pr-2 text-right font-semibold">Cena</th>
             <th className="py-2" />
@@ -588,9 +588,10 @@ function ShoppingTable({ plan, a, onChange }: { plan: Plan; a: AnimalInput; onCh
                     )}
                   </span>
                 </td>
-                <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">{it.gramsPerDay > 0 && it.role !== "olej" ? `${round5(it.gramsPerDay)} g` : ""}</td>
+                <td className="py-2 pr-2 text-right text-small tabular-nums">{it.portionText}</td>
                 <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">
                   {it.qty} × {formatWeight(it.product.weightGrams)}
+                  {it.periods > 1 && <span className="block text-small text-muted">vydrží ~{it.periods} nákupy</span>}
                 </td>
                 <td className="whitespace-nowrap py-2 pr-2 text-right tabular-nums">{formatPrice(it.qty * it.product.priceCzk)}</td>
                 <td className="py-2 text-right">
