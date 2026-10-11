@@ -47,11 +47,11 @@ export default async function PriceTagsPage({ searchParams }: { searchParams: Pr
         {list.map((p) => (
           <div key={p.id} className="break-inside-avoid flex h-[150px] flex-col rounded-[var(--radius-card)] border border-line bg-white p-3 print:h-[70mm] print:rounded-none print:border-dashed print:border-ink">
             <p className="label text-[10px] text-muted">{LINE_INFO[p.line].name}</p>
-            <p className="font-display text-[20px] font-semibold leading-tight">{productName(p)}</p>
+            <p className="text-[20px] font-semibold leading-tight">{productName(p)}</p>
             <p className="text-xs text-muted">{p.unit === "kg" ? "na váhu" : formatWeight(p.weight_grams)}{p.producer ? ` · ${p.producer}` : ""}</p>
             <div className="mt-auto flex items-end justify-between gap-2">
               <div>
-                <p className="font-display text-[28px] font-bold leading-none text-green">
+                <p className="text-[28px] font-bold leading-none text-green">
                   {formatPrice(p.price_czk)}
                   {p.unit === "kg" && <span className="text-[14px]">/kg</span>}
                 </p>

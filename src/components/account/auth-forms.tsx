@@ -93,7 +93,7 @@ function SentPanel({ email, what, pending, onResend, onBack, children }: { email
       <div className="flex items-start gap-3 rounded-[var(--radius-control)] border border-line bg-cream p-4">
         <MailCheck strokeWidth={1.75} className="mt-0.5 h-6 w-6 shrink-0 text-green" />
         <div>
-          <p className="font-display text-lg font-semibold">Podívejte se do e-mailu</p>
+          <p className="text-lg font-semibold">Podívejte se do e-mailu</p>
           <p className="mt-1 text-sm">
             Pokud e-mail <strong>{email}</strong> známe, poslali jsme na něj {what}. Klikněte na tlačítko v něm, klidně i na telefonu.
           </p>
@@ -151,7 +151,7 @@ function CodeForm({ email, next }: { email: string; next?: string }) {
       <input type="hidden" name="next" value={next ?? ""} />
       <label className="block">
         <span className="label mb-1 block text-[11px] text-muted">Kód z e-mailu</span>
-        <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required aria-label="Kód z e-mailu" className="w-36 text-center font-display text-xl tracking-[0.3em]" />
+        <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required aria-label="Kód z e-mailu" className="w-36 text-center text-xl tracking-[0.3em]" />
       </label>
       <Button type="submit" disabled={pending}>
         {pending ? "Ověřuji…" : "Přihlásit kódem"}

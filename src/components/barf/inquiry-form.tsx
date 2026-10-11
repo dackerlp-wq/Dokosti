@@ -9,7 +9,7 @@ export function InquiryForm() {
   if (state?.ok) {
     return (
       <div className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
-        <p className="font-display text-[20px] font-semibold">Dotaz je u nás.</p>
+        <p className="text-[20px] font-semibold">Dotaz je u nás.</p>
         <p className="mt-1 text-sm text-muted">Ozveme se zpravidla do jednoho pracovního dne.</p>
       </div>
     );

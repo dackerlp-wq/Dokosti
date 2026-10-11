@@ -49,7 +49,7 @@ export default async function RoutePage({ searchParams }: { searchParams: Promis
             const lines = byOrder.get(o.id) ?? [];
             return (
               <li key={o.id} className="break-inside-avoid grid grid-cols-[32px_1fr_auto] gap-3 p-3 text-[13px]">
-                <span className="font-display text-[22px] font-semibold leading-none">{i + 1}</span>
+                <span className="text-[22px] font-semibold leading-none">{i + 1}</span>
                 <div>
                   <p className="text-[15px] font-semibold">
                     {o.customer_name} <span className="font-normal text-muted">· {o.customer_phone}</span>

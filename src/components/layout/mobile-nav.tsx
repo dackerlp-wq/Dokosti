@@ -2,43 +2,57 @@
 
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PAGE_NAV } from "@/lib/site";
 
 type MenuItem = { href: string; label: string; meats: { key: string; label: string }[] };
 
+/** Boční panel 300 px zprava pod 992 px: řady s druhy masa, Krmení na míru, ostatní stránky a účet. */
 export function MobileNav({ menu }: { menu: MenuItem[] }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const row = "flex min-h-11 items-center text-nav text-green hover:text-brick-text";
+
   return (
     <div className="lg:hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls="mobile-nav"
-        aria-label={open ? "Zavřít menu" : "Otevřít menu"}
-        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-[var(--radius-control)] text-green hover:bg-cream"
-      >
-        {open ? <X strokeWidth={1.75} /> : <Menu strokeWidth={1.75} />}
+      <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="mobile-nav" aria-label="Otevřít menu" className="inline-flex size-10 items-center justify-center text-green">
+        <Menu strokeWidth={1.75} className="size-6" aria-hidden />
       </button>
 
       {open && (
-        <nav id="mobile-nav" aria-label="Hlavní" className="absolute inset-x-0 z-20 border-t border-line bg-paper">
-          <div className="container-dk py-3">
-            <p className="label mb-1 text-[11px] text-muted">Nabídka</p>
-            <ul className="mb-3">
+        <div className="fixed inset-0 z-50">
+          <button type="button" aria-label="Zavřít menu" onClick={close} className="absolute inset-0 bg-overlay" />
+          <nav id="mobile-nav" aria-label="Hlavní" className="absolute inset-y-0 right-0 flex w-[min(300px,85vw)] flex-col overflow-y-auto bg-white shadow-menu">
+            <div className="flex items-center justify-between border-b border-line px-5 py-2.5">
+              <span className="text-eyebrow text-muted uppercase">Nabídka</span>
+              <button type="button" onClick={close} aria-label="Zavřít menu" className="inline-flex size-10 items-center justify-center text-green">
+                <X strokeWidth={1.75} className="size-6" aria-hidden />
+              </button>
+            </div>
+            <ul className="px-5 py-2.5">
               {menu.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} onClick={close} className="label flex min-h-11 items-center text-green hover:bg-cream">
+                  <Link href={item.href} onClick={close} className={row}>
                     {item.label}
                   </Link>
                   {item.meats.length > 0 && (
-                    <ul className="mb-2 flex flex-wrap gap-1.5 pl-3">
+                    <ul className="mb-2.5 flex flex-wrap gap-1.25">
                       {item.meats.map((m) => (
                         <li key={m.key}>
-                          <Link href={`${item.href}/${m.key}`} onClick={close} className="inline-flex min-h-8 items-center rounded-full border border-line bg-cream px-2.5 text-xs capitalize text-ink">
+                          <Link href={`${item.href}/${m.key}`} onClick={close} className="inline-flex min-h-8 items-center rounded-control bg-paper px-2.5 text-small text-ink capitalize hover:bg-cream">
                             {m.label}
                           </Link>
                         </li>
@@ -48,28 +62,32 @@ export function MobileNav({ menu }: { menu: MenuItem[] }) {
                 </li>
               ))}
               <li>
-                <Link href="/krmeni-na-miru" onClick={close} className="label flex min-h-11 items-center text-brick-text hover:bg-cream">
+                <Link href="/krmeni-na-miru" onClick={close} className={row}>
                   Krmení na míru
                 </Link>
               </li>
             </ul>
-            <p className="label mb-1 border-t border-line pt-3 text-[11px] text-muted">Informace</p>
-            <ul>
+            <ul className="border-t border-line px-5 py-2.5">
               {PAGE_NAV.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} onClick={close} className="flex min-h-10 items-center text-sm hover:bg-cream">
+                  <Link href={item.href} onClick={close} className="flex min-h-10 items-center text-small font-semibold text-ink hover:text-brick-text">
                     {item.label}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href="/ucet" onClick={close} className="flex min-h-10 items-center text-sm hover:bg-cream">
+                <Link href="/ucet" onClick={close} className="flex min-h-10 items-center text-small font-semibold text-ink hover:text-brick-text">
                   Můj účet
                 </Link>
               </li>
+              <li>
+                <Link href="/hledat" onClick={close} className="flex min-h-10 items-center text-small font-semibold text-ink hover:text-brick-text">
+                  Hledat
+                </Link>
+              </li>
             </ul>
-          </div>
-        </nav>
+          </nav>
+        </div>
       )}
     </div>
   );

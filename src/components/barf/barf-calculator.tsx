@@ -226,7 +226,7 @@ export function BarfCalculator({
               )}
             </span>
             <span>
-              Celkem <strong className="font-display text-[22px] text-green">{formatPrice(plan.totalCzk)}</strong>
+              Celkem <strong className="text-[22px] text-green">{formatPrice(plan.totalCzk)}</strong>
             </span>
           </div>
           {plan.items.length > 0 && (
@@ -454,7 +454,7 @@ function Tile({ label, value, sub }: { label: string; value: string; sub: string
   return (
     <div className="rounded-[var(--radius-card)] border border-line bg-cream px-4 py-3">
       <p className="label text-[11px] text-muted">{label}</p>
-      <p className="font-display text-[28px] font-semibold leading-tight text-green">{value}</p>
+      <p className="text-[28px] font-semibold leading-tight text-green">{value}</p>
       <p className="text-xs text-muted">{sub}</p>
     </div>
   );

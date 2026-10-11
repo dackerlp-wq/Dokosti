@@ -292,7 +292,7 @@ export function Pos({
     <div className="flex h-dvh flex-col">
       {/* Horní lišta */}
       <header className="flex flex-wrap items-center gap-2 bg-green px-3 py-2 text-cream">
-        <Link href="/admin" className="mr-2 font-display text-[20px] font-semibold text-cream">
+        <Link href="/admin" className="mr-2 text-[20px] font-semibold text-cream">
           DoKosti
         </Link>
         <nav className="flex gap-1 overflow-x-auto" aria-label="Kasa">
@@ -479,7 +479,7 @@ export function Pos({
               {couponStale && !couponError && coupon && lines.length > 0 && <p className="mt-1 text-xs text-muted">Kód ověřte tlačítkem Použít, nebo se ověří při platbě.</p>}
               <div className="mt-3 flex items-baseline justify-between">
                 <span className="label text-[11px] text-muted">{paying ? "K zaplacení" : "Celkem"}</span>
-                <span className="font-display text-[34px] font-semibold text-green">{formatPrice(total)}</span>
+                <span className="text-[34px] font-semibold text-green">{formatPrice(total)}</span>
               </div>
               {paying ? (
                 <Button type="button" variant="secondary" onClick={() => setPaying(false)} className="mt-2 min-h-12 w-full text-[13px]">
@@ -547,7 +547,7 @@ export function Pos({
                         </span>
                       </span>
                       <span className="mt-2 flex items-baseline justify-between gap-2">
-                        <span className="font-display text-[19px] font-semibold">
+                        <span className="text-[19px] font-semibold">
                           {formatPrice(p.price_czk)}
                           {p.unit === "kg" && <span className="font-body text-xs font-normal text-muted">/kg</span>}
                         </span>
@@ -590,7 +590,7 @@ export function Pos({
                     ))}
                   </ul>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="font-display text-[20px] font-semibold text-green">{formatPrice(o.total_czk)}</span>
+                    <span className="text-[20px] font-semibold text-green">{formatPrice(o.total_czk)}</span>
                     <Button type="button" onClick={() => (noShift ? setTab("uzaverka") : setModal({ kind: "settle", order: o }))} className="min-h-10">
                       {o.payment_method === "hotove" && !o.paid_at ? "Vydat a zaplatit" : "Vydat"}
                     </Button>
@@ -745,7 +745,7 @@ export function Pos({
       )}
       {modal?.kind === "done" && (
         <Modal title={`Hotovo · ${modal.number}`} onClose={clearSale}>
-          <p className="font-display text-[34px] font-semibold text-green">{formatPrice(modal.total)}</p>
+          <p className="text-[34px] font-semibold text-green">{formatPrice(modal.total)}</p>
           {modal.change !== null && modal.change > 0 && (
             <p className="mt-1 text-lg">
               Vrátit <strong>{formatPrice(modal.change)}</strong>
@@ -1050,7 +1050,7 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
             </div>
             <div className="mt-3 grid max-w-[360px] grid-cols-3 gap-2">
               {["7", "8", "9", "4", "5", "6", "1", "2", "3", "C", "0", "00"].map((k) => (
-                <button key={k} type="button" onClick={() => key(k)} className={`min-h-[56px] rounded-[var(--radius-card)] border border-line bg-paper font-display text-[22px] font-semibold hover:border-green ${k === "C" ? "text-brick-text" : ""}`} aria-label={k === "C" ? "Smazat" : k}>
+                <button key={k} type="button" onClick={() => key(k)} className={`min-h-[56px] rounded-[var(--radius-card)] border border-line bg-paper text-[22px] font-semibold hover:border-green ${k === "C" ? "text-brick-text" : ""}`} aria-label={k === "C" ? "Smazat" : k}>
                   {k}
                 </button>
               ))}
@@ -1058,9 +1058,9 @@ function PayPanel({ total, iban, shopName, pending, onPay }: { total: number; ib
           </div>
           <div className="self-start rounded-[var(--radius-card)] border border-line bg-paper p-4">
             <p className="label text-[11px] text-muted">Přijato</p>
-            <p className="font-display text-[32px] font-semibold">{received ? formatPrice(cash) : formatPrice(total)}</p>
+            <p className="text-[32px] font-semibold">{received ? formatPrice(cash) : formatPrice(total)}</p>
             <p className="label mt-2 text-[11px] text-muted">Vrátit</p>
-            <p className={`font-display text-[32px] font-semibold ${change < 0 && received ? "text-brick-text" : "text-brick-text"}`}>{received ? (change < 0 ? "chybí " + formatPrice(-change) : formatPrice(change)) : formatPrice(0)}</p>
+            <p className={`text-[32px] font-semibold ${change < 0 && received ? "text-brick-text" : "text-brick-text"}`}>{received ? (change < 0 ? "chybí " + formatPrice(-change) : formatPrice(change)) : formatPrice(0)}</p>
           </div>
         </div>
       )}
@@ -1145,7 +1145,7 @@ function TodayTab({ manager, userId, onStorno, refreshKey }: { manager: boolean;
                 <span>{POS_PAYMENT_LABEL[s.payment]}</span>
                 {s.customers && <span className="text-muted">{s.customers.name}</span>}
                 {s.order_id && <span className="text-muted">výdej objednávky</span>}
-                <span className={`ml-auto font-display text-[18px] font-semibold ${s.status === "storno" ? "text-muted line-through" : "text-green"}`}>{formatPrice(s.total_czk)}</span>
+                <span className={`ml-auto text-[18px] font-semibold ${s.status === "storno" ? "text-muted line-through" : "text-green"}`}>{formatPrice(s.total_czk)}</span>
                 <a href={`/admin/kasa/uctenka/${s.id}`} target="_blank" rel="noopener" className="text-xs text-green underline">
                   účtenka
                 </a>
@@ -1351,7 +1351,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--radius-card)] border border-line bg-paper p-3">
       <p className="label text-[11px] text-muted">{label}</p>
-      <p className="font-display text-[24px] font-semibold text-green">{value}</p>
+      <p className="text-[24px] font-semibold text-green">{value}</p>
     </div>
   );
 }

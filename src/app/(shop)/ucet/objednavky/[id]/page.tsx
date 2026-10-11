@@ -60,7 +60,7 @@ export default async function CustomerOrderPage({ params }: { params: Promise<{ 
             <span>Doprava</span>
             <span>{o.shipping_czk === 0 ? "zdarma" : formatPrice(o.shipping_czk)}</span>
           </li>
-          <li className="flex justify-between gap-3 p-3 font-display text-[18px] font-semibold">
+          <li className="flex justify-between gap-3 p-3 text-[18px] font-semibold">
             <span>Celkem</span>
             <span>{formatPrice(o.total_czk)}</span>
           </li>

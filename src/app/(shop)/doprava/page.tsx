@@ -31,7 +31,7 @@ export default async function ShippingPage() {
           {SHIPPING.map((s) => (
             <div key={s.id} className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
               <h2 className="text-[19px]">{s.name}</h2>
-              <p className="mt-1 font-display text-[19px] font-semibold">
+              <p className="mt-1 text-[19px] font-semibold">
                 {s.priceCzk === 0 ? "zdarma" : formatPrice(s.priceCzk)}
               </p>
               <p className="mt-2 text-sm text-muted">

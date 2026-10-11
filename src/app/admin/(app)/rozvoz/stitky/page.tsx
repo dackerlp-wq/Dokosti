@@ -69,7 +69,7 @@ export default async function LabelsPage({ searchParams }: { searchParams: Promi
             return (
               <div key={o.id} className="break-inside-avoid rounded-[var(--radius-card)] border border-line bg-white p-4 text-[13px] print:rounded-none print:border-dashed print:border-ink">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-display text-[22px] font-semibold leading-tight">{o.customer_name}</p>
+                  <p className="text-[22px] font-semibold leading-tight">{o.customer_name}</p>
                   <p className="label shrink-0 text-[10px] text-muted">{o.order_number}</p>
                 </div>
                 <p className="mt-1 text-[15px]">{o.customer_phone}</p>

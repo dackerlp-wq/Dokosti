@@ -1,63 +1,25 @@
 @import "tailwindcss";
-
-/* Tokeny značky podle BRAND.md */
-@theme {
-  --color-*: initial;
-  --color-white: #ffffff;
-  --color-green: #1f3a2d;
-  --color-green-hover: #2b4d3c;
-  --color-cream: #f3ecdd;
-  --color-paper: #fbf7ee;
-  --color-brick: #b5532f;
-  --color-brick-text: #9c4424;
-  --color-ink: #24221f;
-  --color-muted: #55645a;
-  --color-line: #d9cfb8;
-  --color-ochre: #c8892b;
-  --color-ochre-badge: #e9c98f;
-  --color-olive: #7a8c3a;
-
-  --font-display: var(--font-display), Georgia, serif;
-  --font-label: var(--font-label), Arial, sans-serif;
-  --font-body: var(--font-body), Arial, sans-serif;
-
-  --radius-control: 6px;
-  --radius-card: 12px;
-}
+/* Tokeny e-shopu: barvy, rohy, stíny, zlomy, velikosti písma a základní styl těla stránky (design/DESIGN.md). */
+@import "../../design/dokosti-theme.css";
 
 @layer base {
   html {
-    background: var(--color-cream);
-    color: var(--color-ink);
-    font-family: var(--font-body);
-    font-size: 15px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    height: 100%;
   }
 
-  @media (min-width: 768px) {
-    html {
-      font-size: 16px;
-    }
-  }
-
-  body {
-    background: var(--color-cream);
-  }
-
+  /* Nadpisy jsou Montserrat v zelené. Ruční písmo (Amatic SC) má jen `font-display` s `text-display-*`. */
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
-    font-optical-sizing: auto;
-    font-weight: 600;
+    color: var(--color-green);
+    font-weight: 700;
     line-height: 1.1;
     text-wrap: balance;
   }
 
+  /* Výchozí velikosti pro stránky, které ještě nepoužívají utility text-display-* / text-heading-*. */
   h1 {
     font-size: 32px;
-    font-weight: 800;
   }
   h2 {
     font-size: 24px;
@@ -82,16 +44,18 @@
     text-underline-offset: 3px;
   }
 
+  /* Pole: bílá, okraj muted (ne line, aby byl ovládací prvek vidět), rohy 3 px. Fokus plným obrysem. */
   input,
   select,
   textarea {
-    background: var(--color-paper);
-    border: 1px solid var(--color-line);
+    background: var(--color-white);
+    border: 1px solid var(--color-muted);
     border-radius: var(--radius-control);
     color: var(--color-ink);
     font: inherit;
+    line-height: 1.4;
     min-height: 40px;
-    padding: 0 10px;
+    padding: 0 12px;
     width: 100%;
   }
 
@@ -99,15 +63,25 @@
   select:focus-visible,
   textarea:focus-visible {
     border-color: var(--color-green);
-    box-shadow: inset 0 0 0 1px var(--color-green);
-    outline: none;
+    outline: 2px solid var(--color-green);
+    outline-offset: 0;
   }
 
   textarea {
     padding: 10px 12px;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
 }
 
+/* Drobný popisek verzálkami. V e-shopu jen pro nadtitulky použij raději `text-eyebrow uppercase`; administrace ho používá dál. */
 @utility label {
   font-family: var(--font-label);
   font-size: 12px;
@@ -116,15 +90,12 @@
   text-transform: uppercase;
 }
 
+/* Obsah stránky: 1200 px se 20px okraji (totéž co `mx-auto max-w-site px-5`). */
 @utility container-dk {
   margin-inline: auto;
-  max-width: 1080px;
-  padding-inline: 16px;
+  max-width: calc(var(--container-site) + 2 * 20px);
+  padding-inline: 20px;
   width: 100%;
-
-  @media (min-width: 768px) {
-    padding-inline: 24px;
-  }
 }
 
 /* Tisk dokladů a štítků: jen obsah, bez menu administrace. */

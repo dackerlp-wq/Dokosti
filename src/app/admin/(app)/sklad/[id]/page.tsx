@@ -280,7 +280,7 @@ function Stat({ label, value, sub, warn, small }: { label: string; value: string
   return (
     <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
       <p className="label text-[11px] text-muted">{label}</p>
-      <p className={`font-display font-semibold ${small ? "text-[18px]" : "text-[24px]"} ${warn ? "text-brick-text" : ""}`}>{value}</p>
+      <p className={`font-semibold ${small ? "text-[18px]" : "text-[24px]"} ${warn ? "text-brick-text" : ""}`}>{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
     </div>
   );

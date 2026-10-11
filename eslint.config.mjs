@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Referenční komponenty design systému, nejsou součástí aplikace.
+    "design/**",
   ]),
 ]);
 

@@ -15,3 +15,11 @@ export function maxQty(p: Pick<Product, "inStock" | "stockQty">): number {
   if (!p.inStock) return 0;
   return p.stockQty === null || p.stockQty === undefined ? Infinity : Math.max(0, Math.floor(p.stockQty));
 }
+
+/** Stav skladu pro komponentu StockStatus (skladem / poslední kusy / naskladňujeme). */
+export function stockState(p: Pick<Product, "inStock" | "stockQty" | "unit">): { state: "in" } | { state: "low"; left: number } | { state: "out" } {
+  const s = stockLabel(p);
+  if (s.kind === "neni") return { state: "out" };
+  if (s.kind === "posledni") return { state: "low", left: Math.max(1, Math.floor(p.stockQty ?? 1)) };
+  return { state: "in" };
+}

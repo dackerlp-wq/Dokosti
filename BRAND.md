@@ -1,5 +1,8 @@
 # DoKosti BARF – brand reference
 
+> Pro vzhled e-shopu platí `design/DESIGN.md` a `design/BRAND-MANUAL.md` (bílá stránka, Amatic SC + Montserrat, rohy 3 px).
+> Tento soubor zůstává jako reference k názvu, logu a souborům značky; kde se liší, platí `design/`.
+
 Kamenná prodejna a e-shop se syrovým krmivem (BARF) pro psy a kočky.
 Zakladatelé: Dvořák a Kostová (odtud "DoKosti" a monogram "DK").
 Značka prodává hotové balené krmivo od výrobců, nevyrábí vlastní.

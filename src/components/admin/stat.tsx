@@ -6,7 +6,7 @@ export function Stat({ label, value, sub, href, warn, small }: { label: string; 
   const body = (
     <>
       <p className={`label text-[11px] ${warn ? "text-brick-text" : "text-muted"}`}>{label}</p>
-      <p className={`font-display font-semibold leading-tight ${small ? "text-[20px]" : "text-[26px]"} ${warn ? "text-brick-text" : ""}`}>{value}</p>
+      <p className={`font-semibold leading-tight ${small ? "text-[20px]" : "text-[26px]"} ${warn ? "text-brick-text" : ""}`}>{value}</p>
       {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
     </>
   );

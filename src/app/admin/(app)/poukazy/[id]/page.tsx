@@ -52,7 +52,7 @@ export default async function VoucherPage({ params }: { params: Promise<{ id: st
         <div className="flex h-full flex-col justify-between">
           <div>
             <p className="label text-[11px] text-brick-text">Dárkový poukaz</p>
-            <p className="font-display text-[44px] font-semibold leading-none text-green">{formatPrice(c.value)}</p>
+            <p className="text-[44px] font-semibold leading-none text-green">{formatPrice(c.value)}</p>
             {c.recipient && <p className="mt-2 text-[15px]">{c.recipient}</p>}
           </div>
           <div>
@@ -67,7 +67,7 @@ export default async function VoucherPage({ params }: { params: Promise<{ id: st
             <p className="shrink-0 text-right">
               {c.valid_to ? `Platí do ${formatDay(c.valid_to)}` : "Bez omezení"}
               <br />
-              <span className="font-display text-[16px] font-semibold text-green">{settings.shop.name}</span>
+              <span className="text-[16px] font-semibold text-green">{settings.shop.name}</span>
             </p>
           </div>
         </div>

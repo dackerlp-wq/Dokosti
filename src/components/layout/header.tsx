@@ -1,61 +1,37 @@
-import { Calculator, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { AccountLink } from "@/components/layout/account-link";
 import { CartLink } from "@/components/cart/cart-link";
 import { CategoryMenu } from "@/components/layout/category-menu";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { SearchBox } from "@/components/layout/search-box";
 import { Logo } from "@/components/ui/logo";
-import type { Product } from "@/lib/catalog";
 import type { MenuLine } from "@/lib/menu";
-import { PAGE_NAV } from "@/lib/site";
 
 /**
- * Hlavička ve dvou řádcích: nahoře logo, hledání, účet a košík s odkazy na ostatní
- * stránky; pod tím lišta s řadami produktů. Na mobilu se vše skládá do menu.
+ * Bílá hlavička 60 px se stínem: nápis s kostí (44 px), řady produktů s mega menu a Krmení na míru,
+ * vpravo hledání, účet a košík. Pod 992 px se navigace schová do bočního panelu zprava.
  */
-export function Header({ products, menu }: { products: Product[]; menu: MenuLine[] }) {
+export function Header({ menu }: { menu: MenuLine[] }) {
   return (
-    <header className="relative border-b border-line bg-paper">
-      <div className="container-dk flex min-h-16 items-center gap-3 py-2 md:gap-6">
+    <header className="relative z-30 bg-white shadow-header">
+      <div className="mx-auto flex h-15 max-w-site items-center gap-5 px-5 lg:gap-7.5">
         <Link href="/" className="shrink-0" aria-label="DoKosti BARF, úvodní stránka">
-          {/* Barevné logo bez podtitulu (min. 150 px). Na mobilu jen nápis s kostí. */}
-          <span className="hidden md:block">
-            <Logo variant="bez-podtitulu" width={150} priority />
-          </span>
-          <span className="md:hidden">
-            <Logo variant="napis" width={110} priority />
-          </span>
+          {/* Nápis s kostí bez řádku BARF, výška 44 px (poměr 689:250). */}
+          <Logo variant="napis" width={121} priority className="h-11 w-auto" />
         </Link>
 
-        <SearchBox products={products} className="hidden flex-1 md:block md:max-w-md" />
-
-        <nav className="ml-auto hidden items-center gap-0.5 lg:flex" aria-label="Stránky">
-          {PAGE_NAV.map((item) => (
-            <Link key={item.href} href={item.href} className="inline-flex min-h-10 items-center whitespace-nowrap rounded-[var(--radius-control)] px-2 text-sm text-muted hover:bg-cream hover:text-ink">
-              {item.label}
-            </Link>
-          ))}
+        <nav className="hidden flex-1 lg:block" aria-label="Nabídka">
+          <CategoryMenu menu={menu} />
         </nav>
 
-        <div className="ml-auto flex items-center gap-0.5 lg:ml-0">
-          <Link href="/hledat" aria-label="Hledat" className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-[var(--radius-control)] text-green hover:bg-cream md:hidden">
-            <Search strokeWidth={1.75} className="h-5 w-5" />
+        <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:gap-2.5">
+          <Link href="/hledat" aria-label="Hledat" className="inline-flex size-10 items-center justify-center text-green transition-colors duration-300 hover:text-brick-text">
+            <Search strokeWidth={1.75} className="size-6" aria-hidden />
           </Link>
           <AccountLink />
           <CartLink />
           <MobileNav menu={menu.map((l) => ({ href: l.href, label: l.name, meats: l.meats.map((m) => ({ key: m.key, label: m.label })) }))} />
         </div>
-      </div>
-
-      <div className="hidden border-t border-line lg:block">
-        <nav className="container-dk flex items-center gap-1" aria-label="Řady produktů">
-          <CategoryMenu menu={menu} />
-          <Link href="/krmeni-na-miru" className="label ml-auto inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap px-3 text-brick-text hover:text-green">
-            <Calculator strokeWidth={1.75} className="h-4 w-4" />
-            Krmení na míru
-          </Link>
-        </nav>
       </div>
     </header>
   );

@@ -169,7 +169,7 @@ function Stat({ label, value, sub, warn, href }: { label: string; value: string;
   const body = (
     <>
       <p className="label text-[11px] text-muted">{label}</p>
-      <p className={`font-display text-[24px] font-semibold ${warn ? "text-brick-text" : ""}`}>{value}</p>
+      <p className={`text-[24px] font-semibold ${warn ? "text-brick-text" : ""}`}>{value}</p>
       {sub && <p className="text-xs text-muted">{sub}</p>}
     </>
   );

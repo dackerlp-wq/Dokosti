@@ -276,7 +276,7 @@ export default async function HowToStartPage() {
         <div className="grid gap-3 md:grid-cols-2">
           {FAQ.map(([q, a]) => (
             <details key={q} className="group rounded-[var(--radius-card)] border border-line bg-cream p-4">
-              <summary className="cursor-pointer font-display text-[17px] font-semibold marker:text-brick-text">{q}</summary>
+              <summary className="cursor-pointer text-[17px] font-semibold marker:text-brick-text">{q}</summary>
               <p className="mt-2 text-sm text-muted">{a}</p>
             </details>
           ))}

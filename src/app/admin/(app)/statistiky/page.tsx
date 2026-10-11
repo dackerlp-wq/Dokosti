@@ -150,7 +150,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
       <p className="label text-[11px] text-muted">{label}</p>
-      <p className="font-display text-[24px] font-semibold">{value}</p>
+      <p className="text-[24px] font-semibold">{value}</p>
     </div>
   );
 }

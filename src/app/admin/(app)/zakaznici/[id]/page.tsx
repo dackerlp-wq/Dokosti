@@ -79,7 +79,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
                 {c.orders_count} objednávek · {formatPrice(c.total_spent_czk)}
               </p>
               <p className="text-muted">Zákazník od {formatDate(c.created_at)}</p>
-              <p className="mt-2 font-display text-[22px] font-semibold">{c.points} Kostiček</p>
+              <p className="mt-2 text-[22px] font-semibold">{c.points} Kostiček</p>
             </div>
             <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm sm:col-span-2">
               <p className="label mb-1 text-[11px] text-muted">Klub</p>

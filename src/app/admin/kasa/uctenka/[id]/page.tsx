@@ -46,7 +46,7 @@ export default async function ReceiptPage({ params, searchParams }: { params: Pr
       </div>
       <article className="receipt bg-white p-4 font-mono text-[12px] leading-snug text-ink print:p-0">
         <header className="text-center">
-          <p className="font-display text-[22px] font-bold text-green">DoKosti</p>
+          <p className="text-[22px] font-bold text-green">DoKosti</p>
           <p>{shop.name}</p>
           <p>
             {shop.address}, {shop.city}

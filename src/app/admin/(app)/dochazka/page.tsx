@@ -84,7 +84,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
           {[...summary.entries()].map(([k, s]) => (
             <div key={k} className="rounded-[var(--radius-card)] border border-line bg-paper p-3">
               <p className="label text-[11px] text-muted">{empName.get(k) ?? "bez zaměstnance"}</p>
-              <p className="font-display text-[22px] font-semibold">{fmtH(s.prace)} h</p>
+              <p className="text-[22px] font-semibold">{fmtH(s.prace)} h</p>
               <p className="text-xs text-muted">
                 {s.dovolena ? `dovolená ${fmtH(s.dovolena)} h · ` : ""}
                 {s.nemoc ? `nemoc ${fmtH(s.nemoc)} h · ` : ""}

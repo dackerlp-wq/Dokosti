@@ -74,7 +74,7 @@ export default async function ProvozPage() {
             return (
               <div key={d.id} className={`rounded-[var(--radius-card)] border bg-paper p-4 ${bad ? "border-brick" : t.length === 0 ? "border-ochre" : "border-line"}`}>
                 <p className="label text-[11px] text-muted">{d.name}</p>
-                <p className="font-display text-[26px] font-semibold">{last ? fmtT(last.value_c) : <span className="text-muted">—</span>}</p>
+                <p className="text-[26px] font-semibold">{last ? fmtT(last.value_c) : <span className="text-muted">—</span>}</p>
                 <p className="text-xs text-muted">
                   rozsah {Number(d.min_c)} až {Number(d.max_c)} °C
                   {last ? ` · ${new Date(last.measured_at).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" })} ${last.created_by_name}` : ""}

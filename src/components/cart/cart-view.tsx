@@ -20,10 +20,12 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
 
   if (items.length === 0) {
     return (
-      <div className="rounded-[var(--radius-card)] border border-line bg-paper p-8 text-center">
+      <div className="rounded-card border border-line bg-white p-8 text-center">
         <p className="text-muted">V košíku zatím nic není.</p>
         <div className="mt-6">
-          <ButtonLink href="/rada/barf">Vybrat krmivo</ButtonLink>
+          <ButtonLink href="/rada/barf" variant="action" size="md">
+            Vybrat krmivo
+          </ButtonLink>
         </div>
       </div>
     );
@@ -33,7 +35,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-      <ul className="divide-y divide-line rounded-[var(--radius-card)] border border-line bg-paper">
+      <ul className="divide-y divide-line rounded-card border border-line bg-white">
         {items.map(({ product, qty }) => {
           const limit = maxQty(product);
           return (
@@ -42,7 +44,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
               <ProductImage product={product} sizes="96px" />
             </Link>
             <div>
-              <h3 className="text-[17px]">
+              <h3 className="text-heading-md font-bold">
                 <Link href={`/produkt/${product.slug}`} className="hover:underline">
                   {productName(product)}
                 </Link>
@@ -54,7 +56,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
                 <QtyButton label="Ubrat" onClick={() => setQty(product.slug, qty - 1)}>
                   <Minus strokeWidth={1.75} className="h-4 w-4" />
                 </QtyButton>
-                <span className="w-8 text-center font-display font-semibold" aria-live="polite">
+                <span className="w-8 text-center font-semibold" aria-live="polite">
                   {qty}
                 </span>
                 <QtyButton label="Přidat" onClick={() => setQty(product.slug, Math.min(qty + 1, limit === Infinity ? qty + 1 : limit))} disabled={qty >= limit}>
@@ -83,7 +85,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
             ) : qty === limit ? (
               <p className="col-start-2 text-xs text-muted">Víc kusů teď skladem není.</p>
             ) : null}
-            <p className="col-start-2 font-display text-[17px] font-semibold sm:col-start-3 sm:text-right">
+            <p className="col-start-2 text-[17px] font-semibold sm:col-start-3 sm:text-right">
               {formatPrice(product.priceCzk * qty)}
             </p>
           </li>
@@ -92,7 +94,7 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
       </ul>
 
       <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5">
-        <h2 className="text-[20px]">Souhrn</h2>
+        <h2 className="text-heading-lg">Souhrn</h2>
         <dl className="mt-4 space-y-2">
           <div className="flex justify-between">
             <dt className="text-muted">Zboží</dt>
@@ -109,8 +111,8 @@ export function CartView({ freeDeliveryFromCzk, catalog }: { freeDeliveryFromCzk
           </p>
         )}
         <div className="mt-6">
-          <ButtonLink href="/pokladna" className="w-full">
-            Pokračovat k dodání
+          <ButtonLink href="/pokladna" variant="action" size="md" className="w-full">
+            Pokračovat k dopravě
           </ButtonLink>
         </div>
         <p className="mt-3 text-center text-sm text-muted">
@@ -156,7 +158,7 @@ function QtyButton({ label, onClick, disabled = false, children }: { label: stri
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-line bg-cream text-green hover:border-green disabled:opacity-40"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-control border border-muted bg-paper text-green hover:bg-cream disabled:opacity-40"
     >
       {children}
     </button>

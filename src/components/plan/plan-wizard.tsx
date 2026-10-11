@@ -245,7 +245,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           <div className="grid grid-cols-2 gap-3">
             {(["pes", "kocka"] as const).map((s) => (
               <button key={s} type="button" onClick={() => setPet({ ...pet, species: s })} aria-pressed={pet.species === s} className={opt(pet.species === s)}>
-                <span className="font-display text-lg font-semibold">{s === "pes" ? "Pes" : "Kočka"}</span>
+                <span className="text-lg font-semibold">{s === "pes" ? "Pes" : "Kočka"}</span>
               </button>
             ))}
           </div>
@@ -591,7 +591,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
                   </p>
                 </div>
               </div>
-              <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" required autoFocus aria-label="Kód z e-mailu" className="text-center font-display text-2xl tracking-[0.4em]" />
+              <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" required autoFocus aria-label="Kód z e-mailu" className="text-center text-2xl tracking-[0.4em]" />
               {error && (
                 <p role="alert" className="text-sm text-brick-text">
                   {error}
@@ -754,7 +754,7 @@ function PlanStep({
 
       <aside className="h-fit rounded-[var(--radius-card)] border border-line bg-paper p-5 lg:sticky lg:top-4">
         <p className="label text-[11px] text-muted">Cena za den</p>
-        <p className="font-display text-[44px] font-semibold leading-none">{formatPrice(plan.perDayCzk)}</p>
+        <p className="text-[44px] font-semibold leading-none">{formatPrice(plan.perDayCzk)}</p>
         <p className="mt-1 text-xs text-muted">
           {formatPrice(plan.totalCzk)} za dodávku na {days === 14 ? "2 týdny" : "4 týdny"}
           {delivery === "rozvoz" ? (shipFree ? " · rozvoz zdarma" : ` · rozvoz ${formatPrice(shipping.rozvozPriceCzk)}`) : " · odběr v prodejně zdarma"}

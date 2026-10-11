@@ -3,79 +3,60 @@ import { Logo } from "@/components/ui/logo";
 import { getSettings } from "@/lib/settings";
 import { CATEGORY_NAV, SITE } from "@/lib/site";
 
+const SERVICE_NAV = [
+  { href: "/jak-zacit-s-barfem", label: "Jak začít s BARFem" },
+  { href: "/kalkulacka", label: "Kalkulačka dávky" },
+  { href: "/doprava", label: "Doprava a platba" },
+  { href: "/o-nas", label: "O nás" },
+  { href: "/kontakt", label: "Kontakt" },
+  { href: "/ucet", label: "Můj účet" },
+  { href: "/obchodni-podminky", label: "Obchodní podmínky" },
+  { href: "/ochrana-udaju", label: "Ochrana údajů" },
+];
+
+/** Nízká zelená patička bez sloupců: řádek řad, řádek servisních odkazů, spodní pruh s logem, telefonem a copyrightem. */
 export async function Footer() {
   const { shop } = await getSettings();
+  const phone = shop.phone.startsWith("[") ? null : shop.phone;
+  const address = shop.address.startsWith("[") ? shop.city : `${shop.address}, ${shop.city}`;
   return (
-    <footer className="mt-12 bg-green text-cream">
-      <div className="container-dk grid gap-8 py-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div>
-          <Logo variant="negativ" width={180} />
-          <p className="mt-4 max-w-xs text-sm text-cream/80">
-            Kamenná prodejna a e-shop se syrovým krmivem pro psy a kočky. Kladno.
-          </p>
-        </div>
-
-        <FooterCol title="Nabídka">
+    <footer className="mt-auto bg-green px-5 pt-6.5 pb-5 text-center text-cream">
+      <div className="mx-auto max-w-site">
+        <ul className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-[16px] font-semibold">
           {CATEGORY_NAV.map((i) => (
-            <FooterLink key={i.href} href={i.href}>
-              {i.label}
-            </FooterLink>
+            <li key={i.href}>
+              <Link href={i.href} className="hover:underline">
+                {i.label}
+              </Link>
+            </li>
           ))}
-        </FooterCol>
-
-        <FooterCol title="Prodejna">
-          <address className="not-italic text-sm text-cream/80">
-            {shop.address}, {shop.city}
-            <br />
-            {shop.phone}
-            <br />
-            {shop.email}
-          </address>
-          <ul className="mt-3 text-sm text-cream/80">
-            {shop.openingHours.map((o) => (
-              <li key={o.days}>
-                {o.days} {o.hours}
-              </li>
-            ))}
-          </ul>
-        </FooterCol>
-
-        <FooterCol title="Informace">
-          <FooterLink href="/jak-zacit-s-barfem">Jak začít s BARFem</FooterLink>
-          <FooterLink href="/krmeni-na-miru">Krmení na míru</FooterLink>
-          <FooterLink href="/kalkulacka">Kalkulačka dávky</FooterLink>
-          <FooterLink href="/doprava">Doprava a platba</FooterLink>
-          <FooterLink href="/o-nas">O nás</FooterLink>
-          <FooterLink href="/kontakt">Kontakt</FooterLink>
-          <FooterLink href="/obchodni-podminky">Obchodní podmínky</FooterLink>
-          <FooterLink href="/ochrana-udaju">Ochrana údajů</FooterLink>
-        </FooterCol>
-      </div>
-      <div className="border-t border-green-hover">
-        <div className="container-dk flex flex-col gap-2 py-3 text-xs text-cream/70 md:flex-row md:justify-between">
+          <li>
+            <Link href="/krmeni-na-miru" className="hover:underline">
+              Krmení na míru
+            </Link>
+          </li>
+        </ul>
+        <ul className="mt-2.5 flex flex-wrap justify-center gap-x-4 gap-y-1 text-small font-semibold text-cream/90">
+          {SERVICE_NAV.map((i) => (
+            <li key={i.href}>
+              <Link href={i.href} className="hover:underline">
+                {i.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5 flex flex-col items-center justify-center gap-3 border-t border-green-hover pt-5 text-small md:flex-row md:gap-5">
+          <Logo variant="napis-negativ" width={96} />
+          {phone && (
+            <a href={`tel:${phone.replace(/\s+/g, "")}`} className="rounded-control bg-cream px-2.5 py-1.25 font-semibold text-green hover:bg-paper">
+              {phone}
+            </a>
+          )}
           <span>
-            © {new Date().getFullYear()} {SITE.name} · IČO {shop.ico}
+            © {new Date().getFullYear()} {SITE.name} · {address} · IČO {shop.ico}
           </span>
-          <span className="font-display">{SITE.slogan}</span>
         </div>
       </div>
     </footer>
-  );
-}
-
-function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h2 className="label mb-3 font-label text-[14px] text-cream/90">{title}</h2>
-      <div className="flex flex-col gap-1">{children}</div>
-    </div>
-  );
-}
-
-function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="text-sm text-cream/80 hover:text-cream hover:underline">
-      {children}
-    </Link>
   );
 }

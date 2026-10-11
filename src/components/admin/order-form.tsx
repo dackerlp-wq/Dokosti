@@ -284,7 +284,7 @@ export function OrderForm({ products, shipping: SHIPPING, deliveryDays, loyalty,
           <Row k="Doprava" v={shipCzk === 0 ? "zdarma" : formatPrice(shipCzk)} />
           <div className="flex justify-between border-t border-line pt-2 text-base font-semibold">
             <dt>Celkem</dt>
-            <dd className="font-display text-[22px] text-green">{formatPrice(Math.max(0, total))}</dd>
+            <dd className="text-[22px] text-green">{formatPrice(Math.max(0, total))}</dd>
           </div>
         </dl>
         <label className="flex items-center gap-2 text-sm">

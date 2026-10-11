@@ -1,26 +1,22 @@
 import type { Metadata } from "next";
-import { Archivo, Archivo_Narrow, Fraunces } from "next/font/google";
+import { Amatic_SC, Montserrat } from "next/font/google";
 import { CookieConsent } from "@/components/layout/cookie-consent";
 import { SITE_URL } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
-const fraunces = Fraunces({
+// Amatic SC: jen titulky (H1, titulek sekce). Montserrat: všechno ostatní. Viz design/fonts.ts.
+const amatic = Amatic_SC({
+  weight: "700",
   subsets: ["latin", "latin-ext"],
-  weight: ["600", "800"],
-  variable: "--font-display",
+  variable: "--font-amatic",
+  display: "swap",
 });
 
-const archivoNarrow = Archivo_Narrow({
+const montserrat = Montserrat({
   subsets: ["latin", "latin-ext"],
-  weight: ["500", "600"],
-  variable: "--font-label",
-});
-
-const archivo = Archivo({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "600"],
-  variable: "--font-body",
+  variable: "--font-montserrat",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="cs"
-      className={`${fraunces.variable} ${archivoNarrow.variable} ${archivo.variable} h-full`}
+      className={`${amatic.variable} ${montserrat.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
         {children}

@@ -40,11 +40,11 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
       <article className="rounded-[var(--radius-card)] border border-line bg-white p-8 text-[13px] leading-snug text-ink print:border-0 print:p-0">
         <header className="flex items-start justify-between gap-6 border-b border-line pb-4">
           <div>
-            <p className="font-display text-[26px] font-bold text-green">DoKosti</p>
+            <p className="text-[26px] font-bold text-green">DoKosti</p>
             <p className="label text-[10px] text-muted">BARF · krmivo pro psy a kočky</p>
           </div>
           <div className="text-right">
-            <p className="font-display text-[20px] font-semibold">{vat ? "Faktura – daňový doklad" : "Doklad o prodeji"}</p>
+            <p className="text-[20px] font-semibold">{vat ? "Faktura – daňový doklad" : "Doklad o prodeji"}</p>
             <p className="text-[15px]">č. {o.invoice_number ?? "—"}</p>
           </div>
         </header>
@@ -150,7 +150,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 </p>
               </div>
             ))}
-          <p className="flex justify-between font-display text-[18px] font-semibold">
+          <p className="flex justify-between text-[18px] font-semibold">
             <span>Celkem k úhradě</span>
             <span>{formatPrice(o.total_czk)}</span>
           </p>
@@ -159,7 +159,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         <footer className="mt-8 border-t border-line pt-3 text-[11px] text-muted">
           {shop.name} · {shop.phone} · {shop.email}
           {!vat && " · Dodavatel není plátcem DPH."}
-          <span className="float-right font-display">Poctivé do kosti.</span>
+          <span className="float-right">Poctivé do kosti.</span>
         </footer>
       </article>
     </div>

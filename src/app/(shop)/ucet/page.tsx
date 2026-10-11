@@ -117,7 +117,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <p className="label text-[11px] text-muted">Kostičky</p>
-          <p className="font-display text-[28px] font-semibold">{c?.points ?? 0}</p>
+          <p className="text-[28px] font-semibold">{c?.points ?? 0}</p>
           {L.enabled && (
             <p className="text-xs text-muted">
               1 za každých {L.czkPerPoint} Kč, {L.redeemStep} = {formatPrice(L.redeemValueCzk)}. Uplatníte v pokladně.
@@ -126,7 +126,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4">
           <p className="label text-[11px] text-muted">Objednávek</p>
-          <p className="font-display text-[28px] font-semibold">{c?.orders_count ?? list.length}</p>
+          <p className="text-[28px] font-semibold">{c?.orders_count ?? list.length}</p>
           <p className="text-xs text-muted">celkem {formatPrice(c?.total_spent_czk ?? 0)}</p>
         </div>
         <div className="rounded-[var(--radius-card)] border border-line bg-paper p-4 text-sm">
@@ -174,7 +174,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-display font-semibold">{formatPrice(o.total_czk)}</span>
+                <span className="font-semibold">{formatPrice(o.total_czk)}</span>
                 <StatusBadge status={o.status} />
               </div>
             </li>

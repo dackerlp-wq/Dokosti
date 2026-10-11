@@ -1,56 +1,68 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { AddToCartButton } from "@/components/cart/add-to-cart-button";
+import { Clock } from "lucide-react";
+import { CardBuy } from "@/components/cart/card-buy";
 import { ProductImage } from "@/components/product/product-image";
-import { LINE_INFO, STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
+import { Flag, StockStatus } from "@/components/ui/badge";
+import { STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
-import { stockLabel } from "@/lib/stock";
+import { stockState } from "@/lib/stock";
 
-export function ProductCard({ product }: { product: Product }) {
+/**
+ * Karta produktu podle design/components/product-card.tsx: bílá s linkou, fotka 200 px vyříznutá,
+ * praporky přilepené vlevo, cena vlevo dole, množství a Do košíku vpravo dole. Horní část karty je odkaz na detail.
+ */
+export function ProductCard({ product, priority }: { product: Product; priority?: boolean }) {
   const href = `/produkt/${product.slug}`;
   const onSale = product.originalPriceCzk !== undefined && product.originalPriceCzk > product.priceCzk;
-  const stock = stockLabel(product);
+  const stock = stockState(product);
+  const unavailable = stock.state === "out";
+  const byWeight = product.unit === "kg";
+  const flags = [product.isNew ? ("new" as const) : null, onSale ? ("sale" as const) : null].filter((f): f is "new" | "sale" => f !== null);
 
   return (
-    <article className="flex flex-col rounded-[var(--radius-card)] border border-line bg-paper p-2.5">
-      <Link href={href} className="relative block">
-        <ProductImage product={product} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" />
-        {(product.isNew || onSale) && (
-          <div className="absolute left-2 top-2 flex gap-1.5">
-            {product.isNew && <Badge kind="novinka">Novinka</Badge>}
-            {onSale && <Badge kind="sleva">Sleva</Badge>}
-          </div>
-        )}
-      </Link>
+    <article className="group relative flex w-full flex-col rounded-card border border-line bg-white text-left shadow-card transition-[border-color,box-shadow] duration-300 ease-in-out hover:border-brick hover:shadow-card-hover">
+      {unavailable && (
+        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center gap-3.5 rounded-card bg-overlay pt-20 text-center text-price text-white" aria-hidden>
+          <Clock className="size-14" strokeWidth={1.25} />
+          Naskladňujeme
+        </div>
+      )}
 
-      <div className="flex flex-1 flex-col gap-0.5 pt-3">
-        <span className="label text-brick-text">
-          {LINE_INFO[product.line].name} <span className="text-muted">· {STORAGE_LABEL[product.storage]}</span>
-        </span>
-        <h3 className="text-[17px] md:text-[18px]">
-          <Link href={href} className="hover:underline">
+      {flags.length > 0 && (
+        <div className="absolute top-7.5 -left-px z-20 grid justify-items-start gap-1.25">
+          {flags.map((kind) => (
+            <Flag key={kind} kind={kind} />
+          ))}
+        </div>
+      )}
+
+      <div className="mx-5 mt-5">
+        <ProductImage product={product} sizes="(min-width: 62rem) 380px, (min-width: 30rem) 50vw, 100vw" priority={priority} />
+      </div>
+
+      <div className="flex flex-1 flex-col px-5 pt-6 pb-5">
+        <h3 className="mb-2.5 line-clamp-2 text-heading-md text-green">
+          {/* after: roztáhne odkaz přes fotku a text, patička s nákupem zůstává nad ním */}
+          <Link href={href} className="transition-colors duration-300 after:absolute after:inset-x-0 after:top-0 after:bottom-20 after:z-10 group-hover:text-brick-text">
             {productName(product)}
           </Link>
         </h3>
-        <p className="text-xs text-muted">
-          {product.unit === "kg" ? "na váhu, jen v prodejně" : formatWeight(product.weightGrams)}
-          <span className={`ml-2 ${stock.kind === "skladem" ? "text-green" : stock.kind === "posledni" ? "text-brick-text" : "text-muted"}`}>· {stock.text}</span>
+        <p className="mb-1.25 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-small">
+          <span>{byWeight ? "na váhu" : formatWeight(product.weightGrams)}</span>
+          <span>{STORAGE_LABEL[product.storage]}</span>
+          <StockStatus stock={stock} />
         </p>
-        <p className="mt-auto pt-2 font-display text-[18px] font-semibold">
-          {onSale && (
-            <span className="mr-2 text-sm font-normal text-muted line-through">
-              {formatPrice(product.originalPriceCzk!)}
-            </span>
-          )}
-          <span className={onSale ? "text-brick-text" : ""}>{formatPrice(product.priceCzk)}</span>
-          {product.unit === "kg" && <span className="text-sm font-normal text-muted">/kg</span>}
-        </p>
-        <div className="pt-2">
-          {product.unit === "kg" ? (
-            <p className="label inline-flex min-h-10 w-full items-center justify-center rounded-[var(--radius-control)] border border-line text-[11px] text-muted">V prodejně na váhu</p>
-          ) : (
-            <AddToCartButton product={product} className="w-full" />
-          )}
+        {product.intro && <p className="mb-1.25 line-clamp-3 text-small">{product.intro}</p>}
+
+        <div className="mt-auto flex items-end justify-between gap-2.5 pt-2.5">
+          <div>
+            <div className="text-label whitespace-nowrap text-muted">{onSale ? <s className="font-normal">{formatPrice(product.originalPriceCzk!)}</s> : "Cena:"}</div>
+            <div className={`text-price whitespace-nowrap ${onSale ? "text-brick-text" : "text-green"}`}>
+              {formatPrice(product.priceCzk)}
+              {byWeight && <span className="text-small font-normal text-muted">/kg</span>}
+            </div>
+          </div>
+          {byWeight ? <p className="relative z-20 text-small text-muted">V prodejně na váhu</p> : <CardBuy product={product} />}
         </div>
       </div>
     </article>

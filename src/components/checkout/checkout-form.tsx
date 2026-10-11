@@ -159,7 +159,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
     <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-8">
         <fieldset>
-          <legend className="mb-3 text-[20px] font-display font-semibold">Způsob dodání</legend>
+          <legend className="mb-3 text-[20px] font-semibold">Způsob dodání</legend>
           <div className="space-y-2">
             {SHIPPING.map((s) => (
               <RadioCard
@@ -184,7 +184,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
         {shipping === "rozvoz" && deliveryDays.length > 0 && (
           <fieldset>
-            <legend className="mb-3 text-[20px] font-display font-semibold">Den rozvozu</legend>
+            <legend className="mb-3 text-[20px] font-semibold">Den rozvozu</legend>
             <div className="flex flex-wrap gap-2">
               {deliveryDays.map((d) => {
                 const date = new Date(d + "T12:00:00");
@@ -210,7 +210,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
         {subscription.enabled && (
           <fieldset>
-            <legend className="mb-1 text-[20px] font-display font-semibold">Pravidelně?</legend>
+            <legend className="mb-1 text-[20px] font-semibold">Pravidelně?</legend>
             <p className="mb-3 text-sm text-muted">
               Stejný nákup vám pošleme znovu{subscription.discountPct > 0 ? ` a dáme ${subscription.discountPct} % slevu na zboží` : ""}
               {subscription.pointsBonusPct > 0 ? ` a za každou dodávku připíšeme Kostičky navíc v hodnotě ${subscription.pointsBonusPct} % nákupu` : ""}. Platíte za každou dodávku zvlášť, kdykoli ji přeskočíte nebo zrušíte.
@@ -261,7 +261,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         )}
 
         <fieldset>
-          <legend className="mb-3 text-[20px] font-display font-semibold">Platba</legend>
+          <legend className="mb-3 text-[20px] font-semibold">Platba</legend>
           <div className="space-y-2">
             {paymentOptions.map((p) => (
               <RadioCard
@@ -277,7 +277,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-[20px] font-display font-semibold">Kontakt</legend>
+          <legend className="mb-3 text-[20px] font-semibold">Kontakt</legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Jméno a příjmení" name="name" autoComplete="name" required defaultValue={prefill?.name} />
             <Field label="Telefon" name="phone" type="tel" autoComplete="tel" required defaultValue={prefill?.phone} />
@@ -300,7 +300,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
 
         {needsAddress && (
           <fieldset>
-            <legend className="mb-3 text-[20px] font-display font-semibold">Adresa doručení</legend>
+            <legend className="mb-3 text-[20px] font-semibold">Adresa doručení</legend>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Ulice a číslo" name="street" autoComplete="street-address" required className="sm:col-span-2" defaultValue={prefill?.street} />
               <Field label="Město" name="city" autoComplete="address-level2" required defaultValue={prefill?.city} />
@@ -310,7 +310,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
         )}
 
         <fieldset>
-          <legend className="mb-3 text-[20px] font-display font-semibold">Sleva</legend>
+          <legend className="mb-3 text-[20px] font-semibold">Sleva</legend>
           <div className="space-y-4">
             <div>
               <label htmlFor="coupon" className="label mb-1 block text-[11px] text-muted">
@@ -422,7 +422,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             <dt className="text-muted">Doprava</dt>
             <dd>{shippingCzk === 0 ? "zdarma" : formatPrice(shippingCzk)}</dd>
           </div>
-          <div className="flex justify-between font-display text-[19px] font-semibold">
+          <div className="flex justify-between text-[19px] font-semibold">
             <dt>Celkem</dt>
             <dd>{formatPrice(totalCzk)}</dd>
           </div>

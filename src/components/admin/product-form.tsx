@@ -296,12 +296,12 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
                 {preview.isNew && <span className="label rounded-full bg-ochre-badge px-2 py-0.5 text-[10px] text-ink">Novinka</span>}
                 {!preview.published && <span className="label rounded-full border border-line px-2 py-0.5 text-[10px] text-muted">skryté</span>}
               </div>
-              <p className="mt-1 font-display text-[20px] font-semibold leading-tight">{name}</p>
+              <p className="mt-1 text-[20px] font-semibold leading-tight">{name}</p>
               <p className="text-xs text-muted">
                 {unit === "kg" ? "na váhu" : preview.weight >= 1000 ? `${preview.weight / 1000} kg` : `${preview.weight} g`}
                 {preview.producer ? ` · ${preview.producer}` : ""}
               </p>
-              <p className="mt-2 font-display text-[22px]">
+              <p className="mt-2 text-[22px]">
                 {preview.price} Kč{unit === "kg" && <span className="text-sm">/kg</span>}
                 {unit === "ks" && preview.weight > 0 && <span className="ml-2 font-body text-xs text-muted">{Math.round((preview.price / preview.weight) * 1000)} Kč/kg</span>}
               </p>

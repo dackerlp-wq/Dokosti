@@ -260,15 +260,15 @@ export default async function AdminHome() {
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="label text-[11px] text-muted">Tržby</dt>
-                  <dd className="font-display text-[20px] font-semibold">{formatPrice(weekRevenue)}</dd>
+                  <dd className="text-[20px] font-semibold">{formatPrice(weekRevenue)}</dd>
                 </div>
                 <div>
                   <dt className="label text-[11px] text-muted">Prodejů</dt>
-                  <dd className="font-display text-[20px] font-semibold">{weekCount}</dd>
+                  <dd className="text-[20px] font-semibold">{weekCount}</dd>
                 </div>
                 <div>
                   <dt className="label text-[11px] text-muted">Průměrný nákup</dt>
-                  <dd className="font-display text-[20px] font-semibold">{weekCount ? formatPrice(Math.round(weekRevenue / weekCount)) : "–"}</dd>
+                  <dd className="text-[20px] font-semibold">{weekCount ? formatPrice(Math.round(weekRevenue / weekCount)) : "–"}</dd>
                 </div>
                 <div>
                   <dt className="label text-[11px] text-muted">Nejprodávanější v kase</dt>

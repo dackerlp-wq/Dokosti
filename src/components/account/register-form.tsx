@@ -112,7 +112,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         <div className="flex items-start gap-3">
           <MailCheck strokeWidth={1.75} className="mt-0.5 h-6 w-6 shrink-0 text-green" />
           <div>
-            <p className="font-display text-lg font-semibold">Opište kód z e-mailu</p>
+            <p className="text-lg font-semibold">Opište kód z e-mailu</p>
             <p className="mt-1 text-sm">
               Na <strong>{stage.email}</strong> jsme poslali šestimístný kód. Platí několik minut.
             </p>
@@ -129,7 +129,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
             required
             autoFocus
             aria-label="Kód z e-mailu"
-            className="text-center font-display text-2xl tracking-[0.4em]"
+            className="text-center text-2xl tracking-[0.4em]"
           />
         </label>
         {error && (
