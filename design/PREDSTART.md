@@ -32,13 +32,14 @@ Sekce střídají bílou a `paper`, jedna `cream` (listina), jedna cihlová akce
 
 ### 2. Co připravujeme (paper)
 
-Titulek: **Prodejna, ne sklad.** Tři ikonové dlaždice:
+V Kladně už je specializovaná BARF prodejna a výdejní místo online e-shopu. Stránka proto neříká „syrové krmivo v Kladně“, to lidé mají. Říká, co je u nás jinak, a jen to, co platí od prvního dne. Titulek: **Prodejna, ne sklad.** Čtyři ikonové dlaždice:
 
-- **Prodejna v Kladně.** Mrazáky, váha, člověk, který syrově krmí vlastního psa. Poradíme a nepřemlouváme.
-- **Rozvoz po Kladně.** Vozíme sami v chladicím boxu, mražené dovezeme mražené. Domluvíme den a hodinu.
-- **Pět řad.** BARF mixy, Kosti, Navíc, Mlsky, Granule. Od výrobců, u kterých víme, co je v balíčku.
+- **Dovezeme až domů.** Kladno a okolí vozíme sami v chladicím boxu, mražené dovezeme mražené. Domluvíme den a hodinu, zakládající zákazníci první rok zdarma.
+- **Spočítáme a složíme.** Kalkulačka dávky podle hmotnosti, věku a kondice. V prodejně z ní rovnou složíme dodávku na čtrnáct dní.
+- **Jiní výrobci, širší řady.** Značky, které v Kladně zatím nekoupíte, a pět řad od mixů po granule. Jména doplníme, až budou smlouvy.
+- **Otevřeno, když máte čas.** [Večerní hodiny a sobota], místo [u parkoviště / na trase]. Doplnit po nalezení prostoru.
 
-Bez cen a bez názvů výrobců, dokud nejsou domluvení.
+Bez cen a bez názvů výrobců, dokud nejsou domluvení. Konkurenci nikde nejmenujeme ani nesrovnáváme.
 
 ### 3. Kalkulačka (bílá)
 
@@ -52,10 +53,12 @@ Nadtitulek: `Zakládající zákazník`. Titulek: **Prvních padesát z Kladna.*
 
 Odstavec: Prvních padesát lidí z listiny, kteří po otevření nakoupí, bere jako zakládající zákazníky. Platí to na jméno, bez časového limitu na první nákup.
 
-Co dostanou (návrh, viz poznámka níže):
+Co dostanou (odsouhlaseno):
 
 - Rozvoz po Kladně zdarma na celý první rok.
 - 15 % na první nákup.
+
+Trvalá sleva se neslibuje, zůstává v záloze pro pravidelné odběry.
 
 Formulář (6 polí, z toho 3 povinná):
 
@@ -74,7 +77,7 @@ Po odeslání: „Jste na listině jako číslo 37. Napíšeme, až budeme mít 
 
 ### 5. Kdo za tím stojí (bílá)
 
-Titulek: **Psa krmíme syrově [X] let.** Jeden odstavec za tvář značky, křestní jméno, jméno psa, plemeno, jak dlouho syrově, co je na tom vedlo k otevření prodejny. Kulatá fotka člověka se psem. Odkazy: Instagram, Facebook.
+Titulek: **[Jméno psa] jí syrově [X] let.** Odstavec (doplnit z poznámky): „Jsem [křestní jméno]. [Jméno psa], [plemeno], jí syrově od [rok]. Začínali jsme stejně jako vy: tabulky, dohady, mrazák plný otazníků. Prodejnu otevíráme proto, aby to měl v Kladně někdo za sebou dřív než vy.“ Kulatá fotka člověka se psem. Odkazy: Instagram, Facebook.
 
 Druhý zakladatel se nezmiňuje jménem, jen „jsme dva, Dvořák a Kostová, odtud DoKosti“, pokud s tím souhlasí.
 
@@ -100,7 +103,7 @@ Kontakt (e-mail, telefon až bude), Instagram, Facebook, Ochrana údajů, Obchod
 
 ## Poznámky k rozhodnutí
 
-1. **Tři odměny najednou jsou moc.** Rozvoz zdarma na rok stojí jen čas a pro lidi od online e-shopů je to hlavní důvod přejít. 15 % na první nákup je jednorázové a jasné. Trvalou slevu bych teď nesliboval: marže na mraženém krmivu je tenká a slib padesáti nejaktivnějším zákazníkům platí navždy. Nechte si ji jako rezervu, třeba pro pravidelné odběry.
-2. **Konkurence v Kladně.** Když už tu někdo prodává, nestačí „syrové krmivo v Kladně“. Stránka musí říct, v čem jste jiní: rozvoz, poradna a kalkulačka, otevírací doba, šíře řad, konkrétní výrobci. Potřebuji o ní vědět víc, viz otázky.
+1. **Odměny odsouhlaseny:** rozvoz zdarma na rok a 15 % na první nákup, bez trvalé slevy.
+2. **Konkurence v Kladně** je specializovaná BARF prodejna a výdejní místo e-shopu. Odlišení je v sekci 2: rozvoz, poradna a kalkulačka, jiní výrobci, otevírací doba a místo. Z toho rozvoz a kalkulačka jsou jisté hned, výrobci a hodiny se doplní. Konkurenci nejmenovat.
 3. **Bez cen a bez výrobců**, dokud nejsou smlouvy. Stránka se nedá nachytat na slibu.
 4. **Double opt-in** (potvrzení e-mailu kliknutím) je čistší vůči GDPR i vůči kvalitě listiny. Stojí jeden e-mail navíc. Doporučuji ano.
