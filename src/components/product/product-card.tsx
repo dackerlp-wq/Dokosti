@@ -4,7 +4,7 @@ import { CardBuy } from "@/components/cart/card-buy";
 import { ProductImage } from "@/components/product/product-image";
 import { Flag, StockStatus } from "@/components/ui/badge";
 import { STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
-import { formatPrice, formatWeight } from "@/lib/format";
+import { formatPct, formatPrice, formatWeight } from "@/lib/format";
 import { stockState } from "@/lib/stock";
 
 /**
@@ -28,11 +28,12 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         </div>
       )}
 
-      {flags.length > 0 && (
+      {(flags.length > 0 || product.meatPct !== undefined) && (
         <div className="absolute top-7.5 -left-px z-20 grid justify-items-start gap-1.25">
           {flags.map((kind) => (
             <Flag key={kind} kind={kind} />
           ))}
+          {product.meatPct !== undefined && <Flag kind="favourite">{`${formatPct(product.meatPct)} masa`}</Flag>}
         </div>
       )}
 

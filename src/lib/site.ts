@@ -12,6 +12,7 @@ export const CATEGORY_NAV = [
   { href: "/rada/navic", label: "Navíc" },
   { href: "/rada/mlsky", label: "Mlsky" },
   { href: "/rada/granule", label: "Granule" },
+  { href: "/rada/konzervy", label: "Konzervy" },
 ] as const;
 
 /** Ostatní stránky: horní řádek hlavičky. */

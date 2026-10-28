@@ -21,3 +21,8 @@ export function formatWeight(grams: number) {
 export function pricePerKg(priceCzk: number, grams: number) {
   return Math.round((priceCzk / grams) * 1000);
 }
+
+/** Procento s českou desetinnou čárkou a pevnou mezerou: 60 → „60 %“, 55.5 → „55,5 %“. */
+export function formatPct(value: number) {
+  return `${value.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} %`;
+}

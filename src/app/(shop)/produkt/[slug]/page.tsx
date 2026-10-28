@@ -10,7 +10,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { ANIMAL_LABEL, LINE_INFO, MEAT_LABEL, STORAGE_LABEL, productName } from "@/lib/catalog";
-import { formatPrice, formatWeight, pricePerKg } from "@/lib/format";
+import { formatPct, formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { stockState } from "@/lib/stock";
@@ -103,6 +103,15 @@ export default async function ProductPage({ params }: Props) {
                 {byWeight && <span className="text-small"> za kg</span>}
                 {onSale && <s className="ml-2.5 text-small">{formatPrice(product.originalPriceCzk!)}</s>}
               </dd>
+              {product.meatPct !== undefined && (
+                <>
+                  <dt className="text-label text-muted">Podíl masa:</dt>
+                  <dd>
+                    <span className="font-semibold text-green">{formatPct(product.meatPct)}</span> masa a vnitřností
+                    <span className="text-small text-muted"> · podle složení výrobce</span>
+                  </dd>
+                </>
+              )}
               <dt className="text-label text-muted">Balení:</dt>
               <dd>
                 {byWeight ? "na váhu, vážíme v prodejně" : `${formatWeight(product.weightGrams)}, ${STORAGE_LABEL[product.storage].toLowerCase()}`}

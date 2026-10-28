@@ -227,6 +227,9 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
             hmotnosti; s energií počítá přesněji a zobrazí i kcal. Podíl kosti se používá pro bilanci kostí v dávce.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Podíl masa (%)" hint="maso a vnitřnosti ze složení, ukáže se na kartě">
+              <input name="meat_pct" type="number" min={0} max={100} step="0.1" defaultValue={p?.meat_pct ?? ""} />
+            </Field>
             <Field label="Energie (kcal/100 g)" hint="ME z etikety">
               <input name="kcal_per_100g" type="number" min={0} step="0.1" defaultValue={p?.kcal_per_100g ?? ""} />
             </Field>

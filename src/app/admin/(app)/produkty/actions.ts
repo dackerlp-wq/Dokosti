@@ -55,6 +55,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
 
   const nutrition = {
     kcal_per_100g: optNum(formData.get("kcal_per_100g")),
+    meat_pct: optNum(formData.get("meat_pct"), 100),
     bone_pct: optNum(formData.get("bone_pct"), 100),
     organ_pct: optNum(formData.get("organ_pct"), 100),
     liver_pct: optNum(formData.get("liver_pct"), 100),

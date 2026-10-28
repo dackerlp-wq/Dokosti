@@ -168,6 +168,8 @@ export type ProductRow = {
   low_stock_threshold: number;
   /** Údaje z etikety pro kalkulačku, null = neuvedeno. */
   kcal_per_100g: number | null;
+  /** Podíl masa a vnitřností v % podle složení výrobce (migrace 0034). */
+  meat_pct: number | null;
   bone_pct: number | null;
   organ_pct: number | null;
   liver_pct: number | null;

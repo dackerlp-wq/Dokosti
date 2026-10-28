@@ -45,6 +45,7 @@ const LINE_DOT: Record<LineSlug, string> = {
   navic: "bg-ochre",
   mlsky: "bg-olive",
   granule: "bg-muted",
+  konzervy: "bg-ink",
 };
 const PARKED_KEY = "dokosti-kasa-odlozene";
 const CART_KEY = "dokosti-pos-cart";

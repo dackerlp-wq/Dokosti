@@ -1,4 +1,4 @@
-import { Beef, Bone, Calculator, Cookie, Heart, Leaf, Snowflake, Store, Truck, Wheat, type LucideIcon } from "lucide-react";
+import { Beef, Bone, Calculator, Cookie, CookingPot, Heart, Leaf, Snowflake, Store, Truck, Wheat, type LucideIcon } from "lucide-react";
 import { ProductCarousel } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 
 /** Ikona řady v rozcestníku a mega menu. Kost je motiv loga, smí označovat řady krmiva. */
-const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Beef, kosti: Bone, navic: Leaf, mlsky: Cookie, granule: Wheat };
+const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Beef, kosti: Bone, navic: Leaf, mlsky: Cookie, granule: Wheat, konzervy: CookingPot };
 
 export default async function HomePage() {
   const [products, { shop }] = await Promise.all([getProducts(), getSettings()]);
@@ -57,8 +57,8 @@ export default async function HomePage() {
       </section>
 
       <Section tone="paper">
-        <SectionHeader eyebrow="Nabídka" title="Pět řad, jasný systém" />
-        <div className="grid gap-x-5 gap-y-7.5 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <SectionHeader eyebrow="Nabídka" title="Šest řad, jasný systém" />
+        <div className="grid gap-x-5 gap-y-7.5 xs:grid-cols-2 lg:grid-cols-3">
           {LINES.map((slug) => {
             const line = LINE_INFO[slug];
             return (

@@ -3,7 +3,7 @@
  * (viz supabase/migrations), aby šlo přepnout z ukázkových dat bez změny UI.
  */
 
-export const LINES = ["barf", "kosti", "navic", "mlsky", "granule"] as const;
+export const LINES = ["barf", "kosti", "navic", "mlsky", "granule", "konzervy"] as const;
 export type LineSlug = (typeof LINES)[number];
 
 export type Line = {
@@ -46,9 +46,16 @@ export const LINE_INFO: Record<LineSlug, Line> = {
   granule: {
     slug: "granule",
     name: "Granule",
-    tagline: "Suché krmivo s vysokým podílem masa. Pro štěňata i na cesty.",
+    tagline: "Granule s 56–70 % masa. Na přechod k BARFu i na cesty.",
     description:
-      "Kvalitní granule pro ty, kdo nechtějí nebo nemohou krmit syrově. Vedeme Elbeville a Brit Fresh, obojí s vysokým podílem čerstvého masa. Dobrá volba pro štěňata a na dovolenou.",
+      "Pro dny, kdy syrové krmení nejde, a na postupný přechod k BARFu. Vybíráme jen granule s vysokým podílem masa: Carnilove True Fresh má 60 % čerstvého masa, pro kočky 70 %. Bez obilovin, brambor a kuřecího. Podíl masa vidíte u každého balení.",
+  },
+  konzervy: {
+    slug: "konzervy",
+    name: "Konzervy",
+    tagline: "Konzervy a kapsičky s 62–90 % masa. Pro psy i kočky.",
+    description:
+      "Masové konzervy a kapsičky, ve kterých je maso na prvním místě: 62–74 % u konzerv, 70 % u kapsiček pro psy a 90 % u kapsiček pro kočky. Kompletní krmivo, ke granulím i jako záloha k BARFu na cesty. Podíl masa uvádíme u každého produktu podle složení od výrobce.",
   },
 };
 
@@ -141,6 +148,8 @@ export type Product = {
    * Kalkulačka a průvodce jí řadí produkty se stejnou rolí. Nákupní cena se do prohlížeče neposílá.
    */
   recoScore?: number;
+  /** Podíl masa a vnitřností v % podle složení od výrobce. Neuvedeno = nezobrazuje se. */
+  meatPct?: number;
   /**
    * Údaje z etikety výrobce pro kalkulačku dávky. Nikdy se nedopočítávají;
    * bez nich kalkulačka počítá orientačně procentem hmotnosti.
