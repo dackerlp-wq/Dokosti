@@ -52,7 +52,7 @@ export function MobileNav({ menu }: { menu: MenuItem[] }) {
                     <ul className="mb-2.5 flex flex-wrap gap-1.25">
                       {item.meats.map((m) => (
                         <li key={m.key}>
-                          <Link href={`${item.href}/${m.key}`} onClick={close} className="inline-flex min-h-8 items-center rounded-control bg-paper px-2.5 text-small text-ink capitalize hover:bg-cream">
+                          <Link href={`${item.href}/${m.key}`} onClick={close} className="inline-flex min-h-8 items-center rounded-control bg-paper px-2.5 text-small text-ink hover:bg-cream">
                             {m.label}
                           </Link>
                         </li>

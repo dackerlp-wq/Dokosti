@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { LINES, LINE_INFO, type FacetKey, facetLabel, isMeatKey, lineFacets, type LineSlug, type MeatKey, productFacets, type Product } from "@/lib/catalog";
+import { LINES, LINE_INFO, type FacetKey, facetName, isMeatKey, lineFacets, type LineSlug, type MeatKey, productFacets, type Product } from "@/lib/catalog";
 
 export type MenuMeat = { key: FacetKey; label: string; count: number; image: string | null; illustration: boolean };
 export type MenuLine = { slug: LineSlug; name: string; tagline: string; href: string; meats: MenuMeat[] };
@@ -24,7 +24,7 @@ export function buildCategoryMenu(products: Product[]): MenuLine[] {
     const meats = lineFacets(slug).map((key) => {
       const hits = inLine.filter((p) => productFacets(p).includes(key));
       const ill = isMeatKey(key) ? meatIllustration(key) : null;
-      return { key, label: facetLabel(key), count: hits.length, image: ill ?? hits.find((p) => p.image)?.image ?? null, illustration: Boolean(ill) };
+      return { key, label: facetName(key), count: hits.length, image: ill ?? hits.find((p) => p.image)?.image ?? null, illustration: Boolean(ill) };
     }).filter((m) => m.count > 0);
     return { slug, name: LINE_INFO[slug].name, tagline: LINE_INFO[slug].tagline, href: `/rada/${slug}`, meats };
   });

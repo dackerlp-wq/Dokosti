@@ -32,7 +32,7 @@ export function CategoryMenu({ menu }: { menu: MenuLine[] }) {
                           )}
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-nav text-green capitalize">{m.label}</span>
+                          <span className="block text-nav text-green">{m.label}</span>
                           <span className="block text-small text-muted">
                             {m.count} {m.count === 1 ? "produkt" : m.count < 5 ? "produkty" : "produktů"}
                           </span>

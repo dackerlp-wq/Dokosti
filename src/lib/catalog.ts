@@ -126,6 +126,11 @@ export const lineFacets = (line: LineSlug): readonly FacetKey[] => (line === "na
 export const isLineFacet = (line: LineSlug, v: string): v is FacetKey => (line === "navic" ? isNavicKind(v) : isMeatKey(v));
 export const productFacets = (p: Pick<Product, "line" | "meats" | "kind">): FacetKey[] => (p.line === "navic" ? (p.kind ? [p.kind] : []) : (p.meats ?? []));
 export const facetLabel = (key: FacetKey): string => (isNavicKind(key) ? NAVIC_KIND_LABEL[key] : MEAT_LABEL[key]);
+/** Popisek s velkým jen prvním písmenem, do menu a filtrů („Vápník a minerály“, ne CSS capitalize). */
+export const facetName = (key: FacetKey): string => {
+  const l = facetLabel(key);
+  return l.charAt(0).toUpperCase() + l.slice(1);
+};
 /** Popisek výběru podkategorií v řadě. */
 export const facetHeading = (line: LineSlug) => (line === "navic" ? "Vyberte podle účelu" : "Vyberte podle masa");
 
