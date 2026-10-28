@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
-import { type Animal, isMeatKey, type LineSlug, MEAT_LABEL, MEATS, type MeatKey, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
+import { type Animal, type FacetKey, facetLabel, isLineFacet, lineFacets, type LineSlug, productFacets, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
 
 type Sort = "doporucene" | "nejlevnejsi" | "nejdrazsi" | "novinky";
 type Pack = "male" | "stredni" | "velke";
@@ -12,14 +12,14 @@ const SORT_LABEL: Record<Sort, string> = { doporucene: "Doporučené", nejlevnej
 const PACK_LABEL: Record<Pack, string> = { male: "do 500 g", stredni: "500 g až 1 kg", velke: "nad 1 kg" };
 const packOf = (p: Product): Pack => (p.unit === "kg" || p.weightGrams > 1000 ? "velke" : p.weightGrams > 500 ? "stredni" : "male");
 
-type Filters = { meats: MeatKey[]; animal: Animal | null; inStock: boolean; storage: Storage | null; pack: Pack | null; sort: Sort };
+type Filters = { meats: FacetKey[]; animal: Animal | null; inStock: boolean; storage: Storage | null; pack: Pack | null; sort: Sort };
 
 /**
- * Produkty řady: filtr podle masa je řádek odkazů nad mřížkou (každý druh má vlastní stránku /rada/[řada]/[maso]),
+ * Produkty řady: filtr podle masa (u Navíc podle účelu) je řádek odkazů nad mřížkou (každý má vlastní stránku /rada/[řada]/[klíč]),
  * ostatní volby (pro koho, skladem, skladování, balení, řazení) jsou v úzké liště a drží se v adrese.
  * Stránka zůstává statická, filtruje se v prohlížeči.
  */
-export function LineProducts({ products, line, initialMeat = null }: { products: Product[]; line: LineSlug; initialMeat?: MeatKey | null }) {
+export function LineProducts({ products, line, initialMeat = null }: { products: Product[]; line: LineSlug; initialMeat?: FacetKey | null }) {
   return (
     <Suspense fallback={<Inner products={products} line={line} initialMeat={initialMeat} params={new URLSearchParams()} />}>
       <FromUrl products={products} line={line} initialMeat={initialMeat} />
@@ -27,13 +27,13 @@ export function LineProducts({ products, line, initialMeat = null }: { products:
   );
 }
 
-function FromUrl(props: { products: Product[]; line: LineSlug; initialMeat: MeatKey | null }) {
+function FromUrl(props: { products: Product[]; line: LineSlug; initialMeat: FacetKey | null }) {
   const params = useSearchParams();
   return <Inner {...props} params={params} />;
 }
 
-function parse(params: URLSearchParams, initialMeat: MeatKey | null): Filters {
-  const meatsRaw = (params.get("maso") ?? "").split(",").filter(isMeatKey);
+function parse(params: URLSearchParams, line: LineSlug, initialMeat: FacetKey | null): Filters {
+  const meatsRaw = (params.get("maso") ?? "").split(",").filter((v): v is FacetKey => isLineFacet(line, v));
   const zvire = params.get("zvire");
   const sort = params.get("razeni") as Sort | null;
   const storage = params.get("skladovani");
@@ -51,7 +51,7 @@ function parse(params: URLSearchParams, initialMeat: MeatKey | null): Filters {
 function apply(products: Product[], f: Filters, skip?: keyof Filters) {
   let list = products.filter(
     (p) =>
-      (skip === "meats" || !f.meats.length || f.meats.some((m) => p.meats?.includes(m))) &&
+      (skip === "meats" || !f.meats.length || f.meats.some((m) => productFacets(p).includes(m))) &&
       (skip === "animal" || !f.animal || p.animals.includes(f.animal)) &&
       (skip === "inStock" || !f.inStock || p.inStock) &&
       (skip === "storage" || !f.storage || p.storage === f.storage) &&
@@ -65,14 +65,14 @@ function apply(products: Product[], f: Filters, skip?: keyof Filters) {
 
 const plural = (n: number) => `${n} ${n === 1 ? "produkt" : n < 5 ? "produkty" : "produktů"}`;
 
-function Inner({ products, line, initialMeat, params }: { products: Product[]; line: LineSlug; initialMeat: MeatKey | null; params: URLSearchParams }) {
+function Inner({ products, line, initialMeat, params }: { products: Product[]; line: LineSlug; initialMeat: FacetKey | null; params: URLSearchParams }) {
   const router = useRouter();
   const pathname = usePathname();
-  const f = useMemo(() => parse(params, initialMeat), [params, initialMeat]);
+  const f = useMemo(() => parse(params, line, initialMeat), [params, line, initialMeat]);
   const list = apply(products, f);
 
   const count = (skip: keyof Filters, test: (p: Product) => boolean) => apply(products, f, skip).filter(test).length;
-  const meatOptions = MEATS.filter((key) => products.some((p) => p.meats?.includes(key))).map((key) => ({ key, count: count("meats", (p) => Boolean(p.meats?.includes(key))) }));
+  const meatOptions = lineFacets(line).filter((key) => products.some((p) => productFacets(p).includes(key))).map((key) => ({ key, count: count("meats", (p) => productFacets(p).includes(key)) }));
   const storageOptions = (Object.keys(STORAGE_LABEL) as Storage[]).filter((s) => products.some((p) => p.storage === s));
   const packOptions = (Object.keys(PACK_LABEL) as Pack[]).filter((k) => products.some((p) => packOf(p) === k));
   const animalOptions = (["pes", "kocka"] as Animal[]).filter((a) => products.some((p) => p.animals.includes(a)));
@@ -97,7 +97,7 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
   const reset = () => go({ ...f, animal: null, inStock: false, storage: null, pack: null });
   const single = f.meats.length === 1 ? f.meats[0] : null;
   const keep = query({ ...f, meats: [] });
-  const meatHref = (key: MeatKey | null) => `/rada/${line}${key ? `/${key}` : ""}${keep ? `?${keep}` : ""}`;
+  const meatHref = (key: FacetKey | null) => `/rada/${line}${key ? `/${key}` : ""}${keep ? `?${keep}` : ""}`;
 
   const meatLink = "inline-flex min-h-10 items-center rounded-control px-3.5 text-button transition-colors duration-300";
   const select = "min-h-10 w-auto py-1 text-small";
@@ -105,13 +105,13 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
   return (
     <div>
       {meatOptions.length > 0 && (
-        <nav aria-label="Druh masa" className="mb-5 flex flex-wrap justify-center gap-1.25">
+        <nav aria-label={line === "navic" ? "Účel" : "Druh masa"} className="mb-5 flex flex-wrap justify-center gap-1.25">
           <Link href={meatHref(null)} aria-current={!single && !f.meats.length ? "page" : undefined} className={`${meatLink} ${!f.meats.length ? "bg-green text-cream" : "text-green hover:text-brick-text"}`}>
             Vše
           </Link>
           {meatOptions.map((m) => (
             <Link key={m.key} href={meatHref(m.key)} aria-current={single === m.key ? "page" : undefined} className={`${meatLink} capitalize ${single === m.key ? "bg-green text-cream" : "text-green hover:text-brick-text"}`}>
-              {MEAT_LABEL[m.key]}
+              {facetLabel(m.key)}
               <span className={`ml-1.5 text-small font-normal ${single === m.key ? "text-cream/80" : "text-muted"}`}>{m.count}</span>
             </Link>
           ))}

@@ -8,7 +8,8 @@ import type { Line, LineSlug } from "@/lib/catalog";
 const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Beef, kosti: Bone, navic: Leaf, mlsky: Cookie, granule: Wheat, konzervy: CookingPot };
 
 /** Hero řady na bílé: vlevo ilustrace (druh masa) nebo ikona řady na krémovém disku, vpravo název, podtitulek, odstavec, návody a tlačítko. */
-export function LineHero({ line, title, illustration, eyebrow }: { line: Line; title: ReactNode; illustration?: string | null; eyebrow?: ReactNode }) {
+/** lead nahradí podtitulek řady (popis podkategorie). */
+export function LineHero({ line, title, illustration, eyebrow, lead }: { line: Line; title: ReactNode; illustration?: string | null; eyebrow?: ReactNode; lead?: string }) {
   const Icon = LINE_ICON[line.slug];
   return (
     <section className="mx-auto flex max-w-site flex-col items-center gap-7.5 px-5 py-10 text-center md:flex-row md:py-15 md:text-left">
@@ -20,7 +21,7 @@ export function LineHero({ line, title, illustration, eyebrow }: { line: Line; t
       <div className="max-w-[570px] flex-1">
         <p className="text-eyebrow text-muted uppercase">{eyebrow ?? "Řada"}</p>
         <h1 className="mb-3.5 font-display text-display-lg text-green md:text-display-xl">{title}</h1>
-        <p className="mb-3.5 text-heading-md text-green">{line.tagline}</p>
+        <p className="mb-3.5 text-heading-md text-green">{lead ?? line.tagline}</p>
         <p className="mb-5">{line.description}</p>
         <ul className="mb-7.5 flex flex-wrap justify-center gap-x-5 gap-y-2.5 md:justify-start">
           <li>

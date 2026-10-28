@@ -6,7 +6,7 @@ import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
-import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, MEAT_LABEL, MEATS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
+import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, MEAT_LABEL, MEATS, NAVIC_KIND_INFO, NAVIC_KINDS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
 const STEPS = ["Co to je", "Cena a balení", "Sklad a dodavatel", "Etiketa a web"] as const;
 
@@ -55,6 +55,18 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
                 ))}
               </select>
             </Field>
+            {preview.line === "navic" && (
+              <Field label="Podkategorie" hint="účel v řadě Navíc">
+                <select name="kind" defaultValue={p?.kind ?? ""}>
+                  <option value="">nezařazeno</option>
+                  {NAVIC_KINDS.map((k) => (
+                    <option key={k} value={k}>
+                      {NAVIC_KIND_INFO[k].title}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Druh masa / suroviny" hint="např. hovězí mix">
               <input name="variant" defaultValue={p?.variant} required onChange={(e) => setPreview((v) => ({ ...v, variant: e.target.value }))} />
             </Field>

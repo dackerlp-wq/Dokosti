@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/admin";
-import { isLineSlug, type Animal, type Storage, isMeatKey } from "@/lib/catalog";
+import { isLineSlug, type Animal, type Storage, isMeatKey, isNavicKind } from "@/lib/catalog";
 import { logActivity } from "@/lib/activity";
 import { flashError, flashOk } from "@/lib/flash";
 import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
@@ -37,6 +37,8 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const storage = String(formData.get("storage") ?? "") as Storage;
   const animals = formData.getAll("animals").map(String) as Animal[];
   const meats = formData.getAll("meats").map(String).filter(isMeatKey);
+  const kindRaw = String(formData.get("kind") ?? "");
+  const kind = line === "navic" && isNavicKind(kindRaw) ? kindRaw : null;
   const weight = num(formData.get("weight_grams"));
   const price = num(formData.get("price_czk"));
   const originalRaw = String(formData.get("original_price_czk") ?? "").trim();
@@ -71,6 +73,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     storage,
     animals,
     meats,
+    kind,
     weight_grams: Math.round(weight),
     price_czk: Math.round(price),
     original_price_czk: original === null ? null : Math.round(original),

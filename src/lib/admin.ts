@@ -170,6 +170,8 @@ export type ProductRow = {
   kcal_per_100g: number | null;
   /** Podíl masa a vnitřností v % podle složení výrobce (migrace 0034). */
   meat_pct: number | null;
+  /** Podkategorie řady Navíc (migrace 0035). */
+  kind: string | null;
   bone_pct: number | null;
   organ_pct: number | null;
   liver_pct: number | null;

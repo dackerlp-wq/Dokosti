@@ -32,9 +32,9 @@ export const LINE_INFO: Record<LineSlug, Line> = {
   navic: {
     slug: "navic",
     name: "Navíc",
-    tagline: "Oleje, byliny a doplňky, které mix doplní.",
+    tagline: "Oleje, minerály, vitamíny a přílohy, které BARF doplní.",
     description:
-      "Co v mixu chybí nebo co chcete přidat: rybí olej, sušené byliny, vaječné skořápky, zelenina. Dávkuje se po lžičkách.",
+      "Co v mase chybí nebo co chcete přidat: oleje s omega-3, vápník místo kostí, řasy a vitamíny, přílohy k masu a doplňky s kolagenem. Vybírejte podle účelu, dávkuje se po lžičkách.",
   },
   mlsky: {
     slug: "mlsky",
@@ -93,6 +93,42 @@ export const MEAT_TITLE: Record<MeatKey, string> = {
 export function isMeatKey(v: string): v is MeatKey {
   return (MEATS as readonly string[]).includes(v);
 }
+/** Podkategorie řady Navíc podle účelu (ostatní řady se dělí podle masa). */
+export const NAVIC_KINDS = ["oleje", "mineraly", "vitaminy", "prilohy", "klouby", "ostatni"] as const;
+export type NavicKind = (typeof NAVIC_KINDS)[number];
+export const NAVIC_KIND_LABEL: Record<NavicKind, string> = {
+  oleje: "oleje",
+  mineraly: "vápník a minerály",
+  vitaminy: "řasy, vitamíny a kvasnice",
+  prilohy: "přílohy k masu",
+  klouby: "klouby a pohyb",
+  ostatni: "štěňata, lékárnička a pomůcky",
+};
+/** Nadpis a krátký popis podkategorie Navíc. */
+export const NAVIC_KIND_INFO: Record<NavicKind, { title: string; text: string }> = {
+  oleje: { title: "Oleje", text: "Rybí a rostlinné oleje k mixu. Doplní omega-3 mastné kyseliny, ryby nejsou v misce každý den." },
+  mineraly: { title: "Vápník a minerály", text: "Náhrada masitých kostí pro psy, kteří kosti nejedí, a vyrovnání vápníku a fosforu v masité stravě." },
+  vitaminy: { title: "Řasy, vitamíny a kvasnice", text: "Jód, vitamíny skupiny B a stopové prvky, kterých je v mase a vnitřnostech málo." },
+  prilohy: { title: "Přílohy k masu", text: "Zelenina, pohanka a rýže pro BARF s rostlinnou složkou. Vláknina a objem pro žravé psy." },
+  klouby: { title: "Klouby a pohyb", text: "Doplňky s kolagenem pro velká plemena, sportovce a seniory. Při potížích nejdřív k veterináři." },
+  ostatni: { title: "Štěňata, lékárnička a pomůcky", text: "Mléko pro štěňata, aktivní uhlí do lékárničky a odměrka na oleje a sypké doplňky." },
+};
+export function isNavicKind(v: string): v is NavicKind {
+  return (NAVIC_KINDS as readonly string[]).includes(v);
+}
+
+/**
+ * Podkategorie řady: Navíc podle účelu, ostatní podle druhu masa.
+ * Adresa je vždy /rada/[řada]/[klíč].
+ */
+export type FacetKey = MeatKey | NavicKind;
+export const lineFacets = (line: LineSlug): readonly FacetKey[] => (line === "navic" ? NAVIC_KINDS : MEATS);
+export const isLineFacet = (line: LineSlug, v: string): v is FacetKey => (line === "navic" ? isNavicKind(v) : isMeatKey(v));
+export const productFacets = (p: Pick<Product, "line" | "meats" | "kind">): FacetKey[] => (p.line === "navic" ? (p.kind ? [p.kind] : []) : (p.meats ?? []));
+export const facetLabel = (key: FacetKey): string => (isNavicKind(key) ? NAVIC_KIND_LABEL[key] : MEAT_LABEL[key]);
+/** Popisek výběru podkategorií v řadě. */
+export const facetHeading = (line: LineSlug) => (line === "navic" ? "Vyberte podle účelu" : "Vyberte podle masa");
+
 /** Prodejní jednotka: balení po kusech, nebo na váhu (cena za kg, jen v prodejně). */
 export type ProductUnit = "ks" | "kg";
 export const UNIT_LABEL: Record<ProductUnit, string> = { ks: "kus", kg: "na váhu (kg)" };
@@ -116,6 +152,8 @@ export type Product = {
   animals: Animal[];
   /** Druhy masa v produktu (podkategorie, filtr, vyloučení v kalkulačce). */
   meats?: MeatKey[];
+  /** Podkategorie řady Navíc. */
+  kind?: NavicKind;
   storage: Storage;
   /** Hmotnost balení v gramech (u zboží na váhu orientační porce). */
   weightGrams: number;

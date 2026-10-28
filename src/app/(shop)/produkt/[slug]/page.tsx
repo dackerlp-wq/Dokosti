@@ -9,7 +9,7 @@ import { Flag, StockStatus } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Section, SectionHeader } from "@/components/ui/section";
-import { ANIMAL_LABEL, LINE_INFO, MEAT_LABEL, STORAGE_LABEL, productName } from "@/lib/catalog";
+import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, facetLabel, productFacets, productName } from "@/lib/catalog";
 import { formatPct, formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
@@ -124,14 +124,14 @@ export default async function ProductPage({ params }: Props) {
               <dt className="text-label text-muted">Pro koho:</dt>
               <dd>
                 {product.animals.map((a) => ANIMAL_LABEL[a].replace("Pro ", "")).join(" a ")}
-                {product.meats && product.meats.length > 0 && (
+                {productFacets(product).length > 0 && (
                   <>
                     {" · "}
-                    {product.meats.map((m, i) => (
+                    {productFacets(product).map((m, i) => (
                       <span key={m}>
                         {i > 0 && ", "}
                         <Link href={`/rada/${line.slug}/${m}`} className="text-brick-text hover:underline">
-                          {MEAT_LABEL[m]}
+                          {facetLabel(m)}
                         </Link>
                       </span>
                     ))}
