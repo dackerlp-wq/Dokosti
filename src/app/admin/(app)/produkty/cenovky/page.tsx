@@ -4,11 +4,12 @@ import { PrintButton } from "@/components/admin/print-button";
 import type { ProductRow } from "@/lib/admin";
 import { LINE_INFO, LINES, productName } from "@/lib/catalog";
 import { formatPrice, formatWeight, pricePerKg } from "@/lib/format";
+import { storePrice } from "@/lib/pos";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Cenovky" };
 
-/** Regálové cenovky: název, balení, cena, cena za kg a složení ve zkratce. Tisk na A4, osm na stránku. */
+/** Regálové cenovky: název, balení, cena pro prodejnu (během akce akční), cena za kg. Tisk na A4, osm na stránku. */
 export default async function PriceTagsPage({ searchParams }: { searchParams: Promise<{ rada?: string; produkt?: string }> }) {
   await requireAdmin();
   const { rada, produkt } = await searchParams;
@@ -44,7 +45,9 @@ export default async function PriceTagsPage({ searchParams }: { searchParams: Pr
         <PrintButton />
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 print:gap-0">
-        {list.map((p) => (
+        {list.map((p) => {
+          const price = storePrice(p);
+          return (
           <div key={p.id} className="break-inside-avoid flex h-[150px] flex-col rounded-card border border-line bg-white p-3 print:h-[70mm] print:rounded-none print:border-dashed print:border-ink">
             <p className="text-eyebrow uppercase text-muted">{LINE_INFO[p.line].name}</p>
             <p className="text-[20px] font-semibold leading-tight">{productName(p)}</p>
@@ -52,16 +55,17 @@ export default async function PriceTagsPage({ searchParams }: { searchParams: Pr
             <div className="mt-auto flex items-end justify-between gap-2">
               <div>
                 <p className="text-[28px] font-bold leading-none text-green">
-                  {formatPrice(p.price_czk)}
+                  {formatPrice(price)}
                   {p.unit === "kg" && <span className="text-[14px]">/kg</span>}
                 </p>
                 {p.original_price_czk && <p className="text-small text-muted line-through">{formatPrice(p.original_price_czk)}</p>}
               </div>
-              {p.unit === "ks" && p.weight_grams > 0 && <p className="text-small text-muted">{formatPrice(pricePerKg(p.price_czk, p.weight_grams))}/kg</p>}
+              {p.unit === "ks" && p.weight_grams >= 50 && <p className="text-small text-muted">{formatPrice(pricePerKg(price, p.weight_grams))}/kg</p>}
             </div>
             {p.ean && <p className="mt-1 font-mono text-[9px] text-muted">{p.ean}</p>}
           </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );

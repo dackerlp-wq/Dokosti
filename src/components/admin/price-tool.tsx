@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import type { LineSlug } from "@/lib/catalog";
 import { formatPrice } from "@/lib/format";
 
-export type PriceProduct = { id: string; name: string; line: LineSlug; lineName: string; price_czk: number; purchase_price_czk: number | null; supplier_id: string | null; inAction: boolean };
-type Mode = "procent" | "marze" | "castka";
+export type PriceProduct = { id: string; name: string; line: LineSlug; lineName: string; price_czk: number; store_price_czk: number | null; purchase_price_czk: number | null; supplier_id: string | null; inAction: boolean };
+type Mode = "procent" | "marze" | "castka" | "zeshopu";
+type Target = "web" | "kasa";
 
-/** Hromadná změna cen: vybrat produkty (řada, dodavatel), zvolit pravidlo, zkontrolovat náhled, zapsat. */
+/** Hromadná změna cen e-shopu nebo prodejny: vybrat produkty (řada, dodavatel), zvolit pravidlo, zkontrolovat náhled, zapsat. */
 export function PriceTool({ products, suppliers }: { products: PriceProduct[]; suppliers: { id: string; name: string }[] }) {
   const [line, setLine] = useState("");
   const [supplier, setSupplier] = useState("");
+  const [target, setTarget] = useState<Target>("web");
   const [mode, setMode] = useState<Mode>("procent");
   const [value, setValue] = useState("5");
   const [rounding, setRounding] = useState<"1" | "9" | "10">("1");
@@ -25,27 +27,46 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
     return products
       .filter((p) => (!line || p.line === line) && (!supplier || p.supplier_id === supplier))
       .map((p) => {
+        // Výchozí cena: e-shop, nebo prodejna (prázdná cena pro prodejnu = e-shopová).
+        const now = target === "kasa" ? (p.store_price_czk ?? p.price_czk) : p.price_czk;
         let next: number | null = null;
-        if (mode === "procent" && Number.isFinite(v)) next = p.price_czk * (1 + v / 100);
-        if (mode === "castka" && Number.isFinite(v)) next = p.price_czk + v;
+        if (mode === "procent" && Number.isFinite(v)) next = now * (1 + v / 100);
+        if (mode === "castka" && Number.isFinite(v)) next = now + v;
+        if (mode === "zeshopu" && target === "kasa" && Number.isFinite(v)) next = p.price_czk * (1 + v / 100);
         if (mode === "marze" && Number.isFinite(v) && p.purchase_price_czk && v < 100) next = p.purchase_price_czk / (1 - v / 100);
         if (next !== null) {
           if (rounding === "9") next = Math.max(9, Math.round(next / 10) * 10 - 1);
           else if (rounding === "10") next = Math.round(next / 10) * 10;
           else next = Math.round(next);
-          next = Math.max(0, next);
+          next = Math.max(target === "kasa" ? 1 : 0, next);
         }
         const margin = (price: number) => (p.purchase_price_czk && price > 0 ? Math.round(((price - p.purchase_price_czk) / price) * 100) : null);
-        return { p, next, marginNow: margin(p.price_czk), marginNext: next === null ? null : margin(next) };
+        return { p, now, next, marginNow: margin(now), marginNext: next === null ? null : margin(next) };
       });
-  }, [products, line, supplier, mode, value, rounding]);
-  const changes = rows.filter((r) => r.next !== null && r.next !== r.p.price_czk && !excluded.has(r.p.id));
+  }, [products, line, supplier, mode, value, rounding, target]);
+  const changes = rows.filter((r) => r.next !== null && r.next !== r.now && !excluded.has(r.p.id));
 
   return (
     <form action={applyPrices} className="space-y-4">
       <input type="hidden" name="items" value={JSON.stringify(changes.map((r) => ({ id: r.p.id, price: r.next })))} />
       <input type="hidden" name="reason" value={reason} />
-      <div className="grid gap-3 rounded-card border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-6">
+      <input type="hidden" name="target" value={target} />
+      <div className="grid gap-3 rounded-card border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-7">
+        <label className="block">
+          <span className="mb-1 block text-label text-green">Která cena</span>
+          <select
+            value={target}
+            onChange={(e) => {
+              const t = e.target.value as Target;
+              setTarget(t);
+              if (t === "web" && mode === "zeshopu") setMode("procent");
+            }}
+            className="min-h-9 py-1"
+          >
+            <option value="web">e-shop</option>
+            <option value="kasa">prodejna</option>
+          </select>
+        </label>
         <label className="block">
           <span className="mb-1 block text-label text-green">Řada</span>
           <select value={line} onChange={(e) => setLine(e.target.value)} className="min-h-9 py-1">
@@ -74,10 +95,11 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
             <option value="procent">Změnit o %</option>
             <option value="castka">Změnit o Kč</option>
             <option value="marze">Cílová marže %</option>
+            {target === "kasa" && <option value="zeshopu">E-shop + %</option>}
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-label text-green">{mode === "marze" ? "Marže (%)" : mode === "castka" ? "Kč (záporné = zlevnit)" : "% (záporné = zlevnit)"}</span>
+          <span className="mb-1 block text-label text-green">{mode === "marze" ? "Marže (%)" : mode === "castka" ? "Kč (záporné = zlevnit)" : mode === "zeshopu" ? "% nad e-shopem" : "% (záporné = zlevnit)"}</span>
           <input value={value} onChange={(e) => setValue(e.target.value)} inputMode="decimal" className="min-h-9 py-1" />
         </label>
         <label className="block">
@@ -107,8 +129,8 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.map(({ p, next, marginNow, marginNext }) => {
-              const change = next !== null && next !== p.price_czk;
+            {rows.map(({ p, now, next, marginNow, marginNext }) => {
+              const change = next !== null && next !== now;
               return (
                 <tr key={p.id} className={!change ? "text-muted" : ""}>
                   <td className="px-3 py-2">
@@ -116,10 +138,13 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
                   </td>
                   <td className="px-3 py-2 font-semibold">
                     {p.name}
-                    {p.inAction && <span className="ml-2 text-small font-normal text-brick-text">v akci: změní se cena po akci</span>}
+                    {p.inAction && <span className="ml-2 text-small font-normal text-brick-text">{target === "kasa" ? "v akci: v prodejně platí akční cena, tahle až po akci" : "v akci: změní se cena po akci"}</span>}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">{p.purchase_price_czk ? formatPrice(p.purchase_price_czk) : "—"}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">{formatPrice(p.price_czk)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {formatPrice(now)}
+                    {target === "kasa" && p.store_price_czk === null && <span className="ml-1 text-small text-muted">(jako e-shop)</span>}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap font-semibold">{next === null ? "—" : formatPrice(next)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {marginNow !== null ? `${marginNow} %` : "—"}
@@ -134,7 +159,7 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-muted">{changes.length} cen ke změně</span>
         <Button type="submit" variant="action" disabled={changes.length === 0}>
-          Zapsat {changes.length} cen
+          Zapsat {changes.length} cen {target === "kasa" ? "pro prodejnu" : "na e-shop"}
         </Button>
       </div>
     </form>

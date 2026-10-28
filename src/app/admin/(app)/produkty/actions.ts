@@ -41,6 +41,8 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const price = num(formData.get("price_czk"));
   const originalRaw = String(formData.get("original_price_czk") ?? "").trim();
   const original = originalRaw ? num(originalRaw) : null;
+  const storeRaw = String(formData.get("store_price_czk") ?? "").trim();
+  const store = storeRaw ? num(storeRaw) : null;
 
   if (!isLineSlug(line)) return { error: "Vyberte řadu." };
   if (!variant) return { error: "Doplňte druh masa nebo suroviny." };
@@ -48,6 +50,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   if (animals.length === 0) return { error: "Vyberte aspoň jedno zvíře." };
   if (!(weight > 0)) return { error: "Hmotnost musí být větší než 0." };
   if (!(price >= 0)) return { error: "Cena musí být číslo." };
+  if (store !== null && !(store > 0)) return { error: "Cena pro prodejnu musí být větší než 0, nebo ji nechte prázdnou." };
   if (original !== null && !(original > price)) return { error: "Původní cena musí být vyšší než aktuální." };
 
   const nutrition = {
@@ -70,6 +73,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     weight_grams: Math.round(weight),
     price_czk: Math.round(price),
     original_price_czk: original === null ? null : Math.round(original),
+    store_price_czk: store === null ? null : Math.round(store),
     producer: String(formData.get("producer") ?? "").trim(),
     intro: String(formData.get("intro") ?? "").trim(),
     composition: String(formData.get("composition") ?? "").trim(),

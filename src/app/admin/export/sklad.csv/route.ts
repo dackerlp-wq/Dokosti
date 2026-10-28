@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const num = (n: number) => n.toLocaleString("cs-CZ", { maximumFractionDigits: 3, useGrouping: false });
-  const head = ["Produkt", "Řada", "Uskladnění", "Jednotka", "Skladem", `Prodáno za ${period.days} dní`, "Dní zásoby", "Poslední prodej (dní)", "Naskladněno (dní)", "Stav", "Limit", "Prodejní cena", "Hodnota zásoby Kč", ...(admin.isManager ? ["Nákupní cena", "Hodnota v nákupních cenách Kč"] : [])];
+  const head = ["Produkt", "Řada", "Uskladnění", "Jednotka", "Skladem", `Prodáno za ${period.days} dní`, "Dní zásoby", "Poslední prodej (dní)", "Naskladněno (dní)", "Stav", "Limit", "Cena e-shop", "Cena prodejna", "Hodnota zásoby Kč", ...(admin.isManager ? ["Nákupní cena", "Hodnota v nákupních cenách Kč"] : [])];
   const lines = list.map((s) =>
     [
       s.name,
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       STOCK_STATUS_LABEL[s.status],
       s.product.low_stock_threshold,
       s.product.price_czk,
+      s.product.store_price_czk ?? s.product.price_czk,
       s.valueCzk,
       ...(admin.isManager ? [s.product.purchase_price_czk ?? "", s.costCzk ?? ""] : []),
     ]

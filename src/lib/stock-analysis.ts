@@ -36,6 +36,7 @@ export type StockProduct = {
   unit: ProductUnit;
   storage: Storage;
   price_czk: number;
+  store_price_czk?: number | null;
   purchase_price_czk: number | null;
   stock_qty: number | string | null;
   low_stock_threshold: number;

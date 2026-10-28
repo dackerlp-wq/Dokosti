@@ -88,6 +88,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   {formatPrice(p.price_czk)}
                   {p.unit === "kg" && <span className="text-muted">/kg</span>}
                   {p.original_price_czk && <span className="ml-1 text-muted line-through">{formatPrice(p.original_price_czk)}</span>}
+                  {p.store_price_czk !== null && p.store_price_czk !== p.price_czk && <div className="text-small text-muted">prodejna {formatPrice(p.store_price_czk)}</div>}
                 </Td>
                 {manager && <Td className={margin(p) !== null && margin(p)! < 20 ? "text-brick-text" : ""}>{margin(p) !== null ? `${margin(p)} %` : <span className="text-muted">—</span>}</Td>}
                 <Td>

@@ -106,7 +106,7 @@ export default async function ProductPage({ params }: Props) {
               <dt className="text-label text-muted">Balení:</dt>
               <dd>
                 {byWeight ? "na váhu, vážíme v prodejně" : `${formatWeight(product.weightGrams)}, ${STORAGE_LABEL[product.storage].toLowerCase()}`}
-                {!byWeight && <span className="text-small"> · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}/kg</span>}
+                {!byWeight && product.weightGrams >= 50 && <span className="text-small"> · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}/kg</span>}
               </dd>
               <dt className="text-label text-muted">Dostupnost:</dt>
               <dd>

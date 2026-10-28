@@ -149,6 +149,8 @@ export type ProductRow = {
   weight_grams: number;
   price_czk: number;
   original_price_czk: number | null;
+  /** Cena v kamenné prodejně, null = stejná jako na e-shopu (migrace 0033). */
+  store_price_czk: number | null;
   producer: string;
   intro: string;
   composition: string;

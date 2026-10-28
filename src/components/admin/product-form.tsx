@@ -99,6 +99,9 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
             <Field label={unit === "kg" ? "Cena za kg (Kč)" : "Cena (Kč)"}>
               <input name="price_czk" type="number" min={0} defaultValue={p?.price_czk} required onChange={(e) => setPreview((v) => ({ ...v, price: Number(e.target.value) || 0 }))} />
             </Field>
+            <Field label={unit === "kg" ? "Cena za kg v prodejně (Kč)" : "Cena v prodejně (Kč)"} hint="pro kasu a cenovky; prázdné = jako na e-shopu">
+              <input name="store_price_czk" type="number" min={1} defaultValue={p?.store_price_czk ?? ""} />
+            </Field>
             <Field label="Původní cena (Kč)" hint="přeškrtnutá; akce s platností: Akce a slevy">
               <input name="original_price_czk" type="number" min={0} defaultValue={p?.original_price_czk ?? ""} />
             </Field>

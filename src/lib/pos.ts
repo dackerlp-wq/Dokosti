@@ -7,6 +7,7 @@ export type PosProduct = {
   line: LineSlug;
   variant: string;
   unit: ProductUnit;
+  /** Cena, kterou kasa účtuje: cena pro prodejnu, během akce akční cena (stejně jako pos_unit_price v DB). */
   price_czk: number;
   weight_grams: number;
   ean: string | null;
@@ -14,6 +15,11 @@ export type PosProduct = {
   in_stock: boolean;
   is_published: boolean;
 };
+
+/** Cena v prodejně: když je vyplněná store_price_czk a neběží akce, platí ona. Jinak e-shopová cena. */
+export function storePrice(p: { price_czk: number; original_price_czk: number | null; store_price_czk: number | null }): number {
+  return p.original_price_czk === null && p.store_price_czk !== null ? p.store_price_czk : p.price_czk;
+}
 
 export type PosPet = { name: string; species: string | null; weight_kg: number | string | null; born_on: string | null; exclude: string[] | null };
 export type PosCustomer = { id: string; name: string; email: string | null; phone: string; points: number; card_code: string | null; pets?: PosPet[] };
