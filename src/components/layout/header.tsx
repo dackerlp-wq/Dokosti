@@ -9,7 +9,7 @@ import type { MenuLine } from "@/lib/menu";
 
 /**
  * Bílá hlavička 60 px se stínem: nápis s kostí (44 px), řady produktů s mega menu a Krmení na míru,
- * vpravo hledání, účet a košík. Pod 992 px se navigace schová do bočního panelu zprava.
+ * vpravo hledání, účet a košík (mezi 992 a 1200 px jen ikony, ať se vejde šest řad). Pod 992 px se navigace schová do bočního panelu zprava.
  */
 export function Header({ menu }: { menu: MenuLine[] }) {
   return (

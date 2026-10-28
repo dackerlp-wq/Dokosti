@@ -33,7 +33,7 @@ export function AccountLink() {
       className="inline-flex min-h-10 items-center gap-2 px-2 text-nav text-green transition-colors duration-300 hover:text-brick-text"
       aria-label={signedIn ? "Můj účet" : "Přihlásit se"}
     >
-      <span className="hidden sm:inline">{signedIn ? "Účet" : "Přihlásit"}</span>
+      <span className="hidden sm:inline lg:hidden xl:inline">{signedIn ? "Účet" : "Přihlásit"}</span>
       <UserRound strokeWidth={1.75} className="size-6" aria-hidden />
     </Link>
   );
