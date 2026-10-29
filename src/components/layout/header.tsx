@@ -14,17 +14,17 @@ import type { MenuLine } from "@/lib/menu";
 export function Header({ menu }: { menu: MenuLine[] }) {
   return (
     <header className="relative z-30 bg-white shadow-header">
-      <div className="mx-auto flex h-15 max-w-site items-center gap-5 px-5 lg:gap-7.5">
+      <div className="mx-auto flex h-15 max-w-site items-center gap-5 px-5 xl:gap-7.5">
         <Link href="/" className="shrink-0" aria-label="DoKosti BARF, úvodní stránka">
           {/* Nápis s kostí bez řádku BARF, výška 44 px (poměr 689:250). */}
           <Logo variant="napis" width={121} priority className="h-11 w-auto" />
         </Link>
 
-        <nav className="hidden flex-1 lg:block" aria-label="Nabídka">
+        <nav className="hidden flex-1 xl:block" aria-label="Nabídka">
           <CategoryMenu menu={menu} />
         </nav>
 
-        <div className="ml-auto flex items-center gap-1 lg:ml-0 lg:gap-2.5">
+        <div className="ml-auto flex items-center gap-1 xl:ml-0 xl:gap-2.5">
           <Link href="/hledat" aria-label="Hledat" className="inline-flex size-10 items-center justify-center text-green transition-colors duration-300 hover:text-brick-text">
             <Search strokeWidth={1.75} className="size-6" aria-hidden />
           </Link>

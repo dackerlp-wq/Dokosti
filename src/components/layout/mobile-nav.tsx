@@ -27,7 +27,7 @@ export function MobileNav({ menu }: { menu: MenuItem[] }) {
   const row = "flex min-h-11 items-center text-nav text-green hover:text-brick-text";
 
   return (
-    <div className="lg:hidden">
+    <div className="xl:hidden">
       <button type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-controls="mobile-nav" aria-label="Otevřít menu" className="inline-flex size-10 items-center justify-center text-green">
         <Menu strokeWidth={1.75} className="size-6" aria-hidden />
       </button>
