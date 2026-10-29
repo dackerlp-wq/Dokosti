@@ -191,6 +191,8 @@ export type Product = {
    * Kalkulačka a průvodce jí řadí produkty se stejnou rolí. Nákupní cena se do prohlížeče neposílá.
    */
   recoScore?: number;
+  /** Dávkování z textu výrobce (olej, doplňky) pro kalkulačku krmení. */
+  dose?: SupplementDose;
   /** Podíl masa a vnitřností v % podle složení od výrobce. Neuvedeno = nezobrazuje se. */
   meatPct?: number;
   /**
@@ -201,6 +203,10 @@ export type Product = {
 };
 
 export type BoneClass = "jedla" | "rekreacni";
+
+/** Dávka doplňku: na 100 g krmiva, na 1 kg hmotnosti zvířete, nebo pevná podle pásem hmotnosti (doKg null = bez horní meze). */
+export type DoseRule = { per: "food" | "body"; min: number; max: number } | { per: "tiers"; tiers: [number | null, number, number][] };
+export type SupplementDose = { unit: "ml" | "g"; pes?: DoseRule; kocka?: DoseRule };
 
 export type Nutrition = {
   /** Metabolizovatelná energie, kcal/100 g. */

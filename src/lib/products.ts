@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, isMeatKey, isNavicKind } from "@/lib/catalog";
+import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isMeatKey, isNavicKind } from "@/lib/catalog";
 import { getSupabase } from "@/lib/supabase/server";
 
 /** Řádek tabulky products v Supabase (snake_case). */
@@ -26,6 +26,7 @@ type ProductRow = {
   kcal_per_100g: number | null;
   meat_pct: number | string | null;
   kind: string | null;
+  dose: SupplementDose | null;
   bone_pct: number | null;
   organ_pct: number | null;
   liver_pct: number | null;
@@ -91,6 +92,7 @@ function fromRow(r: ProductRow): Product {
     nutrition: nutritionFromRow(r),
     meatPct: r.meat_pct == null ? undefined : Number(r.meat_pct),
     kind: r.kind && isNavicKind(r.kind) ? r.kind : undefined,
+    dose: r.dose ?? undefined,
     unit: r.unit ?? "ks",
     meats: (r.meats ?? []).filter(isMeatKey),
     recoScore: recoScore(r),
@@ -108,7 +110,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
   const { data, error } = await db
     .from("products")
     .select(
-      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, meat_pct, kind, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty, meats, purchase_price_czk, low_stock_threshold, reco_boost",
+      "slug, line, variant, animals, storage, weight_grams, price_czk, original_price_czk, producer, intro, composition, storage_note, dosage, in_stock, is_new, image_url, upsell_slugs, crosssell_slugs, kcal_per_100g, meat_pct, kind, dose, bone_pct, organ_pct, liver_pct, taurine_mg_per_kg, bone_class, is_complete, unit, stock_qty, meats, purchase_price_czk, low_stock_threshold, reco_boost",
     )
     .eq("is_published", true)
     .order("sort_order")

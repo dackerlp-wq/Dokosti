@@ -101,6 +101,24 @@ export function foodKind(p: Product): FoodKind {
   return "sval";
 }
 /** Obsahuje mix kost (podle etikety nebo složení)? */
+/**
+ * Denní dávka doplňku podle výrobce: rozpětí min–max pro dané zvíře, null když dávkování u produktu neznáme.
+ * „food“ se počítá z denní dávky krmiva, „body“ z hmotnosti, „tiers“ je pevná dávka podle pásma hmotnosti.
+ */
+export function supplementDose(p: Product, species: Species, weightKg: number, dailyGrams: number): { min: number; max: number; unit: "ml" | "g" } | null {
+  const rule = p.dose?.[species];
+  if (!p.dose || !rule) return null;
+  if (rule.per === "tiers") {
+    const tier = rule.tiers.find(([to]) => to == null || weightKg <= to) ?? rule.tiers[rule.tiers.length - 1];
+    return { min: tier[1], max: tier[2], unit: p.dose.unit };
+  }
+  if (rule.per === "food") return { min: (rule.min * dailyGrams) / 100, max: (rule.max * dailyGrams) / 100, unit: p.dose.unit };
+  return { min: rule.min * weightKg, max: rule.max * weightKg, unit: p.dose.unit };
+}
+/** Dávka lidsky: malé dávky na půl gramu/mililitru, větší na celé. */
+const fmtDose = (x: number) => (x < 3 ? (Math.round(x * 10) / 10).toLocaleString("cs-CZ") : String(Math.round(x)));
+const doseText = (d: { min: number; max: number; unit: string }, where = "") =>
+  `${fmtDose(d.min)} ${d.unit} denně${where}` + (Math.abs(d.max - d.min) < 0.25 ? "" : ` (výrobce ${fmtDose(d.min)}–${fmtDose(d.max)} ${d.unit}, začněte spodní dávkou)`);
 const mixHasBone = (p: Product) => (p.nutrition?.bonePct ?? 0) > 0 || /kost/.test(fold(p.composition).replace(/bez kost\w*/g, ""));
 
 /** Obsahuje produkt některý z vyloučených druhů masa? */
@@ -719,15 +737,26 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
 
   // Denní doplňky: olej 1 ml na 100 g dávky (rybí, když v plánu není ryba), zelenina 20 % dávky u psů, granule podle energie.
   // Sušené přílohy a doplňky se dávkují podle obalu: v plánu je jedno balení, které vydrží několik dodávek.
-  const oilCands = pool.filter((p) => foodKind(p) === "olej");
-  const fishOil = (p: Product) => has(p, "losos", "tresk", "rybí");
-  const oil = i.addons.olej ? choose(oilCands, (p) => dailyAlloc(p, D / 100, days).fit * (!fish && !fishOil(p) ? 0.6 : 1)) : null;
-  const oilPerDay = oil ? D / 100 : 0;
+  // Olej do BARFu je zdroj omega mastných kyselin: rybí (losos), nebo lněný a konopný. Ostropestřec není na omega-3
+  // a olej z tresčích jater má hodně vitaminu A a D, ten kalkulačka sama nenabízí.
+  const fishOil = (p: Product) => has(p, "losos", "rybí");
+  const oilCands = pool.filter((p) => foodKind(p) === "olej" && (fishOil(p) || has(p, "lněn", "konop")));
+  // Dávka oleje podle výrobce (spodní hranice); bez údaje 1 ml na 100 g dávky.
+  const doseKg = result.idealKg;
+  const oilDoseOf = (p: Product) => supplementDose(p, i.species, doseKg, D);
+  const oilPerDayOf = (p: Product) => oilDoseOf(p)?.min ?? D / 100;
+  // Bez ryby v plánu má rybí olej jasnou přednost; s rybou rostlinný (omega-3 už je z ryby).
+  const oilPref = (p: Product) => (fish ? (fishOil(p) ? 0.7 : 1) : fishOil(p) ? 1 : 0.3);
+  const oil = i.addons.olej ? choose(oilCands, (p) => (dailyAlloc(p, oilPerDayOf(p), days).fit > 0 ? oilPref(p) : 0)) : null;
+  const oilPerDay = oil ? oilPerDayOf(oil) : 0;
+  const oilDose = oil ? oilDoseOf(oil) : null;
+  if (oil && oil.dose?.[i.species]?.per === "food") notes.push({ kind: "info", text: `${productName(oil)}: výrobce doporučuje podle tučnosti masa a celkový tuk v krmivu do 20 %. K tučnějším mixům (kachna, vepřové) dávejte spodní dávku.` });
   const vegCands = pool.filter((p) => foodKind(p) === "prilohy" && has(p, "zelenin", "barfex"));
   const veg = comp.plant > 0 && i.addons.zelenina ? choose(vegCands, () => 1) : null;
   if (comp.plant > 0 && i.addons.zelenina && !veg) notes.push({ kind: "info", text: "Zeleninový mix zrovna nemáme, rozmixujte mrkev, cuketu nebo dýni." });
-  const vegDry = veg ? veg.storage === "suche" : false;
-  const vegPerDay = veg && !vegDry ? D * (comp.plant / 100) : 0;
+  const vegDose = veg ? supplementDose(veg, i.species, result.idealKg, D) : null;
+  const vegDry = veg ? veg.storage === "suche" && !vegDose : false;
+  const vegPerDay = veg && !vegDry ? (vegDose?.min ?? D * (comp.plant / 100)) : 0;
 
   // Doplňky podle toho, co v sestavě chybí: jód (mořská řasa), když v plánu není ryba; vápník, když část mixů nemá kost
   // a v plánu nejsou Kosti (ne u štěňat velkých plemen, tam vápník navíc nepatří).
@@ -910,9 +939,12 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
 
     takeMeat(Math.max(0, dailyTotal - boneToday - organToday), out, lastDay);
     if (organItem) out.push(organItem);
-    if (oil) out.push({ product: oil, grams: 0, note: `${Math.max(1, Math.round(oilPerDay))} ml` });
+    if (oil) out.push({ product: oil, grams: 0, note: `${fmtDose(oilPerDay)} ml` });
     if (veg) out.push(vegDry ? { product: veg, grams: 0, note: "podle návodu na obalu" } : { product: veg, grams: round5(vegPerDay) });
-    for (const s of supplements) out.push({ product: s.product, grams: 0, note: "podle obalu" });
+    for (const s of supplements) {
+      const d = supplementDose(s.product, i.species, result.idealKg, D);
+      out.push({ product: s.product, grams: 0, note: d ? `${fmtDose(d.min)} ${d.unit}` : "podle obalu" });
+    }
     if (kibble && result.kibbleKcal > 0) out.push({ product: kibble, grams: kibblePerDay, note: kibblePerDay > 0 ? "v jiném jídle" : `${result.kibbleKcal} kcal podle obalu` });
     return { day, label: `${day + 1}. den`, weekday: weekdayOf(day), items: out };
   });
@@ -951,7 +983,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     const { qty, used, periods } = dailyAlloc(product, gpd, days);
     items.push({ product, qty, gramsPerDay: gpd, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText: text, role, why });
   };
-  if (oil) daily(oil, oilPerDay, "olej", "spolu s vitaminem E", `${Math.max(1, Math.round(oilPerDay))} ml denně do misky`);
+  if (oil) daily(oil, oilPerDay, "olej", "dávka podle výrobce", oilDose ? doseText(oilDose, " do misky") : `${fmtDose(oilPerDay)} ml denně do misky`);
   /** Sušený doplněk dávkovaný podle obalu: jedno balení, které vydrží několik dodávek (nejvýš do trvanlivosti). */
   const onePack = (product: Product, role: Reco["role"], why: string, text: string) => {
     const periods = maxPeriodsFor(product, days);
@@ -959,8 +991,12 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     items.push({ product, qty: 1, gramsPerDay: used / days, usedGrams: used, leftoverGrams: product.weightGrams - used, periods, portionText: text, role, why });
   };
   if (veg && vegDry) onePack(veg, "zelenina", "rostlinná část dávky", "podle návodu na obalu");
-  else if (veg) daily(veg, vegPerDay, "zelenina", "rostlinná část, 20 % dávky", `${round5(vegPerDay)} g denně`);
-  for (const s of supplements) onePack(s.product, "doplnek", s.why, "denně podle obalu");
+  else if (veg) daily(veg, vegPerDay, "zelenina", vegDose ? "příloha k masu podle výrobce" : "rostlinná část, 20 % dávky", vegDose ? doseText(vegDose) : `${round5(vegPerDay)} g denně`);
+  for (const s of supplements) {
+    const d = supplementDose(s.product, i.species, result.idealKg, D);
+    if (d) daily(s.product, d.min, "doplnek", s.why, doseText(d));
+    else onePack(s.product, "doplnek", s.why, "denně podle obalu");
+  }
   if (kibble && result.kibbleKcal > 0) daily(kibble, kibblePerDay, "granule", `${100 - i.rawShare} % energie`, kibblePerDay > 0 ? `${kibblePerDay} g denně v jiném jídle` : `${result.kibbleKcal} kcal denně podle tabulky na obalu`);
 
   const longest = Math.max(0, ...mixes.map((m) => m.weightGrams / animalGrams));
@@ -1090,13 +1126,10 @@ export const addonForRole = (role: Reco["role"]) => ROLE_ADDON[role];
 export function recommendExtras(products: Product[], i: AnimalInput, days: number): Reco[] {
   const off = (Object.keys(i.addons) as AddonKey[]).filter((k) => !i.addons[k] && k !== "granule");
   if (!off.length) return [];
-  const others: AddonKey[] = off.filter((k) => k !== "doplnky");
-  const all = others.length ? buildPlan(products, { ...i, addons: { ...i.addons, ...Object.fromEntries(others.map((k) => [k, true])) } as Record<AddonKey, boolean> }, days).items : [];
-  const extras = all.filter((it) => {
-    const key = addonForRole(it.role);
-    return key !== undefined && others.includes(key);
-  });
-  // Doplňky se posuzují k sestavě, kterou zákazník opravdu má (třeba mořská řasa jen když si nepřidal rybu).
-  if (off.includes("doplnky")) extras.push(...buildPlan(products, { ...i, addons: { ...i.addons, doplnky: true } }, days).items.filter((it) => it.role === "doplnek"));
+  // Každý doplněk se posuzuje k sestavě, kterou zákazník opravdu má: rybí olej se nabídne, když nemá rybu,
+  // mořská řasa jen bez ryby, vápník jen bez kostí.
+  const extras = off.flatMap((k) =>
+    buildPlan(products, { ...i, addons: { ...i.addons, [k]: true } }, days).items.filter((it) => addonForRole(it.role) === k),
+  );
   return extras;
 }
