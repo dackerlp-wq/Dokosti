@@ -23,7 +23,7 @@ import { formatPrice, formatWeight } from "@/lib/format";
  * Plán, rozpis a pravidelné dodávky dělá průvodce Krmení na míru.
  */
 const STORAGE_KEY = "dokosti-kalkulacka-v4";
-const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", rekreacni: "Na okusování" };
+const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", doplnek: "Doplněk", rekreacni: "Na okusování" };
 const DAYS = [7, 14, 30] as const;
 type Days = (typeof DAYS)[number];
 

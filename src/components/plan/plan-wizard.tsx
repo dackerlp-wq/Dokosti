@@ -12,7 +12,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
 import { Choice, ChoiceGrid, SideCards, WizardLabel, WizardLayout, WizardPanel } from "@/components/plan/wizard-ui";
-import { ACTIVITY_LABEL, addonForRole, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
+import { ACTIVITY_LABEL, addonForRole, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -47,8 +47,8 @@ function petName(name: string, species: PetProfile["species"], sex: Sex, pad: Pa
   const dog = species === "pes";
   return pad === "dat" ? (dog ? "vašemu psovi" : "vaší kočce") : pad === "acc" ? (dog ? "vašeho psa" : "vaši kočku") : dog ? "váš pes" : "vaše kočka";
 }
-const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "kost navíc", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", granule: "granule" };
-const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", rekreacni: "Na okusování" };
+const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "kost navíc", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", doplnek: "doplněk", granule: "granule" };
+const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", doplnek: "Doplněk", rekreacni: "Na okusování" };
 
 /** Datum narození zpětně z věku (měsíce nebo roky), přibližně na začátek měsíce. */
 function bornFrom(months: number): string {
@@ -658,7 +658,7 @@ function PlanStep({
           </div>
           <ul className="divide-y divide-line text-sm">
             {plan.items.map((i) => {
-              const alternatives = i.role === "zaklad" || i.role === "kosti" ? plan.pool.filter((p) => p.line === i.product.line && p.slug !== i.product.slug && !plan.items.some((x) => x.product.slug === p.slug)) : [];
+              const alternatives = i.role === "zaklad" || i.role === "kosti" ? plan.pool.filter((p) => foodKind(p) === foodKind(i.product) && p.slug !== i.product.slug && !plan.items.some((x) => x.product.slug === p.slug)) : [];
               return (
                 <li key={i.product.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                   <div className="min-w-0 flex-1">
