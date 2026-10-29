@@ -35,7 +35,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const q = (sp.q ?? "").trim().toLowerCase();
   const state = STATES.find((s) => s.id === sp.stav);
   const products = all.filter((p) => (!sp.rada || p.line === sp.rada) && (!sp.dodavatel || p.supplier_id === sp.dodavatel) && (!state || state.test(p)) && (!q || `${productName(p)} ${p.slug} ${p.ean ?? ""} ${p.producer}`.toLowerCase().includes(q)));
-  /** Marže v Kč (a %) na e-shopu a v prodejně (kasa). Pod 20 % cihlově. */
+  /** Marže v Kč (a %) na e-shopu a v prodejně (kasa) z velkoobchodní nákupní ceny s DPH. Pod 20 % cihlově. */
   const marginCell = (price: number, p: ProductRow) => {
     const m = marginOf(price, p.purchase_price_czk);
     if (!m) return <span className="text-muted">—</span>;
@@ -83,7 +83,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {products.length === 0 ? (
           <p className="text-muted">{all.length === 0 ? "Zatím žádný produkt. Založte první tlačítkem Nový produkt." : "Nic neodpovídá filtru."}</p>
         ) : (
-          <Table head={manager ? ["Název", "Řada", "Balení", "Cena", "Marže e-shop", "Marže prodejna", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
+          <Table head={manager ? ["Název", "Řada", "Balení", "Nákup", "Cena", "Marže e-shop", "Marže prodejna", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
             {products.map((p) => (
               <tr key={p.id}>
                 <Td>
@@ -94,6 +94,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 </Td>
                 <Td>{LINE_INFO[p.line].name}</Td>
                 <Td>{p.unit === "kg" ? <span className="text-muted">na váhu</span> : formatWeight(p.weight_grams)}</Td>
+                {manager && (
+                  <Td className="whitespace-nowrap">
+                    {p.purchase_price_czk !== null ? formatMarginCzk(Number(p.purchase_price_czk)) : <span className="text-muted">—</span>}
+                    {p.purchase_price_czk !== null && p.unit === "kg" && <span className="text-muted">/kg</span>}
+                  </Td>
+                )}
                 <Td className="whitespace-nowrap">
                   {formatPrice(p.price_czk)}
                   {p.unit === "kg" && <span className="text-muted">/kg</span>}
