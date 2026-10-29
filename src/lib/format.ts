@@ -10,6 +10,8 @@ export function formatPrice(czkAmount: number) {
 }
 
 export function formatWeight(grams: number) {
+  // Kusové zboží bez udané hmotnosti (rohy, paroží, uši) má v databázi 1 g.
+  if (grams <= 1) return "1 ks";
   if (grams >= 1000) {
     const kg = grams / 1000;
     return `${Number.isInteger(kg) ? kg : kg.toFixed(1).replace(".", ",")} kg`;
