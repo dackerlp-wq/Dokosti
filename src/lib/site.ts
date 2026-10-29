@@ -8,11 +8,11 @@ export const SITE = {
 /** Řady produktů: patička a záloha pro menu (lišta v hlavičce se staví z produktů, viz lib/menu.ts). */
 export const CATEGORY_NAV = [
   { href: "/rada/barf", label: "BARF mixy" },
-  { href: "/rada/kosti", label: "Kosti" },
-  { href: "/rada/navic", label: "Navíc" },
-  { href: "/rada/mlsky", label: "Mlsky" },
-  { href: "/rada/granule", label: "Granule" },
-  { href: "/rada/konzervy", label: "Konzervy" },
+  { href: "/rada/maso", label: "Maso a vnitřnosti" },
+  { href: "/rada/kosti", label: "Masité kosti" },
+  { href: "/rada/mlsky", label: "Pamlsky a žvýkání" },
+  { href: "/rada/navic", label: "Doplňky" },
+  { href: "/rada/granule", label: "Granule a konzervy" },
 ] as const;
 
 /** Ostatní stránky: horní řádek hlavičky. */

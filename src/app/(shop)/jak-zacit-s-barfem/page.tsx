@@ -144,7 +144,7 @@ export default async function HowToStartPage() {
             Základ tvoří kvalitní olej s omega-3 mastnými kyselinami (lososový, z tresčích jater nebo z řas). Podle potřeby můžete přidat mořské řasy, vitamín
             E nebo pivovarské kvasnice. Na začátek stačí jeden olej, další doplňky řešte až s plným jídelníčkem.{" "}
             <Link href="/rada/navic" className="text-brick-text underline">
-              Řada Navíc
+              Doplňky v e-shopu
             </Link>
           </p>
         </div>

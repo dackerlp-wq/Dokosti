@@ -15,7 +15,7 @@ export function meatIllustration(key: MeatKey): string | null {
 }
 
 /**
- * Data pro menu řad s podkategoriemi (druhy masa, u Navíc účel): jen ty, které v řadě opravdu jsou,
+ * Data pro menu řad s podkategoriemi (druhy masa, u řad s druhy podkategorie): jen ty, které v řadě opravdu jsou,
  * s ilustrací nebo obrázkem prvního produktu.
  */
 export function buildCategoryMenu(products: Product[]): MenuLine[] {
@@ -24,7 +24,7 @@ export function buildCategoryMenu(products: Product[]): MenuLine[] {
     const meats = lineFacets(slug).map((key) => {
       const hits = inLine.filter((p) => productFacets(p).includes(key));
       const ill = isMeatKey(key) ? meatIllustration(key) : null;
-      return { key, label: facetName(key), count: hits.length, image: ill ?? hits.find((p) => p.image)?.image ?? null, illustration: Boolean(ill) };
+      return { key, label: facetName(slug, key), count: hits.length, image: ill ?? hits.find((p) => p.image)?.image ?? null, illustration: Boolean(ill) };
     }).filter((m) => m.count > 0);
     return { slug, name: LINE_INFO[slug].name, tagline: LINE_INFO[slug].tagline, href: `/rada/${slug}`, meats };
   });

@@ -131,7 +131,7 @@ export default async function ProductPage({ params }: Props) {
                       <span key={m}>
                         {i > 0 && ", "}
                         <Link href={`/rada/${line.slug}/${m}`} className="text-brick-text hover:underline">
-                          {facetLabel(m)}
+                          {facetLabel(product.line, m)}
                         </Link>
                       </span>
                     ))}

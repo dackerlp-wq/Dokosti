@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
-import { type Animal, type FacetKey, facetName, isLineFacet, lineFacets, type LineSlug, productFacets, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
+import { type Animal, type FacetKey, facetName, isLineFacet, lineFacets, lineHasKinds, type LineSlug, productFacets, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
 
 type Sort = "doporucene" | "nejlevnejsi" | "nejdrazsi" | "novinky";
 type Pack = "male" | "stredni" | "velke";
@@ -15,7 +15,7 @@ const packOf = (p: Product): Pack => (p.unit === "kg" || p.weightGrams > 1000 ? 
 type Filters = { meats: FacetKey[]; animal: Animal | null; inStock: boolean; storage: Storage | null; pack: Pack | null; sort: Sort };
 
 /**
- * Produkty řady: filtr podle masa (u Navíc podle účelu) je řádek odkazů nad mřížkou (každý má vlastní stránku /rada/[řada]/[klíč]),
+ * Produkty řady: filtr podle masa (u řad s druhy podle podkategorie) je řádek odkazů nad mřížkou (každý má vlastní stránku /rada/[řada]/[klíč]),
  * ostatní volby (pro koho, skladem, skladování, balení, řazení) jsou v úzké liště a drží se v adrese.
  * Stránka zůstává statická, filtruje se v prohlížeči.
  */
@@ -105,13 +105,13 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
   return (
     <div>
       {meatOptions.length > 0 && (
-        <nav aria-label={line === "navic" ? "Účel" : "Druh masa"} className="mb-5 flex flex-wrap justify-center gap-1.25">
+        <nav aria-label={line === "navic" ? "Účel" : lineHasKinds(line) ? "Podkategorie" : "Druh masa"} className="mb-5 flex flex-wrap justify-center gap-1.25">
           <Link href={meatHref(null)} aria-current={!single && !f.meats.length ? "page" : undefined} className={`${meatLink} ${!f.meats.length ? "bg-green text-cream" : "text-green hover:text-brick-text"}`}>
             Vše
           </Link>
           {meatOptions.map((m) => (
             <Link key={m.key} href={meatHref(m.key)} aria-current={single === m.key ? "page" : undefined} className={`${meatLink} ${single === m.key ? "bg-green text-cream" : "text-green hover:text-brick-text"}`}>
-              {facetName(m.key)}
+              {facetName(line, m.key)}
               <span className={`ml-1.5 text-small font-normal ${single === m.key ? "text-cream/80" : "text-muted"}`}>{m.count}</span>
             </Link>
           ))}

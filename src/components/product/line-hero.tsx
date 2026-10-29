@@ -1,11 +1,11 @@
-import { Beef, Bone, Cookie, CookingPot, Leaf, Wheat, type LucideIcon } from "lucide-react";
+import { Beef, Bone, Cookie, CookingPot, Droplet, Soup, type LucideIcon } from "lucide-react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import type { Line, LineSlug } from "@/lib/catalog";
 
-const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Beef, kosti: Bone, navic: Leaf, mlsky: Cookie, granule: Wheat, konzervy: CookingPot };
+const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Soup, maso: Beef, kosti: Bone, mlsky: Cookie, navic: Droplet, granule: CookingPot };
 
 /** Hero řady na bílé: vlevo ilustrace (druh masa) nebo ikona řady na krémovém disku, vpravo název, podtitulek, odstavec, návody a tlačítko. */
 /** lead nahradí podtitulek řady (popis podkategorie). */

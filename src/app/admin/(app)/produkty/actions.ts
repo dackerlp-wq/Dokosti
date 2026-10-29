@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { slugify } from "@/lib/admin";
-import { isLineSlug, type Animal, type Storage, isMeatKey, isNavicKind } from "@/lib/catalog";
+import { isLineKind, isLineSlug, lineHasKinds, type Animal, type Storage, isMeatKey } from "@/lib/catalog";
 import { logActivity } from "@/lib/activity";
 import { flashError, flashOk } from "@/lib/flash";
 import { getAdmin, getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
@@ -38,7 +38,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const animals = formData.getAll("animals").map(String) as Animal[];
   const meats = formData.getAll("meats").map(String).filter(isMeatKey);
   const kindRaw = String(formData.get("kind") ?? "");
-  const kind = line === "navic" && isNavicKind(kindRaw) ? kindRaw : null;
+  const kind = isLineSlug(line) && isLineKind(line, kindRaw) ? kindRaw : null;
   const weight = num(formData.get("weight_grams"));
   const price = num(formData.get("price_czk"));
   const originalRaw = String(formData.get("original_price_czk") ?? "").trim();
@@ -47,6 +47,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const store = storeRaw ? num(storeRaw) : null;
 
   if (!isLineSlug(line)) return { error: "Vyberte řadu." };
+  if (lineHasKinds(line) && !kind) return { error: "Vyberte podkategorii." };
   if (!variant) return { error: "Doplňte druh masa nebo suroviny." };
   if (!["mrazene", "chlazene", "suche"].includes(storage)) return { error: "Vyberte skladování." };
   if (animals.length === 0) return { error: "Vyberte aspoň jedno zvíře." };

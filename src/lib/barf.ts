@@ -85,15 +85,21 @@ export const DEFAULT_ADDONS: Record<AddonKey, boolean> = { kosti: true, ryba: tr
 export const BASE_ADDONS: Record<AddonKey, boolean> = { kosti: false, ryba: false, olej: false, zelenina: false, rekreacni: false, vnitrnosti: false, doplnky: false, granule: true };
 
 /**
- * Co produkt v jídelníčku dělá. BARF řada obsahuje hotové mixy (maso s kostí), čistou svalovinu, vnitřnosti a ryby;
+ * Co produkt v jídelníčku dělá. BARF mixy jsou hotové mixy (maso s kostí), Maso a vnitřnosti se dělí na svalovinu, vnitřnosti a ryby;
  * kalkulačka je musí rozlišit, jinak by třeba játra nebo srdce brala jako základ misky.
  */
 export type FoodKind = "mix" | "sval" | "vnitrnosti" | "ryba" | "kost" | "rekreacni" | "olej" | "mineraly" | "vitaminy" | "prilohy" | "granule" | "jine";
 export function foodKind(p: Product): FoodKind {
-  if (p.line === "granule") return "granule";
+  // Konzervy a kapsičky jsou v řadě Granule a konzervy, kalkulačka s nimi ale nepočítá jako s granulemi.
+  if (p.line === "granule") return p.kind === "konzervy" ? "jine" : "granule";
   if (p.line === "kosti") return p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov", "kolen", "kloub") ? "rekreacni" : "kost";
   if (p.line === "navic") return p.kind === "oleje" ? "olej" : p.kind === "mineraly" ? "mineraly" : p.kind === "vitaminy" ? "vitaminy" : p.kind === "prilohy" ? "prilohy" : "jine";
-  if (p.line !== "barf") return "jine";
+  if (p.line === "barf") return "mix";
+  if (p.line !== "maso") return "jine";
+  // Maso a vnitřnosti: podkategorie rozhoduje, bez ní se odhadne z názvu a etikety.
+  if (p.kind === "svalovina") return "sval";
+  if (p.kind === "vnitrnosti") return "vnitrnosti";
+  if (p.kind === "ryby") return "ryba";
   const v = fold(p.variant);
   if (p.meats?.includes("ryby") || /ryb|losos|sprot|tresk|makrel|sled/.test(v)) return "ryba";
   if ((p.nutrition?.liverPct ?? 0) >= 50 || (p.nutrition?.organPct ?? 0) >= 90 || /jatra|ledvin|droby a orez|vnitrnost|slezin/.test(v)) return "vnitrnosti";
@@ -595,9 +601,9 @@ export function mixesKcal(mixes: Product[]) {
  * Orientační trvanlivost balení ve dnech: mražené zhruba 3 měsíce v mrazáku, chlazené pár dní,
  * suché (olej po otevření) 3 měsíce, granule po otevření 4 měsíce. Delší výdrž nemá smysl objednávat.
  */
-export function shelfDays(p: { line: string; storage: string }): number {
+export function shelfDays(p: { line: string; storage: string; kind?: string }): number {
   if (p.storage === "chlazene") return 7;
-  if (p.line === "granule") return 120;
+  if (p.line === "granule" && p.kind !== "konzervy") return 120;
   return 90;
 }
 
@@ -652,7 +658,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const prelim = calculate(i);
   const prelimAnimal = prelim.dailyGrams * ((100 - prelim.composition.plant) / 100);
   const mixes = pickMixes(pool, i, prelimAnimal, days).map(swap).filter((m, idx, arr) => arr.findIndex((x) => x.slug === m.slug) === idx);
-  const kibbleCands = pool.filter((p) => p.line === "granule");
+  const kibbleCands = pool.filter((p) => foodKind(p) === "granule");
   const kibble = i.rawShare < 100 && i.addons.granule ? (choose(kibbleCands.filter((p) => i.stage !== "mlade" || has(p, "štěň", "puppy", "junior")), () => 1) ?? choose(kibbleCands, () => 1)) : null;
   const result = calculate(i, mixesKcal(mixes), kibble?.nutrition?.kcalPer100g ?? null);
   const D = result.dailyGrams;

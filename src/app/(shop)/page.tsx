@@ -1,4 +1,4 @@
-import { Beef, Bone, Calculator, Cookie, CookingPot, Heart, Leaf, Snowflake, Store, Truck, Wheat, type LucideIcon } from "lucide-react";
+import { Beef, Bone, Calculator, Cookie, CookingPot, Droplet, Heart, Leaf, Snowflake, Soup, Store, Truck, type LucideIcon } from "lucide-react";
 import { ProductCarousel } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 
 /** Ikona řady v rozcestníku a mega menu. Kost je motiv loga, smí označovat řady krmiva. */
-const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Beef, kosti: Bone, navic: Leaf, mlsky: Cookie, granule: Wheat, konzervy: CookingPot };
+const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Soup, maso: Beef, kosti: Bone, mlsky: Cookie, navic: Droplet, granule: CookingPot };
 
 export default async function HomePage() {
   const [products, { shop }] = await Promise.all([getProducts(), getSettings()]);
@@ -85,7 +85,7 @@ export default async function HomePage() {
           <IconTile icon={Beef} title="Maso" text="Svalovina je základ každého mixu a největší část denní dávky." />
           <IconTile icon={Bone} title="Kosti" text="Masité kosti, vždy syrové, nikdy vařené. Velikost podle psa." />
           <IconTile icon={Heart} title="Vnitřnosti" text="Játra, srdce, žaludky. Menší část dávky, podle složení na etiketě." />
-          <IconTile icon={Leaf} title="Navíc" text="Oleje, byliny, zelenina a vaječné skořápky. Dávkují se po lžičkách." />
+          <IconTile icon={Leaf} title="Doplňky" text="Oleje, byliny, zelenina a vaječné skořápky. Dávkují se po lžičkách." />
         </div>
       </Section>
 

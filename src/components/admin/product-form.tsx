@@ -6,7 +6,7 @@ import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import type { ProductRow } from "@/lib/admin";
-import { ANIMAL_LABEL, BONE_CLASS_LABEL, LINES, LINE_INFO, MEAT_LABEL, MEATS, NAVIC_KIND_INFO, NAVIC_KINDS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
+import { ANIMAL_LABEL, BONE_CLASS_LABEL, KIND_INFO, LINE_KINDS, LINES, LINE_INFO, MEAT_LABEL, MEATS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
 const STEPS = ["Co to je", "Cena a balení", "Sklad a dodavatel", "Etiketa a web"] as const;
 
@@ -55,13 +55,13 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
                 ))}
               </select>
             </Field>
-            {preview.line === "navic" && (
-              <Field label="Podkategorie" hint="účel v řadě Navíc">
-                <select name="kind" defaultValue={p?.kind ?? ""}>
-                  <option value="">nezařazeno</option>
-                  {NAVIC_KINDS.map((k) => (
+            {LINE_KINDS[preview.line] && (
+              <Field label="Podkategorie" hint={`v řadě ${LINE_INFO[preview.line].name}`}>
+                <select key={preview.line} name="kind" defaultValue={p?.line === preview.line ? (p?.kind ?? "") : ""}>
+                  <option value="">vyberte</option>
+                  {LINE_KINDS[preview.line]!.map((k) => (
                     <option key={k} value={k}>
-                      {NAVIC_KIND_INFO[k].title}
+                      {KIND_INFO[k].title}
                     </option>
                   ))}
                 </select>
@@ -257,7 +257,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
             <Field label="Taurin (mg/kg)" hint="kočičí mixy">
               <input name="taurine_mg_per_kg" type="number" min={0} step="1" defaultValue={p?.taurine_mg_per_kg ?? ""} />
             </Field>
-            <Field label="Druh kosti" hint="řada Kosti">
+            <Field label="Druh kosti" hint="řada Masité kosti">
               <select name="bone_class" defaultValue={p?.bone_class ?? ""}>
                 <option value="">neurčeno</option>
                 {(Object.keys(BONE_CLASS_LABEL) as (keyof typeof BONE_CLASS_LABEL)[]).map((k) => (

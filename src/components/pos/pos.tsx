@@ -41,11 +41,11 @@ type Parked = { id: string; name: string; at: string; lines: { productId: string
 /** Barva řady: tečka na dlaždici a u kategorie (dlaždice jsou světlé, aby se četla cena a sklad). */
 const LINE_DOT: Record<LineSlug, string> = {
   barf: "bg-green",
+  maso: "bg-ink",
   kosti: "bg-brick",
-  navic: "bg-ochre",
   mlsky: "bg-olive",
+  navic: "bg-ochre",
   granule: "bg-muted",
-  konzervy: "bg-ink",
 };
 const PARKED_KEY = "dokosti-kasa-odlozene";
 const CART_KEY = "dokosti-pos-cart";

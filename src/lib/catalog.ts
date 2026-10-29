@@ -3,7 +3,8 @@
  * (viz supabase/migrations), aby šlo přepnout z ukázkových dat bez změny UI.
  */
 
-export const LINES = ["barf", "kosti", "navic", "mlsky", "granule", "konzervy"] as const;
+/** Řady = hlavní kategorie v menu, v tomhle pořadí. */
+export const LINES = ["barf", "maso", "kosti", "mlsky", "navic", "granule"] as const;
 export type LineSlug = (typeof LINES)[number];
 
 export type Line = {
@@ -22,40 +23,40 @@ export const LINE_INFO: Record<LineSlug, Line> = {
     description:
       "Hotové BARF mixy, ve kterých je maso, masité kosti a vnitřnosti v poměru vhodném pro každodenní krmení. Rozmrazíte, odvážíte, podáte. Vyberte podle druhu masa.",
   },
+  maso: {
+    slug: "maso",
+    name: "Maso a vnitřnosti",
+    tagline: "Čistá svalovina, vnitřnosti a ryby pro vlastní skládání jídelníčku.",
+    description:
+      "Jednotlivé suroviny bez kostí: svalovina a srdce jako základ, játra a ledvinky jako menší část dávky a ryby zhruba jednou týdně. Hodí se k BARF mixům i pro ty, kdo si jídelníček skládají sami.",
+  },
   kosti: {
     slug: "kosti",
-    name: "Kosti",
-    tagline: "Masité kosti na hryzání a jako část denní dávky.",
+    name: "Masité kosti",
+    tagline: "Syrové krky, křídla a stehna jako část denní dávky.",
     description:
-      "Syrové masité kosti zaměstnají psa na dlouho a jsou přirozeným zdrojem vápníku. Vždy syrové, nikdy vařené. Velikost volte podle psa, poradíme.",
+      "Syrové masité kosti, které pes nebo kočka sní celé. Jsou přirozeným zdrojem vápníku. Vždy syrové, nikdy vařené. Velikost volte podle zvířete, kost nesmí jít spolknout vcelku. Na dlouhé hryzání jsou rohy a paroží v Pamlscích a žvýkání.",
+  },
+  mlsky: {
+    slug: "mlsky",
+    name: "Pamlsky a žvýkání",
+    tagline: "Sušené pamlsky na odměnu a rohy, paroží a kůže na hryzání.",
+    description:
+      "Sušené maso a vnitřnosti z jedné suroviny do kapsy na procházku i na trénink. K tomu žvýkání na dlouho: buvolí rohy, jelení paroží, uši, kůže a kávové dřevo.",
   },
   navic: {
     slug: "navic",
-    name: "Navíc",
+    name: "Doplňky",
     tagline: "Oleje, minerály, vitamíny a přílohy, které BARF doplní.",
     description:
       "Co v mase chybí nebo co chcete přidat: oleje s omega-3, vápník místo kostí, řasy a vitamíny, přílohy k masu a doplňky s kolagenem. Vybírejte podle účelu, dávkuje se po lžičkách.",
   },
-  mlsky: {
-    slug: "mlsky",
-    name: "Mlsky",
-    tagline: "Sušené pamlsky z jedné suroviny. Odměna bez chemie.",
-    description:
-      "Sušené maso, vnitřnosti a kůže z jedné suroviny. Bez soli, cukru a barviv. Do kapsy na procházku i na trénink.",
-  },
   granule: {
     slug: "granule",
-    name: "Granule",
-    tagline: "Granule s 56–70 % masa. Na přechod k BARFu i na cesty.",
+    name: "Granule a konzervy",
+    tagline: "Granule a konzervy s vysokým podílem masa. Na přechod k BARFu i na cesty.",
     description:
-      "Pro dny, kdy syrové krmení nejde, a na postupný přechod k BARFu. Vybíráme jen granule s vysokým podílem masa: Carnilove True Fresh má 60 % čerstvého masa, pro kočky 70 %. Bez obilovin, brambor a kuřecího. Podíl masa vidíte u každého balení.",
-  },
-  konzervy: {
-    slug: "konzervy",
-    name: "Konzervy",
-    tagline: "Konzervy a kapsičky s 62–90 % masa. Pro psy i kočky.",
-    description:
-      "Masové konzervy a kapsičky, ve kterých je maso na prvním místě: 62–74 % u konzerv, 70 % u kapsiček pro psy a 90 % u kapsiček pro kočky. Kompletní krmivo, ke granulím i jako záloha k BARFu na cesty. Podíl masa uvádíme u každého produktu podle složení od výrobce.",
+      "Pro dny, kdy syrové krmení nejde, a na postupný přechod k BARFu. Vybíráme jen krmiva, kde je maso na prvním místě: Carnilove True Fresh má 60 % čerstvého masa, pro kočky 70 %, konzervy a kapsičky 62–90 %. Podíl masa vidíte u každého produktu podle složení od výrobce.",
   },
 };
 
@@ -93,46 +94,66 @@ export const MEAT_TITLE: Record<MeatKey, string> = {
 export function isMeatKey(v: string): v is MeatKey {
   return (MEATS as readonly string[]).includes(v);
 }
-/** Podkategorie řady Navíc podle účelu (ostatní řady se dělí podle masa). */
+/** Podkategorie řady Doplňky podle účelu. */
 export const NAVIC_KINDS = ["oleje", "mineraly", "vitaminy", "prilohy", "klouby", "ostatni"] as const;
 export type NavicKind = (typeof NAVIC_KINDS)[number];
-export const NAVIC_KIND_LABEL: Record<NavicKind, string> = {
-  oleje: "oleje",
-  mineraly: "vápník a minerály",
-  vitaminy: "řasy, vitamíny a kvasnice",
-  prilohy: "přílohy k masu",
-  klouby: "klouby a pohyb",
-  ostatni: "štěňata, lékárnička a pomůcky",
+/** Podkategorie řady Maso a vnitřnosti. */
+export const MASO_KINDS = ["svalovina", "vnitrnosti", "ryby"] as const;
+export type MasoKind = (typeof MASO_KINDS)[number];
+/** Podkategorie řady Pamlsky a žvýkání. */
+export const MLSKY_KINDS = ["pamlsky", "zvykani"] as const;
+export type MlskyKind = (typeof MLSKY_KINDS)[number];
+/** Podkategorie řady Granule a konzervy. */
+export const GRANULE_KINDS = ["granule", "konzervy"] as const;
+export type GranuleKind = (typeof GRANULE_KINDS)[number];
+export type ProductKind = NavicKind | MasoKind | MlskyKind | GranuleKind;
+
+/** Řady, které se dělí podle druhu (sloupec kind). Ostatní (BARF mixy, Masité kosti) se dělí podle masa. */
+export const LINE_KINDS: Partial<Record<LineSlug, readonly ProductKind[]>> = { maso: MASO_KINDS, mlsky: MLSKY_KINDS, navic: NAVIC_KINDS, granule: GRANULE_KINDS };
+export const lineHasKinds = (line: LineSlug) => Boolean(LINE_KINDS[line]);
+export function isLineKind(line: LineSlug, v: string | null | undefined): v is ProductKind {
+  return Boolean(v && LINE_KINDS[line]?.includes(v as ProductKind));
+}
+
+/** Popisek do menu a filtru, nadpis podkategorie a krátký popis. */
+export const KIND_INFO: Record<ProductKind, { label: string; title: string; text: string }> = {
+  oleje: { label: "oleje", title: "Oleje", text: "Rybí a rostlinné oleje k mixu. Doplní omega-3 mastné kyseliny, ryby nejsou v misce každý den." },
+  mineraly: { label: "vápník a minerály", title: "Vápník a minerály", text: "Náhrada masitých kostí pro psy, kteří kosti nejedí, a vyrovnání vápníku a fosforu v masité stravě." },
+  vitaminy: { label: "řasy, vitamíny a kvasnice", title: "Řasy, vitamíny a kvasnice", text: "Jód, vitamíny skupiny B a stopové prvky, kterých je v mase a vnitřnostech málo." },
+  prilohy: { label: "přílohy k masu", title: "Přílohy k masu", text: "Zelenina, pohanka a rýže pro BARF s rostlinnou složkou. Vláknina a objem pro žravé psy." },
+  klouby: { label: "klouby a pohyb", title: "Klouby a pohyb", text: "Doplňky s kolagenem pro velká plemena, sportovce a seniory. Při potížích nejdřív k veterináři." },
+  ostatni: { label: "štěňata, lékárnička a pomůcky", title: "Štěňata, lékárnička a pomůcky", text: "Mléko pro štěňata, aktivní uhlí do lékárničky a odměrka na oleje a sypké doplňky." },
+  svalovina: { label: "svalovina", title: "Svalovina", text: "Libové maso, srdce, žaludky a dršťky. Základ dávky pro ty, kdo si jídelníček skládají sami." },
+  vnitrnosti: { label: "vnitřnosti", title: "Vnitřnosti", text: "Játra, ledvinky a droby. Menší část dávky, játra nejvýš zhruba 5 %." },
+  ryby: { label: "ryby", title: "Ryby", text: "Losos, šproty a mořské ryby. Do misky zhruba jednou týdně jako zdroj omega-3." },
+  pamlsky: { label: "pamlsky", title: "Pamlsky", text: "Sušené maso a vnitřnosti na odměnu a výcvik, pro psy i kočky." },
+  zvykani: { label: "žvýkání", title: "Žvýkání", text: "Buvolí rohy, jelení paroží, uši, kůže a dřevo na dlouhé hryzání. Podávejte pod dohledem." },
+  granule: { label: "granule", title: "Granule", text: "Granule s 60–70 % masa, bez obilovin a brambor. Na přechod k BARFu i na cesty." },
+  konzervy: { label: "konzervy a kapsičky", title: "Konzervy a kapsičky", text: "Masové konzervy a kapsičky s 62–90 % masa. Kompletní krmivo pro psy i kočky." },
 };
-/** Nadpis a krátký popis podkategorie Navíc. */
-export const NAVIC_KIND_INFO: Record<NavicKind, { title: string; text: string }> = {
-  oleje: { title: "Oleje", text: "Rybí a rostlinné oleje k mixu. Doplní omega-3 mastné kyseliny, ryby nejsou v misce každý den." },
-  mineraly: { title: "Vápník a minerály", text: "Náhrada masitých kostí pro psy, kteří kosti nejedí, a vyrovnání vápníku a fosforu v masité stravě." },
-  vitaminy: { title: "Řasy, vitamíny a kvasnice", text: "Jód, vitamíny skupiny B a stopové prvky, kterých je v mase a vnitřnostech málo." },
-  prilohy: { title: "Přílohy k masu", text: "Zelenina, pohanka a rýže pro BARF s rostlinnou složkou. Vláknina a objem pro žravé psy." },
-  klouby: { title: "Klouby a pohyb", text: "Doplňky s kolagenem pro velká plemena, sportovce a seniory. Při potížích nejdřív k veterináři." },
-  ostatni: { title: "Štěňata, lékárnička a pomůcky", text: "Mléko pro štěňata, aktivní uhlí do lékárničky a odměrka na oleje a sypké doplňky." },
-};
+/** Zpětná kompatibilita: popisky a texty podkategorií Doplňků. */
+export const NAVIC_KIND_LABEL = Object.fromEntries(NAVIC_KINDS.map((k) => [k, KIND_INFO[k].label])) as Record<NavicKind, string>;
+export const NAVIC_KIND_INFO = KIND_INFO as Record<NavicKind, { title: string; text: string }>;
 export function isNavicKind(v: string): v is NavicKind {
   return (NAVIC_KINDS as readonly string[]).includes(v);
 }
 
 /**
- * Podkategorie řady: Navíc podle účelu, ostatní podle druhu masa.
+ * Podkategorie řady: u řad s druhy (LINE_KINDS) podle sloupce kind, u BARF mixů a kostí podle druhu masa.
  * Adresa je vždy /rada/[řada]/[klíč].
  */
-export type FacetKey = MeatKey | NavicKind;
-export const lineFacets = (line: LineSlug): readonly FacetKey[] => (line === "navic" ? NAVIC_KINDS : MEATS);
-export const isLineFacet = (line: LineSlug, v: string): v is FacetKey => (line === "navic" ? isNavicKind(v) : isMeatKey(v));
-export const productFacets = (p: Pick<Product, "line" | "meats" | "kind">): FacetKey[] => (p.line === "navic" ? (p.kind ? [p.kind] : []) : (p.meats ?? []));
-export const facetLabel = (key: FacetKey): string => (isNavicKind(key) ? NAVIC_KIND_LABEL[key] : MEAT_LABEL[key]);
+export type FacetKey = MeatKey | ProductKind;
+export const lineFacets = (line: LineSlug): readonly FacetKey[] => LINE_KINDS[line] ?? MEATS;
+export const isLineFacet = (line: LineSlug, v: string): v is FacetKey => (lineHasKinds(line) ? isLineKind(line, v) : isMeatKey(v));
+export const productFacets = (p: Pick<Product, "line" | "meats" | "kind">): FacetKey[] => (lineHasKinds(p.line) ? (p.kind ? [p.kind] : []) : (p.meats ?? []));
+export const facetLabel = (line: LineSlug, key: FacetKey): string => (lineHasKinds(line) ? KIND_INFO[key as ProductKind].label : MEAT_LABEL[key as MeatKey]);
 /** Popisek s velkým jen prvním písmenem, do menu a filtrů („Vápník a minerály“, ne CSS capitalize). */
-export const facetName = (key: FacetKey): string => {
-  const l = facetLabel(key);
+export const facetName = (line: LineSlug, key: FacetKey): string => {
+  const l = facetLabel(line, key);
   return l.charAt(0).toUpperCase() + l.slice(1);
 };
 /** Popisek výběru podkategorií v řadě. */
-export const facetHeading = (line: LineSlug) => (line === "navic" ? "Vyberte podle účelu" : "Vyberte podle masa");
+export const facetHeading = (line: LineSlug) => (line === "navic" ? "Vyberte podle účelu" : lineHasKinds(line) ? "Vyberte, co hledáte" : "Vyberte podle masa");
 
 /** Prodejní jednotka: balení po kusech, nebo na váhu (cena za kg, jen v prodejně). */
 export type ProductUnit = "ks" | "kg";
@@ -157,8 +178,8 @@ export type Product = {
   animals: Animal[];
   /** Druhy masa v produktu (podkategorie, filtr, vyloučení v kalkulačce). */
   meats?: MeatKey[];
-  /** Podkategorie řady Navíc. */
-  kind?: NavicKind;
+  /** Podkategorie řady s druhy (Maso a vnitřnosti, Pamlsky a žvýkání, Doplňky, Granule a konzervy). */
+  kind?: ProductKind;
   storage: Storage;
   /** Hmotnost balení v gramech (u zboží na váhu orientační porce). */
   weightGrams: number;

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isMeatKey, isNavicKind } from "@/lib/catalog";
+import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isLineKind, isMeatKey } from "@/lib/catalog";
 import { getSupabase } from "@/lib/supabase/server";
 
 /** Řádek tabulky products v Supabase (snake_case). */
@@ -69,9 +69,13 @@ export function nutritionFromRow(r: Pick<ProductRow, "kcal_per_100g" | "bone_pct
 }
 
 function fromRow(r: ProductRow): Product {
+  // Řada Konzervy se sloučila do Granule a konzervy (migrace 0037); starý řádek se ukáže už v nové kategorii.
+  const old = (r.line as string) === "konzervy";
+  const line: LineSlug = old ? "granule" : r.line;
+  const kind = old ? "konzervy" : r.kind;
   return {
     slug: r.slug,
-    line: r.line,
+    line,
     variant: r.variant,
     animals: r.animals,
     storage: r.storage,
@@ -91,7 +95,7 @@ function fromRow(r: ProductRow): Product {
     crosssell: r.crosssell_slugs ?? [],
     nutrition: nutritionFromRow(r),
     meatPct: r.meat_pct == null ? undefined : Number(r.meat_pct),
-    kind: r.kind && isNavicKind(r.kind) ? r.kind : undefined,
+    kind: isLineKind(line, kind) ? kind : undefined,
     dose: r.dose ?? undefined,
     unit: r.unit ?? "ks",
     meats: (r.meats ?? []).filter(isMeatKey),
