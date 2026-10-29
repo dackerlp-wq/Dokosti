@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
-import type { ProductRow } from "@/lib/admin";
+import { formatMarginCzk, marginOf, type ProductRow } from "@/lib/admin";
 import { ANIMAL_LABEL, BONE_CLASS_LABEL, KIND_INFO, LINE_KINDS, LINES, LINE_INFO, MEAT_LABEL, MEATS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
 const STEPS = ["Co to je", "Cena a balení", "Sklad a dodavatel", "Etiketa a web"] as const;
@@ -19,8 +19,10 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
   const p = product;
   const [step, setStep] = useState(1);
   const [unit, setUnit] = useState<"ks" | "kg">(p?.unit ?? "ks");
-  const [preview, setPreview] = useState({ variant: p?.variant ?? "", line: p?.line ?? "barf", price: p?.price_czk ?? 0, weight: p?.weight_grams ?? 1000, intro: p?.intro ?? "", producer: p?.producer ?? "", published: p?.is_published ?? false, isNew: p?.is_new ?? false, stock: p?.stock_qty ?? null, purchase: p?.purchase_price_czk ?? null });
-  const margin = preview.purchase && preview.price > 0 ? Math.round(((preview.price - preview.purchase) / preview.price) * 1000) / 10 : null;
+  const [preview, setPreview] = useState({ variant: p?.variant ?? "", line: p?.line ?? "barf", price: p?.price_czk ?? 0, weight: p?.weight_grams ?? 1000, intro: p?.intro ?? "", producer: p?.producer ?? "", published: p?.is_published ?? false, isNew: p?.is_new ?? false, stock: p?.stock_qty ?? null, purchase: p?.purchase_price_czk ?? null, store: p?.store_price_czk ?? null });
+  const margin = marginOf(preview.price, preview.purchase);
+  const storeMargin = marginOf(preview.store ?? preview.price, preview.purchase);
+  const marginText = margin && storeMargin ? `marže e-shop ${formatMarginCzk(margin.czk)} (${margin.pct} %) · prodejna ${formatMarginCzk(storeMargin.czk)} (${storeMargin.pct} %)` : null;
   const name = preview.variant.trim() ? preview.variant.trim().charAt(0).toUpperCase() + preview.variant.trim().slice(1) : "Název produktu";
   const missing = [!preview.variant.trim() && "název", !(preview.price > 0) && "cena", !p?.image_url && "fotka", !p?.ean && "EAN pro kasu"].filter(Boolean) as string[];
 
@@ -112,7 +114,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               <input name="price_czk" type="number" min={0} defaultValue={p?.price_czk} required onChange={(e) => setPreview((v) => ({ ...v, price: Number(e.target.value) || 0 }))} />
             </Field>
             <Field label={unit === "kg" ? "Cena za kg v prodejně (Kč)" : "Cena v prodejně (Kč)"} hint="pro kasu a cenovky; prázdné = jako na e-shopu">
-              <input name="store_price_czk" type="number" min={1} defaultValue={p?.store_price_czk ?? ""} />
+              <input name="store_price_czk" type="number" min={1} defaultValue={p?.store_price_czk ?? ""} onChange={(e) => setPreview((v) => ({ ...v, store: e.target.value === "" ? null : Number(e.target.value) }))} />
             </Field>
             <Field label="Původní cena (Kč)" hint="přeškrtnutá; akce s platností: Akce a slevy">
               <input name="original_price_czk" type="number" min={0} defaultValue={p?.original_price_czk ?? ""} />
@@ -160,7 +162,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               <input name="ean" inputMode="numeric" defaultValue={p?.ean ?? ""} placeholder="8590…" />
             </Field>
             {manager && (
-              <Field label="Nákupní cena (Kč)" hint={margin !== null ? `marže ${margin} %` : "z poslední příjemky"}>
+              <Field label="Nákupní cena (Kč)" hint={marginText ?? "z poslední příjemky"}>
                 <input name="purchase_price_czk" type="number" min={0} step="0.01" defaultValue={p?.purchase_price_czk ?? ""} onChange={(e) => setPreview((v) => ({ ...v, purchase: e.target.value === "" ? null : Number(e.target.value) }))} />
               </Field>
             )}
@@ -336,7 +338,13 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               </p>
               {preview.intro && <p className="mt-1 text-small">{preview.intro}</p>}
               <p className="mt-2 text-small text-muted">{preview.stock === null ? "sklad se neeviduje" : preview.stock > 0 ? `skladem ${preview.stock} ${unit}` : "Momentálně není"}</p>
-              {manager && margin !== null && <p className={`mt-1 text-small ${margin < 20 ? "text-brick-text" : "text-muted"}`}>marže {margin} %</p>}
+              {manager && margin && storeMargin && (
+                <p className="mt-1 text-small text-muted">
+                  Marže e-shop <span className={margin.pct < 20 ? "text-brick-text" : "text-ink"}>{formatMarginCzk(margin.czk)} ({margin.pct} %)</span>
+                  <br />
+                  Marže prodejna <span className={storeMargin.pct < 20 ? "text-brick-text" : "text-ink"}>{formatMarginCzk(storeMargin.czk)} ({storeMargin.pct} %)</span>
+                </p>
+              )}
             </div>
           </div>
         </div>

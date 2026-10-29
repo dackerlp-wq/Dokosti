@@ -275,6 +275,18 @@ export type StockMovementRow = {
 };
 
 /** Množství se jednotkou: kusy celé, kilogramy na tři desetinná místa. */
+/**
+ * Marže na kus (u zboží na váhu na kg): prodejní cena minus nákupní cena s DPH, v Kč a v % z prodejní ceny.
+ * null, když nákupní cenu neznáme. Prodejna bez vlastní ceny prodává za cenu e-shopu.
+ */
+export function marginOf(price: number | null | undefined, purchase: number | string | null | undefined): { czk: number; pct: number } | null {
+  const buy = purchase === null || purchase === undefined || purchase === "" ? null : Number(purchase);
+  if (buy === null || !Number.isFinite(buy) || !price || price <= 0) return null;
+  return { czk: Math.round((price - buy) * 10) / 10, pct: Math.round(((price - buy) / price) * 100) };
+}
+/** „24 Kč“, u desetin „8,8 Kč“. */
+export const formatMarginCzk = (czk: number) => `${czk.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} Kč`;
+
 export function formatQty(qty: number | string | null, unit: ProductUnit) {
   if (qty === null) return "";
   const n = Number(qty);

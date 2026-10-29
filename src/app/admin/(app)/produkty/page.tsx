@@ -5,7 +5,7 @@ import { StockFilters } from "@/components/admin/stock-filters";
 import { Table, Td } from "@/components/admin/table";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
-import { formatQty, type ProductRow, type SupplierRow } from "@/lib/admin";
+import { formatMarginCzk, formatQty, marginOf, type ProductRow, type SupplierRow } from "@/lib/admin";
 import { LINE_INFO, LINES, productName, STORAGE_LABEL } from "@/lib/catalog";
 import { formatPrice, formatWeight } from "@/lib/format";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
@@ -35,7 +35,17 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const q = (sp.q ?? "").trim().toLowerCase();
   const state = STATES.find((s) => s.id === sp.stav);
   const products = all.filter((p) => (!sp.rada || p.line === sp.rada) && (!sp.dodavatel || p.supplier_id === sp.dodavatel) && (!state || state.test(p)) && (!q || `${productName(p)} ${p.slug} ${p.ean ?? ""} ${p.producer}`.toLowerCase().includes(q)));
-  const margin = (p: ProductRow) => (p.purchase_price_czk && p.price_czk > 0 ? Math.round(((p.price_czk - p.purchase_price_czk) / p.price_czk) * 100) : null);
+  /** Marže v Kč (a %) na e-shopu a v prodejně (kasa). Pod 20 % cihlově. */
+  const marginCell = (price: number, p: ProductRow) => {
+    const m = marginOf(price, p.purchase_price_czk);
+    if (!m) return <span className="text-muted">—</span>;
+    return (
+      <span className={m.pct < 20 ? "text-brick-text" : ""}>
+        <span className="font-semibold">{formatMarginCzk(m.czk)}</span>
+        <span className="block text-small text-muted">{m.pct} %</span>
+      </span>
+    );
+  };
 
   return (
     <>
@@ -73,7 +83,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {products.length === 0 ? (
           <p className="text-muted">{all.length === 0 ? "Zatím žádný produkt. Založte první tlačítkem Nový produkt." : "Nic neodpovídá filtru."}</p>
         ) : (
-          <Table head={manager ? ["Název", "Řada", "Balení", "Cena", "Marže", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
+          <Table head={manager ? ["Název", "Řada", "Balení", "Cena", "Marže e-shop", "Marže prodejna", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
             {products.map((p) => (
               <tr key={p.id}>
                 <Td>
@@ -90,7 +100,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   {p.original_price_czk && <span className="ml-1 text-muted line-through">{formatPrice(p.original_price_czk)}</span>}
                   {p.store_price_czk !== null && p.store_price_czk !== p.price_czk && <div className="text-small text-muted">prodejna {formatPrice(p.store_price_czk)}</div>}
                 </Td>
-                {manager && <Td className={margin(p) !== null && margin(p)! < 20 ? "text-brick-text" : ""}>{margin(p) !== null ? `${margin(p)} %` : <span className="text-muted">—</span>}</Td>}
+                {manager && <Td className="whitespace-nowrap">{marginCell(p.price_czk, p)}</Td>}
+                {manager && <Td className="whitespace-nowrap">{marginCell(p.store_price_czk ?? p.price_czk, p)}</Td>}
                 <Td>
                   {p.stock_qty === null ? (
                     <span className="text-muted">{STORAGE_LABEL[p.storage]}</span>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { applyPrices } from "@/app/admin/(app)/produkty/ceny/actions";
 import { Button } from "@/components/ui/button";
 import type { LineSlug } from "@/lib/catalog";
+import { formatMarginCzk, marginOf } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 
 export type PriceProduct = { id: string; name: string; line: LineSlug; lineName: string; price_czk: number; store_price_czk: number | null; purchase_price_czk: number | null; supplier_id: string | null; inAction: boolean };
@@ -40,7 +41,7 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
           else next = Math.round(next);
           next = Math.max(target === "kasa" ? 1 : 0, next);
         }
-        const margin = (price: number) => (p.purchase_price_czk && price > 0 ? Math.round(((price - p.purchase_price_czk) / price) * 100) : null);
+        const margin = (price: number) => marginOf(price, p.purchase_price_czk);
         return { p, now, next, marginNow: margin(now), marginNext: next === null ? null : margin(next) };
       });
   }, [products, line, supplier, mode, value, rounding, target]);
@@ -147,8 +148,8 @@ export function PriceTool({ products, suppliers }: { products: PriceProduct[]; s
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap font-semibold">{next === null ? "—" : formatPrice(next)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    {marginNow !== null ? `${marginNow} %` : "—"}
-                    {marginNext !== null && marginNext !== marginNow && <span className={marginNext < marginNow! ? "text-brick-text" : "text-green"}> → {marginNext} %</span>}
+                    {marginNow ? `${formatMarginCzk(marginNow.czk)} (${marginNow.pct} %)` : "—"}
+                    {marginNext && marginNow && marginNext.czk !== marginNow.czk && <span className={marginNext.czk < marginNow.czk ? "text-brick-text" : "text-green"}> → {formatMarginCzk(marginNext.czk)} ({marginNext.pct} %)</span>}
                   </td>
                 </tr>
               );
