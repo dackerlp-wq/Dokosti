@@ -106,7 +106,10 @@ export default async function ProductPage({ params }: Props) {
               {product.benefit && (
                 <>
                   <dt className="text-label text-muted">Hlavní přínos:</dt>
-                  <dd className="font-semibold text-green">{product.benefit}</dd>
+                  <dd>
+                    <span className="font-semibold text-green">{product.benefit}</span>
+                    {product.benefitDetail && <p className="mt-1.25 text-small">{product.benefitDetail}</p>}
+                  </dd>
                 </>
               )}
               {product.meatPct !== undefined && (

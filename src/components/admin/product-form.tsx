@@ -74,6 +74,13 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
                 <span className="mt-1 block text-small text-muted">Jen co obsahuje podle výrobce (zdroj vápníku, vitamíny skupiny B). Ne „léčí“ ani „chrání“.</span>
               </Field>
             )}
+            {preview.line === "navic" && (
+              <div className="sm:col-span-2">
+                <Field label="Přínos podrobněji" hint="na stránce produktu, 2–3 věty, max 600 znaků">
+                  <textarea name="benefit_detail" maxLength={600} rows={3} defaultValue={p?.benefit_detail ?? ""} placeholder="Co doplněk obsahuje, proč ho přidat k masu a komu se hodí. Čísla jen z etikety." />
+                </Field>
+              </div>
+            )}
             <Field label="Druh masa / suroviny" hint="např. hovězí mix">
               <input name="variant" defaultValue={p?.variant} required onChange={(e) => setPreview((v) => ({ ...v, variant: e.target.value }))} />
             </Field>

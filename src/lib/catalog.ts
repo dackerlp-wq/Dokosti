@@ -218,6 +218,8 @@ export type Product = {
   meatPct?: number;
   /** Hlavní přínos doplňku podle výrobce, krátký štítek („Zdroj omega-3“). Ne zdravotní tvrzení. */
   benefit?: string;
+  /** Delší vysvětlení přínosu na stránce produktu, 2–3 věty podle výrobce. */
+  benefitDetail?: string;
   /**
    * Údaje z etikety výrobce pro kalkulačku dávky. Nikdy se nedopočítávají;
    * bez nich kalkulačka počítá orientačně procentem hmotnosti.

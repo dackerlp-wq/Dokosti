@@ -172,6 +172,8 @@ export type ProductRow = {
   meat_pct: number | null;
   /** Hlavní přínos doplňku, štítek na kartě (migrace 0038). */
   benefit: string | null;
+  /** Delší vysvětlení přínosu na stránce produktu (migrace 0039). */
+  benefit_detail: string | null;
   /** Podkategorie řady (Doplňky, Maso a vnitřnosti, Pamlsky a žvýkání, Granule a konzervy; migrace 0035 a 0037). */
   kind: string | null;
   bone_pct: number | null;
