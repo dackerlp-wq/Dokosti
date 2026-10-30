@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Cat, Dog, Leaf, Package, Scale, Snowflake, Store, Thermometer, Truck, Utensils } from "lucide-react";
+import { CalendarClock, Cat, Dog, Droplets, Home, Leaf, Lightbulb, Package, PackageOpen, Scale, Snowflake, Store, Thermometer, Truck, Utensils } from "lucide-react";
 import { BuyPanel } from "@/components/product/buy-panel";
 import { DosePicker } from "@/components/product/dose-picker";
 import { ProductCarousel } from "@/components/product/product-grid";
@@ -12,12 +12,35 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, facetLabel, productFacets, productName } from "@/lib/catalog";
+import { parseComposition, parseStorage, type StorageKind } from "@/lib/facts";
 import { formatPct, formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { stockState } from "@/lib/stock";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** Procenta i pro malá čísla („0,02 %“). */
+const pct = (v: number) => `${v.toLocaleString("cs-CZ", { maximumFractionDigits: v < 1 ? 2 : 1 })} %`;
+
+const STORAGE_ICON: Record<StorageKind, typeof Snowflake> = { freezer: Snowflake, thaw: Droplets, open: PackageOpen, shelf: CalendarClock, place: Home, tip: Lightbulb };
+
+/** Vodorovné pruhy s procenty: první (nebo označený) zeleně, ostatní okrově. `scale` je 100 % šířky. */
+function Bars({ rows, scale }: { rows: { label: string; pct: number; strong?: boolean }[]; scale: number }) {
+  return (
+    <ul className="flex flex-col gap-3.5">
+      {rows.map((r) => (
+        <li key={r.label} className="grid grid-cols-[minmax(0,1fr)_56px] items-center gap-x-3.5 gap-y-1 sm:grid-cols-[180px_minmax(0,1fr)_56px]">
+          <span className="text-[15px]/[21px] font-semibold text-ink">{r.label}</span>
+          <span className="order-last col-span-2 h-3.5 overflow-hidden rounded-control bg-cream sm:order-none sm:col-span-1" aria-hidden>
+            <span className={`block h-full ${r.strong ? "bg-green" : "bg-ochre"}`} style={{ width: `${Math.min(100, (r.pct / scale) * 100)}%` }} />
+          </span>
+          <span className="text-right text-[15px] font-bold text-green">{pct(r.pct)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export async function generateStaticParams() {
   return (await getProducts()).map((p) => ({ slug: p.slug }));
@@ -81,7 +104,12 @@ export default async function ProductPage({ params }: Props) {
   ].filter((n): n is { value: string; label: string } => Boolean(n));
   const facets = productFacets(product);
   // Sekce pod nákupem se střídají papírová / bílá (nákup nahoře je bílý), v pořadí, v jakém se zobrazí.
-  const shown = { dose: !!pickableDose, comp: !!product.composition || keyNumbers.length > 0, how: !!(product.dosage || product.storageNote), upsell: upsell.length > 0, cross: crosssell.length > 0, related: related.length > 0 };
+  const facts = parseComposition(product.composition);
+  const withPct = facts.ingredients.filter((i) => i.pct !== undefined && i.pct >= 1).slice(0, 6);
+  const otherIngredients = facts.ingredients.filter((i) => !withPct.includes(i)).slice(0, 12).map((i) => i.name.charAt(0).toLowerCase() + i.name.slice(1));
+  const parsedAnything = withPct.length > 0 || facts.nutrients.length > 0 || facts.minor.length > 0 || facts.micros.length > 0;
+  const storage = parseStorage(product.storageNote);
+  const shown = { dose: !!pickableDose, comp: !!product.composition || keyNumbers.length > 0, how: !!(product.dosage || storage.length > 0), upsell: upsell.length > 0, cross: crosssell.length > 0, related: related.length > 0 };
   const tones = {} as Record<keyof typeof shown, "white" | "paper">;
   (Object.keys(shown) as (keyof typeof shown)[]).filter((k) => shown[k]).forEach((k, i) => (tones[k] = i % 2 === 0 ? "paper" : "white"));
   const tiles = [
@@ -206,41 +234,105 @@ export default async function ProductPage({ params }: Props) {
           {keyNumbers.length > 0 && (
             <ul className="mx-auto mb-10 grid max-w-narrow grid-cols-2 gap-3.5 md:grid-cols-4">
               {keyNumbers.map((n) => (
-                <li key={n.label} className="rounded-card border border-line p-4 text-center">
+                <li key={n.label} className="rounded-card border border-line bg-white p-4 text-center">
                   <p className="text-[26px]/[32px] font-extrabold text-green">{n.value}</p>
                   <p className="text-small">{n.label}</p>
                 </li>
               ))}
             </ul>
           )}
-          {product.composition && <p className="mx-auto max-w-text">{product.composition}</p>}
+          {(withPct.length > 0 || facts.nutrients.length > 0 || facts.minor.length > 0) && (
+            <div className="grid gap-10 md:grid-cols-2">
+              {withPct.length > 0 && (
+                <div>
+                  <h3 className="mb-5 text-heading-md font-bold text-green">Hlavní suroviny</h3>
+                  <Bars rows={withPct.map((i) => ({ label: i.name, pct: i.pct!, strong: i === withPct[0] }))} scale={100} />
+                  {otherIngredients.length > 0 && (
+                    <p className="mt-5 text-small">
+                      <span className="font-semibold text-ink">Dál obsahuje: </span>
+                      {otherIngredients.join(", ")}
+                      {facts.ingredients.length - withPct.length > otherIngredients.length && " a další"}.
+                    </p>
+                  )}
+                </div>
+              )}
+              {(facts.nutrients.length > 0 || facts.minor.length > 0) && (
+                <div>
+                  <h3 className="mb-5 text-heading-md font-bold text-green">Živiny</h3>
+                  {facts.nutrients.length > 0 && <Bars rows={facts.nutrients.map((n) => ({ label: n.label, pct: n.pct, strong: n.key === "protein" }))} scale={Math.max(...facts.nutrients.map((n) => n.pct)) > 50 ? 100 : 50} />}
+                  {facts.minor.length > 0 && (
+                    <ul className="mt-5 flex flex-wrap gap-2">
+                      {facts.minor.map((n) => (
+                        <li key={n.key} className="rounded-full bg-paper px-3.5 py-1 text-small">
+                          {n.label} <span className="font-bold text-green">{pct(n.pct)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {facts.micros.length > 0 && (
+            <div className="mt-10">
+              <h3 className="mb-5 text-heading-md font-bold text-green">
+                Vitamíny, minerály a účinné látky{facts.microsPer && <span className="font-normal text-muted"> {facts.microsPer}</span>}
+              </h3>
+              <ul className="grid grid-cols-2 gap-2.5 xs:grid-cols-3 lg:grid-cols-6">
+                {facts.micros.map((m) => (
+                  <li key={m.name} className="rounded-card border border-line bg-white p-3.5 text-center">
+                    <p className="text-[15px]/[20px] font-bold text-green">{m.name}</p>
+                    <p className="text-small">{m.amount}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {product.composition && (
+            parsedAnything ? (
+              <details className="group mx-auto mt-10 max-w-text">
+                <summary className="cursor-pointer list-none text-center text-button text-brick-text hover:underline">Celé složení od výrobce</summary>
+                <p className="mt-3.5 text-small">{product.composition}</p>
+              </details>
+            ) : (
+              <p className="mx-auto max-w-text">{product.composition}</p>
+            )
+          )}
         </Section>
       )}
 
-      {(product.dosage || product.storageNote) && (
+      {(product.dosage || storage.length > 0) && (
         <Section tone={tones.how}>
           <SectionHeader title="Jak podávat a skladovat" />
-          <div className="mx-auto grid max-w-narrow gap-10 md:grid-cols-2">
-            {product.dosage && (
-              <div className="text-center">
-                <span className="mx-auto mb-3.5 flex size-18 items-center justify-center rounded-full bg-green text-cream">
-                  <Utensils className="size-8" strokeWidth={1.5} aria-hidden />
-                </span>
-                <h3 className="mb-1.5 text-heading-md font-bold text-green">Podávání</h3>
+          {storage.length > 0 && (
+            <ul className={`grid gap-3.5 xs:grid-cols-2 ${storage.length >= 4 ? "lg:grid-cols-4" : storage.length === 3 ? "lg:grid-cols-3" : ""}`}>
+              {storage.map((t) => {
+                const Icon = STORAGE_ICON[t.kind];
+                return (
+                  <li key={t.kind} className="flex flex-col items-center rounded-card border border-line bg-white p-5 text-center">
+                    <span className="mb-3.5 flex size-14 items-center justify-center rounded-full bg-green text-cream">
+                      <Icon className="size-7" strokeWidth={1.5} aria-hidden />
+                    </span>
+                    <p className="text-eyebrow text-muted uppercase">{t.title}</p>
+                    {t.value && <p className="text-[26px]/[32px] font-extrabold text-green">{t.value}</p>}
+                    <p className="mt-1.5 text-[14px]/[22px]">{t.text}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {product.dosage && (
+            <div className="mx-auto mt-10 flex max-w-text items-start gap-4 rounded-card bg-white p-5 shadow-card">
+              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-paper text-green">
+                <Utensils className="size-7" strokeWidth={1.5} aria-hidden />
+              </span>
+              <div>
+                <h3 className="mb-1 text-heading-md font-bold text-green">Podávání</h3>
                 <p className="text-[15px]/[26px]">{product.dosage}</p>
               </div>
-            )}
-            {product.storageNote && (
-              <div className="text-center">
-                <span className="mx-auto mb-3.5 flex size-18 items-center justify-center rounded-full bg-green text-cream">
-                  <Thermometer className="size-8" strokeWidth={1.5} aria-hidden />
-                </span>
-                <h3 className="mb-1.5 text-heading-md font-bold text-green">Skladování</h3>
-                <p className="text-[15px]/[26px]">{product.storageNote}</p>
-              </div>
-            )}
-          </div>
-          <p className="mt-10 text-center text-small">
+            </div>
+          )}
+          <p className="mt-7.5 text-center text-small">
             Dávkování je orientační, přesnou dávku spočítá{" "}
             <Link href="/kalkulacka" className="text-brick-text underline">
               kalkulačka dávky
