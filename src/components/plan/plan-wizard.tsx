@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, Cat, Check, Dog, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { deletePetById, savePetProfile } from "@/app/(shop)/ucet/actions";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
+import { ProductImage } from "@/components/product/product-image";
 import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
 import { PlanSide } from "@/components/plan/plan-side";
@@ -638,176 +639,287 @@ function PlanStep({
   const totalKg = plan.items.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
   const shipFree = shipping.freeFromCzk !== null && plan.totalCzk >= shipping.freeFromCzk;
   const bonusPts = subscription.pointsBonusPct > 0 && loyalty.enabled ? Math.round(((plan.totalCzk * subscription.pointsBonusPct) / 100) * (loyalty.redeemStep / loyalty.redeemValueCzk)) : 0;
-  const seg = (on: boolean) => `flex-1 rounded-panel border-2 bg-white p-3 text-left transition-colors duration-300 ${on ? "border-green bg-paper ring-1 ring-green" : "border-line hover:border-muted"}`;
+  const seg = (on: boolean) => `min-h-11 rounded-control border-2 px-2.5 py-2 text-center text-[13px]/[18px] font-bold transition-colors duration-300 ${on ? "border-green bg-paper text-green" : "border-line bg-white text-muted hover:border-muted"}`;
   const removedItems = plan.pool.filter((p) => removed.includes(p.slug));
 
+  // Barvy produktů v misce a v kalendáři (stejné pořadí jako dodávka).
+  const PALETTE = ["bg-green text-cream", "bg-brick text-white", "bg-muted text-white", "bg-ochre text-ink", "bg-olive text-white", "bg-ink text-white"];
+  const mealItems = plan.items.filter((i) => ["zaklad", "ryba", "kosti", "vnitrnosti"].includes(i.role));
+  const colorOf = (slug: string) => PALETTE[Math.max(0, mealItems.findIndex((i) => i.product.slug === slug)) % PALETTE.length];
+  const mealKg = mealItems.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
+  const letterOf = (slug: string) => {
+    const p = mealItems.find((i) => i.product.slug === slug)?.product;
+    return p ? productName(p).charAt(0).toUpperCase() : "?";
+  };
+  const calendar = plan.schedule.map((d) => {
+    const main = [...d.items].filter((x) => mealItems.some((m) => m.product.slug === x.product.slug)).sort((a, b) => b.grams - a.grams);
+    return { day: d, main: main[0]?.product ?? null, extra: main.length > 1 };
+  });
+  const [showSchedule, setShowSchedule] = useState(false);
+  const period = days === 14 ? "2 týdny" : "4 týdny";
+  const meals = r.mealsPerDay;
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_400px]">
-      <div className="space-y-5">
-        <div>
-          <button type="button" onClick={onBack} className="mb-3.5 inline-flex items-center gap-1.5 text-small font-semibold text-muted hover:text-green">
+    <div className="lg:col-span-2">
+      <section className="-mx-5 bg-paper px-5 py-10">
+        <div className="mx-auto max-w-site">
+          <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 text-small font-semibold text-muted hover:text-green">
             <ArrowLeft strokeWidth={1.75} className="size-4" aria-hidden /> Zpět na otázky
           </button>
-          <p className="text-eyebrow text-green uppercase">Plán pro {firstAcc}</p>
-          <h2 className="mt-1 font-display text-display-md text-green md:text-display-lg">
-            {pet.name} potřebuje {r.dailyGrams} g {rawShare < 100 ? "syrového" : "syrové stravy"}
-            {rawShare < 100 && r.kibbleGrams ? ` a ${r.kibbleGrams} g granulí` : ""} denně
-          </h2>
-          {rawShare < 100 && !r.kibbleGrams && <p className="mt-1 text-sm text-muted">Zbytek ({100 - rawShare} % energie, {r.kibbleKcal} kcal) doplní granule podle tabulky na obalu.</p>}
-          <p className="mt-2 max-w-2xl text-sm text-muted">
-            {SEX_LABEL[pet.species][pet.sex]}{pet.sex === "samice" && pet.reproduction === "brezi" ? ", březí" : pet.sex === "samice" && pet.reproduction === "kojici" ? ", kojící" : ""}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně, ve {r.mealsPerDay === 1 ? "jedné porci" : r.mealsPerDay === 2 ? "dvou porcích" : `${r.mealsPerDay} porcích`}
-            {r.mealsPerDay > 1 ? ` po ${Math.round(r.dailyGrams / r.mealsPerDay)} g` : ""}. Orientační dávka, po 2 až 4 týdnech {firstAcc} zvažte a plán upravíte v účtu.
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-panel border border-line bg-white shadow-card">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-line px-4 py-3">
-            <h3 className="text-heading-md text-green">Dodávka na {days === 14 ? "2 týdny" : "4 týdny"}</h3>
-            <span className="text-xs text-muted">{totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg · {days === 14 ? "v mrazáku zhruba jedna police" : "větší mrazák"}</span>
-          </div>
-          <ul className="divide-y divide-line text-sm">
-            {plan.items.map((i) => {
-              const alternatives = i.role === "zaklad" || i.role === "kosti" ? plan.pool.filter((p) => foodKind(p) === foodKind(i.product) && p.slug !== i.product.slug && !plan.items.some((x) => x.product.slug === p.slug)) : [];
-              return (
-                <li key={i.product.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p>
-                      <span className="font-semibold">{productName(i.product)}</span> <span className="text-muted">{formatWeight(i.product.weightGrams)}</span>
-                    </p>
-                    <p className="text-xs text-muted">
-                      {i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? i.why : `${ROLE_LABEL[i.role]}, ${i.why}`}
-                      {leftoverText(i) && <> · {leftoverText(i)}</>}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted">
-                    {i.portionText}
-                    {everyNth[i.product.slug] && <Durability item={i} every={everyNth[i.product.slug]} oneTime={oneTime} />}
-                  </span>
-                  <span className="w-12 text-right font-semibold">{i.qty} ks</span>
-                  <span className="flex items-center gap-2 text-xs">
-                    {alternatives.length > 0 && (
-                      <select value={swaps[i.product.slug] ?? ""} onChange={(e) => setSwaps(e.target.value ? { ...swaps, [i.product.slug]: e.target.value } : Object.fromEntries(Object.entries(swaps).filter(([k]) => k !== i.product.slug)))} aria-label={`Nahradit ${productName(i.product)}`} className="min-h-8 w-auto py-0.5 text-xs">
-                        <option value="">nahradit…</option>
-                        {alternatives.map((a) => (
-                          <option key={a.slug} value={a.slug}>
-                            {productName(a)}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <button type="button" onClick={() => (addonForRole(i.role) ? setAddon(i.role, false) : setRemoved([...removed, i.product.slug]))} className="text-brick-text underline">
-                      odebrat
-                    </button>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          {removedItems.length > 0 && (
-            <p className="border-t border-line px-4 py-2 text-xs text-muted">
-              Odebráno: {removedItems.map((p) => productName(p)).join(", ")}.{" "}
-              <button type="button" onClick={() => setRemoved([])} className="text-brick-text underline">
-                vrátit
-              </button>
-            </p>
-          )}
-        </div>
-        {extras.length > 0 && (
-          <section className="overflow-hidden rounded-panel border border-line bg-paper" aria-label="Doporučujeme navíc">
-            <div className="border-b border-line px-4 py-3">
-              <h3 className="text-heading-md text-green">Doporučujeme navíc</h3>
-              <p className="text-xs text-muted">Vybráno tak, aby se balení za {days === 14 ? "2 týdny" : "4 týdny"} spotřebovalo celé nebo z co největší části. Co přidáte, zapadne do dávky místo části mixu.</p>
+          <div className="mt-3.5 flex flex-wrap items-center gap-7.5">
+            <span className="hidden size-30 shrink-0 items-center justify-center rounded-full bg-green text-cream sm:flex">
+              {pet.species === "kocka" ? <Cat className="size-15" strokeWidth={1.5} aria-hidden /> : <Dog className="size-15" strokeWidth={1.5} aria-hidden />}
+            </span>
+            <div className="min-w-0 flex-1 basis-[400px]">
+              <p className="text-eyebrow text-muted uppercase">Plán pro {firstAcc} je hotový</p>
+              <h2 className="font-display text-display-lg text-green md:text-[64px]/[70px]">
+                {pet.name.trim() || first} potřebuje {r.dailyGrams} g {rawShare < 100 ? "syrového" : ""} denně
+                {rawShare < 100 && r.kibbleGrams ? ` a ${r.kibbleGrams} g granulí` : ""}
+              </h2>
+              <p className="mt-1">
+                {SEX_LABEL[pet.species][pet.sex]}
+                {pet.sex === "samice" && pet.reproduction === "brezi" ? ", březí" : pet.sex === "samice" && pet.reproduction === "kojici" ? ", kojící" : ""}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně. Po 2 až 4 týdnech {firstAcc} zvažte, dávku upravíte v účtu.
+              </p>
+              {rawShare < 100 && !r.kibbleGrams && <p className="mt-1 text-small">Zbytek ({100 - rawShare} % energie, {r.kibbleKcal} kcal) doplní granule podle tabulky na obalu.</p>}
             </div>
-            <ul className="divide-y divide-line text-sm">
-              {extras.map((i) => (
-                <li key={i.product.slug} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p>
-                      <span className="text-eyebrow text-muted uppercase">{EXTRA_LABEL[i.role]}</span> <span className="font-semibold">{productName(i.product)}</span> <span className="text-muted">{formatWeight(i.product.weightGrams)}</span>
-                    </p>
-                    <p className="text-xs text-muted">
-                      {i.portionText}
-                      {i.why ? `, ${i.why}` : ""} · {i.qty} ks{i.periods > 1 ? `, vydrží ~${i.periods} dodávky` : ""}
-                    </p>
-                  </div>
-                  <span className="font-semibold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</span>
-                  <Button type="button" variant="secondary" onClick={() => setAddon(i.role, true)} aria-label={`Přidat ${productName(i.product)} do dodávky`}>
-                    <Plus className="size-4" strokeWidth={2} aria-hidden /> Přidat
-                  </Button>
+          </div>
+          <ul className="mt-7.5 grid grid-cols-2 gap-3.5 md:grid-cols-4">
+            <li className="rounded-card border border-line bg-white p-4.5 text-center">
+              <p className="text-[30px]/[36px] font-extrabold text-green">{r.dailyGrams} g</p>
+              <p className="text-small">{rawShare < 100 ? "syrového denně" : "syrové stravy denně"}</p>
+            </li>
+            <li className="rounded-card border border-line bg-white p-4.5 text-center">
+              <p className="text-[30px]/[36px] font-extrabold text-green">{meals > 1 ? `${meals} × ${Math.round(r.dailyGrams / meals)} g` : `${r.dailyGrams} g`}</p>
+              <p className="text-small">{meals === 1 ? "v jedné porci" : meals === 2 ? "ráno a večer" : `v ${meals} porcích`}</p>
+            </li>
+            <li className="rounded-card border border-line bg-white p-4.5 text-center">
+              <p className="text-[30px]/[36px] font-extrabold text-green">{totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg</p>
+              <p className="text-small">dodávka na {period}</p>
+            </li>
+            <li className="rounded-card bg-green p-4.5 text-center text-cream">
+              <p className="text-[30px]/[36px] font-extrabold">{formatPrice(plan.perDayCzk)}</p>
+              <p className="text-small">za den</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <div className="mx-auto mt-10 grid max-w-site items-start gap-7.5 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0 space-y-10">
+          {mealItems.length > 0 && (
+            <section>
+              <h3 className="text-heading-lg text-green">Co bude v misce</h3>
+              <p className="mt-1 mb-4 text-[15px]/[24px]">Podíl v dodávce na {period} podle hmotnosti.</p>
+              <div className="flex h-6.5 overflow-hidden rounded-control" role="img" aria-label={mealItems.map((i) => `${productName(i.product)} ${Math.round(((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100)} %`).join(", ")}>
+                {mealItems.map((i) => (
+                  <div key={i.product.slug} className={colorOf(i.product.slug).split(" ")[0]} style={{ width: `${((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100}%` }} />
+                ))}
+              </div>
+              <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5 text-[14px]/[22px]">
+                {mealItems.map((i) => (
+                  <li key={i.product.slug} className="inline-flex items-center gap-2">
+                    <span className={`size-3 rounded-full ${colorOf(i.product.slug).split(" ")[0]}`} aria-hidden />
+                    <b className="text-green">{Math.round(((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100)} %</b> {productName(i.product).toLowerCase()}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section>
+            <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-heading-lg text-green">Dodávka na {period}</h3>
+              <span className="text-small">
+                {totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg · {days === 14 ? "v mrazáku zhruba jedna police" : "větší mrazák"}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-2.5">
+              {plan.items.map((i) => {
+                const alternatives = i.role === "zaklad" || i.role === "kosti" ? plan.pool.filter((p) => foodKind(p) === foodKind(i.product) && p.slug !== i.product.slug && !plan.items.some((x) => x.product.slug === p.slug)) : [];
+                const once = everyNth[i.product.slug];
+                return (
+                  <li key={i.product.slug} className="flex flex-wrap items-center gap-3.5 rounded-card border border-line bg-white p-3.5">
+                    <div className="size-16 shrink-0 overflow-hidden rounded-control bg-cream">
+                      <ProductImage product={i.product} sizes="64px" className="h-16" />
+                    </div>
+                    <div className="min-w-0 flex-1 basis-[220px]">
+                      <span className="inline-block rounded-control bg-paper px-2 text-[11px]/[18px] font-bold tracking-wide text-green uppercase">
+                        {ROLE_LABEL[i.role]}
+                        {once ? " · jednorázově" : ""}
+                      </span>
+                      <p className="mt-1 text-[16px]/[22px] font-extrabold text-green">
+                        {productName(i.product)} <span className="font-normal text-muted">{formatWeight(i.product.weightGrams)}</span>
+                      </p>
+                      <p className="text-[13px]/[20px]">
+                        {i.portionText}
+                        {i.why && !i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? ` · ${i.why}` : ""}
+                        {leftoverText(i) && <> · {leftoverText(i)}</>}
+                      </p>
+                      {once && <Durability item={i} every={once} oneTime={oneTime} />}
+                    </div>
+                    <span className="w-12 text-right font-bold text-ink">{i.qty} ks</span>
+                    <span className="w-18 text-right font-bold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</span>
+                    <span className="flex basis-full items-center justify-end gap-3 text-[13px] sm:basis-auto">
+                      {alternatives.length > 0 && (
+                        <select value={swaps[i.product.slug] ?? ""} onChange={(e) => setSwaps(e.target.value ? { ...swaps, [i.product.slug]: e.target.value } : Object.fromEntries(Object.entries(swaps).filter(([k]) => k !== i.product.slug)))} aria-label={`Nahradit ${productName(i.product)}`} className="min-h-8 w-auto py-0.5 text-xs">
+                          <option value="">Nahradit…</option>
+                          {alternatives.map((a) => (
+                            <option key={a.slug} value={a.slug}>
+                              {productName(a)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      <button type="button" onClick={() => (addonForRole(i.role) ? setAddon(i.role, false) : setRemoved([...removed, i.product.slug]))} className="font-semibold text-brick-text underline">
+                        Odebrat
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            {removedItems.length > 0 && (
+              <p className="mt-2.5 text-small">
+                Odebráno: {removedItems.map((p) => productName(p)).join(", ")}.{" "}
+                <button type="button" onClick={() => setRemoved([])} className="text-brick-text underline">
+                  vrátit
+                </button>
+              </p>
+            )}
+          </section>
+
+          {extras.length > 0 && (
+            <section aria-label="Doporučujeme navíc">
+              <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
+              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části mixu. Co vydrží déle než jednu dodávku, přijde jen jednou.</p>
+              <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+                {extras.map((i) => {
+                  const lastsDays = i.gramsPerDay > 0 ? Math.round((i.qty * i.product.weightGrams) / i.gramsPerDay) : 0;
+                  const lasting = i.periods > 1;
+                  return (
+                    <li key={i.product.slug} className="flex flex-col gap-1 rounded-card border-2 border-line bg-white p-3.5">
+                      <div className="mb-1 overflow-hidden rounded-control bg-cream">
+                        <ProductImage product={i.product} sizes="200px" className="h-27" />
+                      </div>
+                      <span className="text-[11px]/[18px] font-bold tracking-wide uppercase">{EXTRA_LABEL[i.role]}</span>
+                      <span className="text-[16px]/[21px] font-extrabold text-green">
+                        {productName(i.product)} <span className="font-normal text-muted">{formatWeight(i.product.weightGrams)}</span>
+                      </span>
+                      <span className="text-[13px]/[20px]">
+                        {i.portionText}
+                        {i.why ? `, ${i.why}` : ""}
+                      </span>
+                      <span className="mt-1 inline-flex items-center gap-1.5 text-[12px]/[18px] font-semibold text-green">
+                        <CalendarDays className="size-3.5" strokeWidth={2} aria-hidden />
+                        {lasting ? `Jednorázově · vydrží ${lastsDays >= 60 ? `asi ${Math.round(lastsDays / 30)} měsíců` : `asi ${lastsDays} dní`}` : "V každé dodávce"}
+                      </span>
+                      <span className="mt-auto flex items-center justify-between gap-2.5 pt-2">
+                        <b className="text-[18px] text-green">{formatPrice(i.qty * i.product.priceCzk)}</b>
+                        <Button type="button" variant="secondary" onClick={() => setAddon(i.role, true)} aria-label={`Přidat ${productName(i.product)} do dodávky`}>
+                          <Plus className="size-4" strokeWidth={2} aria-hidden /> Přidat
+                        </Button>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {calendar.length > 0 && (
+            <section className="rounded-card bg-paper p-6">
+              <h3 className="text-heading-lg text-green">Které balení kdy načít</h3>
+              <p className="mt-1 mb-4 text-[15px]/[24px]">Večer před krmením přendejte balení z mrazáku do lednice.</p>
+              <ol className="grid grid-cols-7 gap-1" aria-label="Kalendář krmení">
+                {calendar.map(({ day, main, extra }) => (
+                  <li key={day.day} className="flex flex-col items-center gap-1" title={day.items.map((x) => productName(x.product)).join(", ")}>
+                    <span className="text-[11px]/[14px] font-semibold">{day.weekday.slice(0, 2)}</span>
+                    <span className={`flex h-10 w-full items-center justify-center rounded-control text-[13px] font-extrabold ${main ? colorOf(main.slug) : "bg-white text-muted"}`}>
+                      {main ? letterOf(main.slug) : "–"}
+                      {extra ? "+" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              <ul className="mt-3 flex flex-wrap gap-x-4.5 gap-y-1.5 text-[13px]/[20px]">
+                {mealItems.map((i) => (
+                  <li key={i.product.slug} className="inline-flex items-center gap-1.5">
+                    <span className={`size-2.5 rounded-xs ${colorOf(i.product.slug).split(" ")[0]}`} aria-hidden />
+                    {letterOf(i.product.slug)} {productName(i.product).toLowerCase()}
+                  </li>
+                ))}
+                <li>+ ten den i další balení</li>
+              </ul>
+              <button type="button" onClick={() => setShowSchedule(!showSchedule)} aria-expanded={showSchedule} className="mt-4.5 flex min-h-12 w-full items-center justify-between gap-2.5 rounded-control border border-green bg-white px-4 text-button text-green">
+                {showSchedule ? "Skrýt podrobný rozpis" : "Zobrazit podrobný rozpis po dnech"}
+                <ChevronDown className={`size-4.5 transition-transform duration-300 ${showSchedule ? "rotate-180" : ""}`} strokeWidth={2} aria-hidden />
+              </button>
+              {showSchedule && (
+                <div className="mt-2.5 rounded-control border border-line bg-white p-4">
+                  <FeedingSchedule plan={plan} />
+                </div>
+              )}
+            </section>
+          )}
+
+          {plan.notes.length > 0 && (
+            <ul className="space-y-1 text-sm text-muted">
+              {plan.notes.map((n, idx) => (
+                <li key={idx} className={n.kind === "warn" ? "text-brick-text" : ""}>
+                  {n.text}
                 </li>
               ))}
             </ul>
-          </section>
-        )}
-        <details className="rounded-panel border border-line bg-white p-4 shadow-card">
-          <summary className="cursor-pointer text-button text-green">Rozpis krmení po dnech: které balení kdy načít</summary>
-          <div className="mt-3">
-            <FeedingSchedule plan={plan} />
-          </div>
-        </details>
-        {plan.notes.length > 0 && (
-          <ul className="space-y-1 text-sm text-muted">
-            {plan.notes.map((n, idx) => (
-              <li key={idx} className={n.kind === "warn" ? "text-brick-text" : ""}>
-                {n.text}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <aside className="h-fit rounded-panel bg-paper p-5 lg:sticky lg:top-5">
-        <p className="text-eyebrow text-green uppercase">Cena za den</p>
-        <p className="text-display-lg text-green">{formatPrice(plan.perDayCzk)}</p>
-        <p className="mt-1 text-xs text-muted">
-          {formatPrice(plan.totalCzk)} za dodávku na {days === 14 ? "2 týdny" : "4 týdny"}
-          {delivery === "rozvoz" ? (shipFree ? " · rozvoz zdarma" : ` · rozvoz ${formatPrice(shipping.rozvozPriceCzk)}`) : " · odběr v prodejně zdarma"}
-        </p>
-
-        <p className="mt-4 mb-1.5 text-label text-green">Jak často</p>
-        <div className="flex gap-2">
-          {([14, 28] as Days[]).map((d) => (
-            <button key={d} type="button" onClick={() => { setDays(d); setOneTime(false); }} aria-pressed={days === d && !oneTime} className={seg(days === d && !oneTime)}>
-              <span className="block text-sm font-semibold">{d === 14 ? "Každé 2 týdny" : "Každé 4 týdny"}</span>
-              <span className="block text-xs text-muted">{d === 14 ? "menší balík, jedna police" : "větší balík, méně dodávek"}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" onClick={() => setOneTime(!oneTime)} aria-pressed={oneTime} className={`${seg(oneTime)} mt-2 w-full`}>
-          <span className="block text-sm font-semibold">Jen jednou</span>
-          <span className="block text-xs text-muted">balík na {days === 14 ? "2 týdny" : "4 týdny"}, bez dalších dodávek</span>
-        </button>
-
-        <p className="mt-4 mb-1.5 text-label text-green">Dodání</p>
-        <div className="flex gap-2">
-          {shipping.rozvoz && (
-            <button type="button" onClick={() => setDelivery("rozvoz")} aria-pressed={delivery === "rozvoz"} className={seg(delivery === "rozvoz")}>
-              <span className="block text-sm font-semibold">Rozvoz</span>
-              <span className="block text-xs text-muted">{shipping.freeFromCzk !== null ? `zdarma od ${formatPrice(shipping.freeFromCzk)}` : formatPrice(shipping.rozvozPriceCzk)}</span>
-            </button>
-          )}
-          {shipping.odber && (
-            <button type="button" onClick={() => setDelivery("odber")} aria-pressed={delivery === "odber"} className={seg(delivery === "odber")}>
-              <span className="block text-sm font-semibold">Vyzvednu v prodejně</span>
-              <span className="block text-xs text-muted">v otevírací době</span>
-            </button>
           )}
         </div>
 
-        {error && (
-          <p role="alert" className="mt-3 text-sm text-brick-text">
-            {error}
+        <aside className="h-fit rounded-card border border-line bg-white p-6 shadow-card lg:sticky lg:top-5">
+          <p className="text-eyebrow text-muted uppercase">Shrnutí</p>
+          <p className="text-[40px]/[46px] font-extrabold text-green">{formatPrice(plan.totalCzk)}</p>
+          <p className="mb-4.5 text-[13px]/[20px]">
+            za dodávku na {period} · {formatPrice(plan.perDayCzk)} za den
+            {delivery === "rozvoz" ? (shipFree ? " · rozvoz zdarma" : ` · rozvoz ${formatPrice(shipping.rozvozPriceCzk)}`) : " · odběr v prodejně zdarma"}
           </p>
-        )}
-        <Button type="button" variant="action" size="lg" onClick={onContinue} disabled={pending || plan.items.length === 0} className="mt-4 w-full">
-          {pending ? "Ukládám…" : cta}
-        </Button>
-        <p className="mt-2 text-center text-xs text-muted">
-          {oneTime ? "Jednorázová objednávka. Pravidelné dodávky si můžete nastavit kdykoli později v účtu." : "Bez závazku: dodávku přeskočíte, změníte nebo zrušíte kdykoli v účtu. Platíte za každou zvlášť."}
-          {!oneTime && bonusPts > 0 && ` Za každou dodávku ${bonusPts} Kostiček navíc.`}
-          {club.petPoints > 0 && ` Za profil ${first} ${club.petPoints} Kostiček.`}
-        </p>
-      </aside>
+          <p className="mb-1.5 text-[15px]/[21px] font-semibold text-green">Jak často</p>
+          <div className="mb-4 grid grid-cols-3 gap-1.5">
+            {([14, 28] as Days[]).map((d) => (
+              <button key={d} type="button" onClick={() => { setDays(d); setOneTime(false); }} aria-pressed={days === d && !oneTime} className={seg(days === d && !oneTime)}>
+                {d === 14 ? "Každé 2 týdny" : "Každé 4 týdny"}
+              </button>
+            ))}
+            <button type="button" onClick={() => setOneTime(true)} aria-pressed={oneTime} className={seg(oneTime)}>
+              Jen jednou
+            </button>
+          </div>
+          <p className="mb-1.5 text-[15px]/[21px] font-semibold text-green">Dodání</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {shipping.rozvoz && (
+              <button type="button" onClick={() => setDelivery("rozvoz")} aria-pressed={delivery === "rozvoz"} className={`${seg(delivery === "rozvoz")} text-left`}>
+                <span className="block text-green">Rozvoz</span>
+                <span className="block text-[12px]/[18px] font-normal text-muted">{shipping.freeFromCzk !== null ? `zdarma od ${formatPrice(shipping.freeFromCzk)}` : formatPrice(shipping.rozvozPriceCzk)}</span>
+              </button>
+            )}
+            {shipping.odber && (
+              <button type="button" onClick={() => setDelivery("odber")} aria-pressed={delivery === "odber"} className={`${seg(delivery === "odber")} text-left`}>
+                <span className="block text-green">Vyzvednu</span>
+                <span className="block text-[12px]/[18px] font-normal text-muted">v prodejně zdarma</span>
+              </button>
+            )}
+          </div>
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-brick-text">
+              {error}
+            </p>
+          )}
+          <Button type="button" variant="action" size="lg" onClick={onContinue} disabled={pending || plan.items.length === 0} className="mt-5 w-full">
+            {pending ? "Ukládám…" : cta}
+          </Button>
+          <p className="mt-2.5 text-center text-[12px]/[19px] text-muted">
+            {oneTime ? "Jednorázová objednávka. Pravidelné dodávky si můžete nastavit kdykoli později v účtu." : "Bez závazku: dodávku přeskočíte, změníte nebo zrušíte kdykoli v účtu."}
+            {!oneTime && bonusPts > 0 && ` Za každou dodávku ${bonusPts} Kostiček navíc.`}
+            {club.petPoints > 0 && ` Za profil ${first} ${club.petPoints} Kostiček.`}
+          </p>
+        </aside>
+      </div>
     </div>
   );
 }
