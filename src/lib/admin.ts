@@ -284,6 +284,20 @@ export function marginOf(price: number | null | undefined, purchase: number | st
   if (buy === null || !Number.isFinite(buy) || !price || price <= 0) return null;
   return { czk: Math.round((price - buy) * 10) / 10, pct: Math.round(((price - buy) / price) * 100) };
 }
+/** Zaokrouhlení prodejní ceny nahoru na devítku: 98 → 99, 120 → 129, 1 120 → 1 129. */
+export const roundUpToNine = (price: number) => Math.max(9, Math.ceil((price + 1) / 10) * 10 - 1);
+
+/**
+ * Cena, při které má produkt danou marži (v % z prodejní ceny): nákup / (1 − marže).
+ * `rounded` je tatáž cena zaokrouhlená nahoru na devítku, `margin` je skutečná marže po zaokrouhlení.
+ */
+export function priceForMargin(purchase: number, pct: number): { exact: number; rounded: number; margin: { czk: number; pct: number } } | null {
+  if (!(purchase > 0) || !(pct >= 0) || pct >= 95) return null;
+  const exact = purchase / (1 - pct / 100);
+  const rounded = roundUpToNine(exact);
+  return { exact: Math.round(exact * 10) / 10, rounded, margin: marginOf(rounded, purchase)! };
+}
+
 /** „24 Kč“, u desetin „8,8 Kč“. */
 export const formatMarginCzk = (czk: number) => `${czk.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} Kč`;
 

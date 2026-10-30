@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { deleteProduct, saveProduct } from "@/app/admin/(app)/produkty/actions";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
-import { formatMarginCzk, marginOf, type ProductRow } from "@/lib/admin";
+import { formatMarginCzk, marginOf, priceForMargin, type ProductRow } from "@/lib/admin";
 import { ANIMAL_LABEL, BONE_CLASS_LABEL, KIND_INFO, LINE_KINDS, LINES, LINE_INFO, MEAT_LABEL, MEATS, STORAGE_LABEL, UNIT_LABEL } from "@/lib/catalog";
 
 const STEPS = ["Co to je", "Cena a balení", "Sklad a dodavatel", "Etiketa a web"] as const;
@@ -21,8 +21,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
   const [unit, setUnit] = useState<"ks" | "kg">(p?.unit ?? "ks");
   const [preview, setPreview] = useState({ variant: p?.variant ?? "", line: p?.line ?? "barf", price: p?.price_czk ?? 0, weight: p?.weight_grams ?? 1000, intro: p?.intro ?? "", producer: p?.producer ?? "", published: p?.is_published ?? false, isNew: p?.is_new ?? false, stock: p?.stock_qty ?? null, purchase: p?.purchase_price_czk ?? null, store: p?.store_price_czk ?? null });
   const margin = marginOf(preview.price, preview.purchase);
-  const storeMargin = marginOf(preview.store ?? preview.price, preview.purchase);
-  const marginText = margin && storeMargin ? `marže e-shop ${formatMarginCzk(margin.czk)} (${margin.pct} %) · prodejna ${formatMarginCzk(storeMargin.czk)} (${storeMargin.pct} %)` : null;
+  const marginText = margin ? `marže ${formatMarginCzk(margin.czk)} (${margin.pct} %)` : null;
   const name = preview.variant.trim() ? preview.variant.trim().charAt(0).toUpperCase() + preview.variant.trim().slice(1) : "Název produktu";
   const missing = [!preview.variant.trim() && "název", !(preview.price > 0) && "cena", !p?.image_url && "fotka", !p?.ean && "EAN pro kasu"].filter(Boolean) as string[];
 
@@ -111,7 +110,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               <input name="weight_grams" type="number" min={1} defaultValue={p?.weight_grams ?? (unit === "kg" ? 1000 : undefined)} required onChange={(e) => setPreview((v) => ({ ...v, weight: Number(e.target.value) || 0 }))} />
             </Field>
             <Field label={unit === "kg" ? "Cena za kg (Kč)" : "Cena (Kč)"}>
-              <input name="price_czk" type="number" min={0} defaultValue={p?.price_czk} required onChange={(e) => setPreview((v) => ({ ...v, price: Number(e.target.value) || 0 }))} />
+              <input name="price_czk" type="number" min={0} value={preview.price || ""} required onChange={(e) => setPreview((v) => ({ ...v, price: Number(e.target.value) || 0 }))} />
             </Field>
             <Field label={unit === "kg" ? "Cena za kg v prodejně (Kč)" : "Cena v prodejně (Kč)"} hint="pro kasu a cenovky; prázdné = jako na e-shopu">
               <input name="store_price_czk" type="number" min={1} defaultValue={p?.store_price_czk ?? ""} onChange={(e) => setPreview((v) => ({ ...v, store: e.target.value === "" ? null : Number(e.target.value) }))} />
@@ -169,6 +168,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
           </div>
           {unit === "kg" && <p className="mt-2 text-small text-muted">Zboží na váhu se prodává jen v prodejně. Na webu se zobrazí s cenou za kg a bez košíku.</p>}
         </Fieldset>
+        {manager && <MarginCalculator purchase={preview.purchase === null ? null : Number(preview.purchase)} price={preview.price} perKg={unit === "kg"} onApply={(price) => setPreview((v) => ({ ...v, price }))} />}
         <div className="flex justify-between">
           <Button type="button" variant="secondary" onClick={() => setStep(1)}>
             Zpět
@@ -338,11 +338,9 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
               </p>
               {preview.intro && <p className="mt-1 text-small">{preview.intro}</p>}
               <p className="mt-2 text-small text-muted">{preview.stock === null ? "sklad se neeviduje" : preview.stock > 0 ? `skladem ${preview.stock} ${unit}` : "Momentálně není"}</p>
-              {manager && margin && storeMargin && (
+              {manager && margin && (
                 <p className="mt-1 text-small text-muted">
-                  Marže e-shop <span className={margin.pct < 20 ? "text-brick-text" : "text-ink"}>{formatMarginCzk(margin.czk)} ({margin.pct} %)</span>
-                  <br />
-                  Marže prodejna <span className={storeMargin.pct < 20 ? "text-brick-text" : "text-ink"}>{formatMarginCzk(storeMargin.czk)} ({storeMargin.pct} %)</span>
+                  Marže <span className={margin.pct < 20 ? "text-brick-text" : "text-ink"}>{formatMarginCzk(margin.czk)} ({margin.pct} %)</span>
                 </p>
               )}
             </div>
@@ -431,5 +429,105 @@ function Picker({ name, label, options, selected }: { name: string; label: strin
       </select>
       <span className="mt-1 block text-[11px] text-muted">Více položek vyberete s Ctrl (Cmd).</span>
     </label>
+  );
+}
+
+const MARGIN_STEPS = [20, 25, 30, 35, 40, 50];
+
+/**
+ * Kalkulačka marže pro cenotvorbu: z nákupní ceny s DPH spočítá prodejní cenu pro zvolenou marži
+ * (v % z prodejní ceny), zaokrouhlí ji nahoru na devítku a ukáže skutečnou marži. „Použít“ přepíše cenu ve formuláři.
+ */
+function MarginCalculator({ purchase, price, perKg, onApply }: { purchase: number | null; price: number; perKg: boolean; onApply: (price: number) => void }) {
+  const [target, setTarget] = useState(25);
+  const current = marginOf(price, purchase);
+  const custom = purchase ? priceForMargin(purchase, target) : null;
+  const unit = perKg ? " / kg" : "";
+
+  return (
+    <Fieldset title="Kalkulačka marže">
+      {!purchase ? (
+        <p className="text-small text-muted">Vyplňte nákupní cenu (s DPH) a kalkulačka spočítá prodejní cenu pro různé marže.</p>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-label text-green">Nákup</p>
+              <p className="mt-1 font-semibold">
+                {formatMarginCzk(purchase)}
+                {unit}
+              </p>
+            </div>
+            <div>
+              <p className="text-label text-green">Teď</p>
+              <p className={`mt-1 font-semibold ${current && current.pct < 20 ? "text-brick-text" : ""}`}>
+                {price > 0 ? `${price} Kč${unit}` : "bez ceny"}
+                {current && (
+                  <span className="ml-1 font-normal text-muted">
+                    · {formatMarginCzk(current.czk)} ({current.pct} %)
+                  </span>
+                )}
+              </p>
+            </div>
+            <Field label="Chci marži (%)">
+              <input type="number" min={0} max={90} value={target} onChange={(e) => setTarget(Number(e.target.value) || 0)} />
+            </Field>
+          </div>
+
+          {custom && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-control bg-paper p-3">
+              <p className="text-sm">
+                Pro {target} % prodávejte za <span className="font-semibold">{custom.rounded} Kč{unit}</span>
+                <span className="text-muted">
+                  {" "}
+                  (přesně {formatMarginCzk(custom.exact)}, po zaokrouhlení marže {formatMarginCzk(custom.margin.czk)} = {custom.margin.pct} %)
+                </span>
+              </p>
+              <Button type="button" variant="secondary" onClick={() => onApply(custom.rounded)} disabled={custom.rounded === price}>
+                {custom.rounded === price ? "Použito" : "Použít cenu"}
+              </Button>
+            </div>
+          )}
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-eyebrow uppercase text-muted">
+                <th className="py-1 font-semibold">Marže</th>
+                <th className="py-1 font-semibold">Přirážka</th>
+                <th className="py-1 font-semibold">Cena{unit}</th>
+                <th className="py-1 font-semibold">Zisk na kus</th>
+                <th className="py-1" />
+              </tr>
+            </thead>
+            <tbody>
+              {MARGIN_STEPS.map((pct) => {
+                const r = priceForMargin(purchase, pct)!;
+                const active = r.rounded === price;
+                return (
+                  <tr key={pct} className={`border-t border-line ${active ? "bg-paper" : ""}`}>
+                    <td className="py-1.5">{pct} %</td>
+                    <td className="py-1.5 text-muted">{Math.round((r.rounded / purchase - 1) * 100)} %</td>
+                    <td className="py-1.5 font-semibold">{r.rounded} Kč</td>
+                    <td className="py-1.5">
+                      {formatMarginCzk(r.margin.czk)} <span className="text-muted">({r.margin.pct} %)</span>
+                    </td>
+                    <td className="py-1.5 text-right">
+                      {active ? (
+                        <span className="text-small text-muted">aktuální cena</span>
+                      ) : (
+                        <button type="button" onClick={() => onApply(r.rounded)} className="text-small font-semibold text-brick-text hover:underline">
+                          Použít
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="text-small text-muted">Marže je podíl zisku z prodejní ceny, přirážka je navýšení nákupní ceny. Ceny jsou zaokrouhlené nahoru na devítku. Pod 20 % je marže v seznamu produktů zvýrazněná.</p>
+        </div>
+      )}
+    </Fieldset>
   );
 }

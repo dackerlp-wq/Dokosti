@@ -35,7 +35,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const q = (sp.q ?? "").trim().toLowerCase();
   const state = STATES.find((s) => s.id === sp.stav);
   const products = all.filter((p) => (!sp.rada || p.line === sp.rada) && (!sp.dodavatel || p.supplier_id === sp.dodavatel) && (!state || state.test(p)) && (!q || `${productName(p)} ${p.slug} ${p.ean ?? ""} ${p.producer}`.toLowerCase().includes(q)));
-  /** Marže v Kč (a %) na e-shopu a v prodejně (kasa) z velkoobchodní nákupní ceny s DPH. Pod 20 % cihlově. */
+  /** Marže v Kč (a %) z prodejní ceny a velkoobchodní nákupní ceny s DPH. Pod 20 % cihlově. */
   const marginCell = (price: number, p: ProductRow) => {
     const m = marginOf(price, p.purchase_price_czk);
     if (!m) return <span className="text-muted">—</span>;
@@ -83,7 +83,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {products.length === 0 ? (
           <p className="text-muted">{all.length === 0 ? "Zatím žádný produkt. Založte první tlačítkem Nový produkt." : "Nic neodpovídá filtru."}</p>
         ) : (
-          <Table head={manager ? ["Název", "Řada", "Balení", "Nákup", "Cena", "Marže e-shop", "Marže prodejna", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
+          <Table head={manager ? ["Název", "Řada", "Balení", "Nákup", "Cena", "Marže", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
             {products.map((p) => (
               <tr key={p.id}>
                 <Td>
@@ -107,7 +107,6 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   {p.store_price_czk !== null && p.store_price_czk !== p.price_czk && <div className="text-small text-muted">prodejna {formatPrice(p.store_price_czk)}</div>}
                 </Td>
                 {manager && <Td className="whitespace-nowrap">{marginCell(p.price_czk, p)}</Td>}
-                {manager && <Td className="whitespace-nowrap">{marginCell(p.store_price_czk ?? p.price_czk, p)}</Td>}
                 <Td>
                   {p.stock_qty === null ? (
                     <span className="text-muted">{STORAGE_LABEL[p.storage]}</span>
