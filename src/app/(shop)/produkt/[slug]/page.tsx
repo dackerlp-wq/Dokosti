@@ -12,7 +12,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { ANIMAL_LABEL, LINE_INFO, STORAGE_LABEL, facetLabel, productFacets, productName } from "@/lib/catalog";
-import { parseComposition, parseStorage, type StorageKind } from "@/lib/facts";
+import { meatSplit, parseComposition, parseStorage, type StorageKind } from "@/lib/facts";
 import { formatPct, formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
@@ -96,15 +96,18 @@ export default async function ProductPage({ params }: Props) {
 
 
   const pickableDose = product.dose && (product.dose.pes ?? product.dose.kocka) && ["tiers", "body"].includes((product.dose.pes ?? product.dose.kocka)!.per) ? product.dose : null;
+  const facts = parseComposition(product.composition);
+  // U masa a BARFu sečteme podíl masa (s kostmi) a vnitřností z procent surovin od výrobce.
+  const split = ["barf", "kosti", "maso"].includes(product.line) && product.meatPct === undefined ? meatSplit(facts.ingredients) : null;
   const keyNumbers = [
     product.meatPct !== undefined && { value: formatPct(product.meatPct), label: "masa a vnitřností" },
+    split && split.meat > 0 && { value: formatPct(split.meat), label: split.meatLabel },
     product.nutrition?.bonePct !== undefined && { value: formatPct(product.nutrition.bonePct), label: "jedlé kosti" },
-    product.nutrition?.organPct !== undefined && { value: formatPct(product.nutrition.organPct), label: "vnitřností" },
+    split ? split.organs > 0 && { value: formatPct(split.organs), label: "vnitřností" } : product.nutrition?.organPct !== undefined && { value: formatPct(product.nutrition.organPct), label: "vnitřností" },
     product.nutrition?.kcalPer100g !== undefined && { value: `${product.nutrition.kcalPer100g.toLocaleString("cs-CZ")} kcal`, label: "ve 100 g" },
   ].filter((n): n is { value: string; label: string } => Boolean(n));
   const facets = productFacets(product);
   // Sekce pod nákupem se střídají papírová / bílá (nákup nahoře je bílý), v pořadí, v jakém se zobrazí.
-  const facts = parseComposition(product.composition);
   const withPct = facts.ingredients.filter((i) => i.pct !== undefined && i.pct >= 1).slice(0, 6);
   const otherIngredients = facts.ingredients.filter((i) => !withPct.includes(i)).slice(0, 12).map((i) => i.name.charAt(0).toLowerCase() + i.name.slice(1));
   const parsedAnything = withPct.length > 0 || facts.nutrients.length > 0 || facts.minor.length > 0 || facts.micros.length > 0;
