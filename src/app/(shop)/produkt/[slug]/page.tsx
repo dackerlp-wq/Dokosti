@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Cat, Dog, Leaf, Package, Scale, Snowflake, Store, Thermometer, Truck, Utensils } from "lucide-react";
 import { BuyPanel } from "@/components/product/buy-panel";
+import { DosePicker } from "@/components/product/dose-picker";
 import { ProductCarousel } from "@/components/product/product-grid";
 import { ProductImage } from "@/components/product/product-image";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -69,11 +71,24 @@ export default async function ProductPage({ params }: Props) {
     },
   };
 
-  const description: { title: string; text: string }[] = [
-    { title: "Složení", text: product.composition },
-    { title: "Podávání", text: product.dosage },
-    { title: "Skladování", text: product.storageNote },
-  ].filter((d) => d.text);
+
+  const pickableDose = product.dose && (product.dose.pes ?? product.dose.kocka) && ["tiers", "body"].includes((product.dose.pes ?? product.dose.kocka)!.per) ? product.dose : null;
+  const keyNumbers = [
+    product.meatPct !== undefined && { value: formatPct(product.meatPct), label: "masa a vnitřností" },
+    product.nutrition?.bonePct !== undefined && { value: formatPct(product.nutrition.bonePct), label: "jedlé kosti" },
+    product.nutrition?.organPct !== undefined && { value: formatPct(product.nutrition.organPct), label: "vnitřností" },
+    product.nutrition?.kcalPer100g !== undefined && { value: `${product.nutrition.kcalPer100g.toLocaleString("cs-CZ")} kcal`, label: "ve 100 g" },
+  ].filter((n): n is { value: string; label: string } => Boolean(n));
+  const facets = productFacets(product);
+  // Sekce pod nákupem se střídají papírová / bílá (nákup nahoře je bílý), v pořadí, v jakém se zobrazí.
+  const shown = { dose: !!pickableDose, comp: !!product.composition || keyNumbers.length > 0, how: !!(product.dosage || product.storageNote), upsell: upsell.length > 0, cross: crosssell.length > 0, related: related.length > 0 };
+  const tones = {} as Record<keyof typeof shown, "white" | "paper">;
+  (Object.keys(shown) as (keyof typeof shown)[]).filter((k) => shown[k]).forEach((k, i) => (tones[k] = i % 2 === 0 ? "paper" : "white"));
+  const tiles = [
+    { icon: product.animals.includes("kocka") && !product.animals.includes("pes") ? Cat : Dog, text: product.animals.map((a) => ANIMAL_LABEL[a]).join(" a ").replace(" a Pro ", " a ") },
+    { icon: product.storage === "mrazene" ? Snowflake : product.storage === "chlazene" ? Thermometer : Package, text: STORAGE_LABEL[product.storage] },
+    { icon: Scale, text: byWeight ? "Na váhu" : formatWeight(product.weightGrams) },
+  ];
 
   return (
     <>
@@ -82,8 +97,25 @@ export default async function ProductPage({ params }: Props) {
         <Breadcrumb items={[{ href: "/", label: "Úvod" }, { href: `/rada/${line.slug}`, label: line.name }, { label: productName(product) }]} />
 
         <div className="mt-7.5 grid gap-10 md:grid-cols-2 md:items-start">
-          {/* Galerie: zatím jedna fotka, vyříznutá na bílé. */}
-          <ProductImage product={product} sizes="(min-width: 768px) 50vw, 100vw" className="h-[300px] md:h-[435px]" priority />
+          <div className="flex flex-col gap-5">
+            <div className="relative">
+              <ProductImage product={product} sizes="(min-width: 768px) 50vw, 100vw" className="h-[300px] md:h-[435px]" priority />
+              {product.meatPct !== undefined && (
+                <div className="absolute bottom-5 left-5 flex size-26 flex-col items-center justify-center rounded-full bg-green text-center text-cream">
+                  <span className="text-[26px]/[28px] font-extrabold">{formatPct(product.meatPct)}</span>
+                  <span className="text-[12px]/[16px] font-semibold">masa</span>
+                </div>
+              )}
+            </div>
+            <ul className="grid grid-cols-3 gap-2.5">
+              {tiles.map((t) => (
+                <li key={t.text} className="flex flex-col items-center gap-1.5 rounded-card bg-paper px-2.5 py-3.5 text-center">
+                  <t.icon className="size-7 text-green" strokeWidth={1.75} aria-hidden />
+                  <span className="text-[13px]/[18px] font-semibold text-green">{t.text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           <div>
             {(product.isNew || onSale) && (
@@ -92,107 +124,146 @@ export default async function ProductPage({ params }: Props) {
                 {onSale && <Flag kind="sale" />}
               </div>
             )}
-            <p className="text-eyebrow text-muted uppercase">{line.name}</p>
-            <h1 className="mb-3.5 font-display text-display-lg text-green md:text-display-xl">{productName(product)}</h1>
-            <p className="mb-5">{product.intro}</p>
-
-            <dl className="mb-7.5 grid grid-cols-[120px_1fr] gap-x-5 gap-y-2.5 border-t border-line pt-5 md:grid-cols-[150px_1fr]">
-              <dt className="text-label text-muted">Cena:</dt>
-              <dd>
-                <span className={`text-price-lg ${onSale ? "text-brick-text" : "text-green"}`}>{formatPrice(product.priceCzk)}</span>
-                {byWeight && <span className="text-small"> za kg</span>}
-                {onSale && <s className="ml-2.5 text-small">{formatPrice(product.originalPriceCzk!)}</s>}
-              </dd>
-              {product.benefit && (
+            <p className="text-eyebrow text-muted uppercase">
+              {line.name}
+              {facets.length > 0 && (
                 <>
-                  <dt className="text-label text-muted">Hlavní přínos:</dt>
-                  <dd>
-                    <span className="font-semibold text-green">{product.benefit}</span>
-                    {product.benefitDetail && <p className="mt-1.25 text-small">{product.benefitDetail}</p>}
-                  </dd>
+                  {" · "}
+                  {facets.map((m, i) => (
+                    <span key={m}>
+                      {i > 0 && ", "}
+                      <Link href={`/rada/${line.slug}/${m}`} className="hover:text-brick-text hover:underline">
+                        {facetLabel(product.line, m)}
+                      </Link>
+                    </span>
+                  ))}
                 </>
               )}
-              {product.meatPct !== undefined && (
-                <>
-                  <dt className="text-label text-muted">Podíl masa:</dt>
-                  <dd>
-                    <span className="font-semibold text-green">{formatPct(product.meatPct)}</span> masa a vnitřností
-                    <span className="text-small text-muted"> · podle složení výrobce</span>
-                  </dd>
-                </>
-              )}
-              <dt className="text-label text-muted">Balení:</dt>
-              <dd>
-                {byWeight ? "na váhu, vážíme v prodejně" : `${formatWeight(product.weightGrams)}, ${STORAGE_LABEL[product.storage].toLowerCase()}`}
-                {!byWeight && product.weightGrams >= 50 && <span className="text-small"> · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}/kg</span>}
-              </dd>
-              <dt className="text-label text-muted">Dostupnost:</dt>
-              <dd>
-                <StockStatus stock={stock} />
-              </dd>
-              <dt className="text-label text-muted">Pro koho:</dt>
-              <dd>
-                {product.animals.map((a) => ANIMAL_LABEL[a].replace("Pro ", "")).join(" a ")}
-                {productFacets(product).length > 0 && (
-                  <>
-                    {" · "}
-                    {productFacets(product).map((m, i) => (
-                      <span key={m}>
-                        {i > 0 && ", "}
-                        <Link href={`/rada/${line.slug}/${m}`} className="text-brick-text hover:underline">
-                          {facetLabel(product.line, m)}
-                        </Link>
-                      </span>
-                    ))}
-                  </>
-                )}
-              </dd>
-              {producer && (
-                <>
-                  <dt className="text-label text-muted">Výrobce:</dt>
-                  <dd>{producer}</dd>
-                </>
-              )}
-            </dl>
-
-            {byWeight ? <p className="text-small">Toto zboží vážíme na místě, přes e-shop ho zatím objednat nejde. Stavte se, nebo napište, kolik chcete připravit.</p> : <BuyPanel product={product} />}
-
-            <p className="mt-5 text-small">
-              Dávkování je orientační. Kolik přesně dávat vašemu zvířeti spočítá{" "}
-              <Link href="/kalkulacka" className="text-brick-text underline">
-                kalkulačka dávky
-              </Link>
-              . Při zdravotních potížích se poraďte s veterinářem.
             </p>
+            <h1 className="mb-3.5 font-display text-display-lg text-green md:text-display-xl">{productName(product)}</h1>
+            {product.intro && <p className="mb-5">{product.intro}</p>}
+
+            {product.benefit && (
+              <div className="mb-6 flex items-start gap-4 rounded-card bg-paper p-5">
+                <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-green text-cream">
+                  <Leaf className="size-7" strokeWidth={1.5} aria-hidden />
+                </span>
+                <div>
+                  <p className="text-eyebrow text-muted uppercase">Co to {product.animals.includes("pes") ? "psovi" : "kočce"} dá</p>
+                  <p className="text-heading-md text-green">{product.benefit}</p>
+                  {product.benefitDetail && <p className="mt-1.5 text-[15px]/[24px]">{product.benefitDetail}</p>}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 border-t border-line pt-5">
+              <span className={`text-price-lg ${onSale ? "text-brick-text" : "text-green"}`}>
+                {formatPrice(product.priceCzk)}
+                {byWeight && <span className="text-small"> za kg</span>}
+              </span>
+              {onSale && <s className="text-small">{formatPrice(product.originalPriceCzk!)}</s>}
+              {!byWeight && product.weightGrams >= 50 && (
+                <span className="text-small">
+                  {formatWeight(product.weightGrams)} · {formatPrice(pricePerKg(product.priceCzk, product.weightGrams))}/kg
+                </span>
+              )}
+              <StockStatus stock={stock} />
+            </div>
+
+            <div className="mt-4">
+              {byWeight ? <p className="text-small">Toto zboží vážíme na místě, přes e-shop ho zatím objednat nejde. Stavte se, nebo napište, kolik chcete připravit.</p> : <BuyPanel product={product} />}
+            </div>
+
+            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-small">
+              <li className="inline-flex items-center gap-1.5">
+                <Truck className="size-4.5 text-green" strokeWidth={1.75} aria-hidden />
+                <Link href="/doprava" className="hover:text-brick-text hover:underline">
+                  Rozvážíme sami po Kladensku
+                </Link>
+              </li>
+              <li className="inline-flex items-center gap-1.5">
+                <Store className="size-4.5 text-green" strokeWidth={1.75} aria-hidden />
+                Osobní odběr v prodejně
+              </li>
+              {producer && <li>Výrobce: {producer}</li>}
+            </ul>
           </div>
         </div>
-
-        {description.length > 0 && (
-          <div className="mx-auto mt-10 max-w-text border-t border-line pt-10 md:mt-15">
-            {description.map((d) => (
-              <section key={d.title} className="mb-7.5">
-                <h2 className="mb-2.5 text-heading-md font-bold text-green">{d.title}</h2>
-                <p>{d.text}</p>
-              </section>
-            ))}
-          </div>
-        )}
       </div>
 
+      {pickableDose && (
+        <Section tone={tones.dose}>
+          <SectionHeader eyebrow="Dávkování" title={`Kolik dát vašemu ${pickableDose.pes ? "psovi" : "kočce"}`}>
+            <p>Vyberte velikost. Dávka je na den, zamíchejte ji do krmiva.</p>
+          </SectionHeader>
+          <DosePicker dose={pickableDose} />
+        </Section>
+      )}
+
+      {(product.composition || keyNumbers.length > 0) && (
+        <Section tone={tones.comp}>
+          <SectionHeader eyebrow="Složení podle výrobce" title="Co je uvnitř" />
+          {keyNumbers.length > 0 && (
+            <ul className="mx-auto mb-10 grid max-w-narrow grid-cols-2 gap-3.5 md:grid-cols-4">
+              {keyNumbers.map((n) => (
+                <li key={n.label} className="rounded-card border border-line p-4 text-center">
+                  <p className="text-[26px]/[32px] font-extrabold text-green">{n.value}</p>
+                  <p className="text-small">{n.label}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {product.composition && <p className="mx-auto max-w-text">{product.composition}</p>}
+        </Section>
+      )}
+
+      {(product.dosage || product.storageNote) && (
+        <Section tone={tones.how}>
+          <SectionHeader title="Jak podávat a skladovat" />
+          <div className="mx-auto grid max-w-narrow gap-10 md:grid-cols-2">
+            {product.dosage && (
+              <div className="text-center">
+                <span className="mx-auto mb-3.5 flex size-18 items-center justify-center rounded-full bg-green text-cream">
+                  <Utensils className="size-8" strokeWidth={1.5} aria-hidden />
+                </span>
+                <h3 className="mb-1.5 text-heading-md font-bold text-green">Podávání</h3>
+                <p className="text-[15px]/[26px]">{product.dosage}</p>
+              </div>
+            )}
+            {product.storageNote && (
+              <div className="text-center">
+                <span className="mx-auto mb-3.5 flex size-18 items-center justify-center rounded-full bg-green text-cream">
+                  <Thermometer className="size-8" strokeWidth={1.5} aria-hidden />
+                </span>
+                <h3 className="mb-1.5 text-heading-md font-bold text-green">Skladování</h3>
+                <p className="text-[15px]/[26px]">{product.storageNote}</p>
+              </div>
+            )}
+          </div>
+          <p className="mt-10 text-center text-small">
+            Dávkování je orientační, přesnou dávku spočítá{" "}
+            <Link href="/kalkulacka" className="text-brick-text underline">
+              kalkulačka dávky
+            </Link>
+            . Při zdravotních potížích se poraďte s veterinářem.
+          </p>
+        </Section>
+      )}
+
       {upsell.length > 0 && (
-        <Section tone="paper">
+        <Section tone={tones.upsell}>
           <SectionHeader eyebrow="Lepší volba" title="Vyplatí se víc" />
           <ProductCarousel products={upsell} label="Lepší volba" />
         </Section>
       )}
       {crosssell.length > 0 && (
-        <Section tone={upsell.length > 0 ? "white" : "paper"}>
+        <Section tone={tones.cross}>
           <SectionHeader eyebrow="Hodí se k tomu" title="Zákazníci k tomu přidávají" />
           <ProductCarousel products={crosssell} label="Hodí se k tomu" />
         </Section>
       )}
       {related.length > 0 && (
-        <Section tone={(upsell.length > 0) !== (crosssell.length > 0) ? "white" : "paper"}>
+        <Section tone={tones.related}>
           <SectionHeader eyebrow={line.name} title="Další z řady" more={<LinkArrow href={`/rada/${line.slug}`}>Vše z řady</LinkArrow>} />
           <ProductCarousel products={related} label={`Další z řady ${line.name}`} />
         </Section>
