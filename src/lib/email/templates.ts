@@ -2,7 +2,10 @@ import { PAYMENT_LABEL, SHIPPING_LABEL } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { SITE_URL } from "@/lib/seo";
 import { DAY_NAMES, type Settings } from "@/lib/settings";
+import { foodKind } from "@/lib/barf";
+import { productName, type Product } from "@/lib/catalog";
 import { INTERVAL_LABEL } from "@/lib/shipping";
+import { deliveryLetter, hasRotation, itemsForDelivery, nextDeliveryIndex, runningOut, type SubscriptionItem, type SubscriptionView } from "@/lib/subscriptions";
 
 /** Objednávka tak, jak ji vrací RPC order_for_email. */
 export type OrderForEmail = {
@@ -213,24 +216,97 @@ export function subscriptionCreated(o: OrderForEmail, s: Settings, sub: Subscrip
   return { subject: title, html: layout(title, body, s.shop), text };
 }
 
-/** Připomínka před dodávkou z předplatného. */
-export function subscriptionReminder(
-  sub: { customer_name: string; next_date: string; items: { name: string | null; qty: number; every_nth?: number; price_czk: number | null; available: boolean | null }[]; shipping_method: "odber" | "rozvoz" | "prepravce" },
-  s: Settings,
-  manageUrl: string,
-): EmailMessage {
-  const title = `${fmtDay(sub.next_date)} vám ${sub.shipping_method === "odber" ? "chystáme" : "posíláme"} pravidelný nákup`;
-  const rows = sub.items.map((i) => `<tr><td style="padding:4px 0;border-bottom:1px solid #d9cfb8">${i.qty} × ${esc(i.name ?? "položka")}${i.available === false ? " <span style=\"color:#9c4424\">(teď není skladem)</span>" : ""}${(i.every_nth ?? 1) > 1 ? ` <span style=\"color:#55645a\">(jen každou ${i.every_nth}. dodávku)</span>` : ""}</td><td align="right" style="padding:4px 0;border-bottom:1px solid #d9cfb8;white-space:nowrap">${i.price_czk != null ? formatPrice(i.qty * i.price_czk) : ""}</td></tr>`).join("");
-  const total = sub.items.reduce((n, i) => n + (i.price_czk ?? 0) * i.qty, 0);
+/** Barvy druhů masa v rozpisu krmení (stejné pořadí jako v Krmení na míru). */
+const MEAL_COLORS = ["#1f3a2d", "#b5532f", "#55645a", "#c8892b", "#7a8c3a", "#24221f"];
+
+/**
+ * Rozpis krmení na období dodávky (jen u předplatného z Krmení na míru, které zná denní dávku):
+ * balení základu na přeskáčku, každé na dny podle své gramáže. Orientační.
+ */
+function feedingStrip(items: SubscriptionItem[], catalog: Product[], dailyGrams: number | null | undefined, days: number) {
+  if (!dailyGrams || !catalog.length) return "";
+  const meals = items
+    .map((i) => ({ i, p: catalog.find((p) => p.slug === i.product_slug) }))
+    .filter((x): x is { i: SubscriptionItem; p: Product } => Boolean(x.p) && ["mix", "sval"].includes(foodKind(x.p!)));
+  if (!meals.length) return "";
+  const names = meals.map((m) => productName(m.p));
+  const label = names.map((n, k) => {
+    const clash = names.some((o, j) => j !== k && o.charAt(0).toUpperCase() === n.charAt(0).toUpperCase());
+    return clash ? n.charAt(0).toUpperCase() + n.charAt(1).toLowerCase() : n.charAt(0).toUpperCase();
+  });
+  // Balení po jednom, druhy na přeskáčku (A B A B A), ať je v misce pestrost.
+  const left = meals.map((m) => m.i.qty);
+  const packs: number[] = [];
+  while (left.some((n) => n > 0)) left.forEach((n, k) => n > 0 && (packs.push(k), (left[k] = n - 1)));
+  // Každé balení dostane dny podle své gramáže; když dodávka vydrží déle nebo kratší dobu, poměr zůstane.
+  const totalGrams = packs.reduce((n, k) => n + meals[k].p.weightGrams, 0);
+  const cells: number[] = [];
+  let end = 0;
+  for (const k of packs) {
+    end += (meals[k].p.weightGrams / totalGrams) * days;
+    while (cells.length < Math.min(days, Math.round(end))) cells.push(k);
+  }
+  while (cells.length < days) cells.push(packs[packs.length - 1]);
+  const cell = (k: number) =>
+    `<td style="padding:2px"><div style="height:30px;line-height:30px;border-radius:3px;background:${MEAL_COLORS[k % MEAL_COLORS.length]};color:#ffffff;font-size:12px;font-weight:bold;text-align:center">${esc(label[k])}</div></td>`;
+  const rows: string[] = [];
+  for (let r = 0; r < cells.length; r += 7) rows.push(`<tr>${cells.slice(r, r + 7).map(cell).join("")}</tr>`);
+  const legend = meals.map((m, k) => `${esc(label[k])} ${esc(names[k].toLowerCase())}`).join(" · ");
+  return `<div style="margin:24px -24px 0;padding:20px 24px;background:#f3ecdd">
+<p style="margin:0 0 6px;font-weight:bold;color:#1f3a2d">Rozpis krmení na ${days === 7 ? "týden" : `${days / 7} týdny`}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed">${rows.join("")}</table>
+<p style="margin:8px 0 0;font-size:13px;color:#55645a">${legend}. Večer před krmením přendejte balení z mrazáku do lednice. Rozpis je orientační.</p></div>`;
+}
+
+/**
+ * Náhled dodávky z předplatného (3 dny předem, Ukázat dodávku předem): co přijde, do kdy jde měnit,
+ * jednorázové doplňky, které docházejí (s odkazem na přidání), a rozpis krmení.
+ */
+export function subscriptionReminder(sub: SubscriptionView, s: Settings, manageUrl: string, catalog: Product[] = []): EmailMessage {
+  const index = nextDeliveryIndex(sub);
+  const letter = hasRotation(sub) ? deliveryLetter(index) : null;
+  const items = itemsForDelivery(sub, index);
+  const low = runningOut(sub, index);
+  const when = fmtDay(sub.next_date);
+  const title = `Takhle bude vypadat vaše další dodávka`;
+  const subject = `Dodávka ${when}: chcete v ní něco změnit?`;
+  // Objednávka vzniká ráno v den uzávěrky, změny tedy jdou do večera předchozího dne.
   const cutoff = s.subscription.cutoffDaysBefore;
-  const body = `<p>Dobrý den, ${esc(sub.customer_name)},</p>
-<p>${sub.shipping_method === "odber" ? "k vyzvednutí připravíme" : "přivezeme"} <strong>${esc(fmtDay(sub.next_date))}</strong>:</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0">${rows}
-<tr><td style="padding:6px 0;font-weight:bold">Zboží${s.subscription.discountPct > 0 ? ` (před slevou ${s.subscription.discountPct} %)` : ""}</td><td align="right" style="padding:6px 0;font-weight:bold">${formatPrice(total)}</td></tr></table>
-<p>Nic nemusíte dělat. Pokud tentokrát nechcete nic, nebo chcete upravit množství, stačí kliknout, a to do ${cutoff === 0 ? "dne dodání" : cutoff === 1 ? "zítřka" : `${cutoff} dnů před dodáním`}:</p>
-<p><a href="${esc(manageUrl)}" style="display:inline-block;background:#1f3a2d;color:#f3ecdd;padding:10px 18px;border-radius:6px;text-decoration:none">Přeskočit nebo upravit</a></p>`;
-  const text = `Dobrý den, ${sub.customer_name},\n\n${fmtDay(sub.next_date)} ${sub.shipping_method === "odber" ? "připravíme k vyzvednutí" : "přivezeme"}:\n${sub.items.map((i) => `${i.qty} × ${i.name ?? "položka"}`).join("\n")}\n\nPřeskočit nebo upravit: ${manageUrl}\n\n${s.shop.name}`;
-  return { subject: title, html: layout(title, body, s.shop), text };
+  const last = new Date(sub.next_date + "T12:00:00");
+  last.setDate(last.getDate() - cutoff - 1);
+  const lastDay = fmtDay(last.toISOString().slice(0, 10));
+  const total = items.reduce((n, i) => n + (i.price_czk ?? 0) * i.qty, 0);
+  const meats = letter
+    ? items
+        .filter((i) => i.rotation === letter)
+        .map((i) => (i.name ?? "").replace(/\s+\d.*$/, "").toLowerCase())
+        .filter(Boolean)
+    : [];
+  const rows = items
+    .map(
+      (i) =>
+        `<tr><td style="padding:10px 0;border-bottom:1px solid #f3ecdd"><b style="color:#1f3a2d">${esc(i.name ?? "položka")}</b>${i.available === false ? ' <span style="color:#9c4424">(teď není skladem)</span>' : ""}</td><td align="right" style="padding:10px 0;border-bottom:1px solid #f3ecdd">${i.qty} ks</td><td align="right" style="padding:10px 0 10px 16px;border-bottom:1px solid #f3ecdd;white-space:nowrap">${i.price_czk != null ? formatPrice(i.qty * i.price_czk) : ""}</td></tr>`,
+    )
+    .join("");
+  const lowBlock = low
+    .map(
+      (i) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;background:#fbf7ee;border-radius:3px"><tr><td style="padding:16px">
+<p style="margin:0;font-weight:bold;color:#1f3a2d">Dochází ${esc((i.name ?? "doplněk").toLowerCase())}</p>
+<p style="margin:0 0 10px;font-size:14px;color:#55645a">Podle denní dávky ho brzy dojde. Přišel jen jednou, do dalších dodávek ho nedáváme sami. Přidat ho do této?</p>
+<a href="${esc(`${manageUrl}?pridat=${encodeURIComponent(i.product_slug)}`)}" style="display:inline-block;padding:8px 16px;border:1px solid #1f3a2d;border-radius:3px;font-size:14px;font-weight:bold;color:#1f3a2d;text-decoration:none">Přidat${i.price_czk != null ? ` za ${formatPrice(i.qty * i.price_czk)}` : ""}</a></td></tr></table>`,
+    )
+    .join("");
+  const body = `<p style="margin:0;font-size:12px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;color:#55645a">${letter ? `Dodávka ${letter} · ` : ""}${esc(when)}</p>
+<p>${meats.length ? `Tentokrát ${esc(meats.join(", "))}, ať je v misce pestrost. ` : ""}Když je všechno v pořádku, nemusíte nic dělat. Změny stihnete do <b>${esc(lastDay)} večer</b>.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px">${rows}
+<tr><td style="padding:12px 0;font-weight:bold;color:#1f3a2d">Celkem${s.subscription.discountPct > 0 ? ` před slevou ${s.subscription.discountPct} %` : ""}${sub.shipping_method === "odber" ? " · vyzvednutí v prodejně" : ""}</td><td></td><td align="right" style="padding:12px 0 12px 16px;font-size:18px;font-weight:bold;color:#1f3a2d;white-space:nowrap">${formatPrice(total)}</td></tr></table>
+${lowBlock}
+<p style="margin:24px 0 0;text-align:center"><a href="${esc(manageUrl)}" style="display:inline-block;min-width:220px;padding:14px 24px;border-radius:3px;background:#b5532f;color:#ffffff;font-size:14px;font-weight:bold;text-decoration:none">Upravit dodávku</a></p>
+<p style="margin:10px 0 0;text-align:center;font-size:13px;color:#55645a">Změnit množství nebo maso · <a href="${esc(manageUrl)}" style="color:#9c4424">Přeskočit tuto dodávku</a></p>
+${feedingStrip(items, catalog, sub.daily_grams, sub.interval_days)}
+<p style="margin:16px 0 0;font-size:12px;color:#55645a;text-align:center">Tyto e-maily vypnete na stránce předplatného: Ukázat dodávku předem.</p>`;
+  const text = `Dobrý den, ${sub.customer_name},\n\n${letter ? `Dodávka ${letter}, ` : ""}${when}:\n${items.map((i) => `${i.qty} × ${i.name ?? "položka"}`).join("\n")}\nCelkem ${formatPrice(total)}\n${low.length ? `\nDochází: ${low.map((i) => i.name).join(", ")}. Přidat: ${manageUrl}?pridat=${low.map((i) => i.product_slug).join(",")}\n` : ""}\nZměny stihnete do ${lastDay} večer: ${manageUrl}\n\n${s.shop.name}`;
+  return { subject, html: layout(title, body, s.shop), text };
 }
 
 /** Prodejně: objednávku z předplatného se nepodařilo vytvořit. */

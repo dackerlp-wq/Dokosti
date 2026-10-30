@@ -1,5 +1,6 @@
 "use server";
 
+import type { PlanHandoff } from "@/components/checkout/checkout-form";
 import { productName, type Product } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
@@ -19,7 +20,7 @@ export type CheckoutInput = {
   couponCode?: string;
   pointsRedeem?: number;
   /** Pravidelný odběr: interval, den v týdnu a datum první dodávky. */
-  subscribe?: { intervalDays: number; weekday: number; firstDate: string; everyNth?: Record<string, number> };
+  subscribe?: { intervalDays: number; weekday: number; firstDate: string; everyNth?: Record<string, number>; plan?: PlanHandoff };
   customer: {
     name: string;
     email: string;
@@ -79,7 +80,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     .filter((l) => l.qty >= 1);
   if (items.length === 0) return { ok: false, error: "Košík je prázdný." };
 
-  let subscribe: { intervalDays: number; weekday: number; firstDate: string; everyNth: Record<string, number> } | null = null;
+  let subscribe: { intervalDays: number; weekday: number; firstDate: string; everyNth: Record<string, number>; plan?: PlanHandoff } | null = null;
   if (input.subscribe && settings.subscription.enabled) {
     const { intervalDays, weekday, firstDate } = input.subscribe;
     if (![14, 28].includes(intervalDays) || !(weekday >= 0 && weekday <= 6) || !/^\d{4}-\d{2}-\d{2}$/.test(firstDate)) {
@@ -87,7 +88,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     }
     const everyNth: Record<string, number> = {};
     for (const [slug, n] of Object.entries(input.subscribe.everyNth ?? {})) if (Number.isInteger(n) && n >= 1 && n <= 12) everyNth[slug] = n;
-    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate, everyNth };
+    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate, everyNth, plan: input.subscribe.plan };
   }
 
   const order = {
@@ -145,8 +146,16 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
   let subscriptionResult: { token: string; nextDate: string } | undefined;
   if (subscribe) {
     const { data: sub, error: subError } = await db.rpc("create_subscription", {
-      p_sub: { ...order, interval_days: subscribe.intervalDays, weekday: subscribe.weekday, first_date: subscribe.firstDate, order_number: r.order_number },
-      p_items: items.map((i) => ({ ...i, every_nth: subscribe.everyNth[i.product_slug] ?? 1 })),
+      p_sub: {
+        ...order,
+        interval_days: subscribe.intervalDays,
+        weekday: subscribe.weekday,
+        first_date: subscribe.firstDate,
+        order_number: r.order_number,
+        preview: subscribe.plan?.preview ?? true,
+        daily_grams: subscribe.plan?.dailyGrams ? Math.round(subscribe.plan.dailyGrams) : null,
+      },
+      p_items: subscriptionItems(items, subscribe),
     });
     if (subError || !sub) console.error("create_subscription", subError);
     else {
@@ -193,4 +202,31 @@ export async function loyaltyBalance(email: string): Promise<number> {
   if (!db || !email.includes("@")) return 0;
   const { data } = await db.rpc("loyalty_balance", { p_email: email });
   return typeof data === "number" ? data : 0;
+}
+
+/**
+ * Položky předplatného z košíku a plánu: jednorázové doplňky (once, every_nth = kdy docházejí),
+ * střídání masa (A jen v košíku, B jen v příští dodávce, ostatní v obou) a „jen každou N.“ bez plánu.
+ */
+function subscriptionItems(items: { product_slug: string; qty: number }[], sub: { everyNth: Record<string, number>; plan?: PlanHandoff }) {
+  const plan = sub.plan;
+  const nth = (n: unknown) => (Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 12 ? (n as number) : 1);
+  const rotating = Boolean(plan && plan.b.length > 0);
+  const out: { product_slug: string; qty: number; every_nth: number; rotation: "A" | "B" | null; once: boolean }[] = items.map((i) => {
+    const once = plan?.once[i.product_slug];
+    return {
+      product_slug: i.product_slug,
+      qty: i.qty,
+      every_nth: once ? nth(once) : (sub.everyNth[i.product_slug] ?? 1),
+      rotation: rotating && plan!.aOnly.includes(i.product_slug) ? "A" : null,
+      once: Boolean(once),
+    };
+  });
+  if (rotating) {
+    for (const b of plan!.b.slice(0, 20)) {
+      const qty = Math.floor(Number(b.qty));
+      if (typeof b.slug === "string" && /^[a-z0-9-]{1,80}$/.test(b.slug) && qty >= 1 && qty <= 99) out.push({ product_slug: b.slug, qty, every_nth: 1, rotation: "B", once: false });
+    }
+  }
+  return out;
 }

@@ -26,8 +26,21 @@ type Props = {
   initialShipping?: ShippingId;
   /** Z průvodce: položky jen do každé N. dodávky (slug → N), např. olej, který vydrží déle než interval. */
   everyNth?: Record<string, number>;
+  /** Z průvodce Krmení na míru: jednorázové doplňky, střídání masa (dodávka B), denní dávka mixů, náhled e-mailem. */
+  plan?: PlanHandoff;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
+};
+
+export type PlanHandoff = {
+  /** Jednorázově: slug → po kolika dodávkách dochází (pak e-mail nabídne přidání). */
+  once: Record<string, number>;
+  /** Položky košíku, které patří jen do dodávky A (ostatní jsou v obou). */
+  aOnly: string[];
+  /** Dodávka B: položky navíc místo A. */
+  b: { slug: string; qty: number; name: string }[];
+  dailyGrams?: number;
+  preview: boolean;
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
@@ -35,7 +48,7 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numer
 const INTERVALS = [0, 14, 28] as const;
 type Interval = (typeof INTERVALS)[number];
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, prefill }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, plan, prefill }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(initialShipping && SHIPPING.some((m) => m.id === initialShipping) ? initialShipping : (SHIPPING[0]?.id ?? "odber"));
   const [interval, setInterval] = useState<Interval>(subscription.enabled && (INTERVALS as readonly number[]).includes(initialInterval) ? (initialInterval as Interval) : 0);
@@ -136,7 +149,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
       couponCode: coupon?.ok ? coupon.code : undefined,
       pointsRedeem: redeemSteps * loyalty.redeemStep,
-      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate, everyNth } : undefined,
+      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate, everyNth, plan } : undefined,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -251,7 +264,17 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                   První dodávka {dateFmt.format(new Date(firstDate + "T12:00:00"))}, další vždy v {DAY_NAMES[weekday] === "úterý" ? "úterý" : DAY_NAMES[weekday]}{" "}
                   {INTERVAL_LABEL[interval]}. {subscription.reminderDaysBefore} dny předem vám napíšeme, co posíláme, a jde to jedním kliknutím přeskočit.
                 </p>
-                {cart.items.some((i) => (everyNth[i.product.slug] ?? 1) > 1) && (
+                {plan && plan.b.length > 0 && (
+                  <p className="mt-1 text-muted">
+                    Druhy masa se střídají: tohle je dodávka A, příští bude B ({plan.b.map((x) => `${x.qty}× ${x.name}`).join(", ")}).
+                  </p>
+                )}
+                {plan && cart.items.some((i) => plan.once[i.product.slug]) && (
+                  <p className="mt-1 text-muted">
+                    Jen v této dodávce: {cart.items.filter((i) => plan.once[i.product.slug]).map((i) => productName(i.product)).join(", ")}. Až bude docházet, nabídneme vám ho v e-mailu před dodávkou.
+                  </p>
+                )}
+                {!plan && cart.items.some((i) => (everyNth[i.product.slug] ?? 1) > 1) && (
                   <p className="mt-1 text-muted">
                     Vydrží déle, proto jen občas: {cart.items.filter((i) => (everyNth[i.product.slug] ?? 1) > 1).map((i) => `${productName(i.product)} každou ${everyNth[i.product.slug]}. dodávku`).join(", ")}.
                   </p>

@@ -3,7 +3,8 @@ import { sendEmail } from "@/lib/email/send";
 import { dailyDigestEmail, orderConfirmation, orderNotification, subscriptionFailed, subscriptionReminder, type DigestData, type OrderForEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
-import type { SubscriptionView } from "@/lib/subscriptions";
+import { getProducts } from "@/lib/products";
+import { itemsForDelivery, nextDeliveryIndex, type SubscriptionView } from "@/lib/subscriptions";
 import { getSupabase } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -27,12 +28,20 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const due = (data ?? []) as { action: "remind" | "order"; subscription: SubscriptionView }[];
   const log: string[] = [];
+  // Katalog pro rozpis krmení v připomínce (druh masa a gramáž balení); jen když je komu psát.
+  const catalog = due.some((d) => d.action === "remind") ? await getProducts().catch(() => []) : [];
 
   for (const { action, subscription: s } of due) {
     const manageUrl = `${SITE_URL}/predplatne/${s.token}`;
     try {
       if (action === "remind") {
-        await sendEmail(db, s.customer_email, subscriptionReminder(s, settings, manageUrl), "predplatne-pripominka", null);
+        // Ukázat dodávku předem vypnuté: připomínku jen označit, ať se nezkouší znovu.
+        if (s.preview === false) {
+          await db.rpc("subscription_mark", { p_secret: secret, p_id: s.id, p_action: "reminded" });
+          log.push(`remind off ${s.id}`);
+          continue;
+        }
+        await sendEmail(db, s.customer_email, subscriptionReminder(s, settings, manageUrl, catalog), "predplatne-pripominka", null);
         await db.rpc("subscription_mark", { p_secret: secret, p_id: s.id, p_action: "reminded" });
         log.push(`remind ${s.id}`);
         continue;
@@ -58,11 +67,9 @@ export async function GET(req: NextRequest) {
         subscribe_interval: String(s.interval_days),
         subscription_id: s.id,
       };
-      // Položky, které vydrží déle než interval (olej, kosti navíc), jdou jen do každé N. dodávky:
-      // orders_count = kolik dodávek už bylo (i první z pokladny), položka jde do dodávky, když je jich dělitelný N (1., N+1., 2N+1. …).
-      const prior = s.orders_count ?? 0;
-      const items = s.items
-        .filter((i) => i.available !== false && prior % (i.every_nth ?? 1) === 0)
+      // Sestava A/B, položky „jen každou N.“ a jednorázové doplňky přidané zákazníkem (lib/subscriptions).
+      const items = itemsForDelivery(s, nextDeliveryIndex(s))
+        .filter((i) => i.available !== false)
         .map((i) => ({ product_slug: i.product_slug, qty: i.qty }));
       if (items.length === 0) throw new Error("žádná položka není skladem");
       const { data: created, error: orderError } = await db.rpc("create_order", { p_order: order, p_items: items });

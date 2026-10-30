@@ -9,8 +9,8 @@ import { getSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Pravidelný odběr", robots: { index: false, follow: false } };
 
-export default async function SubscriptionPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export default async function SubscriptionPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ pridat?: string }> }) {
+  const [{ token }, { pridat }] = await Promise.all([params, searchParams]);
   const db = getSupabase();
   if (!db) notFound();
   const [sub, settings] = await Promise.all([getSubscriptionByToken(db, token), getSettings()]);
@@ -22,7 +22,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ t
         <p>Tady si dodávky přeskočíte, upravíte nebo zrušíte. Odkaz na tuto stránku je jen váš.</p>
       </PageIntro>
       <div className="mx-auto max-w-narrow px-5 pb-10 md:pb-15">
-        <SubscriptionManage initial={sub} weekdays={subscriptionWeekdays(settings, sub.shipping_method)} settings={settings.subscription} />
+        <SubscriptionManage initial={sub} weekdays={subscriptionWeekdays(settings, sub.shipping_method)} settings={settings.subscription} offer={(pridat ?? "").split(",").filter(Boolean)} />
       </div>
     </>
   );

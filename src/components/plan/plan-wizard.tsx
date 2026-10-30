@@ -86,6 +86,11 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [addKibble, setAddKibble] = useState(true);
   /** Jen jednou = bez předplatného. */
   const [oneTime, setOneTime] = useState(false);
+  /** Předplatné: střídat druhy masa (dodávka A a B) a e-mail s náhledem dodávky předem. */
+  const [rotate, setRotate] = useState(false);
+  const [preview, setPreview] = useState(true);
+  /** Dodávka B: původní mix → náhrada, kterou si zákazník vybral (jinak se vybere sama). */
+  const [swapsB, setSwapsB] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // Krok 8: účet
@@ -114,7 +119,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       const raw = sessionStorage.getItem(STORE_KEY);
       if (!raw) return;
       sessionStorage.removeItem(STORE_KEY);
-      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; addons?: Record<AddonKey, boolean>; days: Days; delivery: Delivery; oneTime: boolean };
+      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; addons?: Record<AddonKey, boolean>; days: Days; delivery: Delivery; oneTime: boolean; rotate?: boolean; preview?: boolean; swapsB?: Record<string, string> };
       if (!st.pet?.name) return;
       // Obnova rozpracovaného průvodce po návratu z e-mailu: stav se musí nastavit až na klientovi.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -127,6 +132,9 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       setDays(st.days);
       setDelivery(st.delivery);
       setOneTime(st.oneTime);
+      setRotate(Boolean(st.rotate));
+      setPreview(st.preview !== false);
+      setSwapsB(st.swapsB ?? {});
       setStep(7);
     } catch {
       /* rozbité nebo chybějící úložiště: začneme od začátku */
@@ -169,6 +177,38 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     return out;
   }, [plan, days]);
 
+  /**
+   * Dodávka B pro střídání masa: každý mix z plánu nahradí jiný stejného typu, který v dodávce A není
+   * (raději jiné maso a stejná gramáž balení). Množství se přepočítá podle energie nových mixů.
+   */
+  const rotation = useMemo(() => {
+    if (!rotate || oneTime || !input || !plan) return null;
+    const originals = buildPlan(products, { ...input, swaps: {} }, days).items.filter((i) => i.role === "zaklad").map((i) => i.product);
+    const inA = new Set(plan.items.map((i) => i.product.slug));
+    const meatsA = new Set(plan.items.filter((i) => i.role === "zaklad").flatMap((i) => i.product.meats ?? []));
+    const map: Record<string, string> = {};
+    const taken = new Set<string>();
+    for (const o of originals) {
+      const cands = plan.pool.filter((p) => foodKind(p) === foodKind(o) && !inA.has(p.slug) && !taken.has(p.slug));
+      const score = (p: Product) => (p.weightGrams === o.weightGrams ? 2 : 0) + ((p.meats ?? []).some((m) => meatsA.has(m)) ? 0 : 1);
+      const pick = cands.find((c) => c.slug === swapsB[o.slug]) ?? [...cands].sort((a, b) => score(b) - score(a))[0];
+      if (pick) {
+        map[o.slug] = pick.slug;
+        taken.add(pick.slug);
+      }
+    }
+    if (!Object.keys(map).length) return null;
+    const planB = buildPlan(products, { ...input, swaps: { ...input.swaps, ...map } }, days);
+    const qa = new Map(plan.items.map((i) => [i.product.slug, i.qty]));
+    const qb = new Map(planB.items.map((i) => [i.product.slug, i.qty]));
+    const aOnly = plan.items.filter((i) => qb.get(i.product.slug) !== i.qty && !everyNth[i.product.slug]).map((i) => i.product.slug);
+    const b = planB.items.filter((i) => qa.get(i.product.slug) !== i.qty && !everyNth[i.product.slug]);
+    if (!b.length) return null;
+    // B produkt → původní mix (pro výběr náhrady v záložce B)
+    const origOf = Object.fromEntries(Object.entries(map).map(([o, x]) => [x, o]));
+    return { plan: planB, aOnly, b, origOf };
+  }, [rotate, oneTime, input, plan, products, days, swapsB, everyNth]);
+
   function pickPet(p: PetProfile) {
     setPet(p);
     setPetId(p.id);
@@ -197,15 +237,26 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       if (!saved.ok) return setError(saved.error);
       cart.clear();
       plan.items.forEach((r) => cart.add(r.product.slug, r.qty));
-      const obcas = Object.entries(everyNth).map(([slug, n]) => `${slug}:${n}`).join(",");
-      router.push(`/pokladna?predplatne=${oneTime ? 0 : days}&dodani=${delivery}${!oneTime && obcas ? `&obcas=${encodeURIComponent(obcas)}` : ""}`);
+      const q = new URLSearchParams({ predplatne: String(oneTime ? 0 : days), dodani: delivery });
+      if (!oneTime) {
+        // Plán pro předplatné: jednorázové doplňky, střídání masa, denní dávka mixů (rozpis v e-mailu) a náhled předem.
+        q.set("jednou", Object.entries(everyNth).map(([slug, n]) => `${slug}:${n}`).join(","));
+        if (rotation) {
+          q.set("a", rotation.aOnly.join(","));
+          q.set("b", rotation.b.map((i) => `${i.product.slug}:${i.qty}`).join(","));
+        }
+        const daily = plan.items.filter((i) => i.role === "zaklad").reduce((n, i) => n + i.gramsPerDay, 0);
+        if (daily > 0) q.set("davka", String(Math.round(daily)));
+        if (!preview) q.set("nahled", "0");
+      }
+      router.push(`/pokladna?${q.toString()}`);
     });
   }
 
   function sendCode() {
     setError(null);
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, addons, days, delivery, oneTime }));
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, addons, days, delivery, oneTime, rotate, preview, swapsB }));
     } catch {
       /* bez úložiště jen nepůjde pokračovat po kliknutí na odkaz z e-mailu */
     }
@@ -490,6 +541,13 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           everyNth={everyNth}
           oneTime={oneTime}
           setOneTime={setOneTime}
+          rotation={rotation}
+          rotate={rotate}
+          setRotate={setRotate}
+          swapsB={swapsB}
+          setSwapsB={setSwapsB}
+          preview={preview}
+          setPreview={setPreview}
           rawShare={rawShare}
           onBack={back}
           onContinue={() => (user ? finish() : next())}
@@ -602,6 +660,13 @@ function PlanStep({
   everyNth,
   oneTime,
   setOneTime,
+  rotation,
+  rotate,
+  setRotate,
+  swapsB,
+  setSwapsB,
+  preview,
+  setPreview,
   rawShare,
   onBack,
   onContinue,
@@ -630,6 +695,13 @@ function PlanStep({
   everyNth: Record<string, number>;
   oneTime: boolean;
   setOneTime: (v: boolean) => void;
+  rotation: { plan: ReturnType<typeof buildPlan>; aOnly: string[]; b: Reco[]; origOf: Record<string, string> } | null;
+  rotate: boolean;
+  setRotate: (v: boolean) => void;
+  swapsB: Record<string, string>;
+  setSwapsB: (s: Record<string, string>) => void;
+  preview: boolean;
+  setPreview: (v: boolean) => void;
   rawShare: AnimalInput["rawShare"];
   onBack: () => void;
   onContinue: () => void;
@@ -660,6 +732,13 @@ function PlanStep({
     return { day: d, main: main[0]?.product ?? null, extra: main.length > 1 };
   });
   const [showSchedule, setShowSchedule] = useState(false);
+  const [tab, setTab] = useState<"A" | "B">("A");
+  const shown = tab === "B" && rotation ? rotation.plan : plan;
+  const meatsOf = (p: ReturnType<typeof buildPlan>) =>
+    p.items
+      .filter((i) => i.role === "zaklad")
+      .map((i) => productName(i.product).replace(/\s+\d.*$/, "").toLowerCase())
+      .join(", ");
   const period = days === 14 ? "2 týdny" : "4 týdny";
   const meals = r.mealsPerDay;
   return (
@@ -736,9 +815,29 @@ function PlanStep({
                 {totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg · {days === 14 ? "v mrazáku zhruba jedna police" : "větší mrazák"}
               </span>
             </div>
+            {rotation && (
+              <div className="mb-3.5 rounded-card bg-paper p-3.5">
+                <p className="mb-2.5 text-[14px]/[22px]">
+                  <b className="text-green">Druhy masa se střídají.</b> Dodávky jdou A, B, A, B. Ani jedna nemá maso, které {first} nesmí, a obě mají stejnou denní dávku.
+                </p>
+                <div role="tablist" aria-label="Sestava dodávky" className="inline-flex flex-wrap gap-1 rounded-control bg-white p-1">
+                  {(["A", "B"] as const).map((t) => (
+                    <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`min-h-12 rounded-control px-4 py-1.5 text-left text-[14px]/[18px] transition-colors duration-300 ${tab === t ? "bg-green text-cream" : "text-green hover:bg-paper"}`}>
+                      <b className="block">Dodávka {t}</b>
+                      <span className="text-[12px] font-semibold">{meatsOf(t === "A" ? plan : rotation.plan)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <ul className="flex flex-col gap-2.5">
-              {plan.items.map((i) => {
-                const alternatives = i.role === "zaklad" || i.role === "kosti" ? plan.pool.filter((p) => foodKind(p) === foodKind(i.product) && p.slug !== i.product.slug && !plan.items.some((x) => x.product.slug === p.slug)) : [];
+              {shown.items.map((i) => {
+                const inB = tab === "B" && rotation !== null;
+                const origB = inB ? rotation.origOf[i.product.slug] : undefined;
+                const alternatives =
+                  (inB ? Boolean(origB) : i.role === "zaklad" || i.role === "kosti")
+                    ? plan.pool.filter((p) => foodKind(p) === foodKind(i.product) && p.slug !== i.product.slug && !shown.items.some((x) => x.product.slug === p.slug) && !(inB && plan.items.some((x) => x.product.slug === p.slug)))
+                    : [];
                 const once = everyNth[i.product.slug];
                 return (
                   <li key={i.product.slug} className="flex flex-wrap items-center gap-3.5 rounded-card border border-line bg-white p-3.5">
@@ -759,13 +858,18 @@ function PlanStep({
                         {i.why && !i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? ` · ${i.why}` : ""}
                         {leftoverText(i) && <> · {leftoverText(i)}</>}
                       </p>
-                      {once && <Durability item={i} every={once} oneTime={oneTime} />}
+                      {once && <Durability item={i} oneTime={oneTime} />}
                     </div>
                     <span className="w-12 text-right font-bold text-ink">{i.qty} ks</span>
                     <span className="w-18 text-right font-bold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</span>
                     <span className="flex basis-full items-center justify-end gap-3 text-[13px] sm:basis-auto">
                       {alternatives.length > 0 && (
-                        <select value={swaps[i.product.slug] ?? ""} onChange={(e) => setSwaps(e.target.value ? { ...swaps, [i.product.slug]: e.target.value } : Object.fromEntries(Object.entries(swaps).filter(([k]) => k !== i.product.slug)))} aria-label={`Nahradit ${productName(i.product)}`} className="min-h-8 w-auto py-0.5 text-xs">
+                        <select
+                          value={inB ? "" : (swaps[i.product.slug] ?? "")}
+                          onChange={(e) => {
+                            if (inB && origB) setSwapsB({ ...swapsB, [origB]: e.target.value });
+                            else setSwaps(e.target.value ? { ...swaps, [i.product.slug]: e.target.value } : Object.fromEntries(Object.entries(swaps).filter(([k]) => k !== i.product.slug)));
+                          }} aria-label={`Nahradit ${productName(i.product)}`} className="min-h-8 w-auto py-0.5 text-xs">
                           <option value="">Nahradit…</option>
                           {alternatives.map((a) => (
                             <option key={a.slug} value={a.slug}>
@@ -882,7 +986,7 @@ function PlanStep({
           <p className="text-eyebrow text-muted uppercase">Shrnutí</p>
           <p className="text-[40px]/[46px] font-extrabold text-green">{formatPrice(plan.totalCzk)}</p>
           <p className="mb-4.5 text-[13px]/[20px]">
-            za dodávku na {period} · {formatPrice(plan.perDayCzk)} za den
+            {rotation && !oneTime ? `první dodávka (A) · další B za ${formatPrice(rotation.plan.totalCzk)}` : `za dodávku na ${period}`} · {formatPrice(plan.perDayCzk)} za den
             {delivery === "rozvoz" ? (shipFree ? " · rozvoz zdarma" : ` · rozvoz ${formatPrice(shipping.rozvozPriceCzk)}`) : " · odběr v prodejně zdarma"}
           </p>
           <p className="mb-1.5 text-[15px]/[21px] font-semibold text-green">Jak často</p>
@@ -896,6 +1000,12 @@ function PlanStep({
               Jen jednou
             </button>
           </div>
+          {!oneTime && (
+            <div className="mb-4 flex flex-col gap-2">
+              <Toggle on={rotate} onChange={(v) => { setRotate(v); setTab("A"); }} title="Střídat druhy masa" desc="každá druhá dodávka s jinými mixy" />
+              <Toggle on={preview} onChange={setPreview} title="Ukázat dodávku předem" desc={`e-mail ${subscription.reminderDaysBefore} dny před dodávkou, můžete ji upravit`} />
+            </div>
+          )}
           <p className="mb-1.5 text-[15px]/[21px] font-semibold text-green">Dodání</p>
           <div className="grid grid-cols-2 gap-1.5">
             {shipping.rozvoz && (
@@ -930,11 +1040,26 @@ function PlanStep({
   );
 }
 
+/** Přepínač v souhrnu plánu (Střídat druhy masa, Ukázat dodávku předem). */
+function Toggle({ on, onChange, title, desc }: { on: boolean; onChange: (v: boolean) => void; title: string; desc: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={() => onChange(!on)} className="flex items-start justify-between gap-3 rounded-control border border-line p-3 text-left hover:border-muted">
+      <span>
+        <b className="block text-[14px]/[20px] text-green">{title}</b>
+        <span className="text-[12px]/[18px]">{desc}</span>
+      </span>
+      <span className={`relative mt-0.5 h-6 w-10.5 shrink-0 rounded-full transition-colors duration-300 ${on ? "bg-green" : "bg-line"}`} aria-hidden>
+        <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow-card transition-[left] duration-300 ${on ? "left-5" : "left-0.5"}`} />
+      </span>
+    </button>
+  );
+}
+
 /**
  * Poznámka k položce, která vydrží déle než dodávka: kolik dní, případně že balení nestihne spotřebovat
  * před koncem trvanlivosti (a kolik z něj využije), a že do dalších dodávek jde jen občas.
  */
-function Durability({ item, every, oneTime }: { item: Reco; every: number; oneTime: boolean }) {
+function Durability({ item, oneTime }: { item: Reco; oneTime: boolean }) {
   const lasts = Math.round((item.qty * item.product.weightGrams) / item.gramsPerDay);
   const shelf = shelfDays(item.product);
   const usedPct = Math.min(100, Math.round((shelf / lasts) * 100));
@@ -944,11 +1069,11 @@ function Durability({ item, every, oneTime }: { item: Reco; every: number; oneTi
       {lasts > shelf ? (
         <>
           vydrží ~{lasts} dní, ale {frozen ? "zmrazené" : "po otevření"} spotřebujte do ~{shelf} dní (využijete asi {usedPct} % balení)
-          {!oneTime ? `, proto jen každou ${every}. dodávku` : ""}
+          {!oneTime ? ", přijde jen v této dodávce" : ""}
         </>
       ) : (
         <>
-          vydrží ~{lasts} dní{!oneTime ? `, pak jen každou ${every}. dodávku` : ""}
+          vydrží ~{lasts} dní{!oneTime ? ", přijde jen v této dodávce; až bude docházet, nabídneme ho v e-mailu" : ""}
         </>
       )}
     </span>
