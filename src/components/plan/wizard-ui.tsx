@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Calculator,
+  Check,
   Cat,
   Dog,
   Package,
@@ -80,7 +81,7 @@ export function WizardLayout({
 }) {
   return (
     <div
-      className={`mx-auto grid max-w-site items-start gap-5 px-5 pb-10 md:pb-15 ${side ? "lg:grid-cols-[minmax(0,1fr)_280px]" : ""}`}
+      className={`mx-auto grid max-w-site items-start gap-5 px-5 pb-10 md:pb-15 ${side ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}
     >
       {children}
       {side}
@@ -104,6 +105,8 @@ export function WizardPanel({
   nextDisabled = false,
   error,
   hideActions = false,
+  hideProgress = false,
+  mobileBar,
 }: {
   step?: number;
   total?: number;
@@ -119,12 +122,19 @@ export function WizardPanel({
   nextDisabled?: boolean;
   error?: string | null;
   hideActions?: boolean;
+  /** Postup ukazuje krokovač nad panelem; v panelu je jen „Krok 4 ze 7 · Pohyb“. */
+  hideProgress?: boolean;
+  /** Na mobilu přilepená spodní lišta s odhadem (vlevo) a tlačítkem Pokračovat. */
+  mobileBar?: ReactNode;
 }) {
-  const pct = step && total ? Math.round((step / total) * 100) : null;
+  const pct = step && total && !hideProgress ? Math.round((step / total) * 100) : null;
   const body = (
     <>
       {kicker ? (
-        <p className="mb-2 text-eyebrow text-green uppercase">{kicker}</p>
+        <p className="mb-2 text-eyebrow text-muted uppercase">
+          {hideProgress && step && total ? `Krok ${Math.min(step, total)} ${total === 7 || total === 2 ? "ze" : "z"} ${total} · ` : ""}
+          {kicker}
+        </p>
       ) : null}
       <h2 className="mb-2 font-display text-display-md text-green">{title}</h2>
       {helper ? <p className="mb-6">{helper}</p> : null}
@@ -137,8 +147,16 @@ export function WizardPanel({
           {error}
         </p>
       ) : null}
+      {!hideActions && mobileBar ? (
+        <div className="sticky bottom-0 z-20 -mx-5 -mb-5 mt-7 flex items-center gap-3.5 bg-green px-5 py-3.5 text-cream md:hidden">
+          <div className="min-w-0 flex-1">{mobileBar}</div>
+          <button type="submit" disabled={nextDisabled} className="inline-flex min-h-13 items-center gap-2 rounded-control bg-cream px-5 text-button text-green disabled:opacity-50">
+            {nextLabel.length > 18 ? "Pokračovat" : nextLabel} <ArrowRight className="size-4" strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+      ) : null}
       {!hideActions && (
-        <div className="mt-7 flex flex-wrap items-center justify-between gap-3.5">
+        <div className={`mt-7 flex-wrap items-center justify-between gap-3.5 border-t border-line pt-5 ${mobileBar ? "hidden md:flex" : "flex"}`}>
           <div className="flex items-center gap-5 text-small font-semibold">
             {onBack ? (
               <button
@@ -162,7 +180,7 @@ export function WizardPanel({
           </div>
           <Button
             type="submit"
-            variant="action"
+            variant={hideProgress ? "dark" : "action"}
             size="md"
             disabled={nextDisabled}
           >
@@ -240,7 +258,7 @@ export function ChoiceGrid({
   );
 }
 
-/** Karta volby: ikona, název a popis. Chová se jako přepínač (radio). */
+/** Karta volby: ikona v kruhu, název a popis vedle. Chová se jako přepínač (radio); vybraná má zelený kruh a rámeček. */
 export function Choice({
   icon: Icon,
   title,
@@ -262,20 +280,45 @@ export function Choice({
       role="radio"
       aria-checked={checked}
       onClick={onSelect}
-      className={`flex w-full text-left transition-colors duration-300 ${compact ? "min-h-16 flex-row items-center gap-3 px-4 py-3" : "min-h-[116px] flex-col justify-between gap-2.5 p-4"} rounded-panel border-2 bg-white ${checked ? "border-green bg-paper ring-1 ring-green" : "border-line hover:border-muted"}`}
+      className={`flex w-full flex-row items-center text-left transition-colors duration-300 ${compact ? "min-h-14 gap-3 px-4 py-3" : "min-h-22 gap-3.5 p-4"} rounded-card border-2 ${checked ? "border-green bg-paper" : "border-line bg-white hover:border-muted"}`}
     >
       {Icon ? (
-        <Icon
-          className={`${compact ? "size-6" : "size-8"} shrink-0 text-green`}
-          strokeWidth={1.5}
-          aria-hidden
-        />
+        <span className={`flex shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${compact ? "size-10" : "size-14"} ${checked ? "bg-green text-cream" : "bg-cream text-green"}`}>
+          <Icon className={compact ? "size-5" : "size-7"} strokeWidth={1.5} aria-hidden />
+        </span>
+      ) : compact ? (
+        <span className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${checked ? "border-green bg-green text-cream" : "border-line"}`} aria-hidden>
+          {checked && <Check className="size-3" strokeWidth={3} />}
+        </span>
       ) : null}
       <span className="min-w-0">
-        <span className="block text-heading-md text-green">{title}</span>
+        <span className={`block font-extrabold text-green ${compact ? "text-[15px]/[20px]" : "text-[17px]/[22px]"}`}>{title}</span>
         {desc ? <span className="mt-0.5 block text-small">{desc}</span> : null}
       </span>
     </button>
+  );
+}
+
+/** Krokovač nad průvodcem: čísla v kruzích spojená čarou, hotové s fajfkou, aktuální cihlově. */
+export function WizardSteps({ labels, current }: { labels: readonly string[]; current: number }) {
+  return (
+    <ol aria-label="Kroky průvodce" className="mx-auto mb-7.5 grid max-w-site px-5" style={{ gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))` }}>
+      {labels.map((label, i) => {
+        const done = i < current;
+        const on = i === current;
+        return (
+          <li key={label} className="relative flex flex-col items-center gap-1.5 text-center" aria-current={on ? "step" : undefined}>
+            {i > 0 && <span className={`absolute top-4 right-1/2 h-0.5 w-full ${i <= current ? "bg-green" : "bg-line"}`} aria-hidden />}
+            <span
+              className={`relative z-10 flex size-9 items-center justify-center rounded-full text-[14px] font-extrabold ${done ? "bg-green text-cream" : on ? "bg-brick text-white ring-4 ring-cream" : "border-2 border-line bg-white text-muted"}`}
+            >
+              {done ? <Check className="size-4" strokeWidth={3} aria-label="hotovo" /> : i + 1}
+            </span>
+            <span className={`hidden text-[13px]/[18px] sm:block ${on ? "font-extrabold text-green" : "font-semibold text-muted"}`}>{label}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

@@ -11,8 +11,9 @@ import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedul
 import { useCart } from "@/components/cart/cart-context";
 import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
-import { Choice, ChoiceGrid, SideCards, WizardLabel, WizardLayout, WizardPanel } from "@/components/plan/wizard-ui";
-import { ACTIVITY_LABEL, addonForRole, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
+import { PlanSide } from "@/components/plan/plan-side";
+import { Choice, ChoiceGrid, WizardLabel, WizardLayout, WizardPanel, WizardSteps } from "@/components/plan/wizard-ui";
+import { ACTIVITY_LABEL, addonForRole, calculate, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -33,7 +34,9 @@ type Props = {
   meatImages: Partial<Record<MeatKey, string>>;
 };
 
-const STEPS = ["Pro koho", "Věk", "Váha", "Aktivita", "Krmení", "Nesmí", "Plán", "Účet"] as const;
+const STEPS = ["Pro koho", "Věk", "Váha", "Pohyb", "Miska", "Nesmí", "Plán", "Účet"] as const;
+/** Kroky v krokovači nad průvodcem (účet je až za plánem, do krokovače nepatří). */
+const SHOWN_STEPS = STEPS.slice(0, 7);
 type Days = 14 | 28;
 type Delivery = "rozvoz" | "odber";
 type AgeUnit = "mesice" | "roky";
@@ -248,23 +251,28 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       if (s === "senior" && !(years >= seniorFrom)) setAgeValue(String(seniorFrom + 1));
     }
   };
-  const side = (
-    <SideCards
-      items={[
-        { icon: "timer", title: "Hotovo za chvilku", text: "Sedm otázek, zhruba dvě minuty. Bez zbytečného složitování.", tone: "paper" },
-        { icon: "soup", title: "Plán na míru", text: "Výsledkem je denní dávka, složení dodávky a cena za den.", tone: "cream" },
-        { icon: "package", title: "Jak vám to vyhovuje", text: "Krmení můžete dostávat pravidelně, nebo si ho objednat jen jednou.", tone: "white" },
-      ]}
-      trust={
-        <>
-          <strong>Jdeme krok za krokem.</strong> Údaje zadáváte postupně, ať je plán přehledný. Nic se neukládá, dokud plán nedokončíte.
-        </>
-      }
-    />
+  // Odhad denní dávky do bočního panelu a mobilní lišty: stejný výpočet jako plán, jakmile známe váhu.
+  const estimate = useMemo(() => {
+    if (!(pet.weightKg > 0)) return null;
+    try {
+      const r = calculate({ ...petToAnimal({ ...pet, bornOn: ageM !== null ? bornFrom(ageM) : pet.bornOn }), rawShare });
+      return r.dailyGrams > 0 ? { grams: Math.round(r.dailyGrams / 10) * 10, pct: r.pct } : null;
+    } catch {
+      return null;
+    }
+  }, [pet, ageM, rawShare]);
+  const side = <PlanSide pet={pet} ageMonths={ageM} step={step} grams={estimate?.grams ?? null} pct={estimate?.pct ?? null} firstAcc={firstAcc} />;
+  const mobileBar = (
+    <>
+      <p className="truncate text-[12px]/[18px]">{pet.name.trim() ? `${pet.name.trim()}${pet.weightKg > 0 ? `, ${pet.weightKg.toLocaleString("cs-CZ")} kg` : ""} · zatím` : "Odhad dávky"}</p>
+      <p className="text-[22px]/[28px] font-extrabold">{estimate ? `~${estimate.grams} g denně` : "po zadání váhy"}</p>
+    </>
   );
-  const panelProps = { step, total, stepLabel: STEPS[step - 1], onBack: step > 1 ? back : undefined, onReset: step > 1 ? reset : undefined, nextDisabled: !canNext };
+  const panelProps = { step, total: step <= 7 ? 7 : undefined, stepLabel: STEPS[step - 1], onBack: step > 1 ? back : undefined, onReset: step > 1 ? reset : undefined, nextDisabled: !canNext, hideProgress: true, mobileBar };
 
   return (
+    <>
+    <WizardSteps labels={SHOWN_STEPS} current={Math.min(step, 8) - 1} />
     <WizardLayout side={step === 7 ? undefined : side}>
       {step === 1 && (
         <WizardPanel {...panelProps} kicker="Nejdřív se poznáme" title="Pro koho plán děláme?" helper="Vyberte zvíře a napište nám, jak mu říkáte." onSubmit={next}>
@@ -565,6 +573,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         </WizardPanel>
       )}
     </WizardLayout>
+    </>
   );
 }
 

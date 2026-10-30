@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PlanWizard } from "@/components/plan/plan-wizard";
-import { WizardHero } from "@/components/plan/wizard-ui";
 import type { MeatKey } from "@/lib/barf";
 import { MEATS } from "@/lib/catalog";
 import { type PetProfile, rowToProfile } from "@/lib/club";
@@ -38,7 +37,13 @@ export default async function PlanWizardPage() {
 
   return (
     <>
-      <WizardHero eyebrow="Krmení na míru" title="Každé zvíře je jiné." em="Jídelníček taky." lead="Odpovězte na pár otázek a připravíme plán pro vašeho psa nebo kočku. Sedm otázek, zhruba dvě minuty, a uvidíte denní dávku, složení dodávky i cenu za den." />
+      <header className="mx-auto flex max-w-site flex-wrap items-end justify-between gap-x-5 gap-y-2 px-5 pt-7.5 pb-7.5 md:pt-10">
+        <div>
+          <p className="text-eyebrow text-muted uppercase">Krmení na míru</p>
+          <h1 className="font-display text-display-md text-green md:text-display-lg">Plán pro vašeho psa nebo kočku</h1>
+        </div>
+        <p className="text-small">Sedm otázek, zhruba 2 minuty · nic se neukládá, dokud plán nedokončíte</p>
+      </header>
       <PlanWizard
         products={products}
         club={settings.club}
