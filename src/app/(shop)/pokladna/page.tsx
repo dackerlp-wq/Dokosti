@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { CheckoutForm, type PlanHandoff } from "@/components/checkout/checkout-form";
-import { productName } from "@/lib/catalog";
-import { getProducts } from "@/lib/products";
+import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { PageIntro } from "@/components/ui/page-intro";
 import { getCustomerUser } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
@@ -10,23 +8,8 @@ import { nextDeliveryDays, paymentMethods, shippingMethods, subscriptionWeekdays
 
 export const metadata: Metadata = { title: "Pokladna" };
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ predplatne?: string; dodani?: string; obcas?: string; jednou?: string; a?: string; b?: string; davka?: string; nahled?: string }> }) {
-  const [settings, user, products, { predplatne, dodani, obcas, jednou, a, b, davka, nahled }] = await Promise.all([getSettings(), getCustomerUser(), getProducts(), searchParams]);
-  const pairs = (v?: string) => (v ?? "").split(",").map((p) => p.split(":")).filter(([slug, n]) => slug && Number.isInteger(Number(n)) && Number(n) >= 1 && Number(n) <= 99) as [string, string][];
-  // Z průvodce Krmení na míru: jednorázové doplňky, střídání masa a denní dávka (plán předává v adrese).
-  const plan: PlanHandoff | undefined =
-    jednou !== undefined || b !== undefined || davka !== undefined
-      ? {
-          once: Object.fromEntries(pairs(jednou).filter(([, n]) => Number(n) <= 12).map(([slug, n]) => [slug, Number(n)])),
-          aOnly: (a ?? "").split(",").filter(Boolean),
-          b: pairs(b).flatMap(([slug, n]) => {
-            const p = products.find((x) => x.slug === slug);
-            return p ? [{ slug, qty: Number(n), name: productName(p) }] : [];
-          }),
-          dailyGrams: Number(davka) > 0 && Number(davka) < 10000 ? Math.round(Number(davka)) : undefined,
-          preview: nahled !== "0",
-        }
-      : undefined;
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ predplatne?: string; dodani?: string; obcas?: string }> }) {
+  const [settings, user, { predplatne, dodani, obcas }] = await Promise.all([getSettings(), getCustomerUser(), searchParams]);
   let prefill: { name: string; email: string; phone: string; street: string; city: string; zip: string } | undefined;
   if (user) {
     const db = await getAuthSupabase();
@@ -50,7 +33,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           initialInterval={Number(predplatne ?? 0) || 0}
           initialShipping={dodani === "rozvoz" || dodani === "odber" || dodani === "prepravce" ? dodani : undefined}
           everyNth={Object.fromEntries((obcas ?? "").split(",").map((p) => p.split(":")).filter(([slug, n]) => slug && Number(n) >= 2 && Number(n) <= 12).map(([slug, n]) => [slug, Number(n)]))}
-          plan={plan}
           prefill={prefill}
         />
       </div>

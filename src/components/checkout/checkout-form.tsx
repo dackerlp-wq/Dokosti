@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { clearPlan, planExtras, planValid, useCartPlan } from "@/lib/cart-plan";
 import { loyaltyBalance, previewCoupon, submitOrder, type CheckoutInput, type CouponPreview } from "@/app/(shop)/pokladna/actions";
 import { useCart } from "@/components/cart/cart-context";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -26,21 +27,8 @@ type Props = {
   initialShipping?: ShippingId;
   /** Z průvodce: položky jen do každé N. dodávky (slug → N), např. olej, který vydrží déle než interval. */
   everyNth?: Record<string, number>;
-  /** Z průvodce Krmení na míru: jednorázové doplňky, střídání masa (dodávka B), denní dávka mixů, náhled e-mailem. */
-  plan?: PlanHandoff;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
-};
-
-export type PlanHandoff = {
-  /** Jednorázově: slug → po kolika dodávkách dochází (pak e-mail nabídne přidání). */
-  once: Record<string, number>;
-  /** Položky košíku, které patří jen do dodávky A (ostatní jsou v obou). */
-  aOnly: string[];
-  /** Dodávka B: položky navíc místo A. */
-  b: { slug: string; qty: number; name: string }[];
-  dailyGrams?: number;
-  preview: boolean;
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
@@ -48,10 +36,19 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numer
 const INTERVALS = [0, 14, 28] as const;
 type Interval = (typeof INTERVALS)[number];
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, plan, prefill }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, prefill }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(initialShipping && SHIPPING.some((m) => m.id === initialShipping) ? initialShipping : (SHIPPING[0]?.id ?? "odber"));
-  const [interval, setInterval] = useState<Interval>(subscription.enabled && (INTERVALS as readonly number[]).includes(initialInterval) ? (initialInterval as Interval) : 0);
+  // Plán z Krmení na míru uložený u košíku: platí, dokud v košíku zůstávají jeho položky.
+  const stored = useCartPlan();
+  const plan = planValid(stored, cart.lines) ? stored : null;
+  const extras = plan ? planExtras(plan, cart.lines) : [];
+  /** Položky navíc k plánu, které mají chodit v každé dodávce (jinak jen v první). */
+  const [keep, setKeep] = useState<string[]>([]);
+  // Interval: výběr zákazníka, jinak z odkazu (?predplatne=14), jinak z plánu.
+  const [intervalChoice, setInterval] = useState<Interval | null>(null);
+  const fallbackInterval = initialInterval || plan?.intervalDays || 0;
+  const interval: Interval = intervalChoice ?? (subscription.enabled && (INTERVALS as readonly number[]).includes(fallbackInterval) ? (fallbackInterval as Interval) : 0);
   const [weekdayChoice, setWeekdayChoice] = useState<number | null>(null);
   const [payment, setPayment] = useState<PaymentId>(PAYMENT.find((p) => p.id === "hotove")?.id ?? PAYMENT[0]?.id ?? "prevod");
   const [deliveryDate, setDeliveryDate] = useState<string>(deliveryDays[0] ?? "");
@@ -149,7 +146,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       deliveryDate: shipping === "rozvoz" ? deliveryDate : undefined,
       couponCode: coupon?.ok ? coupon.code : undefined,
       pointsRedeem: redeemSteps * loyalty.redeemStep,
-      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate, everyNth, plan } : undefined,
+      subscribe: interval > 0 ? { intervalDays: interval, weekday, firstDate, everyNth, plan: plan ? { ...plan, keep } : undefined } : undefined,
       customer: {
         name: get("name"),
         email: get("email"),
@@ -164,6 +161,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       const res = await submitOrder(input);
       if (res.ok) {
         cart.clear();
+        clearPlan();
         setDone({ number: res.orderNumber, total: res.totalCzk, points: res.pointsEarned, subscription: res.subscription });
       } else {
         setError(res.error);
@@ -273,6 +271,27 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                   <p className="mt-1 text-muted">
                     Jen v této dodávce: {cart.items.filter((i) => plan.once[i.product.slug]).map((i) => productName(i.product)).join(", ")}. Až bude docházet, nabídneme vám ho v e-mailu před dodávkou.
                   </p>
+                )}
+                {plan && extras.length > 0 && (
+                  <div className="mt-3 rounded-control border border-line bg-white p-3">
+                    <p className="font-semibold text-green">Navíc k plánu</p>
+                    <ul className="mt-1.5 flex flex-col gap-1.5">
+                      {extras.map((x) => {
+                        const p = cart.items.find((i) => i.product.slug === x.slug)?.product;
+                        const on = keep.includes(x.slug);
+                        return (
+                          <li key={x.slug} className="flex flex-wrap items-center justify-between gap-2">
+                            <span>
+                              {p ? productName(p) : x.slug} ({x.qty} ks): {on ? "v každé dodávce" : "jen v této dodávce"}
+                            </span>
+                            <button type="button" onClick={() => setKeep(on ? keep.filter((k) => k !== x.slug) : [...keep, x.slug])} className="text-small font-semibold text-brick-text underline">
+                              {on ? "Jen teď" : "Posílat v každé dodávce"}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
                 )}
                 {!plan && cart.items.some((i) => (everyNth[i.product.slug] ?? 1) > 1) && (
                   <p className="mt-1 text-muted">

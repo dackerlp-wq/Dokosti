@@ -9,6 +9,7 @@ import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { deletePetById, savePetProfile } from "@/app/(shop)/ucet/actions";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
+import { savePlan } from "@/lib/cart-plan";
 import { ProductImage } from "@/components/product/product-image";
 import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
@@ -237,19 +238,20 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       if (!saved.ok) return setError(saved.error);
       cart.clear();
       plan.items.forEach((r) => cart.add(r.product.slug, r.qty));
-      const q = new URLSearchParams({ predplatne: String(oneTime ? 0 : days), dodani: delivery });
-      if (!oneTime) {
-        // Plán pro předplatné: jednorázové doplňky, střídání masa, denní dávka mixů (rozpis v e-mailu) a náhled předem.
-        q.set("jednou", Object.entries(everyNth).map(([slug, n]) => `${slug}:${n}`).join(","));
-        if (rotation) {
-          q.set("a", rotation.aOnly.join(","));
-          q.set("b", rotation.b.map((i) => `${i.product.slug}:${i.qty}`).join(","));
-        }
-        const daily = plan.items.filter((i) => i.role === "zaklad").reduce((n, i) => n + i.gramsPerDay, 0);
-        if (daily > 0) q.set("davka", String(Math.round(daily)));
-        if (!preview) q.set("nahled", "0");
-      }
-      router.push(`/pokladna?${q.toString()}`);
+      // Plán se uloží vedle košíku: když si zákazník cestou přidá pamlsky, předplatné z plánu v pokladně zůstane.
+      const daily = plan.items.filter((i) => i.role === "zaklad").reduce((n, i) => n + i.gramsPerDay, 0);
+      savePlan({
+        forName: petName(pet.name, pet.species, pet.sex, "acc"),
+        intervalDays: oneTime ? 0 : days,
+        delivery,
+        lines: plan.items.map((r) => ({ slug: r.product.slug, qty: r.qty })),
+        once: oneTime ? {} : everyNth,
+        aOnly: rotation && !oneTime ? rotation.aOnly : [],
+        b: rotation && !oneTime ? rotation.b.map((i) => ({ slug: i.product.slug, qty: i.qty, name: productName(i.product) })) : [],
+        dailyGrams: daily > 0 ? Math.round(daily) : undefined,
+        preview,
+      });
+      router.push(`/pokladna?predplatne=${oneTime ? 0 : days}&dodani=${delivery}`);
     });
   }
 

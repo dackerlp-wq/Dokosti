@@ -1,6 +1,6 @@
 "use server";
 
-import type { PlanHandoff } from "@/components/checkout/checkout-form";
+import type { PlanHandoff } from "@/lib/cart-plan";
 import { productName, type Product } from "@/lib/catalog";
 import { getProduct } from "@/lib/products";
 import { getSettings } from "@/lib/settings";
@@ -88,7 +88,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     }
     const everyNth: Record<string, number> = {};
     for (const [slug, n] of Object.entries(input.subscribe.everyNth ?? {})) if (Number.isInteger(n) && n >= 1 && n <= 12) everyNth[slug] = n;
-    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate, everyNth, plan: input.subscribe.plan };
+    subscribe = { intervalDays, weekday, firstDate: method.id === "rozvoz" ? deliveryDate : firstDate, everyNth, plan: cleanPlan(input.subscribe.plan) };
   }
 
   const order = {
@@ -204,24 +204,47 @@ export async function loyaltyBalance(email: string): Promise<number> {
   return typeof data === "number" ? data : 0;
 }
 
+/** Plán přichází z prohlížeče: tvar ověřit, ať rozbitá data nezastaví objednávku (bez plánu = běžné předplatné). */
+function cleanPlan(p: PlanHandoff | undefined): PlanHandoff | undefined {
+  if (!p || typeof p !== "object" || !Array.isArray(p.lines) || !Array.isArray(p.b)) return undefined;
+  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  return {
+    ...p,
+    lines: p.lines.filter((l) => l && typeof l.slug === "string" && Number.isFinite(l.qty)),
+    keep: strings(p.keep),
+    aOnly: strings(p.aOnly),
+    once: p.once && typeof p.once === "object" ? p.once : {},
+    preview: p.preview !== false,
+  };
+}
+
 /**
  * Položky předplatného z košíku a plánu: jednorázové doplňky (once, every_nth = kdy docházejí),
  * střídání masa (A jen v košíku, B jen v příští dodávce, ostatní v obou) a „jen každou N.“ bez plánu.
+ * Co je v košíku navíc k plánu, jde jen do první objednávky, pokud ho zákazník nechce v každé dodávce (keep).
  */
-function subscriptionItems(items: { product_slug: string; qty: number }[], sub: { everyNth: Record<string, number>; plan?: PlanHandoff }) {
+function subscriptionItems(cart: { product_slug: string; qty: number }[], sub: { everyNth: Record<string, number>; plan?: PlanHandoff }) {
   const plan = sub.plan;
   const nth = (n: unknown) => (Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 12 ? (n as number) : 1);
   const rotating = Boolean(plan && plan.b.length > 0);
+  const planned = (slug: string) => plan?.lines.find((l) => l.slug === slug)?.qty ?? 0;
+  const items = plan
+    ? cart.flatMap((i) => {
+        const qty = plan.keep.includes(i.product_slug) ? i.qty : Math.min(i.qty, planned(i.product_slug));
+        return qty >= 1 ? [{ ...i, qty }] : [];
+      })
+    : cart;
   const out: { product_slug: string; qty: number; every_nth: number; rotation: "A" | "B" | null; once: boolean }[] = items.map((i) => {
     const once = plan?.once[i.product_slug];
     return {
       product_slug: i.product_slug,
       qty: i.qty,
       every_nth: once ? nth(once) : (sub.everyNth[i.product_slug] ?? 1),
-      rotation: rotating && plan!.aOnly.includes(i.product_slug) ? "A" : null,
+      rotation: rotating && plan!.aOnly.includes(i.product_slug) && !plan!.keep.includes(i.product_slug) ? "A" : null,
       once: Boolean(once),
     };
   });
+  if (out.length === 0) return cart.map((i) => ({ ...i, every_nth: 1, rotation: null, once: false }));
   if (rotating) {
     for (const b of plan!.b.slice(0, 20)) {
       const qty = Math.floor(Number(b.qty));
