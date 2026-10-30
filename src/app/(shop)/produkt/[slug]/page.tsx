@@ -102,7 +102,7 @@ export default async function ProductPage({ params }: Props) {
   const keyNumbers = [
     product.meatPct !== undefined && { value: formatPct(product.meatPct), label: "masa a vnitřností" },
     split && split.meat > 0 && { value: formatPct(split.meat), label: split.meatLabel },
-    product.nutrition?.bonePct !== undefined && { value: formatPct(product.nutrition.bonePct), label: "jedlé kosti" },
+    product.nutrition?.bonePct !== undefined && { value: formatPct(product.nutrition.bonePct), label: split ? "z toho jedlé kosti" : "jedlé kosti" },
     split ? split.organs > 0 && { value: formatPct(split.organs), label: "vnitřností" } : product.nutrition?.organPct !== undefined && { value: formatPct(product.nutrition.organPct), label: "vnitřností" },
     product.nutrition?.kcalPer100g !== undefined && { value: `${product.nutrition.kcalPer100g.toLocaleString("cs-CZ")} kcal`, label: "ve 100 g" },
   ].filter((n): n is { value: string; label: string } => Boolean(n));
