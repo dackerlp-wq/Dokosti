@@ -688,19 +688,19 @@ function PlanStep({
           </div>
           <ul className="mt-7.5 grid grid-cols-2 gap-3.5 md:grid-cols-4">
             <li className="rounded-card border border-line bg-white p-4.5 text-center">
-              <p className="text-[30px]/[36px] font-extrabold text-green">{r.dailyGrams} g</p>
+              <p className="text-[22px]/[28px] md:text-[30px]/[36px] font-extrabold text-green">{r.dailyGrams} g</p>
               <p className="text-small">{rawShare < 100 ? "syrového denně" : "syrové stravy denně"}</p>
             </li>
             <li className="rounded-card border border-line bg-white p-4.5 text-center">
-              <p className="text-[30px]/[36px] font-extrabold text-green">{meals > 1 ? `${meals} × ${Math.round(r.dailyGrams / meals)} g` : `${r.dailyGrams} g`}</p>
+              <p className="text-[22px]/[28px] md:text-[30px]/[36px] font-extrabold text-green">{meals > 1 ? `${meals} × ${Math.round(r.dailyGrams / meals)} g` : `${r.dailyGrams} g`}</p>
               <p className="text-small">{meals === 1 ? "v jedné porci" : meals === 2 ? "ráno a večer" : `v ${meals} porcích`}</p>
             </li>
             <li className="rounded-card border border-line bg-white p-4.5 text-center">
-              <p className="text-[30px]/[36px] font-extrabold text-green">{totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg</p>
+              <p className="text-[22px]/[28px] md:text-[30px]/[36px] font-extrabold text-green">{totalKg.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} kg</p>
               <p className="text-small">dodávka na {period}</p>
             </li>
             <li className="rounded-card bg-green p-4.5 text-center text-cream">
-              <p className="text-[30px]/[36px] font-extrabold">{formatPrice(plan.perDayCzk)}</p>
+              <p className="text-[22px]/[28px] md:text-[30px]/[36px] font-extrabold">{formatPrice(plan.perDayCzk)}</p>
               <p className="text-small">za den</p>
             </li>
           </ul>
