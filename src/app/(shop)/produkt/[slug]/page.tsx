@@ -232,9 +232,9 @@ export default async function ProductPage({ params }: Props) {
         <Section tone={tones.comp}>
           <SectionHeader eyebrow="Složení podle výrobce" title="Co je uvnitř" />
           {keyNumbers.length > 0 && (
-            <ul className="mx-auto mb-10 grid max-w-narrow grid-cols-2 gap-3.5 md:grid-cols-4">
+            <ul className="mx-auto mb-10 flex max-w-narrow flex-wrap justify-center gap-3.5">
               {keyNumbers.map((n) => (
-                <li key={n.label} className="rounded-card border border-line bg-white p-4 text-center">
+                <li key={n.label} className="min-w-[150px] flex-1 basis-[150px] rounded-card border border-line bg-white p-4 text-center sm:max-w-[220px]">
                   <p className="text-[26px]/[32px] font-extrabold text-green">{n.value}</p>
                   <p className="text-small">{n.label}</p>
                 </li>
@@ -242,7 +242,7 @@ export default async function ProductPage({ params }: Props) {
             </ul>
           )}
           {(withPct.length > 0 || facts.nutrients.length > 0 || facts.minor.length > 0) && (
-            <div className="grid gap-10 md:grid-cols-2">
+            <div className={withPct.length > 0 && (facts.nutrients.length > 0 || facts.minor.length > 0) ? "grid gap-10 md:grid-cols-2" : "mx-auto max-w-text"}>
               {withPct.length > 0 && (
                 <div>
                   <h3 className="mb-5 text-heading-md font-bold text-green">Hlavní suroviny</h3>
@@ -289,7 +289,7 @@ export default async function ProductPage({ params }: Props) {
             </div>
           )}
           {product.composition && (
-            parsedAnything ? (
+            parsedAnything && product.composition.length < 140 && facts.ingredients.every((i) => i.pct !== undefined) ? null : parsedAnything ? (
               <details className="group mx-auto mt-10 max-w-text">
                 <summary className="cursor-pointer list-none text-center text-button text-brick-text hover:underline">Celé složení od výrobce</summary>
                 <p className="mt-3.5 text-small">{product.composition}</p>
@@ -305,7 +305,7 @@ export default async function ProductPage({ params }: Props) {
         <Section tone={tones.how}>
           <SectionHeader title="Jak podávat a skladovat" />
           {storage.length > 0 && (
-            <ul className={`grid gap-3.5 xs:grid-cols-2 ${storage.length >= 4 ? "lg:grid-cols-4" : storage.length === 3 ? "lg:grid-cols-3" : ""}`}>
+            <ul className={`mx-auto grid gap-3.5 xs:grid-cols-2 ${storage.length >= 4 ? "lg:grid-cols-4" : storage.length === 3 ? "lg:grid-cols-3" : "max-w-narrow"}`}>
               {storage.map((t) => {
                 const Icon = STORAGE_ICON[t.kind];
                 return (

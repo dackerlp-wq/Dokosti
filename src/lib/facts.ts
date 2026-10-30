@@ -73,21 +73,21 @@ function parseIngredient(raw: string): Ingredient | null {
 }
 
 const NUTRIENTS: { key: string; label: string; re: RegExp; main: boolean }[] = [
-  { key: "protein", label: "Bílkoviny", re: /(?:hrub[ýéá]\s+(?:protein|bílkoviny)|(?<!z celkového obsahu )\bbílkoviny|\bprotein)\s+/i, main: true },
-  { key: "fat", label: "Tuk", re: /(?:hrub[ýý]\s+tuk|obsah\s+tuku|tuky?\s+celkem|\btuky?)\s+/i, main: true },
-  { key: "fiber", label: "Vláknina", re: /(?:hrub[áa]\s+vláknina|\bvláknina)\s+/i, main: true },
-  { key: "ash", label: "Minerální látky (popel)", re: /(?:hrub[ýy]\s+popel|\bpopel)\s+/i, main: true },
-  { key: "moisture", label: "Vlhkost", re: /\bvlhkost\s+/i, main: true },
-  { key: "starch", label: "Škrob", re: /\bškrob\s+/i, main: true },
-  { key: "ca", label: "Vápník", re: /\bvápník\s+/i, main: false },
-  { key: "p", label: "Fosfor", re: /\bfosfor\s+/i, main: false },
+  { key: "protein", label: "Bílkoviny", re: /(?:hrub[ýéá]\s+(?:protein|bílkoviny)|(?<!z celkového obsahu )(?<![A-Za-zÀ-ž])bílkoviny|(?<![A-Za-zÀ-ž])protein)\s+/i, main: true },
+  { key: "fat", label: "Tuk", re: /(?:hrub[ýý]\s+tuk|obsah\s+tuku|tuky?\s+celkem|(?<![A-Za-zÀ-ž])tuky?)\s+/i, main: true },
+  { key: "fiber", label: "Vláknina", re: /(?:hrub[áa]\s+vláknina|(?<![A-Za-zÀ-ž])vláknina)\s+/i, main: true },
+  { key: "ash", label: "Minerální látky (popel)", re: /(?:hrub[ýy]\s+popel|(?<![A-Za-zÀ-ž])popel)\s+/i, main: true },
+  { key: "moisture", label: "Vlhkost", re: /(?<![A-Za-zÀ-ž])vlhkost\s+/i, main: true },
+  { key: "starch", label: "Škrob", re: /(?<![A-Za-zÀ-ž])škrob\s+/i, main: true },
+  { key: "ca", label: "Vápník", re: /(?<![A-Za-zÀ-ž])vápník\s+/i, main: false },
+  { key: "p", label: "Fosfor", re: /(?<![A-Za-zÀ-ž])fosfor\s+/i, main: false },
   { key: "omega3", label: "Omega-3", re: /omega-3\s+mastné\s+kyseliny\s+/i, main: false },
   { key: "omega6", label: "Omega-6", re: /omega-6\s+mastné\s+kyseliny\s+/i, main: false },
-  { key: "linoleic", label: "Kyselina linolová", re: /\blinolová\s+/i, main: false },
-  { key: "alpha", label: "Kyselina alfa-linolenová", re: /\b(?:alfa-linolenová|linolenová)\s+/i, main: false },
-  { key: "gla", label: "Kyselina gama-linolenová", re: /\bgama-linolenová\s+/i, main: false },
-  { key: "epa", label: "EPA", re: /\bEPA\s+/, main: false },
-  { key: "dha", label: "DHA", re: /\bDHA\s+/, main: false },
+  { key: "linoleic", label: "Kyselina linolová", re: /(?<![A-Za-zÀ-ž])linolová\s+/i, main: false },
+  { key: "alpha", label: "Kyselina alfa-linolenová", re: /(?<![A-Za-zÀ-ž])(?:alfa-linolenová|linolenová)\s+/i, main: false },
+  { key: "gla", label: "Kyselina gama-linolenová", re: /(?<![A-Za-zÀ-ž])gama-linolenová\s+/i, main: false },
+  { key: "epa", label: "EPA", re: /(?<![A-Za-zÀ-ž])EPA\s+/, main: false },
+  { key: "dha", label: "DHA", re: /(?<![A-Za-zÀ-ž])DHA\s+/, main: false },
 ];
 
 const MICRO_NAMES: Record<string, string> = { Ca: "Vápník", P: "Fosfor", K: "Draslík", Mg: "Hořčík", Fe: "Železo", Mn: "Mangan", Zn: "Zinek", Cu: "Měď", Na: "Sodík", Se: "Selen", I: "Jód", B7: "Biotin (B7)" };
