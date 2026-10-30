@@ -675,6 +675,8 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const fishCands = pool.filter((p) => foodKind(p) === "ryba" && p.storage !== "suche");
   let fish: Product | null = null;
   let fishA: ReturnType<typeof fishAlloc> = null;
+  if (i.addons.ryba && fishCands.length && (i.beginner || i.stage === "mlade") && mixes.length > 0)
+    notes.push({ kind: "info", text: i.stage === "mlade" ? "Rybí maso u mláďat zatím vynecháváme, omega-3 doplní rybí olej." : "Na začátku BARFu rybu vynecháváme, omega-3 doplní rybí olej. Rybí den přidejte po pár týdnech." });
   if (i.addons.ryba && fishCands.length && !i.beginner && i.stage !== "mlade" && mixes.length > 0) {
     fish = choose(fishCands, (p) => {
       const al = fishAlloc(p, animalGrams, days);
@@ -989,7 +991,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     const { qty, used, periods } = dailyAlloc(product, gpd, days);
     items.push({ product, qty, gramsPerDay: gpd, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText: text, role, why });
   };
-  if (oil) daily(oil, oilPerDay, "olej", "dávka podle výrobce", oilDose ? doseText(oilDose, " do misky") : `${fmtDose(oilPerDay)} ml denně do misky`);
+  if (oil) daily(oil, oilPerDay, "olej", fish ? "omega-3 navíc k rybě, dávka podle výrobce" : fishOil(oil) ? "omega-3, protože v plánu není ryba" : "omega-3, dávka podle výrobce", oilDose ? doseText(oilDose, " do misky") : `${fmtDose(oilPerDay)} ml denně do misky`);
   /** Sušený doplněk dávkovaný podle obalu: jedno balení, které vydrží několik dodávek (nejvýš do trvanlivosti). */
   const onePack = (product: Product, role: Reco["role"], why: string, text: string) => {
     const periods = maxPeriodsFor(product, days);
