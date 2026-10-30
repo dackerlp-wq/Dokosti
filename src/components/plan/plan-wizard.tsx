@@ -677,7 +677,7 @@ function PlanStep({
               </h2>
               <p className="mt-1">
                 {SEX_LABEL[pet.species][pet.sex]}
-                {pet.sex === "samice" && pet.reproduction === "brezi" ? ", březí" : pet.sex === "samice" && pet.reproduction === "kojici" ? ", kojící" : ""}, {pet.weightKg} kg: zhruba {r.pct} % váhy denně. Po 2 až 4 týdnech {firstAcc} zvažte, dávku upravíte v účtu.
+                {pet.sex === "samice" && pet.reproduction === "brezi" ? ", březí" : pet.sex === "samice" && pet.reproduction === "kojici" ? ", kojící" : ""}, {pet.weightKg.toLocaleString("cs-CZ")} kg: zhruba {r.pct.toLocaleString("cs-CZ", { maximumFractionDigits: 1 })} % váhy denně. Po 2 až 4 týdnech {firstAcc} zvažte, dávku upravíte v účtu.
               </p>
               {rawShare < 100 && !r.kibbleGrams && <p className="mt-1 text-small">Zbytek ({100 - rawShare} % energie, {r.kibbleKcal} kcal) doplní granule podle tabulky na obalu.</p>}
             </div>
@@ -747,7 +747,8 @@ function PlanStep({
                         {once ? " · jednorázově" : ""}
                       </span>
                       <p className="mt-1 text-[16px]/[22px] font-extrabold text-green">
-                        {productName(i.product)} <span className="font-normal text-muted">{formatWeight(i.product.weightGrams)}</span>
+                        {productName(i.product)}
+                        {!/\d\s*(kg|g|ml|l)(?![a-zž])/i.test(productName(i.product)) && <span className="font-normal text-muted"> {formatWeight(i.product.weightGrams)}</span>}
                       </p>
                       <p className="text-[13px]/[20px]">
                         {i.portionText}
@@ -802,7 +803,8 @@ function PlanStep({
                       </div>
                       <span className="text-[11px]/[18px] font-bold tracking-wide uppercase">{EXTRA_LABEL[i.role]}</span>
                       <span className="text-[16px]/[21px] font-extrabold text-green">
-                        {productName(i.product)} <span className="font-normal text-muted">{formatWeight(i.product.weightGrams)}</span>
+                        {productName(i.product)}
+                        {!/\d\s*(kg|g|ml|l)(?![a-zž])/i.test(productName(i.product)) && <span className="font-normal text-muted"> {formatWeight(i.product.weightGrams)}</span>}
                       </span>
                       <span className="text-[13px]/[20px]">
                         {i.portionText}
