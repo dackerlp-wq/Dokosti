@@ -75,6 +75,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
     animals,
     meats,
     kind,
+    benefit: String(formData.get("benefit") ?? "").trim().slice(0, 30) || null,
     weight_grams: Math.round(weight),
     price_czk: Math.round(price),
     original_price_czk: original === null ? null : Math.round(original),

@@ -68,6 +68,12 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
                 </select>
               </Field>
             )}
+            {preview.line === "navic" && (
+              <Field label="Hlavní přínos" hint="štítek na kartě, max 30 znaků">
+                <input name="benefit" maxLength={30} defaultValue={p?.benefit ?? ""} placeholder="Zdroj omega-3" />
+                <span className="mt-1 block text-small text-muted">Jen co obsahuje podle výrobce (zdroj vápníku, vitamíny skupiny B). Ne „léčí“ ani „chrání“.</span>
+              </Field>
+            )}
             <Field label="Druh masa / suroviny" hint="např. hovězí mix">
               <input name="variant" defaultValue={p?.variant} required onChange={(e) => setPreview((v) => ({ ...v, variant: e.target.value }))} />
             </Field>

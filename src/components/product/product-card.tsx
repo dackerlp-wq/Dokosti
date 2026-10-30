@@ -28,12 +28,13 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         </div>
       )}
 
-      {(flags.length > 0 || product.meatPct !== undefined) && (
+      {(flags.length > 0 || product.meatPct !== undefined || product.benefit) && (
         <div className="absolute top-7.5 -left-px z-20 grid justify-items-start gap-1.25">
           {flags.map((kind) => (
             <Flag key={kind} kind={kind} />
           ))}
           {product.meatPct !== undefined && <Flag kind="favourite">{`${formatPct(product.meatPct)} masa`}</Flag>}
+          {product.benefit && <Flag kind="favourite">{product.benefit}</Flag>}
         </div>
       )}
 

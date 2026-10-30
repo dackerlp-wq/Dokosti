@@ -170,6 +170,8 @@ export type ProductRow = {
   kcal_per_100g: number | null;
   /** Podíl masa a vnitřností v % podle složení výrobce (migrace 0034). */
   meat_pct: number | null;
+  /** Hlavní přínos doplňku, štítek na kartě (migrace 0038). */
+  benefit: string | null;
   /** Podkategorie řady (Doplňky, Maso a vnitřnosti, Pamlsky a žvýkání, Granule a konzervy; migrace 0035 a 0037). */
   kind: string | null;
   bone_pct: number | null;

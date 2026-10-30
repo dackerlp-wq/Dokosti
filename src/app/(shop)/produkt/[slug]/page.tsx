@@ -103,6 +103,12 @@ export default async function ProductPage({ params }: Props) {
                 {byWeight && <span className="text-small"> za kg</span>}
                 {onSale && <s className="ml-2.5 text-small">{formatPrice(product.originalPriceCzk!)}</s>}
               </dd>
+              {product.benefit && (
+                <>
+                  <dt className="text-label text-muted">Hlavní přínos:</dt>
+                  <dd className="font-semibold text-green">{product.benefit}</dd>
+                </>
+              )}
               {product.meatPct !== undefined && (
                 <>
                   <dt className="text-label text-muted">Podíl masa:</dt>

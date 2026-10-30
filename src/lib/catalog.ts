@@ -216,6 +216,8 @@ export type Product = {
   dose?: SupplementDose;
   /** Podíl masa a vnitřností v % podle složení od výrobce. Neuvedeno = nezobrazuje se. */
   meatPct?: number;
+  /** Hlavní přínos doplňku podle výrobce, krátký štítek („Zdroj omega-3“). Ne zdravotní tvrzení. */
+  benefit?: string;
   /**
    * Údaje z etikety výrobce pro kalkulačku dávky. Nikdy se nedopočítávají;
    * bez nich kalkulačka počítá orientačně procentem hmotnosti.
