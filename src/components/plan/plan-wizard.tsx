@@ -647,9 +647,13 @@ function PlanStep({
   const mealItems = plan.items.filter((i) => ["zaklad", "ryba", "kosti", "vnitrnosti"].includes(i.role));
   const colorOf = (slug: string) => PALETTE[Math.max(0, mealItems.findIndex((i) => i.product.slug === slug)) % PALETTE.length];
   const mealKg = mealItems.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
+  // Zkratka do kalendáře: první písmeno, při shodě (kuře, králík, kachna) první dvě.
   const letterOf = (slug: string) => {
     const p = mealItems.find((i) => i.product.slug === slug)?.product;
-    return p ? productName(p).charAt(0).toUpperCase() : "?";
+    if (!p) return "?";
+    const n = productName(p);
+    const clash = mealItems.some((m) => m.product.slug !== slug && productName(m.product).charAt(0).toUpperCase() === n.charAt(0).toUpperCase());
+    return clash ? n.charAt(0).toUpperCase() + n.charAt(1).toLowerCase() : n.charAt(0).toUpperCase();
   };
   const calendar = plan.schedule.map((d) => {
     const main = [...d.items].filter((x) => mealItems.some((m) => m.product.slug === x.product.slug)).sort((a, b) => b.grams - a.grams);
@@ -792,7 +796,7 @@ function PlanStep({
             <section aria-label="Doporučujeme navíc">
               <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
               <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části mixu. Co vydrží déle než jednu dodávku, přijde jen jednou.</p>
-              <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+              <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                 {extras.map((i) => {
                   const lastsDays = i.gramsPerDay > 0 ? Math.round((i.qty * i.product.weightGrams) / i.gramsPerDay) : 0;
                   const lasting = i.periods > 1;
