@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
       // Ilustrační fotka z Unsplash (licence Unsplash, komerční použití povoleno), viz src/lib/stock-photos.ts.
       { protocol: "https", hostname: "images.unsplash.com" },
+      // Fotky produktů Sokol Falco přímo z jejich e-shopu (nové 300g saláty), dokud nejsou nahrané v administraci.
+      { protocol: "https", hostname: "www.falcokrmiva.com", pathname: "/data/produkty/**" },
     ],
   },
   // Řada „Základ“ se přejmenovala na „BARF mixy“ (slug barf); staré adresy vedou dál.
