@@ -56,18 +56,18 @@ export function PromoTile({ daily, sales }: { daily: DailyCost | null; sales: Sa
           </span>
         </Link>
       ) : daily ? (
-        <Link href="/rada/barf" className="group flex h-full flex-col justify-center rounded-panel bg-sand p-5">
-          <span className="text-small font-semibold text-muted">BARF pro psa {daily.dogKg} kg</span>
-          <span className="font-display text-[2rem] leading-tight font-black text-ink md:text-[2.5rem]">
+        <Link href="/rada/barf" className="group flex h-full flex-col justify-center rounded-panel bg-sand p-4 md:p-5">
+          <span className="text-[0.75rem] font-semibold text-muted md:text-small">BARF pro psa {daily.dogKg} kg</span>
+          <span className="font-display text-[1.625rem] leading-tight font-black whitespace-nowrap text-ink md:text-[2.5rem]">
             od {formatPrice(daily.perDay)}
-            <span className="text-[1.125rem] font-bold text-muted"> / den</span>
+            <span className="text-[0.875rem] font-bold text-muted md:text-[1.125rem]"> / den</span>
           </span>
-          <span className="mt-1 text-small text-brick-text group-hover:underline">Vybrat BARF mix →</span>
+          <span className="mt-1 text-[0.75rem] text-brick-text group-hover:underline md:text-small">Vybrat BARF mix →</span>
         </Link>
       ) : null}
 
       {slides > 1 && (
-        <div className="absolute right-3 bottom-3 flex gap-1.5">
+        <div className="absolute top-3 right-3 flex gap-1.5 md:top-auto md:bottom-3">
           {Array.from({ length: slides }, (_, n) => (
             <button
               key={n}

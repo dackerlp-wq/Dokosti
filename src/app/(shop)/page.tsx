@@ -13,6 +13,7 @@ import { calculate, newAnimal } from "@/lib/barf";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
+import { STOCK_PHOTOS } from "@/lib/stock-photos";
 
 /** Ikona řady, dokud řada nemá fotku produktu. */
 const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Soup, maso: Beef, kosti: Bone, mlsky: Cookie, navic: Droplet, granule: CookingPot };
@@ -76,10 +77,10 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="grid w-full flex-1 grid-cols-2 grid-rows-[190px_130px] gap-3.5 md:grid-rows-[280px_150px] lg:ml-auto lg:max-w-[600px]">
-            {/* Ilustrace psů u misky DoKosti, průhledné pozadí: stojí přímo na krémové, přes oba sloupce. */}
-            <div className="relative col-span-2">
-              <Image src="/foto/psi-u-misky-ilustrace.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 62rem) 600px, 100vw" className="object-contain" />
+          <div className="grid w-full flex-1 grid-cols-2 grid-rows-[150px] gap-3.5 md:grid-rows-[280px_150px] lg:ml-auto lg:max-w-[600px]">
+            {/* Ilustrace psů u misky DoKosti, průhledné pozadí: stojí přímo na krémové, přes oba sloupce. Na telefonu skrytá, zabírala by moc místa. */}
+            <div className="relative col-span-2 hidden md:block">
+              <Image src="/foto/psi-u-misky-ilustrace-v2.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 62rem) 600px, 50vw" className="object-contain" />
             </div>
             <PromoTile daily={dailyCost} sales={sales} />
             <Link href="/krmeni-na-miru" className="group flex flex-col justify-end rounded-panel bg-green p-5 text-cream transition-colors duration-300 hover:bg-green-hover">
@@ -131,7 +132,7 @@ export default async function HomePage() {
       <section id="krmeni-na-miru" className="bg-cream px-5 py-14">
         <div className="mx-auto flex max-w-site flex-col overflow-hidden rounded-[28px] bg-green text-cream md:flex-row">
           <div className="relative min-h-64 bg-green-hover md:w-5/12">
-            <Image src="/foto/pes-u-misky-dokosti.jpg" alt="Pes u misky DoKosti BARF s mletým masem" fill sizes="(min-width: 48rem) 500px, 100vw" className="object-cover object-[50%_70%]" />
+            <Image src={STOCK_PHOTOS.goldenRetriever.src} alt={STOCK_PHOTOS.goldenRetriever.alt} fill sizes="(min-width: 48rem) 500px, 100vw" className="object-cover" />
           </div>
           <div className="flex flex-1 flex-col gap-5 p-8 md:p-10">
             <div>

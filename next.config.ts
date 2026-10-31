@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
+      // Ilustrační fotka z Unsplash (licence Unsplash, komerční použití povoleno), viz src/lib/stock-photos.ts.
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   // Řada „Základ“ se přejmenovala na „BARF mixy“ (slug barf); staré adresy vedou dál.
