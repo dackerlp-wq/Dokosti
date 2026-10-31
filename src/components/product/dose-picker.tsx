@@ -91,7 +91,7 @@ export function DosePicker({ dose }: { dose: SupplementDose }) {
         </div>
         <p className="flex-1 basis-[220px] text-left text-small">
           Začněte nižší dávkou. Přesnou dávku pro celý jídelníček spočítá{" "}
-          <Link href="/kalkulacka" className="text-brick-text underline">
+          <Link href="/#krmeni-na-miru" className="text-brick-text underline">
             kalkulačka
           </Link>
           .

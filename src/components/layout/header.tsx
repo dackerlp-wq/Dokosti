@@ -14,7 +14,7 @@ import type { MenuLine } from "@/lib/menu";
  */
 export function Header({ menu }: { menu: MenuLine[] }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-line bg-paper">
       <div className="mx-auto flex h-17 max-w-site items-center gap-5 px-5 min-[1440px]:max-w-[1440px] min-[1440px]:gap-7.5">
         <Link href="/" className="shrink-0" aria-label="DoKosti BARF, úvodní stránka">
           {/* Nápis s kostí bez řádku BARF, výška 44 px (poměr 689:250). */}

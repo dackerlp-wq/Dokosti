@@ -31,7 +31,7 @@ export function LineHero({ line, title, illustration, eyebrow, lead }: { line: L
             <LinkArrow href="/doprava">Doručení a skladování</LinkArrow>
           </li>
         </ul>
-        <ButtonLink href="/kalkulacka" size="md">
+        <ButtonLink href="/#krmeni-na-miru" size="md">
           Spočítat dávku
         </ButtonLink>
       </div>

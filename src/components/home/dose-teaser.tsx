@@ -1,10 +1,14 @@
 "use client";
 
+import { Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { calculate, newAnimal } from "@/lib/barf";
 
-/** Blok Krmení na míru na hlavní stránce: jen váha psa a orientační denní dávka, zbytek řeší průvodce. */
+/**
+ * Jediná kalkulačka na webu (blok Krmení na míru na hlavní stránce): váha psa a orientační denní dávka.
+ * Přesnou dávku a nákup počítá průvodce /krmeni-na-miru.
+ */
 export function DoseTeaser() {
   const [kg, setKg] = useState(15);
   const daily = useMemo(() => calculate({ ...newAnimal("pes"), weightKg: kg }).dailyGrams, [kg]);
@@ -32,11 +36,16 @@ export function DoseTeaser() {
         <div className="text-small text-cream/80">Orientační denní dávka</div>
         <div className="font-display text-[1.75rem] font-black text-white">{daily} g</div>
       </div>
-      <div className="flex flex-wrap items-center gap-4">
+      <p className="flex gap-2.5 text-small text-cream/85">
+        <Info className="mt-0.5 size-4 shrink-0 text-ochre" strokeWidth={1.75} aria-hidden />
+        <span>
+          Jde jen o hrubý odhad pro dospělého psa. Přesnou dávku podle věku, pohybu a postavy spočítáte v plánu. Plán je bez závazku a nemusíte nic kupovat.
+        </span>
+      </p>
+      <div>
         <ButtonLink href="/krmeni-na-miru" variant="secondary" size="md" className="ring-0">
-          Sestavit plán
+          Sestavit plán zdarma
         </ButtonLink>
-        <span className="text-small text-cream/80">Dávku i nákup spočítáme přesně podle vašeho zvířete.</span>
       </div>
     </div>
   );

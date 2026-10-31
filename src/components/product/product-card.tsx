@@ -38,7 +38,7 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         </div>
       )}
 
-      <div className="bg-cream p-4">
+      <div className="border-b border-line bg-white p-4">
         <ProductImage product={product} sizes="(min-width: 62rem) 380px, (min-width: 30rem) 50vw, 100vw" priority={priority} />
       </div>
 

@@ -5,7 +5,6 @@ import { CATEGORY_NAV, SITE } from "@/lib/site";
 
 const SERVICE_NAV = [
   { href: "/jak-zacit-s-barfem", label: "Jak začít s BARFem" },
-  { href: "/kalkulacka", label: "Kalkulačka dávky" },
   { href: "/doprava", label: "Doprava a platba" },
   { href: "/o-nas", label: "O nás" },
   { href: "/kontakt", label: "Kontakt" },

@@ -11,6 +11,7 @@ import { LINES, LINE_INFO, productName, type LineSlug } from "@/lib/catalog";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
+import { STOCK_PHOTOS } from "@/lib/stock-photos";
 
 /** Ikona řady, dokud řada nemá fotku produktu. */
 const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Soup, maso: Beef, kosti: Bone, mlsky: Cookie, navic: Droplet, granule: CookingPot };
@@ -57,17 +58,19 @@ export default async function HomePage() {
               <ButtonLink href="/rada/barf" variant="action" size="md" className="shadow-float">
                 Nakupovat <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
               </ButtonLink>
-              <ButtonLink href="/kalkulacka" variant="secondary" size="md" className="ring-line hover:ring-green">
+              <ButtonLink href="#krmeni-na-miru" variant="secondary" size="md" className="ring-line hover:ring-green">
                 Spočítat dávku
               </ButtonLink>
             </div>
           </div>
 
           <div className="grid w-full flex-1 grid-cols-2 grid-rows-[200px_200px] gap-3.5 md:grid-rows-[220px_220px]">
-            <div className="row-span-2 flex items-center justify-center rounded-panel bg-white p-8 shadow-card">
-              <Logo variant="barevne" width={320} priority className="w-full max-w-[300px]" />
+            {/* Ilustrační fotka z fotobanky (src/lib/stock-photos.ts), ne náš zákazník. */}
+            <div className="relative row-span-2 overflow-hidden rounded-panel bg-stone">
+              <Image src={STOCK_PHOTOS.dogBowl.src} alt={STOCK_PHOTOS.dogBowl.alt} fill priority sizes="(min-width: 62rem) 340px, 50vw" className="object-cover" />
             </div>
-            <Link href={heroProduct ? `/produkt/${heroProduct.slug}` : "/rada/barf"} className="relative flex items-center justify-center overflow-hidden rounded-panel bg-sand">
+            {/* Fotky produktů mají bílé pozadí, proto bílá plocha. */}
+            <Link href={heroProduct ? `/produkt/${heroProduct.slug}` : "/rada/barf"} className={`relative flex items-center justify-center overflow-hidden rounded-panel ${heroProduct?.image ? "border border-line bg-white" : "bg-sand"}`}>
               {heroProduct?.image ? (
                 <Image src={heroProduct.image} alt={productName(heroProduct)} fill sizes="(min-width: 62rem) 340px, 50vw" className="object-contain p-5" priority />
               ) : (
@@ -95,7 +98,7 @@ export default async function HomePage() {
             return (
               <li key={slug}>
                 <Link href={`/rada/${slug}`} className="group flex flex-col gap-2.5">
-                  <span className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-panel ${TILE_TONE[i % TILE_TONE.length]} transition-shadow duration-300 group-hover:shadow-card-hover`}>
+                  <span className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-panel ${photo?.image ? "border border-line bg-white" : TILE_TONE[i % TILE_TONE.length]} transition-shadow duration-300 group-hover:shadow-card-hover`}>
                     {photo?.image ? (
                       <Image src={photo.image} alt="" fill sizes="(min-width: 62rem) 190px, 45vw" className="object-contain p-5" />
                     ) : (
@@ -123,8 +126,8 @@ export default async function HomePage() {
       {/* Jediná zelená sekce na stránce. */}
       <section id="krmeni-na-miru" className="bg-cream px-5 py-14">
         <div className="mx-auto flex max-w-site flex-col overflow-hidden rounded-[28px] bg-green text-cream md:flex-row">
-          <div className="flex min-h-56 items-center justify-center bg-green-hover p-10 md:w-5/12">
-            <Logo variant="znak-negativ" width={200} className="w-1/2 max-w-[200px] opacity-90" />
+          <div className="relative min-h-64 bg-green-hover md:w-5/12">
+            <Image src={STOCK_PHOTOS.goldenRetriever.src} alt={STOCK_PHOTOS.goldenRetriever.alt} fill sizes="(min-width: 48rem) 500px, 100vw" className="object-cover" />
           </div>
           <div className="flex flex-1 flex-col gap-5 p-8 md:p-10">
             <div>

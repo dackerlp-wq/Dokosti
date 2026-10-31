@@ -337,7 +337,7 @@ export default async function ProductPage({ params }: Props) {
           )}
           <p className="mt-7.5 text-center text-small">
             Dávkování je orientační, přesnou dávku spočítá{" "}
-            <Link href="/kalkulacka" className="text-brick-text underline">
+            <Link href="/#krmeni-na-miru" className="text-brick-text underline">
               kalkulačka dávky
             </Link>
             . Při zdravotních potížích se poraďte s veterinářem.

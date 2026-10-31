@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Bone, Eye, Heart, Smile, Sparkles, Utensils } from "lucide-react";
 import Link from "next/link";
-import { BarfCalculator } from "@/components/barf/barf-calculator";
 import { InquiryForm } from "@/components/barf/inquiry-form";
 import { ProductGrid } from "@/components/product/product-grid";
 import { IconTile } from "@/components/ui/icon-tile";
@@ -52,7 +51,7 @@ export default async function HowToStartPage() {
         title="Začít je jednodušší, než se zdá."
         actions={
           <>
-            <ButtonLink href="/kalkulacka" variant="action" size="md">
+            <ButtonLink href="/krmeni-na-miru" variant="action" size="md">
               Spočítat dávku
             </ButtonLink>
             <ButtonLink href="#balicky" variant="secondary" size="md">
@@ -157,14 +156,21 @@ export default async function HowToStartPage() {
         </SectionHeader>
         <div className="mb-10 grid gap-5 xs:grid-cols-2 xl:grid-cols-4">
           <Card title="Dospělý pes">Střední pes 2–3 % tělesné hmotnosti denně, malí psi 3–5 %, obří plemena kolem 2 %. Klidní a kastrovaní psi méně, sportovní víc.</Card>
-          <Card title="Štěně">6–10 % aktuální hmotnosti v prvních měsících, s věkem postupně ubírejte. Přesněji podle věku a dospělé hmotnosti spočítá kalkulačka.</Card>
+          <Card title="Štěně">6–10 % aktuální hmotnosti v prvních měsících, s věkem postupně ubírejte. Přesněji podle věku a dospělé hmotnosti spočítá plán v Krmení na míru.</Card>
           <Card title="Dospělá kočka">2–4 % tělesné hmotnosti denně, bytová kastrovaná kočka spíš 2–3 %.</Card>
           <Card title="Kotě">10 % aktuální hmotnosti v prvních měsících, před rokem 4 %, rozděleno do více menších porcí.</Card>
         </div>
         <p className="mx-auto mb-10 max-w-text text-center">
           Nejlepším ukazatelem je postava. Žebra byste měli nahmatat, ale ne vidět. Když zvíře přibírá, dávku o kousek snižte, když hubne, přidejte.
         </p>
-        <BarfCalculator products={products} />
+        <div className="flex flex-wrap justify-center gap-5">
+          <ButtonLink href="/krmeni-na-miru" size="md">
+            Sestavit plán
+          </ButtonLink>
+          <ButtonLink href="/#krmeni-na-miru" variant="secondary" size="md">
+            Orientační dávka
+          </ButtonLink>
+        </div>
       </Section>
 
       {/* 6. Přechod krok za krokem */}
@@ -258,8 +264,8 @@ export default async function HowToStartPage() {
         <p className="mt-5 text-center text-small">Ke každému balíčku přikládáme tištěný přehled přechodu krok za krokem.</p>
         <div className="mt-5 flex flex-wrap justify-center gap-5">
           {packs.length === 0 && (
-            <ButtonLink href="#kalkulacka" size="md">
-              Poskládat set kalkulačkou
+            <ButtonLink href="/krmeni-na-miru" size="md">
+              Sestavit plán
             </ButtonLink>
           )}
           <ButtonLink href="/rada/barf" variant="secondary" size="md">

@@ -51,8 +51,8 @@ export function CategoryMenu({ menu }: { menu: MenuLine[] }) {
           )}
         </li>
       ))}
-      <li>
-        <Link href="/krmeni-na-miru" className={item}>
+      <li className="ml-2.5">
+        <Link href="/krmeni-na-miru" className="inline-flex min-h-10 items-center rounded-control bg-green px-4 text-nav whitespace-nowrap text-cream transition-colors duration-300 hover:bg-green-hover">
           Krmení na míru
         </Link>
       </li>

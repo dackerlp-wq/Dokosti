@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { savePetProfile } from "@/app/(shop)/ucet/actions";
 import { PetFields, petComplete } from "@/components/account/pet-form";
@@ -63,9 +64,9 @@ export function PetRowEditable({ pet, id, summary, petPoints, deleteAction }: { 
           <strong>{pet.name}</strong> <span className="text-muted">· {summary}</span>
         </span>
         <span className="flex items-center gap-3">
-          <a href="/kalkulacka" className="text-brick-text underline">
+          <Link href="/krmeni-na-miru" className="text-brick-text underline">
             Dávka a doporučení
-          </a>
+          </Link>
           <button type="button" onClick={() => setEditing((v) => !v)} className="text-brick-text underline">
             {editing ? "Zavřít" : "Upravit"}
           </button>

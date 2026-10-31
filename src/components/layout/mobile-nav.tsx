@@ -61,8 +61,8 @@ export function MobileNav({ menu }: { menu: MenuItem[] }) {
                   )}
                 </li>
               ))}
-              <li>
-                <Link href="/krmeni-na-miru" onClick={close} className={row}>
+              <li className="pt-2.5">
+                <Link href="/krmeni-na-miru" onClick={close} className="flex min-h-11 items-center justify-center rounded-control bg-green px-4 text-nav text-cream hover:bg-green-hover">
                   Krmení na míru
                 </Link>
               </li>
