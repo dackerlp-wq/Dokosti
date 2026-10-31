@@ -64,10 +64,10 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="grid w-full flex-1 grid-cols-2 grid-rows-[200px_200px] gap-3.5 md:grid-rows-[220px_220px]">
-            {/* Ilustrační fotka z fotobanky (src/lib/stock-photos.ts), ne náš zákazník. */}
-            <div className="relative row-span-2 overflow-hidden rounded-panel bg-stone">
-              <Image src={STOCK_PHOTOS.dogBowl.src} alt={STOCK_PHOTOS.dogBowl.alt} fill priority sizes="(min-width: 62rem) 340px, 50vw" className="object-cover" />
+          <div className="grid w-full flex-1 grid-cols-2 grid-rows-[210px_160px] gap-3.5 md:grid-rows-[410px_170px]">
+            {/* Vlastní fotka: pes u misky s logem DoKosti. Na šířku, proto přes oba sloupce. */}
+            <div className="relative col-span-2 overflow-hidden rounded-panel bg-stone">
+              <Image src="/foto/pes-u-misky-dokosti.jpg" alt="Pes u misky DoKosti BARF s mletým masem" fill priority sizes="(min-width: 62rem) 720px, 100vw" className="object-cover object-[50%_75%]" />
             </div>
             {/* Fotky produktů mají bílé pozadí, proto bílá plocha. */}
             <Link href={heroProduct ? `/produkt/${heroProduct.slug}` : "/rada/barf"} className={`relative flex items-center justify-center overflow-hidden rounded-panel ${heroProduct?.image ? "border border-line bg-white" : "bg-sand"}`}>
