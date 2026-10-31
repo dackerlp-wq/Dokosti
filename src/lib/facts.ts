@@ -206,11 +206,15 @@ export function parseStorage(text: string | null | undefined): StorageTile[] {
   return tiles;
 }
 
-export type MeatSplit = { meat: number; meatLabel: string; organs: number };
+/** `cartilage` je chrupavka zvlášť: není to svalovina, takže se do podílu masa nepočítá. */
+export type MeatSplit = { meat: number; meatLabel: string; organs: number; cartilage: number };
 
 const ORGANS = /droby|drobů|játr|ledvin|slezin|vnitřnost/i;
 const BONES = /kost|krky|křídl|stehn|skelet/i;
 const isOrgan = (name: string) => ORGANS.test(name) && !/bez drob/i.test(name);
+const CARTILAGE = /chrupav/i;
+/** Samostatná chrupavka („krůtí chrupavka 30 %“), ne svalovina s chrupavkou jako jedna surovina. */
+const isCartilage = (name: string) => CARTILAGE.test(name) && !/svalovin|maso/i.test(name);
 
 /**
  * Podíl masa (s kostmi) a vnitřností sečtený z procent, která výrobce uvádí u surovin.
@@ -221,8 +225,9 @@ export function meatSplit(ingredients: Ingredient[]): MeatSplit | null {
   const total = ingredients.reduce((n, i) => n + i.pct!, 0);
   if (Math.abs(total - 100) > 2) return null;
   const organs = ingredients.filter((i) => isOrgan(i.name)).reduce((n, i) => n + i.pct!, 0);
-  const rest = ingredients.filter((i) => !isOrgan(i.name));
+  const cartilage = ingredients.filter((i) => !isOrgan(i.name) && isCartilage(i.name)).reduce((n, i) => n + i.pct!, 0);
+  const rest = ingredients.filter((i) => !isOrgan(i.name) && !isCartilage(i.name));
   const meat = rest.reduce((n, i) => n + i.pct!, 0);
   const meatLabel = rest.some((i) => BONES.test(i.name)) ? "masa s kostmi" : "masa";
-  return { meat: Math.round(meat * 10) / 10, meatLabel, organs: Math.round(organs * 10) / 10 };
+  return { meat: Math.round(meat * 10) / 10, meatLabel, organs: Math.round(organs * 10) / 10, cartilage: Math.round(cartilage * 10) / 10 };
 }
