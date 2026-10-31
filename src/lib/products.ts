@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isLineKind, isMeatKey } from "@/lib/catalog";
+import { MASO_KINDS, PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isLineKind, isMeatKey } from "@/lib/catalog";
 import { getSupabase } from "@/lib/supabase/server";
 
 /** Řádek tabulky products v Supabase (snake_case). */
@@ -73,8 +73,10 @@ export function nutritionFromRow(r: Pick<ProductRow, "kcal_per_100g" | "bone_pct
 function fromRow(r: ProductRow): Product {
   // Řada Konzervy se sloučila do Granule a konzervy (migrace 0037); starý řádek se ukáže už v nové kategorii.
   const old = (r.line as string) === "konzervy";
-  const line: LineSlug = old ? "granule" : r.line;
-  const kind = old ? "konzervy" : r.kind;
+  // Masité kosti jsou podkategorie řady Maso (migrace 0041); dokud se data nepřevedou, převádí se tady.
+  const bones = r.line === "kosti";
+  const line: LineSlug = old ? "granule" : bones ? "maso" : r.line;
+  const kind = old ? "konzervy" : bones ? "kosti" : r.kind;
   return {
     slug: r.slug,
     line,
@@ -137,5 +139,9 @@ export async function getProduct(slug: string) {
 }
 
 export async function getProductsByLine(line: LineSlug) {
-  return (await getProducts()).filter((p) => p.line === line);
+  const list = (await getProducts()).filter((p) => p.line === line);
+  if (line !== "maso") return list;
+  // Maso, kosti a vnitřnosti: v pořadí skladby misky (svalovina, kosti, vnitřnosti, ryby), uvnitř od menších balení.
+  const order = (p: Product) => (p.kind ? (MASO_KINDS as readonly string[]).indexOf(p.kind) : 99);
+  return [...list].sort((a, b) => order(a) - order(b) || a.weightGrams - b.weightGrams);
 }
