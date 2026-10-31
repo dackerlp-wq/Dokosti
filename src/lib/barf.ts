@@ -595,6 +595,9 @@ function smallDogMuscle(pool: Product[], i: AnimalInput, animalGrams: number, mi
   return muscle.length ? muscle : null;
 }
 
+/** Sušená játra: kolik gramů čerstvých odpovídá 1 g sušených (čerstvá ~70 % vody, sušená ~10 %). Orientační. */
+const DRIED_LIVER_FACTOR = 3;
+
 /** Jedlé kosti vhodné velikostí: kočky, malí psi a štěňata do 6 měsíců kuřecí krky, střední křídla a krky, velcí kachní krky, sekané kuře a stehna. */
 function boneCandidates(pool: Product[], i: AnimalInput, adultKg: number): Product[] {
   const edible = pool.filter((p) => foodKind(p) === "kost");
@@ -756,10 +759,18 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Játra pokryjí jen svůj díl (nejvýš 5 % dávky), srdce u kočky zhruba jednu porci týdně.
   const organShareFor = (p: Product) =>
     catNeedsHeart && has(p, "srdce") ? Math.max(organShareAll, 1 / 14) : has(p, "játra") ? Math.min(organShareAll, comp.liver / 100) : organShareAll;
-  // Malý pes na svalovině: kilo jater mu vydrží měsíce. Mražená vydrží rok (výrobce), stačí je zamrazit po porcích.
+  // Malý pes na svalovině: místo kila mražených jater sušená játra z Pamlsků (malé balení, dlouhá trvanlivost).
+  // Ve výpočtu vystupují jako čerstvá (hmotnost × DRIED_LIVER_FACTOR), v nákupu a rozpisu se vrátí na sušené gramy.
+  const driedLiverReal = muscleBase
+    ? products.find((p) => p.line === "mlsky" && p.storage === "suche" && p.inStock && p.unit !== "kg" && p.animals.includes(i.species) && !i.removed.includes(p.slug) && has(p, "játra"))
+    : undefined;
+  const driedLiver = driedLiverReal ? { ...driedLiverReal, weightGrams: driedLiverReal.weightGrams * DRIED_LIVER_FACTOR } : undefined;
+  // Mražená játra vydrží v mrazáku rok (výrobce), sušená déle; u malého psa se počítá s ročním balením.
   const organShelf = muscleBase ? 365 : undefined;
-  const organ = choose(organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days, organShelf).fit * organPref(p) : 0);
-  if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: po rozmrazení je hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
+  const organ = choose(driedLiver ? [driedLiver] : organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days, organShelf).fit * organPref(p) : 0);
+  if (muscleBase && organ && driedLiver && organ.slug === driedLiver.slug)
+    notes.push({ kind: "info", text: `${productName(organ)} jsou v plánu místo čerstvých jater (1 g sušených odpovídá zhruba ${DRIED_LIVER_FACTOR} g čerstvých). Navíc je jako pamlsek nedávejte, jater by bylo moc.` });
+  else if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: po rozmrazení je hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
   const organShare = organ ? organShareFor(organ) : 0;
   if (i.addons.vnitrnosti && !organ && organShareAll === 0 && !catNeedsHeart) notes.push({ kind: "info", text: "Vnitřností je v mixech podle etikety dost, další nepřidáváme." });
   if (!organ && catNeedsHeart) notes.push({ kind: "info", text: "Kočka potřebuje taurin. Mixy ho nemají deklarovaný, přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
@@ -966,7 +977,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       }
     }
     let organToday = 0;
-    const organItem = organFeed.days.has(day) ? fromBags(organBags, day === lastOrganDay ? remainingOrgan : Math.min(organFeed.per, remainingOrgan), "vnitřnosti", "nové balení, rozdělte na porce") : null;
+    const organItem = organFeed.days.has(day) ? fromBags(organBags, day === lastOrganDay ? remainingOrgan : Math.min(organFeed.per, remainingOrgan), "vnitřnosti", driedLiver && organ?.slug === driedLiver.slug ? "nové balení" : "nové balení, rozdělte na porce") : null;
     if (organItem) {
       organToday = organItem.grams;
       remainingOrgan = Math.max(0, remainingOrgan - organItem.grams);
@@ -983,6 +994,11 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     if (kibble && result.kibbleKcal > 0) out.push({ product: kibble, grams: kibblePerDay, note: kibblePerDay > 0 ? "v jiném jídle" : `${result.kibbleKcal} kcal podle obalu` });
     return { day, label: `${day + 1}. den`, weekday: weekdayOf(day), items: out };
   });
+
+  // Sušená játra: v rozpisu skutečné sušené gramy (výpočet běžel v čerstvém ekvivalentu).
+  if (driedLiverReal && organ && organ.slug === driedLiverReal.slug)
+    for (const d of schedule)
+      d.items = d.items.map((it) => (it.product.slug === driedLiverReal.slug ? { ...it, product: driedLiverReal, grams: Math.max(0.5, Math.round((it.grams / DRIED_LIVER_FACTOR) * 2) / 2), note: it.note ? `sušená, ${it.note}` : "sušená" } : it));
 
   /* ---------- nákupní seznam ---------- */
   // Koupí se jen balení, která se v období opravdu načnou (přebytek z mixPacks by jinak ležel celý v mrazáku).
@@ -1013,7 +1029,15 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     if (rec) items.push({ product: rec, qty: 1, gramsPerDay: 0, usedGrams: 0, leftoverGrams: 0, periods: Math.max(1, Math.round(28 / days)), portionText: "na okusování, nepočítá se do dávky", role: "rekreacni", why: "jen pod dohledem" });
   }
   const later = (week: number) => (i.beginner ? `, přidávejte až od ${week}. týdne` : "");
-  if (organ) add(organ, "vnitrnosti", (has(organ, "srdce") ? "srdce kvůli taurinu" : has(organ, "játra") ? "játra nejvýš 5 % dávky" : "vnitřnosti do 5 % dávky") + later(3), perWeekText(organFeed.count, organFeed.per), organPeriods);
+  if (organ && driedLiverReal && organ.slug === driedLiverReal.slug) {
+    const qty = pantry.opened.get(organ.slug) ?? 0;
+    const used = (pantry.used.get(organ.slug) ?? 0) / DRIED_LIVER_FACTOR;
+    const per = organFeed.per / DRIED_LIVER_FACTOR;
+    const g = `${fmtDose(per)} g sušených`;
+    const perWeek = Math.round(organFeed.count / (days / 7));
+    const text = organFeed.count >= days ? `${g} denně` : perWeek >= 1 ? `${perWeek}× týdně po ${g}` : `každý ${Math.round(days / organFeed.count)}. den po ${g}`;
+    if (qty) items.push({ product: driedLiverReal, qty, gramsPerDay: used / days, usedGrams: used, leftoverGrams: Math.max(0, qty * driedLiverReal.weightGrams - used), periods: organPeriods, portionText: `${text} (odpovídá ~${round5(organFeed.per)} g čerstvých)`, role: "vnitrnosti", why: "játra nejvýš 5 % dávky" + later(3) });
+  } else if (organ) add(organ, "vnitrnosti", (has(organ, "srdce") ? "srdce kvůli taurinu" : has(organ, "játra") ? "játra nejvýš 5 % dávky" : "vnitřnosti do 5 % dávky") + later(3), perWeekText(organFeed.count, organFeed.per), organPeriods);
   const daily = (product: Product, gpd: number, role: Reco["role"], why: string, text: string) => {
     const { qty, used, periods } = dailyAlloc(product, gpd, days);
     items.push({ product, qty, gramsPerDay: gpd, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText: text, role, why });
