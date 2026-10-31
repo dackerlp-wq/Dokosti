@@ -2,12 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Beef, Bone, Cookie, CookingPot, Droplet, MapPin, Soup, type LucideIcon } from "lucide-react";
 import { DoseTeaser } from "@/components/home/dose-teaser";
+import { PromoTile } from "@/components/home/promo-tile";
 import { ProductGrid } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Logo } from "@/components/ui/logo";
 import { LINES, LINE_INFO, productName, type LineSlug } from "@/lib/catalog";
+import { calculate, newAnimal } from "@/lib/barf";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
@@ -31,7 +33,18 @@ export default async function HomePage() {
     address: shop.address.startsWith("[") ? undefined : { "@type": "PostalAddress", streetAddress: shop.address, addressLocality: shop.city, addressCountry: "CZ" },
   };
   const featured = products.filter((p) => p.inStock && p.unit !== "kg").slice(0, 8);
-  const heroProduct = featured.find((p) => p.image);
+  // Cena za den: nejlevnější kilo BARF mixu skladem × orientační dávka dospělého psa 15 kg.
+  const DOG_KG = 15;
+  const dailyGrams = calculate({ ...newAnimal("pes"), weightKg: DOG_KG }).dailyGrams;
+  const perKg = products
+    .filter((p) => p.line === "barf" && p.inStock && (p.unit === "kg" || p.weightGrams >= 100))
+    .map((p) => (p.unit === "kg" ? p.priceCzk : (p.priceCzk * 1000) / p.weightGrams));
+  const dailyCost = perKg.length > 0 ? { perDay: Math.ceil((Math.min(...perKg) * dailyGrams) / 1000), dogKg: DOG_KG, dailyGrams } : null;
+  // Akční produkty skladem se střídají s cenou za den.
+  const sales = products
+    .filter((p) => p.inStock && p.unit !== "kg" && p.originalPriceCzk !== undefined && p.originalPriceCzk > p.priceCzk)
+    .slice(0, 3)
+    .map((p) => ({ href: `/produkt/${p.slug}`, name: productName(p), image: p.image, price: p.priceCzk, original: p.originalPriceCzk! }));
   const lineImage = (slug: LineSlug) => products.find((p) => p.line === slug && p.image);
   const address = shop.address.startsWith("[") ? null : shop.address;
   const phone = shop.phone.startsWith("[") ? null : shop.phone;
@@ -68,15 +81,7 @@ export default async function HomePage() {
             <div className="relative col-span-2">
               <Image src="/foto/psi-u-misky-ilustrace.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 62rem) 600px, 100vw" className="object-contain" />
             </div>
-            {/* Fotky produktů mají bílé pozadí, proto bílá plocha. */}
-            <Link href={heroProduct ? `/produkt/${heroProduct.slug}` : "/rada/barf"} className={`relative flex items-center justify-center overflow-hidden rounded-panel ${heroProduct?.image ? "border border-line bg-white" : "bg-sand"}`}>
-              {heroProduct?.image ? (
-                <Image src={heroProduct.image} alt={productName(heroProduct)} fill sizes="(min-width: 62rem) 340px, 50vw" className="object-contain p-5" priority />
-              ) : (
-                <Soup className="size-16 text-brick" strokeWidth={1.25} aria-hidden />
-              )}
-              <span className="sr-only">BARF mixy</span>
-            </Link>
+            <PromoTile daily={dailyCost} sales={sales} />
             <Link href="/krmeni-na-miru" className="group flex flex-col justify-end rounded-panel bg-green p-5 text-cream transition-colors duration-300 hover:bg-green-hover">
               <span className="font-display text-[1.5rem] leading-tight font-bold text-white">Krmení na míru</span>
               <span className="mt-1 inline-flex items-center gap-1.5 text-small text-cream/80">
