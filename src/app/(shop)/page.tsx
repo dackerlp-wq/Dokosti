@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Beef, Bone, Cookie, CookingPot, Droplet, MapPin, Snowflake, Soup, Store, type LucideIcon } from "lucide-react";
+import { ArrowRight, Beef, Bone, Cookie, CookingPot, Droplet, MapPin, Soup, type LucideIcon } from "lucide-react";
 import { DoseTeaser } from "@/components/home/dose-teaser";
 import { ProductGrid } from "@/components/product/product-grid";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ButtonLink } from "@/components/ui/button";
 import { LinkArrow } from "@/components/ui/link-arrow";
 import { Logo } from "@/components/ui/logo";
-import { LINES, LINE_INFO, type LineSlug } from "@/lib/catalog";
+import { LINES, LINE_INFO, productName, type LineSlug } from "@/lib/catalog";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
@@ -31,6 +31,7 @@ export default async function HomePage() {
     address: shop.address.startsWith("[") ? undefined : { "@type": "PostalAddress", streetAddress: shop.address, addressLocality: shop.city, addressCountry: "CZ" },
   };
   const featured = products.filter((p) => p.inStock && p.unit !== "kg").slice(0, 8);
+  const heroProduct = featured.find((p) => p.image);
   const lineImage = (slug: LineSlug) => products.find((p) => p.line === slug && p.image);
   const address = shop.address.startsWith("[") ? null : shop.address;
   const phone = shop.phone.startsWith("[") ? null : shop.phone;
@@ -42,59 +43,68 @@ export default async function HomePage() {
     <>
       <JsonLd data={business} />
 
-      {/* Hero: kompaktní, ať jsou produkty brzy vidět. Krátký text a menší fotka vedle sebe. */}
-      <section className="bg-gradient-to-b from-cream to-paper px-5 pt-6 pb-8 md:pt-8 md:pb-10">
-        <div className="mx-auto flex max-w-site flex-col-reverse items-center gap-6 md:flex-row md:gap-10">
-          <div className="flex w-full flex-col gap-4 md:flex-1">
-            <h1 className="font-display text-[2.25rem] leading-[1.1] font-black text-ink md:text-[2.75rem]">
+      {/* Hero: krátký text vlevo, mozaika vpravo. Lidé nakupují očima, textu je málo. */}
+      <section className="bg-gradient-to-b from-cream to-paper px-5 pt-10 pb-14">
+        <div className="mx-auto flex max-w-site flex-col items-center gap-10 lg:flex-row">
+          <div className="flex w-full flex-col gap-5 lg:max-w-[440px]">
+            <h1 className="font-display text-[2.75rem] leading-[1.1] font-black text-ink md:text-[3.25rem]">
               Syrové krmení
               <br />
               <span className="font-normal text-brick italic">pro psy a kočky.</span>
             </h1>
-            <p className="max-w-[440px] text-[1.0625rem]">Mražené BARF mixy, kosti a pamlsky. Na prodejně v Kladně i s doručením.</p>
+            <p className="max-w-[420px] text-[1.0625rem]">Mražené BARF mixy, kosti a pamlsky. Na prodejně v Kladně i s doručením.</p>
             <div className="flex flex-wrap gap-3">
-              <ButtonLink href="#oblibene" variant="action" size="md" className="shadow-float">
+              <ButtonLink href="/rada/barf" variant="action" size="md" className="shadow-float">
                 Nakupovat <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />
               </ButtonLink>
               <ButtonLink href="#krmeni-na-miru" variant="secondary" size="md" className="ring-line hover:ring-green">
                 Spočítat dávku
               </ButtonLink>
             </div>
-            <ul className="flex flex-wrap gap-x-5 gap-y-1.5 pt-1 text-small font-semibold text-green">
-              <li className="inline-flex items-center gap-1.5">
-                <Store className="size-4 text-brick" strokeWidth={1.75} aria-hidden /> Osobní odběr v Kladně
-              </li>
-              <li className="inline-flex items-center gap-1.5">
-                <Snowflake className="size-4 text-brick" strokeWidth={1.75} aria-hidden /> Mražené dovezeme mražené
-              </li>
-            </ul>
           </div>
 
-          {/* Ilustrace psů u misky DoKosti, průhledné pozadí: stojí přímo na krémové. */}
-          <div className="relative aspect-[1400/962] w-full max-w-[260px] md:w-[34%] md:max-w-[380px]">
-            <Image src="/foto/psi-u-misky-ilustrace.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 48rem) 380px, 260px" className="object-contain" />
+          <div className="grid w-full flex-1 grid-cols-2 grid-rows-[190px_130px] gap-3.5 md:grid-rows-[280px_150px] lg:ml-auto lg:max-w-[600px]">
+            {/* Ilustrace psů u misky DoKosti, průhledné pozadí: stojí přímo na krémové, přes oba sloupce. */}
+            <div className="relative col-span-2">
+              <Image src="/foto/psi-u-misky-ilustrace.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 62rem) 600px, 100vw" className="object-contain" />
+            </div>
+            {/* Fotky produktů mají bílé pozadí, proto bílá plocha. */}
+            <Link href={heroProduct ? `/produkt/${heroProduct.slug}` : "/rada/barf"} className={`relative flex items-center justify-center overflow-hidden rounded-panel ${heroProduct?.image ? "border border-line bg-white" : "bg-sand"}`}>
+              {heroProduct?.image ? (
+                <Image src={heroProduct.image} alt={productName(heroProduct)} fill sizes="(min-width: 62rem) 340px, 50vw" className="object-contain p-5" priority />
+              ) : (
+                <Soup className="size-16 text-brick" strokeWidth={1.25} aria-hidden />
+              )}
+              <span className="sr-only">BARF mixy</span>
+            </Link>
+            <Link href="/krmeni-na-miru" className="group flex flex-col justify-end rounded-panel bg-green p-5 text-cream transition-colors duration-300 hover:bg-green-hover">
+              <span className="font-display text-[1.5rem] leading-tight font-bold text-white">Krmení na míru</span>
+              <span className="mt-1 inline-flex items-center gap-1.5 text-small text-cream/80">
+                Dávka pro vašeho psa <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" strokeWidth={1.75} aria-hidden />
+              </span>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Kategorie: kompaktní řada dlaždic, jen název. */}
-      <section className="px-5 pb-8">
-        <ul className="mx-auto grid max-w-site grid-cols-3 gap-3 sm:grid-cols-6 md:gap-4">
+      {/* Kategorie: velké dlaždice, jen název. */}
+      <section className="px-5 pb-14">
+        <ul className="mx-auto grid max-w-site grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {LINES.map((slug, i) => {
             const line = LINE_INFO[slug];
             const photo = lineImage(slug);
             const Icon = LINE_ICON[slug];
             return (
               <li key={slug}>
-                <Link href={`/rada/${slug}`} className="group flex flex-col items-center gap-2">
-                  <span className={`relative flex aspect-[2/1] w-full items-center sm:aspect-[5/3] justify-center overflow-hidden rounded-card ${photo?.image ? "border border-line bg-white" : TILE_TONE[i % TILE_TONE.length]} transition-shadow duration-300 group-hover:shadow-card-hover`}>
+                <Link href={`/rada/${slug}`} className="group flex flex-col gap-2.5">
+                  <span className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-panel ${photo?.image ? "border border-line bg-white" : TILE_TONE[i % TILE_TONE.length]} transition-shadow duration-300 group-hover:shadow-card-hover`}>
                     {photo?.image ? (
-                      <Image src={photo.image} alt="" fill sizes="(min-width: 40rem) 190px, 30vw" className="object-contain p-3" />
+                      <Image src={photo.image} alt="" fill sizes="(min-width: 62rem) 190px, 45vw" className="object-contain p-5" />
                     ) : (
-                      <Icon className="size-9 text-green md:size-10" strokeWidth={1.5} aria-hidden />
+                      <Icon className="size-14 text-green" strokeWidth={1.5} aria-hidden />
                     )}
                   </span>
-                  <span className="text-center text-small leading-tight font-bold text-ink group-hover:text-brick-text md:text-[0.9375rem]">{line.name}</span>
+                  <span className="text-center font-display text-[1.125rem] font-bold text-ink group-hover:text-brick-text">{line.name}</span>
                 </Link>
               </li>
             );
@@ -102,7 +112,7 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section id="oblibene" className="scroll-mt-20 border-y border-line bg-white px-5 py-10 md:py-12">
+      <section id="oblibene" className="border-y border-line bg-white px-5 py-14">
         <div className="mx-auto max-w-site">
           <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
             <h2 className="font-display text-display-md text-ink md:text-[2rem]">Nejoblíbenější</h2>
