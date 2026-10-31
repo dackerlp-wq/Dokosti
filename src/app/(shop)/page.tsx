@@ -11,7 +11,6 @@ import { LINES, LINE_INFO, type LineSlug } from "@/lib/catalog";
 import { getProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
-import { STOCK_PHOTOS } from "@/lib/stock-photos";
 
 /** Ikona řady, dokud řada nemá fotku produktu. */
 const LINE_ICON: Record<LineSlug, LucideIcon> = { barf: Soup, maso: Beef, kosti: Bone, mlsky: Cookie, navic: Droplet, granule: CookingPot };
@@ -71,9 +70,9 @@ export default async function HomePage() {
             </ul>
           </div>
 
-          {/* Vlastní fotka: pes u misky s logem DoKosti. */}
-          <div className="relative aspect-[2/1] w-full overflow-hidden rounded-panel bg-stone md:aspect-[16/10] md:w-[42%] md:max-w-[480px]">
-            <Image src="/foto/pes-u-misky-dokosti.jpg" alt="Pes u misky DoKosti BARF s mletým masem" fill priority sizes="(min-width: 48rem) 480px, 100vw" className="object-cover object-[50%_72%]" />
+          {/* Ilustrace psů u misky DoKosti, průhledné pozadí: stojí přímo na krémové. */}
+          <div className="relative aspect-[1400/962] w-full max-w-[260px] md:w-[34%] md:max-w-[380px]">
+            <Image src="/foto/psi-u-misky-ilustrace.webp" alt="Dva psi u misky DoKosti BARF" fill priority sizes="(min-width: 48rem) 380px, 260px" className="object-contain" />
           </div>
         </div>
       </section>
@@ -117,7 +116,7 @@ export default async function HomePage() {
       <section id="krmeni-na-miru" className="bg-cream px-5 py-14">
         <div className="mx-auto flex max-w-site flex-col overflow-hidden rounded-[28px] bg-green text-cream md:flex-row">
           <div className="relative min-h-64 bg-green-hover md:w-5/12">
-            <Image src={STOCK_PHOTOS.goldenRetriever.src} alt={STOCK_PHOTOS.goldenRetriever.alt} fill sizes="(min-width: 48rem) 500px, 100vw" className="object-cover" />
+            <Image src="/foto/pes-u-misky-dokosti.jpg" alt="Pes u misky DoKosti BARF s mletým masem" fill sizes="(min-width: 48rem) 500px, 100vw" className="object-cover object-[50%_70%]" />
           </div>
           <div className="flex flex-1 flex-col gap-5 p-8 md:p-10">
             <div>
