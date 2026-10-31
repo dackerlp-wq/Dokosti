@@ -759,7 +759,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Malý pes na svalovině: kilo jater mu vydrží měsíce. Mražená vydrží rok (výrobce), stačí je zamrazit po porcích.
   const organShelf = muscleBase ? 365 : undefined;
   const organ = choose(organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days, organShelf).fit * organPref(p) : 0);
-  if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: balení vydrží několik měsíců. Po rozmrazení ho hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
+  if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: po rozmrazení je hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
   const organShare = organ ? organShareFor(organ) : 0;
   if (i.addons.vnitrnosti && !organ && organShareAll === 0 && !catNeedsHeart) notes.push({ kind: "info", text: "Vnitřností je v mixech podle etikety dost, další nepřidáváme." });
   if (!organ && catNeedsHeart) notes.push({ kind: "info", text: "Kočka potřebuje taurin. Mixy ho nemají deklarovaný, přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
@@ -1037,8 +1037,6 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const longest = Math.max(0, ...mixes.map((m) => m.weightGrams / animalGrams));
   if (mixes.length && longest > 3) notes.push({ kind: "info", text: `Balení mixu vydrží ${Math.round(longest)} dní, rozmražené se ale má sníst do dvou. Rozmrazte ho jen zčásti, nebo zbytek hned rozdělte na porce a zamrazte.` });
   if (!mixes.length) notes.push({ kind: "warn", text: i.exclude.length ? "Po vyřazení nevhodných druhů masa nemáme skladem žádný vhodný mix. Stavte se v prodejně, poskládáme set spolu." : "Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu." });
-  const longLived = items.filter((it) => it.periods > 1 && ["kosti", "vnitrnosti"].includes(it.role));
-  if (longLived.length) notes.push({ kind: "info", text: `${longLived.map((it) => `${productName(it.product)} vydrží ~${it.periods} nákupy`).join(", ")}: v dalších nákupech je přidávejte jen občas.` });
 
   // Zbytek mixů do mrazáku: u pravidelných dodávek se po pár dodávkách nastřádá celé balení.
   const mixLeft = items.filter((it) => it.role === "zaklad").reduce((s, it) => s + it.leftoverGrams, 0);

@@ -860,7 +860,6 @@ function PlanStep({
                         {i.why && !i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? ` · ${i.why}` : ""}
                         {leftoverText(i) && <> · {leftoverText(i)}</>}
                       </p>
-                      {once && <Durability item={i} oneTime={oneTime} />}
                     </div>
                     <span className="w-12 text-right font-bold text-ink">{i.qty} ks</span>
                     <span className="w-18 text-right font-bold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</span>
@@ -901,10 +900,9 @@ function PlanStep({
           {extras.length > 0 && (
             <section aria-label="Doporučujeme navíc">
               <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
-              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části mixu. Co vydrží déle než jednu dodávku, přijde jen jednou.</p>
+              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části mixu.</p>
               <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                 {extras.map((i) => {
-                  const lastsDays = i.gramsPerDay > 0 ? Math.round((i.qty * i.product.weightGrams) / i.gramsPerDay) : 0;
                   const lasting = i.periods > 1;
                   return (
                     <li key={i.product.slug} className="flex flex-col gap-1 rounded-card border-2 border-line bg-white p-3.5">
@@ -922,7 +920,7 @@ function PlanStep({
                       </span>
                       <span className="mt-1 inline-flex items-center gap-1.5 text-[12px]/[18px] font-semibold text-green">
                         <CalendarDays className="size-3.5" strokeWidth={2} aria-hidden />
-                        {lasting ? `Jednorázově · vydrží ${lastsDays >= 60 ? `asi ${Math.round(lastsDays / 30)} měsíců` : `asi ${lastsDays} dní`}` : "V každé dodávce"}
+                        {lasting ? "Jednorázově" : "V každé dodávce"}
                       </span>
                       <span className="mt-auto flex items-center justify-between gap-2.5 pt-2">
                         <b className="text-[18px] text-green">{formatPrice(i.qty * i.product.priceCzk)}</b>
@@ -1057,27 +1055,3 @@ function Toggle({ on, onChange, title, desc }: { on: boolean; onChange: (v: bool
   );
 }
 
-/**
- * Poznámka k položce, která vydrží déle než dodávka: kolik dní, případně že balení nestihne spotřebovat
- * před koncem trvanlivosti (a kolik z něj využije), a že do dalších dodávek jde jen občas.
- */
-function Durability({ item, oneTime }: { item: Reco; oneTime: boolean }) {
-  const lasts = Math.round((item.qty * item.product.weightGrams) / item.gramsPerDay);
-  const shelf = shelfDays(item.product);
-  const usedPct = Math.min(100, Math.round((shelf / lasts) * 100));
-  const frozen = item.product.storage === "mrazene";
-  return (
-    <span className="block text-brick-text">
-      {lasts > shelf ? (
-        <>
-          vydrží ~{lasts} dní, ale {frozen ? "zmrazené" : "po otevření"} spotřebujte do ~{shelf} dní (využijete asi {usedPct} % balení)
-          {!oneTime ? ", přijde jen v této dodávce" : ""}
-        </>
-      ) : (
-        <>
-          vydrží ~{lasts} dní{!oneTime ? ", přijde jen v této dodávce; až bude docházet, nabídneme ho v e-mailu" : ""}
-        </>
-      )}
-    </span>
-  );
-}
