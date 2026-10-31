@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 import { ProductGrid } from "@/components/product/product-grid";
+import { KIND_TONE } from "@/lib/kind-tone";
 import { type Animal, type FacetKey, facetName, isLineFacet, lineFacets, lineHasKinds, type LineSlug, productFacets, type Product, type Storage, STORAGE_LABEL } from "@/lib/catalog";
 
 type Sort = "doporucene" | "nejlevnejsi" | "nejdrazsi" | "novinky";
@@ -111,6 +112,7 @@ function Inner({ products, line, initialMeat, params }: { products: Product[]; l
           </Link>
           {meatOptions.map((m) => (
             <Link key={m.key} href={meatHref(m.key)} aria-current={single === m.key ? "page" : undefined} className={`${meatLink} ${single === m.key ? "bg-green text-cream" : "text-green hover:text-brick-text"}`}>
+              {line === "maso" && m.key in KIND_TONE && <span className={`mr-2 size-2.5 rounded-full ${KIND_TONE[m.key as keyof typeof KIND_TONE].dot}`} aria-hidden />}
               {facetName(line, m.key)}
               <span className={`ml-1.5 text-small font-normal ${single === m.key ? "text-cream/80" : "text-muted"}`}>{m.count}</span>
             </Link>

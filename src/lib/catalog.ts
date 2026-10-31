@@ -3,9 +3,11 @@
  * (viz supabase/migrations), aby šlo přepnout z ukázkových dat bez změny UI.
  */
 
+/** Všechny řady v databázi. „kosti“ je od 0041 sloučená do Maso (podkategorie kosti), zůstává jen kvůli starým datům. */
+export const ALL_LINES = ["barf", "maso", "kosti", "mlsky", "navic", "granule"] as const;
+export type LineSlug = (typeof ALL_LINES)[number];
 /** Řady = hlavní kategorie v menu, v tomhle pořadí. */
-export const LINES = ["barf", "maso", "kosti", "mlsky", "navic", "granule"] as const;
-export type LineSlug = (typeof LINES)[number];
+export const LINES: readonly LineSlug[] = ["barf", "maso", "mlsky", "navic", "granule"];
 
 export type Line = {
   slug: LineSlug;
@@ -25,10 +27,10 @@ export const LINE_INFO: Record<LineSlug, Line> = {
   },
   maso: {
     slug: "maso",
-    name: "Maso a vnitřnosti",
-    tagline: "Čistá svalovina, vnitřnosti a ryby pro vlastní skládání jídelníčku.",
+    name: "Maso, kosti a vnitřnosti",
+    tagline: "Suroviny zvlášť: svalovina, masité kosti, vnitřnosti a ryby.",
     description:
-      "Jednotlivé suroviny bez kostí: svalovina a srdce jako základ, játra a ledvinky jako menší část dávky a ryby zhruba jednou týdně. Hodí se k BARF mixům i pro ty, kdo si jídelníček skládají sami.",
+      "Pro ty, kdo si misku skládají sami, a jako doplněk k BARF mixům. Svalovina je základ, masité kosti dodají vápník, vnitřnosti jsou menší část dávky a ryba přijde zhruba jednou týdně.",
   },
   kosti: {
     slug: "kosti",
@@ -98,7 +100,7 @@ export function isMeatKey(v: string): v is MeatKey {
 export const NAVIC_KINDS = ["oleje", "mineraly", "vitaminy", "prilohy", "klouby", "ostatni"] as const;
 export type NavicKind = (typeof NAVIC_KINDS)[number];
 /** Podkategorie řady Maso a vnitřnosti. */
-export const MASO_KINDS = ["svalovina", "vnitrnosti", "ryby"] as const;
+export const MASO_KINDS = ["svalovina", "kosti", "vnitrnosti", "ryby"] as const;
 export type MasoKind = (typeof MASO_KINDS)[number];
 /** Podkategorie řady Pamlsky a žvýkání. */
 export const MLSKY_KINDS = ["pamlsky", "zvykani"] as const;
@@ -124,6 +126,7 @@ export const KIND_INFO: Record<ProductKind, { label: string; title: string; text
   klouby: { label: "klouby a pohyb", title: "Klouby a pohyb", text: "Doplňky s kolagenem pro velká plemena, sportovce a seniory. Při potížích nejdřív k veterináři." },
   ostatni: { label: "štěňata, lékárnička a pomůcky", title: "Štěňata, lékárnička a pomůcky", text: "Mléko pro štěňata, aktivní uhlí do lékárničky a odměrka na oleje a sypké doplňky." },
   svalovina: { label: "svalovina", title: "Svalovina", text: "Libové maso, srdce, žaludky a dršťky. Základ dávky pro ty, kdo si jídelníček skládají sami." },
+  kosti: { label: "masité kosti", title: "Masité kosti", text: "Krky, křídla, stehna a sekané kuře, vždy syrové. Zdroj vápníku, velikost podle psa." },
   vnitrnosti: { label: "vnitřnosti", title: "Vnitřnosti", text: "Játra, ledvinky a droby. Menší část dávky, játra nejvýš zhruba 5 %." },
   ryby: { label: "ryby", title: "Ryby", text: "Losos, šproty a mořské ryby. Do misky zhruba jednou týdně jako zdroj omega-3." },
   pamlsky: { label: "pamlsky", title: "Pamlsky", text: "Sušené maso a vnitřnosti na odměnu a výcvik, pro psy i kočky." },
@@ -353,7 +356,8 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "kosti-kureci-krky",
-    line: "kosti",
+    line: "maso",
+    kind: "kosti",
     variant: "kuřecí krky",
     animals: ["pes", "kocka"],
     storage: "mrazene",
@@ -371,7 +375,8 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "kosti-hovezi-zebra",
-    line: "kosti",
+    line: "maso",
+    kind: "kosti",
     variant: "hovězí žebra",
     animals: ["pes"],
     storage: "mrazene",
@@ -388,7 +393,8 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "kosti-kachni-kridla",
-    line: "kosti",
+    line: "maso",
+    kind: "kosti",
     variant: "kachní křídla",
     animals: ["pes"],
     storage: "mrazene",

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LineHero } from "@/components/product/line-hero";
 import { LineProducts } from "@/components/product/line-products";
+import { MasoGuide } from "@/components/product/maso-guide";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { type FacetKey, KIND_INFO, LINE_INFO, MEAT_TITLE, type LineSlug, type MeatKey, type ProductKind, facetHeading, facetLabel, isLineFacet, isLineSlug, isMeatKey, lineHasKinds, productFacets } from "@/lib/catalog";
 import { lineMeatPairs, meatIllustration } from "@/lib/menu";
@@ -57,6 +58,7 @@ export default async function LineMeatPage({ params }: Props) {
         <SectionHeader eyebrow={plural(inMeat.length)} title={facetHeading(slug)} />
         <LineProducts products={products} line={slug} initialMeat={maso} />
       </Section>
+      {slug === "maso" && <MasoGuide />}
     </>
   );
 }

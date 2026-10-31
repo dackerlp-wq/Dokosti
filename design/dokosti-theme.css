@@ -18,6 +18,15 @@
   --color-sage: #e4e9df;
   --color-clay: #f1e3d6;
   --color-stone: #e8ded0;
+  /* Podkategorie řady Maso, kosti a vnitřnosti: tmavá barva na text a proužek, světlá na štítek. */
+  --color-svalovina: #8f3317;
+  --color-svalovina-soft: #f7e1d7;
+  --color-kosti: #7a5b12;
+  --color-kosti-soft: #f4e9cc;
+  --color-vnitrnosti: #7b2840;
+  --color-vnitrnosti-soft: #f1dbe1;
+  --color-ryby: #2d5b70;
+  --color-ryby-soft: #dce9ef;
   --color-green: #2a382e;
   --color-green-hover: #1f2923;
   --color-brick: #c85a28;

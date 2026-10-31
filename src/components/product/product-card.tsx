@@ -3,7 +3,8 @@ import { Clock } from "lucide-react";
 import { CardBuy } from "@/components/cart/card-buy";
 import { ProductImage } from "@/components/product/product-image";
 import { Flag, StockStatus } from "@/components/ui/badge";
-import { STORAGE_LABEL, productName, type Product } from "@/lib/catalog";
+import { KIND_INFO, STORAGE_LABEL, productName, type ProductKind, type Product } from "@/lib/catalog";
+import { kindTone } from "@/lib/kind-tone";
 import { formatPct, formatPrice, formatWeight } from "@/lib/format";
 import { stockState } from "@/lib/stock";
 
@@ -17,6 +18,7 @@ export function ProductCard({ product, priority }: { product: Product; priority?
   const stock = stockState(product);
   const unavailable = stock.state === "out";
   const byWeight = product.unit === "kg";
+  const tone = kindTone(product);
   const flags = [product.isNew ? ("new" as const) : null, onSale ? ("sale" as const) : null].filter((f): f is "new" | "sale" => f !== null);
 
   return (
@@ -28,8 +30,11 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         </div>
       )}
 
-      {(flags.length > 0 || product.meatPct !== undefined || product.benefit) && (
-        <div className="absolute top-3 left-3 z-20 grid justify-items-start gap-1.25">
+      {/* Podkategorie masa: barevný proužek nahoře a štítek. */}
+      {tone && <span className={`absolute inset-x-0 top-0 z-20 h-1.5 ${tone.bar}`} aria-hidden />}
+      {(flags.length > 0 || product.meatPct !== undefined || product.benefit || tone) && (
+        <div className="absolute top-4 left-3 z-20 grid justify-items-start gap-1.25">
+          {tone && <span className={`inline-block rounded-full px-2.5 py-1 text-[11px]/[14px] font-bold tracking-wide uppercase ${tone.chip}`}>{KIND_INFO[product.kind as ProductKind].title}</span>}
           {flags.map((kind) => (
             <Flag key={kind} kind={kind} />
           ))}

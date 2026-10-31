@@ -95,7 +95,7 @@ export default async function HomePage() {
 
       {/* Kategorie: velké dlaždice, jen název. */}
       <section className="px-5 pb-14">
-        <ul className="mx-auto grid max-w-site grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <ul className="mx-auto grid max-w-site grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {LINES.map((slug, i) => {
             const line = LINE_INFO[slug];
             const photo = lineImage(slug);

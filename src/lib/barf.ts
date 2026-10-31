@@ -92,7 +92,7 @@ export type FoodKind = "mix" | "sval" | "vnitrnosti" | "ryba" | "kost" | "rekrea
 export function foodKind(p: Product): FoodKind {
   // Konzervy a kapsičky jsou v řadě Granule a konzervy, kalkulačka s nimi ale nepočítá jako s granulemi.
   if (p.line === "granule") return p.kind === "konzervy" ? "jine" : "granule";
-  if (p.line === "kosti") return p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov", "kolen", "kloub") ? "rekreacni" : "kost";
+  if (p.line === "kosti" || (p.line === "maso" && p.kind === "kosti")) return p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov", "kolen", "kloub") ? "rekreacni" : "kost";
   if (p.line === "navic") return p.kind === "oleje" ? "olej" : p.kind === "mineraly" ? "mineraly" : p.kind === "vitaminy" ? "vitaminy" : p.kind === "prilohy" ? "prilohy" : "jine";
   if (p.line === "barf") return "mix";
   if (p.line !== "maso") return "jine";
@@ -1025,7 +1025,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   if (bone) add(bone, "kosti", "místo části mixu" + (i.beginner ? ", přidávejte až od 2. týdne" : ""), perWeekText(boneFeed.count, boneFeed.per), bonePeriods);
   // Rekreační kost pro psy nad 10 kg, mimo dávku.
   if (i.addons.rekreacni && i.species === "pes" && adultKg >= 10 && i.stage !== "mlade") {
-    const rec = choose(pool.filter((p) => p.line === "kosti" && (p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov"))), () => 1);
+    const rec = choose(pool.filter((p) => foodKind(p) === "rekreacni" && (p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov"))), () => 1);
     if (rec) items.push({ product: rec, qty: 1, gramsPerDay: 0, usedGrams: 0, leftoverGrams: 0, periods: Math.max(1, Math.round(28 / days)), portionText: "na okusování, nepočítá se do dávky", role: "rekreacni", why: "jen pod dohledem" });
   }
   const later = (week: number) => (i.beginner ? `, přidávejte až od ${week}. týdne` : "");

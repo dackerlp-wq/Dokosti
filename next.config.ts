@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
       // Samostatná kalkulačka skončila, dávku počítá blok na úvodní stránce a přesně průvodce Krmení na míru.
       { source: "/kalkulacka", destination: "/#krmeni-na-miru", permanent: false },
       { source: "/rada/zaklad", destination: "/rada/barf", permanent: true },
+      // Masité kosti jsou od 2026-10 podkategorie řady Maso, kosti a vnitřnosti.
+      { source: "/rada/kosti", destination: "/rada/maso/kosti", permanent: true },
+      { source: "/rada/kosti/:maso", destination: "/rada/maso/kosti", permanent: true },
       { source: "/produkt/zaklad-:rest", destination: "/produkt/barf-:rest", permanent: true },
       // Nové kategorie (2026-10): konzervy jsou podkategorie granulí, maso a vnitřnosti mají vlastní řadu.
       { source: "/rada/konzervy", destination: "/rada/granule/konzervy", permanent: true },

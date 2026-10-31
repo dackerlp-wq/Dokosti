@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LineHero } from "@/components/product/line-hero";
 import { LineProducts } from "@/components/product/line-products";
+import { MasoGuide } from "@/components/product/maso-guide";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { LINES, LINE_INFO, facetHeading, isLineSlug, productFacets } from "@/lib/catalog";
 import { getProductsByLine } from "@/lib/products";
@@ -36,6 +37,7 @@ export default async function LinePage({ params }: Props) {
         <SectionHeader eyebrow={plural(products.length)} title={hasMeats ? facetHeading(slug) : `Co máme v řadě ${line.name}`} />
         <LineProducts products={products} line={slug} />
       </Section>
+      {slug === "maso" && <MasoGuide />}
     </>
   );
 }

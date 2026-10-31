@@ -27,6 +27,11 @@ export function LineHero({ line, title, illustration, eyebrow, lead }: { line: L
           <li>
             <LinkArrow href="/jak-zacit-s-barfem">Jak začít</LinkArrow>
           </li>
+          {line.slug === "maso" && (
+            <li>
+              <LinkArrow href="#jak-skladat">Jak složit misku</LinkArrow>
+            </li>
+          )}
           <li>
             <LinkArrow href="/doprava">Doručení a skladování</LinkArrow>
           </li>
