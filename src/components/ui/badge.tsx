@@ -18,16 +18,16 @@ export function Badge({ kind = "neutral", children }: { kind?: Kind; children: R
 export type FlagKind = "new" | "favourite" | "sale";
 
 const flagStyles: Record<FlagKind, string> = {
-  new: "bg-ochre-badge text-ink",
+  new: "bg-white text-ink",
   favourite: "bg-green text-cream",
   sale: "bg-brick text-white",
 };
 
 const flagLabels: Record<FlagKind, string> = { new: "Novinka", favourite: "Oblíbené", sale: "Akce" };
 
-/** Praporek na produktové kartě: přilepený k levé hraně, zaoblené jen pravé rohy. */
+/** Štítek na fotce produktové karty: oblý, drobné verzálky. */
 export function Flag({ kind, children }: { kind: FlagKind; children?: ReactNode }) {
-  return <span className={`inline-block rounded-r-control px-2.5 py-1.25 text-[15px]/[18px] font-semibold ${flagStyles[kind]}`}>{children ?? flagLabels[kind]}</span>;
+  return <span className={`inline-block rounded-full px-2.5 py-1 text-[11px]/[14px] font-bold uppercase tracking-wide ${flagStyles[kind]}`}>{children ?? flagLabels[kind]}</span>;
 }
 
 export type Stock = { state: "in" } | { state: "low"; left: number } | { state: "out" };

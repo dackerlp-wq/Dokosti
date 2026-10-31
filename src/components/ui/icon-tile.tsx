@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
  * Místo ikony může být vyříznutý obrázek (`image`). Skládá se po 3–5 do mřížky: grid gap-5 xs:grid-cols-2 xl:grid-cols-4.
  */
 export function IconTile({ icon: Icon, image, title, text, href, action, children }: { icon?: LucideIcon; image?: string; title: string; text?: string; href?: string; action?: ReactNode; children?: ReactNode }) {
-  const disc = "relative inline-flex size-32 items-center justify-center overflow-hidden rounded-full bg-green text-cream transition-colors duration-300";
+  const disc = "relative inline-flex size-32 items-center justify-center overflow-hidden rounded-panel bg-green text-cream transition-colors duration-300";
   const glyph = image ? (
     <Image src={image} alt="" fill sizes="128px" className="object-contain p-4" />
   ) : Icon ? (

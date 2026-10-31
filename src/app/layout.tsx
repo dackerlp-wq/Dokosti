@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { Amatic_SC, Montserrat } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import { CookieConsent } from "@/components/layout/cookie-consent";
 import { SITE_URL } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
-// Amatic SC: jen titulky (H1, titulek sekce). Montserrat: všechno ostatní. Viz design/fonts.ts.
-const amatic = Amatic_SC({
-  weight: "700",
+// Fraunces: titulky (H1, titulky sekcí, ceny na kartách). Inter: všechno ostatní. Viz design/fonts.ts.
+const serif = Fraunces({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-amatic",
+  variable: "--font-serif",
   display: "swap",
 });
 
-const montserrat = Montserrat({
+const sans = Inter({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-montserrat",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -41,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="cs"
-      className={`${amatic.variable} ${montserrat.variable} h-full`}
+      className={`${serif.variable} ${sans.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
         {children}

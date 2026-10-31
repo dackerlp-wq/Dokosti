@@ -11,9 +11,9 @@ Vzhled e-shopu se řídí design systémem v `design/DESIGN.md`. Před každou p
   Používej utility z tokenů (`bg-green`, `text-brick-text`, `font-display text-display-lg`, `rounded-control`, `shadow-card`).
 - Referenční komponenty jsou v `design/components/`. Existující komponenty v `src/components/` přestavuj podle nich, nezakládej duplicity.
 - Hlas značky, práce s logem a fotkami: `design/BRAND-MANUAL.md`. `BRAND.md` v kořeni je starší reference (logo, název, zápis); kde se liší, platí `design/`.
-- Stránka je bílá, sekce střídají `white` a `paper`; `cream` nebo `green` sekce nejvýš jedna na stránku (kromě hlavičky a patičky).
-- Amatic SC (`font-display`) jen s `text-display-*` pro H1 a titulky sekcí, nikdy pro ceny, tlačítka a text. Všechno ostatní je Montserrat.
-- Jedna cihlová (`bg-brick text-white`) akce v pohledu: tlačítko, které vede k nákupu.
+- Styl „krémová, zelená, terakota“ (od 31. 10. 2026, viz `design/DESIGN.md` › Směr): stránka `paper`, bílé karty s linkou `line`, zelená plocha nejvýš jedna na stránku.
+- Fraunces (`font-display`) pro nadpisy, titulky sekcí a ceny na kartách; všechno ostatní Inter. Rohy 12 / 20 / 24 px (`rounded-control`, `rounded-card`, `rounded-panel`).
+- Jedna terakotová (`bg-brick text-white`) akce v pohledu: tlačítko, které vede k nákupu. Hlavní stránka má málo textu; předplatné se jmenuje „Krmení na míru“ a netlačí se.
 - Administrace (`/admin`) a kasa používají stejné tokeny a primitiva (PageHeader s titulkem v `font-display text-display-md`, Table, Stat, Field, chipClass). Popisky polí `text-label text-green`, drobné nadtitulky `text-eyebrow uppercase`; třída `label` se už nepoužívá.
 
 ## Pravidla

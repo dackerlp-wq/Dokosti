@@ -4,13 +4,16 @@ Pravidla pro každou práci na vzhledu dokosti.cz: komponenty, stránky, styly, 
 
 ## Směr
 
-E-shop je vzdušný, přátelský obchod na bílé. Stavba stránek a tvar komponent vycházejí z mixano.cz, barvy a logo jsou DoKosti.
+> **Platí od 31. 10. 2026:** styl „krémová, zelená, terakota“ podle schváleného návrhu hlavní stránky. Kde se níže uvedené recepty liší (bílá stránka, Amatic SC, Montserrat, rohy 3 px), platí tato část a tokeny v `dokosti-theme.css`.
 
-1. **Bílá je základ.** Stránka, hlavička i karty jsou `white`. `paper` střídá sekce. `cream` nebo `green` sekce nejvýš jedna na stránku.
-2. **Jedna cihlová akce.** `bg-brick` patří tlačítku, které vede k nákupu. Ostatní akce jsou `green`, obrys nebo odkaz v `brick-text`.
-3. **Ruční písmo jen pro titulky.** Amatic SC (`font-display`) nese H1 a titulek sekce. Všechno ostatní je Montserrat.
-4. **Fotka je vyříznutá.** Produkt, zvíře i surovina stojí na bílé bez rámečku a vlastního pozadí.
-5. **Na rovinu.** Text říká, co v balíčku je a jak se k zákazníkovi dostane. Bez superlativů.
+E-shop je teplý obchod, který prodává očima: velké plochy s fotkou nebo ikonou, málo textu.
+
+1. **Krémová stránka, bílé karty.** Tělo stránky je `paper` (#faf8f5), karty a panely `white` s linkou `line`. Hero má jemný přechod `cream` → `paper`. Zelená plocha nejvýš jedna na stránku.
+2. **Jedna terakotová akce.** `bg-brick` (#c85a28) patří tlačítku, které vede k nákupu. Ostatní akce jsou `green` (#2a382e), obrys nebo odkaz v `brick-text`.
+3. **Patkové titulky, bezpatkový text.** Fraunces (`font-display`) nese nadpisy, titulky sekcí a ceny na kartách; kurzíva v terakotě pro zvýraznění části H1. Všechno ostatní je Inter.
+4. **Oblé tvary.** Ovládací prvky `rounded-control` (12 px), karty `rounded-card` (20 px), velké plochy a dlaždice `rounded-panel` (24 px), štítky oblé (`rounded-full`).
+5. **Málo textu.** Hlavní stránka: H1 + jedna věta, dlaždice kategorií jen s názvem, produkty bez popisu. Předplatné netlačíme, jmenuje se „Krmení na míru“.
+6. **Na rovinu.** Text říká, co v balíčku je a jak se k zákazníkovi dostane. Bez superlativů.
 
 ## Než začneš
 

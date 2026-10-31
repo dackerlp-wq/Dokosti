@@ -1,6 +1,6 @@
 # DoKosti BARF – brand reference
 
-> Pro vzhled e-shopu platí `design/DESIGN.md` a `design/BRAND-MANUAL.md` (bílá stránka, Amatic SC + Montserrat, rohy 3 px).
+> Pro vzhled e-shopu platí `design/DESIGN.md` a `design/BRAND-MANUAL.md` (od 31. 10. 2026 krémová stránka, Fraunces + Inter, oblé rohy, zelená #2a382e a terakota #c85a28).
 > Tento soubor zůstává jako reference k názvu, logu a souborům značky; kde se liší, platí `design/`.
 
 Kamenná prodejna a e-shop se syrovým krmivem (BARF) pro psy a kočky.

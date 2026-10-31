@@ -1,18 +1,17 @@
-import { Amatic_SC, Montserrat } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 
-// Amatic SC: jen titulky (H1, titulek sekce). Montserrat: všechno ostatní.
-export const amatic = Amatic_SC({
-  weight: "700",
+// Fraunces: titulky (H1, titulky sekcí, ceny na kartách). Inter: všechno ostatní.
+export const serif = Fraunces({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-amatic",
+  variable: "--font-serif",
   display: "swap",
 });
 
-export const montserrat = Montserrat({
+export const sans = Inter({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-montserrat",
+  variable: "--font-sans",
   display: "swap",
 });
 
 // app/layout.tsx:
-// <html lang="cs" className={`${amatic.variable} ${montserrat.variable}`}>
+// <html lang="cs" className={`${serif.variable} ${sans.variable}`}>

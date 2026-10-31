@@ -20,7 +20,7 @@ export function ProductCard({ product, priority }: { product: Product; priority?
   const flags = [product.isNew ? ("new" as const) : null, onSale ? ("sale" as const) : null].filter((f): f is "new" | "sale" => f !== null);
 
   return (
-    <article className="group relative flex w-full flex-col rounded-card border border-line bg-white text-left shadow-card transition-[border-color,box-shadow] duration-300 ease-in-out hover:border-brick hover:shadow-card-hover">
+    <article className="group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-white text-left shadow-card transition-[border-color,box-shadow] duration-300 ease-in-out hover:border-green hover:shadow-card-hover">
       {unavailable && (
         <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center gap-3.5 rounded-card bg-overlay pt-20 text-center text-price text-white" aria-hidden>
           <Clock className="size-14" strokeWidth={1.25} />
@@ -29,7 +29,7 @@ export function ProductCard({ product, priority }: { product: Product; priority?
       )}
 
       {(flags.length > 0 || product.meatPct !== undefined || product.benefit) && (
-        <div className="absolute top-7.5 -left-px z-20 grid justify-items-start gap-1.25">
+        <div className="absolute top-3 left-3 z-20 grid justify-items-start gap-1.25">
           {flags.map((kind) => (
             <Flag key={kind} kind={kind} />
           ))}
@@ -38,12 +38,12 @@ export function ProductCard({ product, priority }: { product: Product; priority?
         </div>
       )}
 
-      <div className="mx-5 mt-5">
+      <div className="bg-cream p-4">
         <ProductImage product={product} sizes="(min-width: 62rem) 380px, (min-width: 30rem) 50vw, 100vw" priority={priority} />
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pt-6 pb-5">
-        <h3 className="mb-2.5 line-clamp-2 text-heading-md text-green">
+      <div className="flex flex-1 flex-col px-5 pt-4 pb-5">
+        <h3 className="mb-1.5 line-clamp-2 text-heading-md text-ink">
           {/* after: roztáhne odkaz přes fotku a text, patička s nákupem zůstává nad ním */}
           <Link href={href} className="transition-colors duration-300 after:absolute after:inset-x-0 after:top-0 after:bottom-20 after:z-10 group-hover:text-brick-text">
             {productName(product)}
@@ -54,12 +54,11 @@ export function ProductCard({ product, priority }: { product: Product; priority?
           <span>{STORAGE_LABEL[product.storage]}</span>
           <StockStatus stock={stock} />
         </p>
-        {product.intro && <p className="mb-1.25 line-clamp-3 text-small">{product.intro}</p>}
-
+        
         <div className="mt-auto flex items-end justify-between gap-2.5 pt-2.5">
           <div>
-            <div className="text-label whitespace-nowrap text-muted">{onSale ? <s className="font-normal">{formatPrice(product.originalPriceCzk!)}</s> : "Cena:"}</div>
-            <div className={`text-price whitespace-nowrap ${onSale ? "text-brick-text" : "text-green"}`}>
+            <div className="text-small whitespace-nowrap text-muted">{onSale ? <s className="font-normal">{formatPrice(product.originalPriceCzk!)}</s> : null}</div>
+            <div className={`font-display text-[1.375rem] leading-none font-black whitespace-nowrap ${onSale ? "text-brick-text" : "text-green"}`}>
               {formatPrice(product.priceCzk)}
               {byWeight && <span className="text-small font-normal text-muted">/kg</span>}
             </div>
