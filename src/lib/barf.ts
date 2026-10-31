@@ -487,18 +487,18 @@ function fishAlloc(fish: Product, animalGrams: number, days: number): { every: 7
 /** Nejmenší podíl balení, který se musí stihnout sníst v trvanlivosti, aby mělo smysl ho nabízet. */
 const MIN_FIT = 0.35;
 /** Na kolik nákupů nejvýš smí balení vydržet: do konce trvanlivosti. */
-const maxPeriodsFor = (product: Product, days: number) => Math.max(1, Math.floor(shelfDays(product) / days));
+const maxPeriodsFor = (product: Product, days: number, shelf = shelfDays(product)) => Math.max(1, Math.floor(shelf / days));
 
 /**
  * Kusový sáček (kosti, vnitřnosti): celé sáčky do `maxGrams`, jinak jeden sáček na víc nákupů. V období se z něj sní
  * aspoň tolik, aby se stihl do konce trvanlivosti (`grams`); když by to bylo víc než `maxGrams`, sáček je pro zvíře
  * moc velký a nenabízí se (fit 0).
  */
-function bagAlloc(product: Product, target: number, maxGrams: number, days: number): { packs: number; grams: number; periods: number; fit: number } {
+function bagAlloc(product: Product, target: number, maxGrams: number, days: number, shelf?: number): { packs: number; grams: number; periods: number; fit: number } {
   const W = product.weightGrams;
   const k = Math.max(1, Math.round(target / W));
   if (k * W <= maxGrams) return { packs: k, grams: k * W, periods: 1, fit: 1 };
-  const grams = Math.max(target, W / maxPeriodsFor(product, days));
+  const grams = Math.max(target, W / maxPeriodsFor(product, days, shelf));
   if (grams > maxGrams || target <= 0) return { packs: 1, grams: 0, periods: 1, fit: 0 };
   const periods = Math.max(2, Math.ceil(W / grams));
   const fit = target / grams;
@@ -555,7 +555,8 @@ const isPoultry = (p: Product) => (p.meats?.length ? p.meats.some((m) => m === "
  * (rozmražené se má sníst do dvou dnů), mezi stejně vhodnými rozhoduje výhodnost pro obchod.
  */
 function pickMixes(pool: Product[], i: AnimalInput, animalGrams: number, days: number): Product[] {
-  const mixes = pool.filter((p) => foodKind(p) === "mix" && p.storage !== "suche");
+  const allMixes = pool.filter((p) => foodKind(p) === "mix" && p.storage !== "suche");
+  const mixes = smallDogMuscle(pool, i, animalGrams, allMixes) ?? allMixes;
   if (!mixes.length) return [];
   const ideal = Math.min(1000, Math.max(200, animalGrams * 2));
   const sizeFit = (p: Product) => 1 / (1 + Math.abs(Math.log(p.weightGrams / ideal)));
@@ -579,6 +580,19 @@ function pickMixes(pool: Product[], i: AnimalInput, animalGrams: number, days: n
   const want = i.beginner || i.stage === "mlade" ? 1 : days >= 28 ? 4 : 3;
   const packsInPeriod = Math.max(1, Math.floor((animalGrams * days) / ideal));
   return reps.slice(0, Math.max(1, Math.min(want, packsInPeriod)));
+}
+
+/**
+ * Malý pes: když by i nejmenší mix vydržel víc než dva dny (rozmražené se má sníst do dvou), základem plánu je
+ * svalovina v menším balení (300g saláty). Kost pak nahradí vápník z vaječných skořápek a vnitřnosti játra (buildPlan).
+ * Jen dospělí psi; kočky (taurin) a štěňata (poměr vápníku a fosforu) zůstávají na hotových mixech.
+ */
+function smallDogMuscle(pool: Product[], i: AnimalInput, animalGrams: number, mixes: Product[]): Product[] | null {
+  if (i.species !== "pes" || i.stage === "mlade" || !mixes.length) return null;
+  const smallest = Math.min(...mixes.map((m) => m.weightGrams));
+  if (smallest <= 2 * animalGrams) return null;
+  const muscle = pool.filter((p) => foodKind(p) === "sval" && p.storage !== "suche" && p.weightGrams < smallest && !has(p, "srdce", "žalud", "dršť", "vemen"));
+  return muscle.length ? muscle : null;
 }
 
 /** Jedlé kosti vhodné velikostí: kočky, malí psi a štěňata do 6 měsíců kuřecí krky, střední křídla a krky, velcí kachní krky, sekané kuře a stehna. */
@@ -658,6 +672,8 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const prelim = calculate(i);
   const prelimAnimal = prelim.dailyGrams * ((100 - prelim.composition.plant) / 100);
   const mixes = pickMixes(pool, i, prelimAnimal, days).map(swap).filter((m, idx, arr) => arr.findIndex((x) => x.slug === m.slug) === idx);
+  /** Základ ze svaloviny (malý pes, viz smallDogMuscle): bez Kostí, s vápníkem a játry. */
+  const muscleBase = mixes.length > 0 && mixes.every((m) => foodKind(m) === "sval");
   const kibbleCands = pool.filter((p) => foodKind(p) === "granule");
   const kibble = i.rawShare < 100 && i.addons.granule ? (choose(kibbleCands.filter((p) => i.stage !== "mlade" || has(p, "štěň", "puppy", "junior")), () => 1) ?? choose(kibbleCands, () => 1)) : null;
   const result = calculate(i, mixesKcal(mixes), kibble?.nutrition?.kcalPer100g ?? null);
@@ -703,7 +719,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     return deficit > 0.5 ? Math.min(0.25, deficit / Math.max(1, rmbBonePct - fromMix)) : 0.1 / 7;
   };
   const needAll = animalGrams * days;
-  const boneCands = i.addons.kosti ? boneCandidates(pool, i, adultKg) : [];
+  const boneCands = i.addons.kosti && !muscleBase ? boneCandidates(pool, i, adultKg) : [];
   const boneCap = (target: number) => Math.min(2.5 * target, 0.25 * needAll);
   const bone0 = choose(boneCands, (p) => {
     const target = rmbShareFor(p.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT) * needAll;
@@ -722,7 +738,9 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       if (boneFromMix + rmbShare * rmbBonePct > 12) notes.push({ kind: "warn", text: "Celkový podíl kosti vychází vysoko. Pokud je stolice tvrdá a světlá, kosti uberte." });
     }
   }
-  if (!i.addons.kosti && i.species !== "kocka") notes.push({ kind: "info", text: "Bez Kostí hlídejte, aby mix obsahoval dost kosti. Bez kosti v dávce chybí vápník." });
+  if (muscleBase)
+    notes.push({ kind: "info", text: "Hotové mixy jsou pro vašeho psa velké balení (rozmražené se má sníst do dvou dnů). Základem je proto svalovina v menším balení, kost nahrazuje vápník z vaječných skořápek a vnitřnosti játra." });
+  else if (!i.addons.kosti && i.species !== "kocka") notes.push({ kind: "info", text: "Bez Kostí hlídejte, aby mix obsahoval dost kosti. Bez kosti v dávce chybí vápník." });
   const mixShare = Math.max(0, 1 - comp.plant / 100 - fishShare - rmbShare);
 
   // Vnitřnosti: kolik jich chybí do cíle (játra + další vnitřnosti) po odečtení toho, co už je v mixech podle etikety.
@@ -731,14 +749,17 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const organDeficit = comp.liver + comp.organs - mixShare * mixOrganPct;
   const organShareAll = organDeficit >= 2 ? Math.min(0.12, organDeficit / 100) : 0;
   const catNeedsHeart = i.species === "kocka" && !mixes.some((m) => m.nutrition?.taurineMgPerKg);
-  const organCands = i.addons.vnitrnosti
+  const organCands = i.addons.vnitrnosti || muscleBase
     ? pool.filter((p) => foodKind(p) === "vnitrnosti" || (catNeedsHeart && foodKind(p) === "sval" && has(p, "srdce")))
     : [];
   const organPref = (p: Product) => (catNeedsHeart ? (has(p, "srdce") ? 1 : 0.6) : has(p, "játra") ? 1 : has(p, "ledvin") ? 0.8 : 0.6);
   // Játra pokryjí jen svůj díl (nejvýš 5 % dávky), srdce u kočky zhruba jednu porci týdně.
   const organShareFor = (p: Product) =>
     catNeedsHeart && has(p, "srdce") ? Math.max(organShareAll, 1 / 14) : has(p, "játra") ? Math.min(organShareAll, comp.liver / 100) : organShareAll;
-  const organ = choose(organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days).fit * organPref(p) : 0);
+  // Malý pes na svalovině: kilo jater mu vydrží měsíce. Mražená vydrží rok (výrobce), stačí je zamrazit po porcích.
+  const organShelf = muscleBase ? 365 : undefined;
+  const organ = choose(organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days, organShelf).fit * organPref(p) : 0);
+  if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: balení vydrží několik měsíců. Po rozmrazení ho hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
   const organShare = organ ? organShareFor(organ) : 0;
   if (i.addons.vnitrnosti && !organ && organShareAll === 0 && !catNeedsHeart) notes.push({ kind: "info", text: "Vnitřností je v mixech podle etikety dost, další nepřidáváme." });
   if (!organ && catNeedsHeart) notes.push({ kind: "info", text: "Kočka potřebuje taurin. Mixy ho nemají deklarovaný, přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
@@ -769,15 +790,21 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Doplňky podle toho, co v sestavě chybí: jód (mořská řasa), když v plánu není ryba; vápník, když část mixů nemá kost
   // a v plánu nejsou Kosti (ne u štěňat velkých plemen, tam vápník navíc nepatří).
   const supplements: { product: Product; why: string }[] = [];
+  const pick = (kind: FoodKind, ...words: string[]) => choose(pool.filter((p) => foodKind(p) === kind && has(p, ...words)), () => 1);
+  // Svalovina nemá kost: vápník je v tom případě nutná součást dávky, ne volitelný doplněk.
+  if (muscleBase) {
+    const calcium = pick("mineraly", "vaječn", "vápník");
+    if (calcium) supplements.push({ product: calcium, why: "vápník místo kostí, ke svalovině nutný" });
+    else notes.push({ kind: "warn", text: "Vápník (vaječné skořápky) zrovna nemáme skladem. Svalovina bez kosti ho potřebuje, stavte se pro radu v prodejně." });
+  }
   if (i.addons.doplnky) {
-    const pick = (kind: FoodKind, ...words: string[]) => choose(pool.filter((p) => foodKind(p) === kind && has(p, ...words)), () => 1);
     if (!fish && !(veg && has(veg, "kelp"))) {
       const kelp = choose(pool.filter((p) => foodKind(p) === "vitaminy" && fold(p.variant).includes("kelp")), () => 1);
       if (kelp) supplements.push({ product: kelp, why: "jód, když v jídelníčku není ryba" });
     }
     const bonelessShare = mixes.length ? mixes.filter((m) => !mixHasBone(m)).length / mixes.length : 0;
     const largePuppy = i.species === "pes" && i.stage === "mlade" && adultKg > 25;
-    if (!bone && bonelessShare >= 0.3 && !largePuppy) {
+    if (!muscleBase && !bone && bonelessShare >= 0.3 && !largePuppy) {
       const calcium = pick("mineraly", "vaječn", "vápník");
       if (calcium) supplements.push({ product: calcium, why: "vápník k mixu bez kosti" });
     }
@@ -799,7 +826,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const bonePacks = boneA?.packs ?? 0;
   const boneGrams = boneA?.grams ?? 0;
   const bonePeriods = boneA?.periods ?? 1;
-  const organA = organ ? bagAlloc(organ, organShare * need, 1.4 * organShare * need, days) : null;
+  const organA = organ ? bagAlloc(organ, organShare * need, 1.4 * organShare * need, days, organShelf) : null;
   const organPacks = organA?.packs ?? 0;
   const organGrams = organA?.grams ?? 0;
   const organPeriods = organA?.periods ?? 1;
@@ -977,7 +1004,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const mixUsed = mixes.reduce((s, m) => s + (pantry.used.get(m.slug) ?? 0), 0);
   const mixDaily = mixUsed / days;
   const boughtMixes = mixes.filter((m) => (pantry.opened.get(m.slug) ?? 0) > 0).length;
-  mixes.forEach((m) => add(m, "zaklad", boughtMixes > 1 ? "střídejte po celých balíčcích" : i.beginner || i.stage === "mlade" ? "jeden druh masa na začátek" : "základ misky", `~${round5(mixDaily)} g denně${boughtMixes > 1 ? " dohromady" : ""}`));
+  mixes.forEach((m) => add(m, "zaklad", muscleBase ? (boughtMixes > 1 ? "svalovina, střídejte po celých balíčcích" : "svalovina, základ misky") : boughtMixes > 1 ? "střídejte po celých balíčcích" : i.beginner || i.stage === "mlade" ? "jeden druh masa na začátek" : "základ misky", `~${round5(mixDaily)} g denně${boughtMixes > 1 ? " dohromady" : ""}`));
   if (fish) add(fish, "ryba", fishEvery === 7 ? "místo masa, omega-3" : "jednou za 14 dní místo masa, omega-3", `${fishPacks}× za ${days} dní celé balení místo mixu`);
   if (bone) add(bone, "kosti", "místo části mixu" + (i.beginner ? ", přidávejte až od 2. týdne" : ""), perWeekText(boneFeed.count, boneFeed.per), bonePeriods);
   // Rekreační kost pro psy nad 10 kg, mimo dávku.
