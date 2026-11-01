@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       // Fotky produktů Sokol Falco přímo z jejich e-shopu (nové 300g saláty), dokud nejsou nahrané v administraci.
       { protocol: "https", hostname: "www.falcokrmiva.com", pathname: "/data/produkty/**" },
+      // Fotky produktů Krmiva Hulín z jejich CDN (sušená zelenina, řasy), dokud nejsou nahrané v administraci.
+      { protocol: "https", hostname: "krmivahulin.s3.cdn-upgates.com", pathname: "/**" },
     ],
   },
   // Řada „Základ“ se přejmenovala na „BARF mixy“ (slug barf); staré adresy vedou dál.

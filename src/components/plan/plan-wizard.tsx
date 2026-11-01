@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Drumstick, Fish, Footprints, Layers, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Carrot, Cat, Check, ChevronDown, Dog, Drumstick, Fish, Footprints, Layers, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -157,7 +157,9 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
 
   const input = useMemo<AnimalInput | null>(() => {
     if (step < 7 || pet.weightKg <= 0) return null;
-    return { ...petToAnimal(pet), rawShare, mode, addons: { ...addons, granule: addKibble }, removed, swaps };
+    // Zelenina v misce jen u psů; podíl v dávce zapíná volba „Přidat do misky zeleninu“.
+    const veg = addons.zelenina && pet.species === "pes";
+    return { ...petToAnimal(pet), rawShare, mode, ration: veg ? "zelenina" : "pmr", addons: { ...addons, granule: addKibble, zelenina: veg }, removed, swaps };
   }, [step, pet, removed, swaps, rawShare, addons, addKibble, mode]);
   const plan = useMemo(() => (input ? buildPlan(products, input, days) : null), [input, products, days]);
   /* Doporučení navíc: pro každý vypnutý doplněk nejlepší produkt podle využití balení a výhodnosti. */
@@ -532,6 +534,16 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               );
             })}
           </div>
+          {pet.species === "pes" && (
+            <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-white p-4">
+              <Carrot className="size-5 shrink-0 text-ochre" strokeWidth={1.75} aria-hidden />
+              <span className="flex-1">
+                <span className="block font-semibold text-green">Přidat do misky zeleninu</span>
+                <span className="block text-small">Sušená zelenina, kterou před krmením namočíte. Zabere zhruba desetinu misky.</span>
+              </span>
+              <input type="checkbox" checked={addons.zelenina} onChange={(e) => setAddons((a) => ({ ...a, zelenina: e.target.checked }))} className="size-5 min-h-0 w-5 accent-green" />
+            </label>
+          )}
           {!pet.exclude.includes("ryby") && (
             <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-white p-4">
               <Fish className="size-5 shrink-0 text-ryby" strokeWidth={1.75} aria-hidden />

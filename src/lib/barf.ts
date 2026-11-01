@@ -313,7 +313,8 @@ function kittenPct(ageMonths: number) {
 export function targetComposition(i: AnimalInput): Composition {
   if (i.species === "kocka") return { muscle: 84, bone: 6, liver: 5, organs: 5, plant: 0 };
   const bone = i.stage === "mlade" ? 15 : 8;
-  const plant = i.ration === "zelenina" ? 20 : 0;
+  // Zelenina: výrobci sušené zeleniny uvádějí u malých a středních psů 10–15 % uvařené zeleniny v misce.
+  const plant = i.ration === "zelenina" ? 10 : 0;
   const animal = 100 - plant;
   const liver = 5;
   const organs = 5;
@@ -697,7 +698,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const fishCands = pool.filter((p) => foodKind(p) === "ryba" && p.storage !== "suche");
   let fish: Product | null = null;
   let fishA: ReturnType<typeof fishAlloc> = null;
-  if (i.addons.ryba && !fishCands.length && mixes.length > 0) notes.push({ kind: "info", text: "Rybu teď nemáme skladem, omega-3 doplní rybí olej." });
+  if (i.addons.ryba && !fishCands.length && mixes.length > 0 && !i.exclude.includes("ryby")) notes.push({ kind: "info", text: "Rybu teď nemáme skladem, omega-3 doplní rybí olej." });
   if (i.addons.ryba && fishCands.length && (i.beginner || i.stage === "mlade") && mixes.length > 0)
     notes.push({ kind: "info", text: i.stage === "mlade" ? "Rybí maso u mláďat zatím vynecháváme, omega-3 doplní rybí olej." : "Na začátku BARFu rybu vynecháváme, omega-3 doplní rybí olej. Rybí den přidejte po pár týdnech." });
   if (i.addons.ryba && fishCands.length && !i.beginner && i.stage !== "mlade" && mixes.length > 0) {
@@ -777,19 +778,23 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Olej do BARFu je zdroj omega mastných kyselin: rybí (losos), nebo lněný a konopný. Ostropestřec není na omega-3
   // a olej z tresčích jater má hodně vitaminu A a D, ten kalkulačka sama nenabízí.
   const fishOil = (p: Product) => has(p, "losos", "rybí");
-  const oilCands = pool.filter((p) => foodKind(p) === "olej" && (fishOil(p) || has(p, "lněn", "konop")));
+  // Omega-3 z mikrořas (olej i prášek) je náhrada rybího oleje pro psy, kteří rybu nejedí.
+  const algae = (p: Product) => has(p, "mikrořas");
+  const oilCands = pool.filter((p) => algae(p) || (foodKind(p) === "olej" && (fishOil(p) || has(p, "lněn", "konop"))));
   // Dávka oleje podle výrobce (spodní hranice); bez údaje 1 ml na 100 g dávky.
   const doseKg = result.idealKg;
   const oilDoseOf = (p: Product) => supplementDose(p, i.species, doseKg, D);
   const oilPerDayOf = (p: Product) => oilDoseOf(p)?.min ?? D / 100;
   // Bez ryby v plánu má rybí olej jasnou přednost; s rybou rostlinný (omega-3 už je z ryby).
-  const oilPref = (p: Product) => (fish ? (fishOil(p) ? 0.7 : 1) : fishOil(p) ? 1 : 0.3);
+  const oilPref = (p: Product) => (fish ? (fishOil(p) ? 0.7 : algae(p) ? 0.6 : 1) : fishOil(p) ? 1 : algae(p) ? 0.9 : 0.3);
   const oil = i.addons.olej ? choose(oilCands, (p) => (dailyAlloc(p, oilPerDayOf(p), days).fit > 0 ? oilPref(p) : 0)) : null;
   const oilPerDay = oil ? oilPerDayOf(oil) : 0;
   const oilDose = oil ? oilDoseOf(oil) : null;
   if (oil && oil.dose?.[i.species]?.per === "food") notes.push({ kind: "info", text: `${productName(oil)}: výrobce doporučuje podle tučnosti masa a celkový tuk v krmivu do 20 %. K tučnějším mixům (kachna, vepřové) dávejte spodní dávku.` });
   const vegCands = pool.filter((p) => foodKind(p) === "prilohy" && has(p, "zelenin", "barfex"));
-  const veg = comp.plant > 0 && i.addons.zelenina ? choose(vegCands, () => 1) : null;
+  // Přednost má zelenina s dávkováním od výrobce (dýně, řepa), aby šla spočítat do misky.
+  const veg0 = comp.plant > 0 && i.addons.zelenina ? choose(vegCands, (p) => (supplementDose(p, i.species, 10, 100) ? 1 : 0.5)) : null;
+  const veg = veg0 ? swap(veg0) : null;
   if (comp.plant > 0 && i.addons.zelenina && !veg) notes.push({ kind: "info", text: "Zeleninový mix zrovna nemáme, rozmixujte mrkev, cuketu nebo dýni." });
   const vegDose = veg ? supplementDose(veg, i.species, result.idealKg, D) : null;
   const vegDry = veg ? veg.storage === "suche" && !vegDose : false;
@@ -952,7 +957,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     }
     takeMeat(Math.max(0, dailyTotal - fromSlots), out, lastDay);
     out.push(...after);
-    if (oil) out.push({ product: oil, grams: 0, note: `${fmtDose(oilPerDay)} ml` });
+    if (oil) out.push({ product: oil, grams: 0, note: `${fmtDose(oilPerDay)} ${oilDose?.unit ?? "ml"}` });
     if (veg) out.push(vegDry ? { product: veg, grams: 0, note: "podle návodu na obalu" } : { product: veg, grams: round5(vegPerDay) });
     for (const s of supplements) {
       const d = supplementDose(s.product, i.species, result.idealKg, D);
@@ -1002,7 +1007,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     const { qty, used, periods } = dailyAlloc(product, gpd, days);
     items.push({ product, qty, gramsPerDay: gpd, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText: text, role, why });
   };
-  if (oil) daily(oil, oilPerDay, "olej", fish ? "omega-3 navíc k rybě, dávka podle výrobce" : fishOil(oil) ? "omega-3, protože v plánu není ryba" : "omega-3, dávka podle výrobce", oilDose ? doseText(oilDose, " do misky") : `${fmtDose(oilPerDay)} ml denně do misky`);
+  if (oil) daily(oil, oilPerDay, "olej", fish ? "omega-3 navíc k rybě, dávka podle výrobce" : fishOil(oil) ? "omega-3, protože v plánu není ryba" : algae(oil) ? "omega-3 z řas, bez ryb" : "omega-3, dávka podle výrobce", oilDose ? doseText(oilDose, " do misky") : `${fmtDose(oilPerDay)} ml denně do misky`);
   /** Sušený doplněk dávkovaný podle obalu: jedno balení, které vydrží několik dodávek (nejvýš do trvanlivosti). */
   const onePack = (product: Product, role: Reco["role"], why: string, text: string) => {
     const periods = maxPeriodsFor(product, days);
@@ -1010,7 +1015,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     items.push({ product, qty: 1, gramsPerDay: used / days, usedGrams: used, leftoverGrams: product.weightGrams - used, periods, portionText: text, role, why });
   };
   if (veg && vegDry) onePack(veg, "zelenina", "rostlinná část dávky", "podle návodu na obalu");
-  else if (veg) daily(veg, vegPerDay, "zelenina", vegDose ? "příloha k masu podle výrobce" : "rostlinná část, 20 % dávky", vegDose ? doseText(vegDose) : `${round5(vegPerDay)} g denně`);
+  else if (veg) daily(veg, vegPerDay, "zelenina", vegDose ? (veg.storage === "suche" ? "sušená, před podáním namočte, uvařená zabere zhruba 10 % misky" : "příloha k masu podle výrobce") : "rostlinná část, 10 % dávky", vegDose ? (veg.storage === "suche" ? `${fmtDose(vegDose.min)}–${fmtDose(vegDose.max)} g sušené denně, začněte menší dávkou` : doseText(vegDose)) : `${round5(vegPerDay)} g denně`);
   for (const s of supplements) {
     const d = supplementDose(s.product, i.species, result.idealKg, D);
     if (d) daily(s.product, d.min, "doplnek", s.why, doseText(d));
