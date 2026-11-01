@@ -9,6 +9,7 @@ import { sendEmail } from "@/lib/email/send";
 import { subscriptionCreated } from "@/lib/email/templates";
 import { sendNewOrderEmails } from "@/lib/order-emails";
 import { SITE_URL } from "@/lib/seo";
+import { getAuthSupabase } from "@/lib/supabase/auth";
 import { getSupabase } from "@/lib/supabase/server";
 
 export type CheckoutInput = {
@@ -42,6 +43,7 @@ const DB_ERRORS: [string, string][] = [
   ["below minimum", "Objednávka nedosahuje minimální částky pro tento způsob dodání."],
   ["coupon:", "Slevový kód nejde použít. Zkontrolujte ho prosím."],
   ["points", "Kostičky nejde uplatnit v tomto množství."],
+  ["loyalty login required", "Přihlaste se a použijte e-mail svého účtu, abyste mohli uplatnit Kostičky."],
   ["shipping disabled", "Tento způsob dodání teď nenabízíme."],
 ];
 
@@ -107,8 +109,7 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     subscribe_interval: subscribe ? String(subscribe.intervalDays) : "",
   };
 
-  const db = getSupabase();
-  if (!db) {
+  if (!getSupabase()) {
     // vývoj bez databáze: spočítat aspoň orientačně
     let subtotal = 0;
     for (const i of items) {
@@ -118,6 +119,9 @@ export async function submitOrder(input: CheckoutInput): Promise<CheckoutResult>
     console.info("[objednávka, Supabase není nastavené]", order, items);
     return { ok: true, orderNumber: `DKDEV${Date.now().toString().slice(-4)}`, totalCzk: subtotal + shippingPrice(method, subtotal), pointsEarned: 0 };
   }
+
+  // Zachovej objednávku hosta jako anonymní, ale předej ověřený účet, pokud je přihlášen.
+  const db = await getAuthSupabase();
 
   const { data, error } = await db.rpc("create_order", { p_order: order, p_items: items });
   if (error || !data) {
@@ -198,9 +202,11 @@ export async function previewCoupon(code: string, subtotalCzk: number): Promise<
 
 /** Kolik Kostiček má zákazník s tímto e-mailem. */
 export async function loyaltyBalance(email: string): Promise<number> {
-  const db = getSupabase();
-  if (!db || !email.includes("@")) return 0;
-  const { data } = await db.rpc("loyalty_balance", { p_email: email });
+  if (!email.includes("@")) return 0;
+  const db = await getAuthSupabase();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user?.email || user.email.trim().toLowerCase() !== email.trim().toLowerCase()) return 0;
+  const { data } = await db.rpc("loyalty_balance");
   return typeof data === "number" ? data : 0;
 }
 

@@ -1,3 +1,4 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email/send";
 import { orderConfirmation, orderNotification, type OrderForEmail } from "@/lib/email/templates";
@@ -10,7 +11,12 @@ import type { Settings } from "@/lib/settings";
  */
 export async function sendNewOrderEmails(db: SupabaseClient, orderNumber: string, settings: Settings, { notifyCustomer = true } = {}): Promise<OrderForEmail | null> {
   try {
-    const { data: full } = await db.rpc("order_for_email", { p_order_number: orderNumber });
+    const secret = process.env.CRON_SECRET;
+    if (!secret) {
+      console.error("order_for_email: CRON_SECRET is not configured");
+      return null;
+    }
+    const { data: full } = await db.rpc("order_for_email", { p_order_number: orderNumber, p_secret: secret });
     if (!full) return null;
     const o = full as OrderForEmail;
     const base = SITE_URL;

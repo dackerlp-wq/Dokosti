@@ -279,7 +279,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   function verifyCode() {
     setError(null);
     startTransition(async () => {
-      const res = await clubVerify(owner.email, code, false);
+      const res = await clubVerify(owner.email, code, false, { name: owner.name, email: owner.email, cardCode: "", terms: owner.terms, marketingEmail: owner.marketing, kiosk: false, next: "/krmeni-na-miru" });
       if (!res.ok) return setError(res.error);
       finish();
     });

@@ -54,7 +54,6 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
   if (card && (card.length < 4 || card.length > 32)) return { ok: false, error: "Kód karty nevypadá správně." };
   const settings = await getSettings();
   const db = await getAuthSupabase();
-  const anon = getSupabase() ?? db;
 
   const {
     data: { user: current },
@@ -63,7 +62,8 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
   const needName = !card;
   if (current?.email) {
     if (!name && needName) return { ok: false, error: "Doplňte jméno." };
-    await anon.rpc("club_register_pending", { p_user_id: current.id, p_data: buildPayload(input, settings.club.termsVersion) });
+    const { error: pendingError } = await db.rpc("club_register_pending", { p_user_id: current.id, p_data: buildPayload(input, settings.club.termsVersion) });
+    if (pendingError) return { ok: false, error: "Registraci se nepodařilo uložit. Zkuste to znovu." };
     const done = await complete(current.email, name);
     if (!done.ok) return done;
     return { ok: true, state: "done", awarded: done.awarded };
@@ -72,11 +72,6 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
   const email = input.email.trim().toLowerCase();
   if (!name && needName) return { ok: false, error: "Doplňte jméno." };
   if (!email.includes("@")) return { ok: false, error: "Zadejte platný e-mail." };
-  const { error: pendingError } = await anon.rpc("club_register_pending_email", { p_email: email, p_data: buildPayload(input, settings.club.termsVersion) });
-  if (pendingError) {
-    console.error("club_register_pending_email", pendingError.message);
-    return { ok: false, error: "Registraci se nepodařilo uložit. Zkuste to znovu." };
-  }
   const next = input.next && input.next.startsWith("/") ? input.next : "/ucet";
   const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { full_name: name }, emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}` } });
   if (error) {
@@ -88,13 +83,25 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
 }
 
 /** Krok 2: ověří kód z e-mailu (vznikne session) a dokončí registraci. V kiosku se hned odhlásí. */
-export async function clubVerify(email: string, code: string, kiosk: boolean): Promise<VerifyResult> {
+export async function clubVerify(email: string, code: string, kiosk: boolean, input: RegisterInput): Promise<VerifyResult> {
   const mail = email.trim().toLowerCase();
   const token = code.replace(/\s+/g, "");
   if (!/^\d{6}$/.test(token)) return { ok: false, error: "Kód má šest číslic." };
+  if (!input.terms || input.email.trim().toLowerCase() !== mail) return { ok: false, error: "Zkontrolujte souhlas a e-mail registrace." };
   const db = await getAuthSupabase();
-  const { error } = await db.auth.verifyOtp({ email: mail, token, type: "email" });
-  if (error) return { ok: false, error: "Kód nesedí nebo už vypršel. Nechte si poslat nový." };
+  const { data: { user: existing } } = await db.auth.getUser();
+  if (existing?.email?.trim().toLowerCase() !== mail) {
+    const { error } = await db.auth.verifyOtp({ email: mail, token, type: "email" });
+    if (error) return { ok: false, error: "Kód nesedí nebo už vypršel. Nechte si poslat nový." };
+  }
+  const { data: { user } } = await db.auth.getUser();
+  if (!user?.email || user.email.trim().toLowerCase() !== mail) return { ok: false, error: "Přihlášení se nepodařilo ověřit. Přihlaste se znovu." };
+  const settings = await getSettings();
+  const { error: pendingError } = await db.rpc("club_register_pending", { p_user_id: user.id, p_data: buildPayload(input, settings.club.termsVersion) });
+  if (pendingError) {
+    console.error("club_register_pending", pendingError.message);
+    return { ok: false, error: "Registraci se nepodařilo uložit. Zkuste to znovu." };
+  }
   const result = await complete(mail);
   if (kiosk) await db.auth.signOut();
   return result;
