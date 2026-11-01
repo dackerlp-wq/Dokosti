@@ -65,7 +65,7 @@ export async function requestMagicLink(_prev: AuthState, fd: FormData): Promise<
 export async function verifyLoginCode(_prev: AuthState, fd: FormData): Promise<AuthState> {
   const email = str(fd, "email").toLowerCase();
   const token = str(fd, "code").replace(/\s+/g, "");
-  if (!/^\d{6}$/.test(token)) return { error: "Kód má šest číslic." };
+  if (!/^(?:\d{6}|\d{8})$/.test(token)) return { error: "Kód musí mít 6 nebo 8 číslic." };
   const db = await getAuthSupabase();
   const { error } = await db.auth.verifyOtp({ email, token, type: "email" });
   if (error) return { error: "Kód nesedí nebo už vypršel. Nechte si poslat nový." };

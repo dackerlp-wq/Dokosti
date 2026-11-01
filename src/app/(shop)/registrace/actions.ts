@@ -44,7 +44,7 @@ function buildPayload(input: RegisterInput, termsVersion: string) {
 }
 
 /**
- * Krok 1: uloží rozpracovanou registraci podle e-mailu a pošle šestimístný kód (Supabase OTP; účet vznikne
+ * Krok 1: uloží rozpracovanou registraci podle e-mailu a pošle OTP kód (Supabase; účet vznikne
  * až po ověření kódu). Když je zákazník už přihlášený (Google, nebo účet bez klubu), dokončí registraci rovnou.
  */
 export async function clubStart(input: RegisterInput): Promise<StartResult> {
@@ -86,7 +86,7 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
 export async function clubVerify(email: string, code: string, kiosk: boolean, input: RegisterInput): Promise<VerifyResult> {
   const mail = email.trim().toLowerCase();
   const token = code.replace(/\s+/g, "");
-  if (!/^\d{6}$/.test(token)) return { ok: false, error: "Kód má šest číslic." };
+  if (!/^(?:\d{6}|\d{8})$/.test(token)) return { ok: false, error: "Kód musí mít 6 nebo 8 číslic." };
   if (!input.terms || input.email.trim().toLowerCase() !== mail) return { ok: false, error: "Zkontrolujte souhlas a e-mail registrace." };
   const db = await getAuthSupabase();
   const { data: { user: existing } } = await db.auth.getUser();

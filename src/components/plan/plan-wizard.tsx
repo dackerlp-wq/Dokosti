@@ -604,7 +604,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           helper={
             codeSent ? (
               <>
-                Na <strong>{owner.email}</strong> jsme poslali šestimístný kód, platí několik minut. Když je v e-mailu jen tlačítko, klikněte na něj a vrátíme vás k plánu.
+                Na <strong>{owner.email}</strong> jsme poslali ověřovací kód. Zadejte celý kód z e-mailu. Když je v e-mailu jen tlačítko, klikněte na něj a vrátíme vás k plánu.
               </>
             ) : (
               <>
@@ -616,7 +616,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
           }
           onSubmit={() => (codeSent ? verifyCode() : sendCode())}
           nextLabel={pending ? (codeSent ? "Ověřuji…" : "Odesílám…") : codeSent ? "Dokončit a jít k dodání" : "Poslat kód a pokračovat"}
-          nextDisabled={pending || (codeSent ? code.length !== 6 : !owner.terms)}
+          nextDisabled={pending || (codeSent ? code.length !== 6 && code.length !== 8 : !owner.terms)}
           error={error}
         >
           {!codeSent ? (
@@ -658,7 +658,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
             <>
               <div className="flex items-start gap-3 rounded-panel bg-paper p-4">
                 <MailCheck strokeWidth={1.75} className="mt-0.5 size-6 shrink-0 text-green" aria-hidden />
-                <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" required autoFocus aria-label="Kód z e-mailu" className={`${fieldInput} max-w-xs text-center text-2xl tracking-[0.4em]`} />
+                <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="one-time-code" pattern="(?:\d{6}|\d{8})" maxLength={8} required autoFocus aria-label="Kód z e-mailu" className={`${fieldInput} max-w-xs text-center text-2xl tracking-[0.4em]`} />
               </div>
               <div className="mt-3.5 flex items-center justify-between text-small">
                 <button type="button" onClick={sendCode} disabled={pending || cooldown > 0} className="text-brick-text underline disabled:no-underline disabled:opacity-60">

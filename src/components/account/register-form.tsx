@@ -23,7 +23,7 @@ type Props = {
 type Stage = { kind: "form" } | { kind: "code"; email: string } | { kind: "done"; awarded: number; name: string; email: string };
 
 /**
- * Registrace do klubu na jeden krok: jméno, e-mail, souhlas. Potvrzení šestimístným kódem z e-mailu na téže
+ * Registrace do klubu na jeden krok: jméno, e-mail, souhlas. Potvrzení OTP kódem z e-mailu na téže
  * stránce (žádný odkaz, funguje i na tabletu). Heslo se nezadává, zvířata se přidávají až v účtu za odměnu.
  */
 export function RegisterForm({ cardCode, kiosk, club, account = null, ownerInitials }: Props) {
@@ -117,7 +117,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
           <div>
             <p className="text-heading-md text-green">Opište kód z e-mailu</p>
             <p className="mt-1 text-sm">
-              Na <strong>{stage.email}</strong> jsme poslali šestimístný kód. Platí několik minut.
+              Na <strong>{stage.email}</strong> jsme poslali ověřovací kód. Zadejte celý kód z e-mailu.
             </p>
           </div>
         </div>
@@ -125,10 +125,11 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
           <span className="mb-1 block text-label text-green">Kód z e-mailu</span>
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
             inputMode="numeric"
             autoComplete="one-time-code"
-            pattern="\d{6}"
+            pattern="(?:\d{6}|\d{8})"
+            maxLength={8}
             required
             autoFocus
             aria-label="Kód z e-mailu"
@@ -140,7 +141,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
             {error}
           </p>
         )}
-        <Button type="submit" variant="action" size="md" className="w-full" disabled={pending || code.length !== 6}>
+        <Button type="submit" variant="action" size="md" className="w-full" disabled={pending || (code.length !== 6 && code.length !== 8)}>
           {pending ? "Ověřuji…" : "Dokončit registraci"}
         </Button>
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">

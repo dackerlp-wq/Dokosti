@@ -152,7 +152,7 @@ function CodeForm({ email, next }: { email: string; next?: string }) {
       <input type="hidden" name="next" value={next ?? ""} />
       <label className="block">
         <span className="mb-1 block text-label text-green">Kód z e-mailu</span>
-        <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required aria-label="Kód z e-mailu" className="min-h-13.75 w-40 text-center text-xl tracking-[0.3em]" />
+        <input name="code" inputMode="numeric" autoComplete="one-time-code" pattern="(?:\d{6}|\d{8})" maxLength={8} required aria-label="Kód z e-mailu" className="min-h-13.75 w-40 text-center text-xl tracking-[0.3em]" />
       </label>
       <Button type="submit" variant="action" size="md" disabled={pending}>
         {pending ? "Ověřuji…" : "Přihlásit kódem"}
