@@ -12,14 +12,14 @@ import { getAuthSupabase } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Věrnostní karta DoKosti", robots: { index: false } };
 
-type Props = { params: Promise<{ kod: string }>; searchParams: Promise<{ kiosk?: string }> };
+type Props = { params: Promise<{ kod: string }>; searchParams: Promise<{ kiosk?: string; overeno?: string }> };
 
 /**
  * QR na kartě vede sem. Podle stavu karty se ukáže jen to, co dává smysl: aktivace (registrace s kartou),
  * doplnění e-mailu ke kartě z kasy, přihlášení, připojení karty k účtu, nebo vysvětlení. Viz docs/KARTY.md.
  */
 export default async function CardPage({ params, searchParams }: Props) {
-  const [{ kod }, { kiosk }, settings] = await Promise.all([params, searchParams, getSettings()]);
+  const [{ kod }, { kiosk, overeno }, settings] = await Promise.all([params, searchParams, getSettings()]);
   const code = normalizeCardCode(kod);
   const isKiosk = kiosk === "1";
   const db = await getAuthSupabase();
@@ -74,7 +74,7 @@ export default async function CardPage({ params, searchParams }: Props) {
         <>
           {head("Dokončete registraci s kartou", "Účet máte, ještě ho zapíšeme do klubu a připojíme kartu.")}
           <div>
-            <RegisterForm cardCode={code} kiosk={false} club={settings.club} account={account} ownerInitials={card.state === "prirazena" ? card.initials : undefined} />
+            <RegisterForm cardCode={code} kiosk={false} club={settings.club} account={account} ownerInitials={card.state === "prirazena" ? card.initials : undefined} emailVerified={overeno === "1"} />
           </div>
         </>,
       );

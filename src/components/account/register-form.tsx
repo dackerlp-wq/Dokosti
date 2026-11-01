@@ -18,15 +18,17 @@ type Props = {
   account?: { email: string; name: string } | null;
   /** Aktivace karty zákazníka založeného u kasy: jméno známe, stačí e-mail. */
   ownerInitials?: string;
+  /** Návrat z ověřovacího odkazu v e-mailu. */
+  emailVerified?: boolean;
 };
 
 type Stage = { kind: "form" } | { kind: "code"; email: string } | { kind: "done"; awarded: number; name: string; email: string };
 
 /**
- * Registrace do klubu na jeden krok: jméno, e-mail, souhlas. Potvrzení OTP kódem z e-mailu na téže
- * stránce (žádný odkaz, funguje i na tabletu). Heslo se nezadává, zvířata se přidávají až v účtu za odměnu.
+ * Registrace do klubu na jeden krok: jméno, e-mail, souhlas. E-mail lze potvrdit kódem na stejné stránce
+ * nebo odkazem, který se vrátí na registraci. Heslo se nezadává, zvířata se přidávají až v účtu za odměnu.
  */
-export function RegisterForm({ cardCode, kiosk, club, account = null, ownerInitials }: Props) {
+export function RegisterForm({ cardCode, kiosk, club, account = null, ownerInitials, emailVerified = false }: Props) {
   const router = useRouter();
   const [name, setName] = useState(account?.name ?? "");
   const [email, setEmail] = useState(account?.email ?? "");
@@ -53,7 +55,10 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
     return () => clearTimeout(t);
   }, [kiosk, stage.kind, router]);
 
-  const input = () => ({ name, email, cardCode: card, terms, marketingEmail: marketing, kiosk });
+  const next = card
+    ? `/k/${encodeURIComponent(card.trim())}?overeno=1${kiosk ? "&kiosk=1" : ""}`
+    : `/registrace?overeno=1${kiosk ? "&kiosk=1" : ""}`;
+  const input = () => ({ name, email, cardCode: card, terms, marketingEmail: marketing, kiosk, next });
 
   function start() {
     setError(null);
@@ -115,9 +120,9 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         <div className="flex items-start gap-3">
           <MailCheck strokeWidth={1.75} className="mt-0.5 h-6 w-6 shrink-0 text-green" />
           <div>
-            <p className="text-heading-md text-green">Opište kód z e-mailu</p>
+            <p className="text-heading-md text-green">Ověřte e-mail</p>
             <p className="mt-1 text-sm">
-              Na <strong>{stage.email}</strong> jsme poslali ověřovací kód. Zadejte celý kód z e-mailu.
+              Na <strong>{stage.email}</strong> jsme poslali ověřovací e-mail. Pokud obsahuje kód, opište ho sem. Pokud přišel jen odkaz, klikněte na něj; po návratu sem dokončíte registraci.
             </p>
           </div>
         </div>
@@ -171,7 +176,11 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
           <OrDivider />
         </>
       )}
-      {account && <p className="text-sm text-muted">Účet už máte přihlášený, jen ho zapíšeme do klubu.</p>}
+      {account && (
+        <p className="text-sm text-muted">
+          {emailVerified ? "E-mail je ověřený. Zkontrolujte údaje, znovu potvrďte souhlas s podmínkami a vstupte do klubu." : "Účet už máte přihlášený, jen ho zapíšeme do klubu."}
+        </p>
+      )}
       {ownerInitials && !account && (
         <p className="text-sm text-muted">
           Karta je vedená na jméno {ownerInitials}
@@ -210,10 +219,10 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
         </p>
       )}
       <Button type="submit" variant="action" size="md" className="w-full" disabled={pending || !terms}>
-        {pending ? "Odesílám…" : account ? "Vstoupit do klubu" : "Poslat kód a dokončit"}
+        {pending ? "Odesílám…" : account ? "Vstoupit do klubu" : "Pokračovat e-mailem"}
       </Button>
       <p className="text-xs text-muted">
-        Bez hesla: pošleme vám kód na e-mail, opíšete ho sem a je hotovo.
+        Bez hesla: pošleme ověřovací e-mail. Opíšete kód nebo kliknete na odkaz a účet se potvrdí.
         {club.registrationPoints > 0 && ` Za registraci ${club.registrationPoints} Kostiček`}
         {club.petPoints > 0 && `, za profil psa nebo kočky v účtu dalších ${club.petPoints}`}.
       </p>

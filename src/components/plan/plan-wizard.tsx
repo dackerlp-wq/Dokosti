@@ -600,22 +600,22 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
         <WizardPanel
           {...panelProps}
           kicker="Účet"
-          title={codeSent ? "Opište kód z e-mailu" : "Kam plán poslat?"}
+          title={codeSent ? "Ověřte e-mail" : "Kam plán poslat?"}
           helper={
             codeSent ? (
               <>
-                Na <strong>{owner.email}</strong> jsme poslali ověřovací kód. Zadejte celý kód z e-mailu. Když je v e-mailu jen tlačítko, klikněte na něj a vrátíme vás k plánu.
+                Na <strong>{owner.email}</strong> jsme poslali ověřovací e-mail. Opište kód, pokud ho obsahuje, nebo klikněte na potvrzovací tlačítko; vrátíte se k plánu.
               </>
             ) : (
               <>
-                Založíme vám účet a uložíme plán pro {firstAcc}, ať jde kdykoli upravit. Bez hesla, jen kód z e-mailu.
+                Založíme vám účet a uložíme plán pro {firstAcc}, ať jde kdykoli upravit. Bez hesla, ověření kódem nebo odkazem v e-mailu.
                 {club.petPoints > 0 && ` Za profil zvířete ${club.petPoints} Kostiček`}
                 {club.registrationPoints > 0 && `, za registraci ${club.registrationPoints}`}.
               </>
             )
           }
           onSubmit={() => (codeSent ? verifyCode() : sendCode())}
-          nextLabel={pending ? (codeSent ? "Ověřuji…" : "Odesílám…") : codeSent ? "Dokončit a jít k dodání" : "Poslat kód a pokračovat"}
+          nextLabel={pending ? (codeSent ? "Ověřuji…" : "Odesílám…") : codeSent ? "Dokončit a jít k dodání" : "Poslat ověřovací e-mail"}
           nextDisabled={pending || (codeSent ? code.length !== 6 && code.length !== 8 : !owner.terms)}
           error={error}
         >

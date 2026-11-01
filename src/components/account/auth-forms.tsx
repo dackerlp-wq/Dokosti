@@ -16,10 +16,10 @@ export function AuthForms({ next }: { next?: string }) {
     <div className={`max-w-[560px] ${panel}`}>
       <div className="mb-4 flex gap-2">
         <Tab active={mode === "login"} onClick={() => setMode("login")}>
-          Přihlášení
+          Heslem
         </Tab>
         <Tab active={mode === "link"} onClick={() => setMode("link")}>
-          Odkazem e-mailem
+          Kódem nebo odkazem
         </Tab>
       </div>
       {mode === "login" && (
@@ -86,7 +86,7 @@ function LoginForm({ next, onReset }: { next?: string; onReset: () => void }) {
 }
 
 /**
- * Obrazovka po odeslání odkazu: místo formuláře řekne, kam se podívat, a nabídne poslat znovu.
+ * Obrazovka po odeslání ověřovacího e-mailu: ukáže možné způsoby potvrzení a nabídne poslat znovu.
  */
 function SentPanel({ email, what, pending, onResend, onBack, children }: { email: string; what: string; pending: boolean; onResend: () => void; onBack: () => void; children?: React.ReactNode }) {
   return (
@@ -96,7 +96,7 @@ function SentPanel({ email, what, pending, onResend, onBack, children }: { email
         <div>
           <p className="text-heading-md text-green">Podívejte se do e-mailu</p>
           <p className="mt-1 text-sm">
-            Pokud e-mail <strong>{email}</strong> známe, poslali jsme na něj {what}. Klikněte na tlačítko v něm, klidně i na telefonu.
+            Pokud e-mail <strong>{email}</strong> známe, poslali jsme na něj {what}. Pokud obsahuje tlačítko, klikněte na něj. Když přišel kód, zadejte ho níže. Odkaz můžete otevřít i na telefonu.
           </p>
           <p className="mt-2 text-xs text-muted">Odkaz platí několik minut a jde použít jednou. Když nic nepřišlo, zkontrolujte složku spam nebo hromadné.</p>
         </div>
@@ -125,7 +125,7 @@ function MagicLinkForm({ next, onBack }: { next?: string; onBack: () => void }) 
       startTransition(() => action(fd));
     };
     return (
-      <SentPanel email={email} what="přihlašovací kód a odkaz" pending={pending} onResend={resend} onBack={onBack}>
+      <SentPanel email={email} what="ověřovací e-mail" pending={pending} onResend={resend} onBack={onBack}>
         <CodeForm email={email} next={next} />
       </SentPanel>
     );
@@ -133,17 +133,17 @@ function MagicLinkForm({ next, onBack }: { next?: string; onBack: () => void }) 
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="next" value={next ?? ""} />
-      <p className="text-sm text-muted">Bez hesla: pošleme vám kód a odkaz, opíšete kód nebo kliknete a jste přihlášeni.</p>
+      <p className="text-sm text-muted">Bez hesla: pošleme ověřovací e-mail. Podle jeho obsahu opíšete kód nebo kliknete na odkaz.</p>
       <Field label="E-mail" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <Msg state={state} />
       <Button type="submit" variant="action" size="md" className="w-full" disabled={pending}>
-        {pending ? "Odesílám…" : "Poslat kód na e-mail"}
+        {pending ? "Odesílám…" : "Poslat ověřovací e-mail"}
       </Button>
     </form>
   );
 }
 
-/** Opsání šestimístného kódu z téhož e-mailu, pro toho, kdo nechce klikat na odkaz. */
+/** Zadání kódu z téhož e-mailu pro zákazníka, který nechce klikat na odkaz. */
 function CodeForm({ email, next }: { email: string; next?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(verifyLoginCode, null);
   return (

@@ -72,7 +72,7 @@ export async function clubStart(input: RegisterInput): Promise<StartResult> {
   const email = input.email.trim().toLowerCase();
   if (!name && needName) return { ok: false, error: "Doplňte jméno." };
   if (!email.includes("@")) return { ok: false, error: "Zadejte platný e-mail." };
-  const next = input.next && input.next.startsWith("/") ? input.next : "/ucet";
+  const next = input.next && input.next.startsWith("/") && !input.next.startsWith("//") ? input.next : "/registrace?overeno=1";
   const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: true, data: { full_name: name }, emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}` } });
   if (error) {
     console.error("signInWithOtp", error.message);

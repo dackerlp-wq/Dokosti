@@ -15,7 +15,8 @@ export async function customerLogin(_prev: AuthState, fd: FormData): Promise<Aut
   const db = await getAuthSupabase();
   const { error } = await db.auth.signInWithPassword({ email: str(fd, "email"), password: String(fd.get("password") ?? "") });
   if (error) return { error: "Nesprávný e-mail nebo heslo." };
-  redirect(str(fd, "next") || "/ucet");
+  const next = str(fd, "next");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/ucet");
 }
 
 /**
@@ -54,11 +55,12 @@ export async function customerRegister(_prev: AuthState, fd: FormData): Promise<
 export async function requestMagicLink(_prev: AuthState, fd: FormData): Promise<AuthState> {
   const email = str(fd, "email");
   if (!email.includes("@")) return { error: "Zadejte platný e-mail." };
-  const next = str(fd, "next") || "/ucet";
+  const nextRaw = str(fd, "next") || "/ucet";
+  const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/ucet";
   const db = await getAuthSupabase();
   const { error } = await db.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next.startsWith("/") ? next : "/ucet")}` } });
   if (error && !error.message.toLowerCase().includes("signups not allowed")) return { error: "Odkaz se nepodařilo poslat. Zkuste to za chvíli." };
-  return { info: "Pokud e-mail známe, poslali jsme na něj přihlašovací odkaz. Platí několik minut." };
+  return { info: "Pokud e-mail známe, poslali jsme na něj ověřovací e-mail. Platí několik minut." };
 }
 
 /** Přihlášení šestimístným kódem z e-mailu (stejný e-mail jako u odkazu; kód je v téže zprávě). */
