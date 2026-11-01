@@ -29,6 +29,7 @@ type Props = {
   everyNth?: Record<string, number>;
   /** Údaje z účtu přihlášeného zákazníka. */
   prefill?: { name: string; email: string; phone: string; street: string; city: string; zip: string };
+  accountEmail?: string | null;
 };
 
 const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
@@ -36,7 +37,7 @@ const dateFmt = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numer
 const INTERVALS = [0, 14, 28] as const;
 type Interval = (typeof INTERVALS)[number];
 
-export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, prefill }: Props) {
+export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDays, deliveryWindow, loyalty, subscription, weekdays, initialInterval = 0, initialShipping, everyNth = {}, prefill, accountEmail }: Props) {
   const cart = useCart();
   const [shipping, setShipping] = useState<ShippingId>(initialShipping && SHIPPING.some((m) => m.id === initialShipping) ? initialShipping : (SHIPPING[0]?.id ?? "odber"));
   // Plán z Krmení na míru uložený u košíku: platí, dokud v košíku zůstávají jeho položky.
@@ -352,9 +353,15 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
             {loyalty.enabled && (
               <div>
                 <p className="mb-1 text-label text-green">Kostičky</p>
-                {balance === null ? (
+                {!accountEmail ? (
+                  <p className="text-sm text-muted">
+                    Pro kontrolu a uplatnění Kostiček se <Link href="/ucet/prihlaseni?next=/pokladna" className="underline">přihlaste ke svému účtu</Link>.
+                  </p>
+                ) : email.trim().toLowerCase() !== accountEmail.trim().toLowerCase() ? (
+                  <p className="text-sm text-muted">Pro uplatnění Kostiček musí e-mail objednávky odpovídat e-mailu vašeho účtu.</p>
+                ) : balance === null ? (
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-                    <span>Sbíráte Kostičky? Vyplňte e-mail a zjistěte stav.</span>
+                    <span>Zobrazit zůstatek Kostiček ve vašem účtu.</span>
                     <Button type="button" variant="secondary" onClick={checkBalance} disabled={!email.includes("@")}>
                       Zjistit stav
                     </Button>

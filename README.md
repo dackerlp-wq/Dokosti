@@ -18,6 +18,9 @@ ze `src/lib/catalog.ts` a objednávky jen loguje do konzole.
 - Supabase projekt **DoKosti** (eu-west-1). Migrace jsou v `supabase/migrations/`, ukázková data
   v `supabase/seed.sql`. Produkty se na webu zobrazují, jen když mají `is_published = true`.
 - Objednávky zakládá RPC `create_order` (security definer), web tedy pracuje jen s publishable klíčem.
+- Serverové interní RPC pro e-mailový log a detail objednávky vyžadují `CRON_SECRET`.
+  Nastavte ho v `.env.local` i ve Vercelu; stejná hodnota musí být v chráněné tabulce `secrets` v Supabase.
+  Tajemství nikdy nedávejte do proměnné `NEXT_PUBLIC_*`.
 - Vercel projekt **dokosti**, nasazuje se z větve `main`. Proměnné prostředí jsou nastavené v projektu.
 - Katalog se na webu obnoví nejpozději minutu po změně v databázi (`revalidate = 60`).
 
@@ -48,7 +51,7 @@ Slevové kódy (procenta nebo částka, platnost, limit použití).
 
 Objednávku počítá výhradně databázová funkce `create_order` (ceny z `products`, doprava ze `settings`,
 sleva z `coupons`, Kostičky z `customers`), web jí posílá jen slugy, množství a volby zákazníka.
-Kostičky (`settings.loyalty`): 1 za každých 10 Kč, 100 = 50 Kč. Připisují se při stavu „doručeno“,
+Kostičky (`settings.loyalty`): 1 za každých 10 Kč, 100 = 50 Kč. Kontrola a uplatnění zůstatku v e-shopu vyžadují přihlášení k účtu se shodným e-mailem. Připisují se při stavu „doručeno“,
 při zrušení se vrací; historie v `loyalty_transactions`.
 E-maily (potvrzení objednávky zákazníkovi, upozornění prodejně, změny stavu) posílá `src/lib/email` přes Resend.
 Bez `RESEND_API_KEY` a `EMAIL_FROM` se ukládají do `email_log` se stavem „čeká“ a jdou prohlédnout v adminu (E-maily).

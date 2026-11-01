@@ -69,7 +69,7 @@ export function RegisterForm({ cardCode, kiosk, club, account = null, ownerIniti
   function verify(mail: string) {
     setError(null);
     startTransition(async () => {
-      const res = await clubVerify(mail, code, kiosk);
+      const res = await clubVerify(mail, code, kiosk, input());
       if (!res.ok) return setError(res.error);
       finish(res.awarded, res.name || name, mail);
     });

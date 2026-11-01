@@ -1,10 +1,12 @@
+import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EmailMessage } from "@/lib/email/templates";
 
 /**
  * Odeslání e-mailu přes Resend (https://resend.com). Bez RESEND_API_KEY se e-mail
  * jen uloží do logu se stavem „čeká“; po nastavení domény se začne odesílat.
- * `db` může být anon klient (log_email je security definer).
+ * RPC zápisu do logu je chráněné serverovým CRON_SECRET; proměnná se nikdy
+ * neposílá do klientského bundle.
  */
 export async function sendEmail(
   db: SupabaseClient,
@@ -49,6 +51,12 @@ export async function sendEmail(
     }
   }
 
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.error("log_email: CRON_SECRET is not configured");
+    return;
+  }
+
   const { error: logError } = await db.rpc("log_email", {
     p_to: to,
     p_subject: msg.subject,
@@ -59,6 +67,7 @@ export async function sendEmail(
     p_status: status,
     p_error: error,
     p_provider_id: providerId,
+    p_secret: secret,
   });
   if (logError) console.error("log_email", logError);
 }

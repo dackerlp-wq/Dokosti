@@ -34,6 +34,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           initialShipping={dodani === "rozvoz" || dodani === "odber" || dodani === "prepravce" ? dodani : undefined}
           everyNth={Object.fromEntries((obcas ?? "").split(",").map((p) => p.split(":")).filter(([slug, n]) => slug && Number(n) >= 2 && Number(n) <= 12).map(([slug, n]) => [slug, Number(n)]))}
           prefill={prefill}
+          accountEmail={user?.email ?? null}
         />
       </div>
     </>

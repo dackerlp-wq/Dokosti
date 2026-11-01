@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
       await db.rpc("subscription_mark", { p_secret: secret, p_id: s.id, p_action: "ordered", p_order_number: r.order_number });
       log.push(`order ${s.id} ${r.order_number}`);
 
-      const { data: full } = await db.rpc("order_for_email", { p_order_number: r.order_number });
+      const { data: full } = await db.rpc("order_for_email", { p_order_number: r.order_number, p_secret: secret });
       if (full) {
         const o = full as OrderForEmail;
         await sendEmail(db, o.customer_email, orderConfirmation(o, settings), "potvrzeni", o.id);
