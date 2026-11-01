@@ -694,6 +694,7 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const fishCands = pool.filter((p) => foodKind(p) === "ryba" && p.storage !== "suche");
   let fish: Product | null = null;
   let fishA: ReturnType<typeof fishAlloc> = null;
+  if (i.addons.ryba && !fishCands.length && mixes.length > 0) notes.push({ kind: "info", text: "Rybu teď nemáme skladem, omega-3 doplní rybí olej." });
   if (i.addons.ryba && fishCands.length && (i.beginner || i.stage === "mlade") && mixes.length > 0)
     notes.push({ kind: "info", text: i.stage === "mlade" ? "Rybí maso u mláďat zatím vynecháváme, omega-3 doplní rybí olej." : "Na začátku BARFu rybu vynecháváme, omega-3 doplní rybí olej. Rybí den přidejte po pár týdnech." });
   if (i.addons.ryba && fishCands.length && !i.beginner && i.stage !== "mlade" && mixes.length > 0) {

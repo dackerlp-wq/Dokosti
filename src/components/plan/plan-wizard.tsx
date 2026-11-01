@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Fish, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -507,7 +507,14 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               const on = pet.exclude.includes(m);
               const img = meatImages[m];
               return (
-                <button key={m} type="button" onClick={() => setPet({ ...pet, exclude: on ? pet.exclude.filter((x) => x !== m) : [...pet.exclude, m] })} aria-pressed={on} className={`flex items-center gap-2.5 rounded-panel border-2 bg-white p-2.5 text-left transition-colors duration-300 ${on ? "border-brick bg-paper line-through decoration-brick" : "border-line hover:border-muted"}`}>
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setPet({ ...pet, exclude: on ? pet.exclude.filter((x) => x !== m) : [...pet.exclude, m] });
+                    // Vyřazená ryba vypne i rybí den.
+                    if (m === "ryby" && !on) setAddons((a) => ({ ...a, ryba: false }));
+                  }} aria-pressed={on} className={`flex items-center gap-2.5 rounded-panel border-2 bg-white p-2.5 text-left transition-colors duration-300 ${on ? "border-brick bg-paper line-through decoration-brick" : "border-line hover:border-muted"}`}>
                   <span className="relative size-10 shrink-0 overflow-hidden rounded-full bg-cream">{img && <Image src={img} alt="" fill sizes="40px" className="object-contain p-1" />}</span>
                   <span className="font-semibold text-green capitalize">{MEAT_LABEL[m]}</span>
                   {on && <Check strokeWidth={1.75} className="ml-auto size-4 text-brick-text" aria-hidden />}
@@ -515,6 +522,16 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               );
             })}
           </div>
+          {!pet.exclude.includes("ryby") && (
+            <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-white p-4">
+              <Fish className="size-5 shrink-0 text-ryby" strokeWidth={1.75} aria-hidden />
+              <span className="flex-1">
+                <span className="block font-semibold text-green">Chci do plánu zařadit rybu</span>
+                <span className="block text-small">Rybí den zhruba jednou týdně místo masa, kvůli omega-3.</span>
+              </span>
+              <input type="checkbox" checked={addons.ryba} onChange={(e) => setAddons((a) => ({ ...a, ryba: e.target.checked }))} className="size-5 min-h-0 w-5 accent-green" />
+            </label>
+          )}
         </WizardPanel>
       )}
 
