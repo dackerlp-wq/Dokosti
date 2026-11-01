@@ -323,13 +323,22 @@ export function subscriptionFailed(sub: { customer_name: string; customer_email:
 export function clubWelcome(name: string, awardedPoints: number, s: Settings): EmailMessage {
   const title = "Vítejte v klubu DoKosti";
   const first = name.split(" ")[0] || "";
-  const pts = awardedPoints > 0 ? `<p>Připsali jsme vám <strong>${awardedPoints} Kostiček</strong>. Uplatníte je v pokladně na webu i u nás v prodejně.</p>` : "";
+  const pts = awardedPoints > 0 ? `<p>Na uvítanou jsme vám připsali <strong>${awardedPoints} Kostiček</strong>.</p>` : "";
+  const loyaltyInfo = s.loyalty.enabled
+    ? `<p><strong>Jak fungují Kostičky:</strong> Za každých ${s.loyalty.czkPerPoint} Kč za zboží získáte 1 Kostičku. Uplatnit je můžete po ${s.loyalty.redeemStep}; tento počet odečte z nákupu ${formatPrice(s.loyalty.redeemValueCzk)}.</p>
+<p>Na webu se přihlaste stejným e-mailem a v pokladně zvolte, kolik Kostiček použít. V prodejně ukažte věrnostní kartu nebo sdělte e-mail k účtu.</p>`
+    : "";
+  const petInfo = s.club.petPoints > 0
+    ? `<p>Vyplňte v účtu úplný profil psa nebo kočky a získáte dalších <strong>${s.club.petPoints} Kostiček</strong>. Odměnu připíšeme nejvýše za ${s.club.petPointsMax} profily.</p>`
+    : "";
   const body = `<p>Dobrý den${first ? `, ${esc(first)}` : ""},</p>
-<p>máte hotový účet pro e-shop i věrnostní kartu. V účtu najdete objednávky, Kostičky, profily svých zvířat a doporučení, co a kolik krmit.</p>
+<p>Klub propojuje váš účet na e-shopu s věrnostní kartou v prodejně. V účtu najdete historii objednávek, zůstatek Kostiček a profily svých zvířat s doporučením, co a kolik krmit.</p>
 ${pts}
+${loyaltyInfo}
+${petInfo}
 <p><a href="${SITE_URL}/ucet" style="color:#1f3a2d">Otevřít můj účet</a></p>
 <p>Kdykoli se ozvěte, rádi poradíme.</p>`;
-  const text = `Dobrý den${first ? `, ${first}` : ""},\n\nmáte hotový účet pro e-shop i věrnostní kartu. V účtu najdete objednávky, Kostičky, profily svých zvířat a doporučení.${awardedPoints > 0 ? `\n\nPřipsali jsme vám ${awardedPoints} Kostiček.` : ""}\n\nMůj účet: ${SITE_URL}/ucet\n\n${s.shop.name}`;
+  const text = `Dobrý den${first ? `, ${first}` : ""},\n\nKlub propojuje váš účet na e-shopu s věrnostní kartou v prodejně. V účtu najdete historii objednávek, zůstatek Kostiček a profily svých zvířat s doporučením, co a kolik krmit.${awardedPoints > 0 ? `\n\nNa uvítanou jsme vám připsali ${awardedPoints} Kostiček.` : ""}${s.loyalty.enabled ? `\n\nJak fungují Kostičky: za každých ${s.loyalty.czkPerPoint} Kč za zboží získáte 1 Kostičku. Uplatnit je můžete po ${s.loyalty.redeemStep}; tento počet odečte z nákupu ${formatPrice(s.loyalty.redeemValueCzk)}. Na webu se přihlaste stejným e-mailem a v pokladně zvolte, kolik Kostiček použít. V prodejně ukažte věrnostní kartu nebo sdělte e-mail k účtu.` : ""}${s.club.petPoints > 0 ? `\n\nZa úplný profil psa nebo kočky získáte ${s.club.petPoints} Kostiček, nejvýše za ${s.club.petPointsMax} profily.` : ""}\n\nMůj účet: ${SITE_URL}/ucet\n\n${s.shop.name}`;
   return { subject: title, html: layout(title, body, s.shop), text };
 }
 
