@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Fish, Footprints, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
+import { ArrowLeft, Armchair, Baby, Beef, CalendarDays, Cat, Check, ChevronDown, Dog, Drumstick, Fish, Footprints, Layers, MailCheck, Moon, Plus, Soup, Trophy, UtensilsCrossed, Wheat, X, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { chipClass, fieldInput } from "@/components/ui/field";
 import { PlanSide } from "@/components/plan/plan-side";
 import { Choice, ChoiceGrid, WizardLabel, WizardLayout, WizardPanel, WizardSteps } from "@/components/plan/wizard-ui";
-import { ACTIVITY_LABEL, addonForRole, calculate, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type Reco } from "@/lib/barf";
+import { KIND_TONE } from "@/lib/kind-tone";
+import { ACTIVITY_LABEL, addonForRole, calculate, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type FeedMode, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -82,6 +83,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [swaps, setSwaps] = useState<Record<string, string>>({});
   /** Doplňky k základu (kosti, ryba, olej…): v dodávce jen to, co si zákazník přidá z doporučení. */
   const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ ...BASE_ADDONS });
+  /** Hotové mixy, nebo si misku složit ze svaloviny, kostí a vnitřností. */
+  const [mode, setMode] = useState<FeedMode>("mixy");
   /** Podíl syrové stravy (zbytek granule) a zda přidat naše granule do dodávky. */
   const [rawShare, setRawShare] = useState<AnimalInput["rawShare"]>(100);
   const [addKibble, setAddKibble] = useState(true);
@@ -120,7 +123,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       const raw = sessionStorage.getItem(STORE_KEY);
       if (!raw) return;
       sessionStorage.removeItem(STORE_KEY);
-      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; addons?: Record<AddonKey, boolean>; days: Days; delivery: Delivery; oneTime: boolean; rotate?: boolean; preview?: boolean; swapsB?: Record<string, string> };
+      const st = JSON.parse(raw) as { pet: PetProfile; rawShare: AnimalInput["rawShare"]; addKibble: boolean; removed: string[]; swaps: Record<string, string>; addons?: Record<AddonKey, boolean>; mode?: FeedMode; days: Days; delivery: Delivery; oneTime: boolean; rotate?: boolean; preview?: boolean; swapsB?: Record<string, string> };
       if (!st.pet?.name) return;
       // Obnova rozpracovaného průvodce po návratu z e-mailu: stav se musí nastavit až na klientovi.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -130,6 +133,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       setRemoved(st.removed);
       setSwaps(st.swaps);
       setAddons({ ...BASE_ADDONS, ...(st.addons ?? {}) });
+      setMode(st.mode === "sam" ? "sam" : "mixy");
       setDays(st.days);
       setDelivery(st.delivery);
       setOneTime(st.oneTime);
@@ -153,8 +157,8 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
 
   const input = useMemo<AnimalInput | null>(() => {
     if (step < 7 || pet.weightKg <= 0) return null;
-    return { ...petToAnimal(pet), rawShare, addons: { ...addons, granule: addKibble }, removed, swaps };
-  }, [step, pet, removed, swaps, rawShare, addons, addKibble]);
+    return { ...petToAnimal(pet), rawShare, mode, addons: { ...addons, granule: addKibble }, removed, swaps };
+  }, [step, pet, removed, swaps, rawShare, addons, addKibble, mode]);
   const plan = useMemo(() => (input ? buildPlan(products, input, days) : null), [input, products, days]);
   /* Doporučení navíc: pro každý vypnutý doplněk nejlepší produkt podle využití balení a výhodnosti. */
   const extras = useMemo(() => (input ? recommendExtras(products, input, days) : []), [input, products, days]);
@@ -258,7 +262,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   function sendCode() {
     setError(null);
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, addons, days, delivery, oneTime, rotate, preview, swapsB }));
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({ pet, rawShare, addKibble, removed, swaps, addons, mode, days, delivery, oneTime, rotate, preview, swapsB }));
     } catch {
       /* bez úložiště jen nepůjde pokračovat po kliknutí na odkaz z e-mailu */
     }
@@ -501,7 +505,13 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       )}
 
       {step === 6 && (
-        <WizardPanel {...panelProps} kicker="Chutě a alergie" title={`Co ${first} nesmí nebo nemá rád?`} helper="Označte druhy masa, které vynecháme. Když nic, klidně pokračujte." onSubmit={next} nextLabel={pet.exclude.length ? "Sestavit plán" : "Nic, sestavit plán"}>
+        <WizardPanel {...panelProps} kicker="Miska a chutě" title={`Jak chcete ${firstAcc} krmit?`} helper="Obojí je plnohodnotný BARF. Dávku i nákup spočítáme v obou případech." onSubmit={next} nextLabel="Sestavit plán">
+          <ChoiceGrid label="Jak krmit">
+            <Choice icon={Layers} title="Hotové mixy" desc="Nejjednodušší. Maso, kosti a vnitřnosti v jednom balení." checked={mode === "mixy"} onSelect={() => setMode("mixy")} />
+            <Choice icon={Drumstick} title="Složím si sám" desc="Svalovina, masité kosti a vnitřnosti zvlášť, podle návodu." checked={mode === "sam"} onSelect={() => setMode("sam")} />
+          </ChoiceGrid>
+          <h3 className="mt-8 mb-1 text-heading-md text-green">Co {first} nesmí nebo nemá rád?</h3>
+          <p className="mb-3.5 text-small">Označte druhy masa, které vynecháme. Když nic, klidně pokračujte.</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {MEATS.map((m) => {
               const on = pet.exclude.includes(m);
@@ -802,6 +812,7 @@ function PlanStep({
               <p className="text-small">za den</p>
             </li>
           </ul>
+          <BowlBar plan={plan} />
         </div>
       </section>
 
@@ -896,7 +907,7 @@ function PlanStep({
                           ))}
                         </select>
                       )}
-                      <button type="button" onClick={() => (addonForRole(i.role) ? setAddon(i.role, false) : setRemoved([...removed, i.product.slug]))} className="font-semibold text-brick-text underline">
+                      <button type="button" onClick={() => (addonForRole(i.role) && !(plan.input.mode === "sam" && (i.role === "kosti" || i.role === "vnitrnosti")) ? setAddon(i.role, false) : setRemoved([...removed, i.product.slug]))} className="font-semibold text-brick-text underline">
                         Odebrat
                       </button>
                     </span>
@@ -988,15 +999,7 @@ function PlanStep({
             </section>
           )}
 
-          {plan.notes.length > 0 && (
-            <ul className="space-y-1 text-sm text-muted">
-              {plan.notes.map((n, idx) => (
-                <li key={idx} className={n.kind === "warn" ? "text-brick-text" : ""}>
-                  {n.text}
-                </li>
-              ))}
-            </ul>
-          )}
+          {plan.notes.length > 0 && <PlanNotes notes={plan.notes} />}
         </div>
 
         <aside className="h-fit rounded-card border border-line bg-white p-6 shadow-card lg:sticky lg:top-5">
@@ -1072,3 +1075,67 @@ function Toggle({ on, onChange, title, desc }: { on: boolean; onChange: (v: bool
   );
 }
 
+
+/** Z čeho je miska: podíl svaloviny (mixu), masitých kostí, vnitřností a ryby ze skutečného rozpisu. Barvy jako štítky v e-shopu. */
+function BowlBar({ plan }: { plan: ReturnType<typeof buildPlan> }) {
+  const sam = plan.input.mode === "sam";
+  const roleOf = new Map(plan.items.map((i) => [i.product.slug, i.role]));
+  const sum: Record<string, number> = {};
+  for (const d of plan.schedule) for (const it of d.items) {
+    const role = roleOf.get(it.product.slug);
+    if (it.grams > 0 && role && ["zaklad", "kosti", "vnitrnosti", "ryba"].includes(role)) sum[role] = (sum[role] ?? 0) + it.grams;
+  }
+  const total = Object.values(sum).reduce((a, b) => a + b, 0);
+  if (!total) return null;
+  const parts = [
+    { role: "zaklad", label: sam ? "svalovina" : "BARF mix (maso, kosti, droby)", bar: sam ? KIND_TONE.svalovina.bar : "bg-green" },
+    { role: "kosti", label: "masité kosti", bar: KIND_TONE.kosti.bar },
+    { role: "vnitrnosti", label: "vnitřnosti", bar: KIND_TONE.vnitrnosti.bar },
+    { role: "ryba", label: "ryba", bar: KIND_TONE.ryby.bar },
+  ]
+    .map((p) => ({ ...p, pct: Math.round(((sum[p.role] ?? 0) / total) * 100) }))
+    .filter((p) => p.pct > 0);
+  return (
+    <div className="mt-6 rounded-card border border-line bg-white p-4.5">
+      <p className="text-label text-green">Z čeho je miska</p>
+      <div className="mt-2.5 flex h-8 overflow-hidden rounded-control" role="img" aria-label={parts.map((p) => `${p.label} ${p.pct} %`).join(", ")}>
+        {parts.map((p) => (
+          <span key={p.role} className={`flex items-center justify-center text-[12px] font-bold text-white ${p.bar}`} style={{ width: `${p.pct}%` }}>
+            {p.pct >= 9 ? `${p.pct} %` : ""}
+          </span>
+        ))}
+      </div>
+      <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[13px]/[20px]">
+        {parts.map((p) => (
+          <li key={p.role} className="inline-flex items-center gap-1.5">
+            <span className={`size-2.5 rounded-full ${p.bar}`} aria-hidden />
+            {p.label} {p.pct} %
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Poznámky k plánu: upozornění a první dvě rady hned, zbytek rozbalovací. */
+function PlanNotes({ notes }: { notes: ReturnType<typeof buildPlan>["notes"] }) {
+  const sorted = [...notes.filter((n) => n.kind === "warn"), ...notes.filter((n) => n.kind !== "warn")];
+  const top = sorted.slice(0, Math.max(3, notes.filter((n) => n.kind === "warn").length));
+  const rest = sorted.slice(top.length);
+  const item = (n: (typeof notes)[number], idx: number) => (
+    <li key={idx} className={n.kind === "warn" ? "text-brick-text" : ""}>
+      {n.text}
+    </li>
+  );
+  return (
+    <div className="space-y-2 text-sm text-muted">
+      <ul className="space-y-1">{top.map(item)}</ul>
+      {rest.length > 0 && (
+        <details>
+          <summary className="cursor-pointer font-semibold text-green">Další poznámky ({rest.length})</summary>
+          <ul className="mt-1.5 space-y-1">{rest.map(item)}</ul>
+        </details>
+      )}
+    </div>
+  );
+}

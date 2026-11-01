@@ -43,6 +43,8 @@ export type AnimalInput = {
   ration: Ration;
   /** Začínáme s BARFem: první týdny jeden druh masa, granule vedle. */
   beginner: boolean;
+  /** Jak krmit: hotové mixy (maso s kostí v jednom), nebo si misku složit ze svaloviny, masitých kostí a vnitřností. */
+  mode?: FeedMode;
   /** Druhy masa, které zvíře nesmí (alergie, nesnášenlivost). Produkty s nimi se vyřadí. */
   exclude: MeatKey[];
   /** Co přidat do nákupu; vypnuté role se vynechají. */
@@ -68,6 +70,8 @@ const MEAT_WORDS: Record<MeatKey, string[]> = {
   zverina: ["zverin", "jelen", "srnc", "venison"],
   ryby: ["ryb", "losos", "sled", "makrel", "tresk", "fish"],
 };
+
+export type FeedMode = "mixy" | "sam";
 
 export type AddonKey = "kosti" | "ryba" | "olej" | "zelenina" | "rekreacni" | "vnitrnosti" | "doplnky" | "granule";
 export const ADDON_LABEL: Record<AddonKey, string> = {
@@ -472,16 +476,17 @@ function choose(cands: Product[], fit: (p: Product) => number): Product | null {
   return best;
 }
 
-/** Ryba místo masa: zhruba jednou týdně, když balení nevydrží déle než dva dny; větší jednou za 14 dní. */
-function fishAlloc(fish: Product, animalGrams: number, days: number): { every: 7 | 14; packs: number; grams: number } | null {
+/**
+ * Ryba místo masa jeden den v týdnu: celá balení zhruba na sedminu dávky za období (porcuje se jako ostatní maso).
+ * Když by i jedno balení bylo víc než 20 % dávky za období, ryba se na toto období nehodí.
+ */
+function fishAlloc(fish: Product, animalGrams: number, days: number): { packs: number; grams: number; fit: number } | null {
   const need = animalGrams * days;
-  const packDays = fish.weightGrams / animalGrams;
-  const every = packDays <= 2 ? 7 : packDays <= 4 ? 14 : 0;
-  if (!every || days < every) return null;
-  let packs = Math.max(1, Math.round(days / every));
-  while (packs > 1 && packs * fish.weightGrams > 0.2 * need) packs--;
-  if (packs * fish.weightGrams > 0.2 * need) return null;
-  return { every, packs, grams: packs * fish.weightGrams };
+  const target = need / 7;
+  const packs = Math.max(1, Math.round(target / fish.weightGrams));
+  const grams = packs * fish.weightGrams;
+  if (grams > 0.2 * need) return null;
+  return { packs, grams, fit: clamp01(1 - Math.abs(grams - target) / target) };
 }
 
 /** Nejmenší podíl balení, který se musí stihnout sníst v trvanlivosti, aby mělo smysl ho nabízet. */
@@ -555,18 +560,29 @@ const isPoultry = (p: Product) => (p.meats?.length ? p.meats.some((m) => m === "
  * (rozmražené se má sníst do dvou dnů), mezi stejně vhodnými rozhoduje výhodnost pro obchod.
  */
 function pickMixes(pool: Product[], i: AnimalInput, animalGrams: number, days: number): Product[] {
-  const allMixes = pool.filter((p) => foodKind(p) === "mix" && p.storage !== "suche");
-  const mixes = smallDogMuscle(pool, i, animalGrams, allMixes) ?? allMixes;
+  const mixes =
+    i.mode === "sam"
+      ? pool.filter((p) => foodKind(p) === "sval" && p.storage !== "suche" && !has(p, "vemen"))
+      : pool.filter((p) => foodKind(p) === "mix" && p.storage !== "suche");
   if (!mixes.length) return [];
   const ideal = Math.min(1000, Math.max(200, animalGrams * 2));
   const sizeFit = (p: Product) => 1 / (1 + Math.abs(Math.log(p.weightGrams / ideal)));
-  const best = (cands: Product[]) => [...cands].sort((x, y) => 0.6 * sizeFit(y) + 0.4 * score(y) - (0.6 * sizeFit(x) + 0.4 * score(x)))[0];
+  // Složím si sám: základ je opravdová svalovina; srdce, žaludky a dršťky jen jako doplněk střídání.
+  const offal = (p: Product) => (i.mode === "sam" && has(p, "srdce", "žalud", "dršť") ? 0.6 : 1);
+  const value = (p: Product) => (0.6 * sizeFit(p) + 0.4 * score(p)) * offal(p);
+  const best = (cands: Product[]) => [...cands].sort((x, y) => value(y) - value(x))[0];
   const groups = new Map<string, Product[]>();
   for (const p of mixes) groups.set(meatKey(p), [...(groups.get(meatKey(p)) ?? []), p]);
   let reps = [...groups.values()].map(best);
   // Drůbeží druhy první (snesou je skoro všichni), u koček nejdřív ty s deklarovaným taurinem, pak výhodnost.
-  reps.sort((x, y) => Number(isPoultry(y)) - Number(isPoultry(x)) || score(y) - score(x));
+  // Mixy s kostí před mixy bez kosti (těm by chyběl vápník).
+  reps.sort((x, y) => Number(i.mode !== "sam" && mixHasBone(y)) - Number(i.mode !== "sam" && mixHasBone(x)) || offal(y) - offal(x) || Number(isPoultry(y)) - Number(isPoultry(x)) || score(y) - score(x));
   if (i.species === "kocka") reps.sort((x, y) => Number(!!y.nutrition?.taurineMgPerKg) - Number(!!x.nutrition?.taurineMgPerKg));
+  // Kočka, která si misku skládá sama: srdce jako jeden z druhů masa kvůli taurinu.
+  if (i.species === "kocka" && i.mode === "sam") {
+    const heart = [...mixes].filter((p) => has(p, "srdce")).sort((x, y) => score(y) - score(x))[0];
+    if (heart) reps = [heart, ...reps.filter((p) => p.slug !== heart.slug)];
+  }
   // Kuře celé a drůbež s hovězím jsou různé produkty, ale střídání chce různé hlavní maso: druhý drůbeží druh až za ostatními.
   const seenMain = new Set<string>();
   const firstPass: Product[] = [];
@@ -581,22 +597,6 @@ function pickMixes(pool: Product[], i: AnimalInput, animalGrams: number, days: n
   const packsInPeriod = Math.max(1, Math.floor((animalGrams * days) / ideal));
   return reps.slice(0, Math.max(1, Math.min(want, packsInPeriod)));
 }
-
-/**
- * Malý pes: když by i nejmenší mix vydržel víc než dva dny (rozmražené se má sníst do dvou), základem plánu je
- * svalovina v menším balení (300g saláty). Kost pak nahradí vápník z vaječných skořápek a vnitřnosti játra (buildPlan).
- * Jen dospělí psi; kočky (taurin) a štěňata (poměr vápníku a fosforu) zůstávají na hotových mixech.
- */
-function smallDogMuscle(pool: Product[], i: AnimalInput, animalGrams: number, mixes: Product[]): Product[] | null {
-  if (i.species !== "pes" || i.stage === "mlade" || !mixes.length) return null;
-  const smallest = Math.min(...mixes.map((m) => m.weightGrams));
-  if (smallest <= 2 * animalGrams) return null;
-  const muscle = pool.filter((p) => foodKind(p) === "sval" && p.storage !== "suche" && p.weightGrams < smallest && !has(p, "srdce", "žalud", "dršť", "vemen"));
-  return muscle.length ? muscle : null;
-}
-
-/** Sušená játra: kolik gramů čerstvých odpovídá 1 g sušených (čerstvá ~70 % vody, sušená ~10 %). Orientační. */
-const DRIED_LIVER_FACTOR = 3;
 
 /** Jedlé kosti vhodné velikostí: kočky, malí psi a štěňata do 6 měsíců kuřecí krky, střední křídla a krky, velcí kachní krky, sekané kuře a stehna. */
 function boneCandidates(pool: Product[], i: AnimalInput, adultKg: number): Product[] {
@@ -621,6 +621,8 @@ export function mixesKcal(mixes: Product[]) {
 export function shelfDays(p: { line: string; storage: string; kind?: string }): number {
   if (p.storage === "chlazene") return 7;
   if (p.line === "granule" && p.kind !== "konzervy") return 120;
+  // Mražené maso: Sokol Falco uvádí trvanlivost 1 rok.
+  if (p.storage === "mrazene") return 365;
   return 90;
 }
 
@@ -675,8 +677,8 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const prelim = calculate(i);
   const prelimAnimal = prelim.dailyGrams * ((100 - prelim.composition.plant) / 100);
   const mixes = pickMixes(pool, i, prelimAnimal, days).map(swap).filter((m, idx, arr) => arr.findIndex((x) => x.slug === m.slug) === idx);
-  /** Základ ze svaloviny (malý pes, viz smallDogMuscle): bez Kostí, s vápníkem a játry. */
-  const muscleBase = mixes.length > 0 && mixes.every((m) => foodKind(m) === "sval");
+  /** Složím si sám: základ je svalovina, k ní vždy masité kosti a vnitřnosti (játra a další). */
+  const muscleBase = i.mode === "sam" && mixes.length > 0;
   const kibbleCands = pool.filter((p) => foodKind(p) === "granule");
   const kibble = i.rawShare < 100 && i.addons.granule ? (choose(kibbleCands.filter((p) => i.stage !== "mlade" || has(p, "štěň", "puppy", "junior")), () => 1) ?? choose(kibbleCands, () => 1)) : null;
   const result = calculate(i, mixesKcal(mixes), kibble?.nutrition?.kcalPer100g ?? null);
@@ -684,13 +686,14 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const comp = result.composition;
   const notes: Note[] = [];
   const adultKg = i.species === "pes" && i.stage === "mlade" ? (i.adultWeightKg ?? estimateAdultWeight(i.weightKg, i.ageMonths ?? 4)) : result.idealKg;
+  const baseWord = muscleBase ? "masa" : "mixu";
 
-  // Rostlinná část jde mimo mixy; zbytek je živočišná dávka, kterou pokrývají mixy, ryba a Kosti.
+  // Rostlinná část jde mimo maso; zbytek je živočišná dávka, kterou pokrývají mixy (svalovina), ryba, kosti a vnitřnosti.
   const animalGrams = D * ((100 - comp.plant) / 100);
   const minSplit = Math.max(30, round5(animalGrams * 0.15));
+  const needAll = animalGrams * days;
 
-  // Ryba: vlastní balení místo masa, vybere se ta, jejíž balení období nejlíp využije. Jen když ho zvíře sní nejvýš za dva dny
-  // (větší jednou za 14 dní); jinak se ryba vynechá a omega-3 pokryje olej.
+  // Ryba: jeden den v týdnu místo masa, celá balení na zhruba sedminu dávky. Začátečníci a mláďata ji zatím nemají.
   const fishCands = pool.filter((p) => foodKind(p) === "ryba" && p.storage !== "suche");
   let fish: Product | null = null;
   let fishA: ReturnType<typeof fishAlloc> = null;
@@ -698,61 +701,55 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   if (i.addons.ryba && fishCands.length && (i.beginner || i.stage === "mlade") && mixes.length > 0)
     notes.push({ kind: "info", text: i.stage === "mlade" ? "Rybí maso u mláďat zatím vynecháváme, omega-3 doplní rybí olej." : "Na začátku BARFu rybu vynecháváme, omega-3 doplní rybí olej. Rybí den přidejte po pár týdnech." });
   if (i.addons.ryba && fishCands.length && !i.beginner && i.stage !== "mlade" && mixes.length > 0) {
-    fish = choose(fishCands, (p) => {
-      const al = fishAlloc(p, animalGrams, days);
-      return al ? (al.every === 7 ? 1 : 0.7) : 0;
-    });
+    fish = choose(fishCands, (p) => fishAlloc(p, animalGrams, days)?.fit ?? 0);
     if (fish) fish = swap(fish);
     fishA = fish ? fishAlloc(fish, animalGrams, days) : null;
     if (!fishA) {
       fish = null;
-      notes.push({ kind: "info", text: "Rybí mix je pro vaše zvíře na toto období velké balení, proto v plánu není. Omega-3 doplní rybí olej." });
-    } else if (fishA.every === 14) notes.push({ kind: "info", text: "Rybí balení by vydrželo několik dní, proto rybu zařaďte jednou za 14 dní." });
+      notes.push({ kind: "info", text: days < 28 ? "Rybí balení je na 14 dní pro vaše zvíře moc velké. S dodávkou na 28 dní rybu zařadíme." : "Rybí balení je pro vaše zvíře moc velké, omega-3 doplní rybí olej." });
+    }
   }
-  const fishEvery = fishA?.every ?? 0;
-  const fishShare = fish && fishA ? Math.min(1 / 7, fish.weightGrams / (animalGrams * fishEvery)) : 0;
+  const fishShare = fishA ? fishA.grams / needAll : 0;
 
-  // Bilance kosti: kost v mixu z etikety, jinak neznámá.
-  const mixBonePcts = mixes.map((m) => m.nutrition?.bonePct);
+  // Bilance kosti: kost v mixu z etikety, jinak neznámá. Svalovina kost nemá.
+  const mixBonePcts = mixes.map((m) => (muscleBase ? 0 : m.nutrition?.bonePct));
   const fromMix = mixes.length && mixBonePcts.every((b) => b != null) ? (mixBonePcts as number[]).reduce((a, b) => a + b, 0) / mixes.length : null;
   /** Podíl dávky na masité kosti podle podílu kosti v nich (náhrada části mixu). */
   const rmbShareFor = (rmbBonePct: number) => {
     if (fromMix == null) return (0.15 * 2) / 7;
     const mixShare = 1 - comp.plant / 100 - fishShare;
     const deficit = comp.bone - mixShare * fromMix;
-    return deficit > 0.5 ? Math.min(0.25, deficit / Math.max(1, rmbBonePct - fromMix)) : 0.1 / 7;
+    return deficit > 0.5 ? Math.min(0.3, deficit / Math.max(1, rmbBonePct - fromMix)) : 0.1 / 7;
   };
-  const needAll = animalGrams * days;
-  const boneCands = i.addons.kosti && !muscleBase ? boneCandidates(pool, i, adultKg) : [];
-  const boneCap = (target: number) => Math.min(2.5 * target, 0.25 * needAll);
-  const bone0 = choose(boneCands, (p) => {
+  const boneCands = i.addons.kosti || muscleBase ? boneCandidates(pool, i, adultKg) : [];
+  const boneCap = (target: number) => Math.min((muscleBase ? 1.4 : 2.5) * target, 0.3 * needAll);
+  const boneAllocFor = (p: Product) => {
     const target = rmbShareFor(p.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT) * needAll;
-    return bagAlloc(p, target, boneCap(target), days).fit;
-  });
+    return bagAlloc(p, target, boneCap(target), days);
+  };
+  const bone0 = choose(boneCands, (p) => boneAllocFor(p).fit);
   let bone = bone0 ? swap(bone0) : null;
-  if (bone && bagAlloc(bone, rmbShareFor(bone.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT) * needAll, boneCap(rmbShareFor(bone.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT) * needAll), days).fit <= 0) bone = null;
-  if (i.addons.kosti && boneCands.length && !bone) notes.push({ kind: "info", text: "Sáček kostí je pro vaše zvíře na toto období moc velký (nestihl by se sníst v trvanlivosti), proto v plánu není. V prodejně prodáme i po kusech." });
+  if (bone && boneAllocFor(bone).fit <= 0) bone = null;
+  if (boneCands.length && !bone) notes.push({ kind: "info", text: "Sáček kostí je pro vaše zvíře na toto období moc velký, proto v plánu není. V prodejně prodáme i po kusech." });
+  if (muscleBase && !boneCands.length) notes.push({ kind: "info", text: "Vhodné masité kosti zrovna nemáme skladem, vápník proto doplní vaječné skořápky." });
   const rmbBonePct = bone?.nutrition?.bonePct ?? DEFAULT_RMB_BONE_PCT;
   const rmbShare = bone ? rmbShareFor(rmbBonePct) : 0;
-  if (bone) {
-    if (fromMix == null) notes.push({ kind: "info", text: "Podíl kosti v mixu neznáme z etikety, proto Kosti doporučujeme jako náhradu části mixu dvakrát týdně. Sledujte stolici: tvrdá a světlá znamená kostí moc." });
+  if (bone && !muscleBase) {
+    if (fromMix == null) notes.push({ kind: "info", text: "Podíl kosti v mixu neznáme z etikety, proto kosti doporučujeme jako náhradu části mixu dvakrát týdně. Sledujte stolici: tvrdá a světlá znamená kostí moc." });
     else {
       const boneFromMix = (1 - comp.plant / 100 - fishShare) * fromMix;
       if (comp.bone - boneFromMix <= 0.5) notes.push({ kind: "info", text: "Kost v mixu podle etikety stačí. Kosti proto stačí jako náhrada části mixu jednou týdně, hlavně pro zabavení." });
       if (boneFromMix + rmbShare * rmbBonePct > 12) notes.push({ kind: "warn", text: "Celkový podíl kosti vychází vysoko. Pokud je stolice tvrdá a světlá, kosti uberte." });
     }
   }
-  if (muscleBase)
-    notes.push({ kind: "info", text: "Hotové mixy jsou pro vašeho psa velké balení (rozmražené se má sníst do dvou dnů). Základem je proto svalovina v menším balení, kost nahrazuje vápník z vaječných skořápek a vnitřnosti játra." });
-  else if (!i.addons.kosti && i.species !== "kocka") notes.push({ kind: "info", text: "Bez Kostí hlídejte, aby mix obsahoval dost kosti. Bez kosti v dávce chybí vápník." });
   const mixShare = Math.max(0, 1 - comp.plant / 100 - fishShare - rmbShare);
 
   // Vnitřnosti: kolik jich chybí do cíle (játra + další vnitřnosti) po odečtení toho, co už je v mixech podle etikety.
-  // Játra mají přednost; kočka bez taurinu v mixech dostane místo toho srdce.
-  const mixOrganPct = mixes.length ? mixes.reduce((s, m) => s + (m.nutrition?.organPct ?? 0), 0) / mixes.length : 0;
+  // Játra mají přednost; kočka bez taurinu (a bez srdce v mase) dostane místo toho srdce.
+  const mixOrganPct = mixes.length && !muscleBase ? mixes.reduce((s, m) => s + (m.nutrition?.organPct ?? 0), 0) / mixes.length : 0;
   const organDeficit = comp.liver + comp.organs - mixShare * mixOrganPct;
   const organShareAll = organDeficit >= 2 ? Math.min(0.12, organDeficit / 100) : 0;
-  const catNeedsHeart = i.species === "kocka" && !mixes.some((m) => m.nutrition?.taurineMgPerKg);
+  const catNeedsHeart = i.species === "kocka" && !mixes.some((m) => m.nutrition?.taurineMgPerKg || has(m, "srdce"));
   const organCands = i.addons.vnitrnosti || muscleBase
     ? pool.filter((p) => foodKind(p) === "vnitrnosti" || (catNeedsHeart && foodKind(p) === "sval" && has(p, "srdce")))
     : [];
@@ -760,21 +757,20 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   // Játra pokryjí jen svůj díl (nejvýš 5 % dávky), srdce u kočky zhruba jednu porci týdně.
   const organShareFor = (p: Product) =>
     catNeedsHeart && has(p, "srdce") ? Math.max(organShareAll, 1 / 14) : has(p, "játra") ? Math.min(organShareAll, comp.liver / 100) : organShareAll;
-  // Malý pes na svalovině: místo kila mražených jater sušená játra z Pamlsků (malé balení, dlouhá trvanlivost).
-  // Ve výpočtu vystupují jako čerstvá (hmotnost × DRIED_LIVER_FACTOR), v nákupu a rozpisu se vrátí na sušené gramy.
-  const driedLiverReal = muscleBase
-    ? products.find((p) => p.line === "mlsky" && p.storage === "suche" && p.inStock && p.unit !== "kg" && p.animals.includes(i.species) && !i.removed.includes(p.slug) && has(p, "játra"))
-    : undefined;
-  const driedLiver = driedLiverReal ? { ...driedLiverReal, weightGrams: driedLiverReal.weightGrams * DRIED_LIVER_FACTOR } : undefined;
-  // Mražená játra vydrží v mrazáku rok (výrobce), sušená déle; u malého psa se počítá s ročním balením.
-  const organShelf = muscleBase ? 365 : undefined;
-  const organ = choose(driedLiver ? [driedLiver] : organCands, (p) => organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days, organShelf).fit * organPref(p) : 0);
-  if (muscleBase && organ && driedLiver && organ.slug === driedLiver.slug)
-    notes.push({ kind: "info", text: `${productName(organ)} jsou v plánu místo čerstvých jater (1 g sušených odpovídá zhruba ${DRIED_LIVER_FACTOR} g čerstvých). Navíc je jako pamlsek nedávejte, jater by bylo moc.` });
-  else if (muscleBase && organ) notes.push({ kind: "info", text: `${productName(organ)}: po rozmrazení je hned rozdělte na malé porce (třeba do tvořítka na led) a zamrazte, vyndávejte vždy jen jednu.` });
+  const organ = choose(organCands, (p) => (organShareFor(p) > 0 ? bagAlloc(p, organShareFor(p) * needAll, 1.4 * organShareFor(p) * needAll, days).fit * organPref(p) : 0));
   const organShare = organ ? organShareFor(organ) : 0;
-  if (i.addons.vnitrnosti && !organ && organShareAll === 0 && !catNeedsHeart) notes.push({ kind: "info", text: "Vnitřností je v mixech podle etikety dost, další nepřidáváme." });
+  // Složím si sám: k játrům ještě další vnitřnosti (ledvinky, droby) na zbytek do cíle.
+  const organ2Share = muscleBase && organ && has(organ, "játra") ? Math.max(0, organShareAll - organShare) : 0;
+  const organ2 =
+    organ2Share >= 0.02
+      ? choose(
+          organCands.filter((p) => p.slug !== organ!.slug && !has(p, "játra") && !has(p, "srdce")),
+          (p) => bagAlloc(p, organ2Share * needAll, 1.4 * organ2Share * needAll, days).fit * (has(p, "ledvin") ? 1 : 0.7),
+        )
+      : null;
+  if (i.addons.vnitrnosti && !muscleBase && !organ && organShareAll === 0 && !catNeedsHeart) notes.push({ kind: "info", text: "Vnitřností je v mixech podle etikety dost, další nepřidáváme." });
   if (!organ && catNeedsHeart) notes.push({ kind: "info", text: "Kočka potřebuje taurin. Mixy ho nemají deklarovaný, přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
+  if (muscleBase && !organ) notes.push({ kind: "warn", text: "Vnitřnosti (játra) zrovna nemáme v balení, které by se hodilo. Bez nich dávce chybí vitaminy, stavte se pro radu v prodejně." });
 
   // Denní doplňky: olej 1 ml na 100 g dávky (rybí, když v plánu není ryba), zelenina 20 % dávky u psů, granule podle energie.
   // Sušené přílohy a doplňky se dávkují podle obalu: v plánu je jedno balení, které vydrží několik dodávek.
@@ -799,12 +795,13 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const vegDry = veg ? veg.storage === "suche" && !vegDose : false;
   const vegPerDay = veg && !vegDry ? (vegDose?.min ?? D * (comp.plant / 100)) : 0;
 
-  // Doplňky podle toho, co v sestavě chybí: jód (mořská řasa), když v plánu není ryba; vápník, když část mixů nemá kost
-  // a v plánu nejsou Kosti (ne u štěňat velkých plemen, tam vápník navíc nepatří).
+  // Doplňky podle toho, co v sestavě chybí: jód (mořská řasa), když v plánu není ryba; vápník, když chybí kost
+  // (ne u štěňat velkých plemen, tam vápník navíc nepatří).
   const supplements: { product: Product; why: string }[] = [];
   const pick = (kind: FoodKind, ...words: string[]) => choose(pool.filter((p) => foodKind(p) === kind && has(p, ...words)), () => 1);
-  // Svalovina nemá kost: vápník je v tom případě nutná součást dávky, ne volitelný doplněk.
-  if (muscleBase) {
+  const largePuppy = i.species === "pes" && i.stage === "mlade" && adultKg > 25;
+  // Svalovina bez masitých kostí: vápník je nutná součást dávky, ne volitelný doplněk.
+  if (muscleBase && !bone && !largePuppy) {
     const calcium = pick("mineraly", "vaječn", "vápník");
     if (calcium) supplements.push({ product: calcium, why: "vápník místo kostí, ke svalovině nutný" });
     else notes.push({ kind: "warn", text: "Vápník (vaječné skořápky) zrovna nemáme skladem. Svalovina bez kosti ho potřebuje, stavte se pro radu v prodejně." });
@@ -815,7 +812,6 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       if (kelp) supplements.push({ product: kelp, why: "jód, když v jídelníčku není ryba" });
     }
     const bonelessShare = mixes.length ? mixes.filter((m) => !mixHasBone(m)).length / mixes.length : 0;
-    const largePuppy = i.species === "pes" && i.stage === "mlade" && adultKg > 25;
     if (!muscleBase && !bone && bonelessShare >= 0.3 && !largePuppy) {
       const calcium = pick("mineraly", "vaječn", "vápník");
       if (calcium) supplements.push({ product: calcium, why: "vápník k mixu bez kosti" });
@@ -825,27 +821,18 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   if (!kibble && i.rawShare < 100) notes.push({ kind: "info", text: "Granule pro tuto kombinaci nemáme skladem, podíl granulí dopočítejte podle tabulky výrobce." });
 
   /* ---------- nákup v celých baleních ----------
-   * Nejdřív se rozhodne, co se koupí: každé balení masa se v období sní celé. Kusové sáčky (kosti, vnitřnosti),
-   * které by v období byly moc, jsou položka na víc nákupů (periods > 1) a v tomto období se z nich sní jen podíl.
+   * Ryba, kosti a vnitřnosti jsou balení s vlastním rytmem (dny krmení rozložené po období). Sáčky, které by v období
+   * byly moc, jsou položka na víc nákupů (periods > 1) a sní se z nich jen cílový podíl. Zbytek dávky pokryjí mixy.
    */
-  const need = animalGrams * days;
-
-  // Ryba: celá balení zhruba jednou týdně (viz fishAlloc). Kosti a vnitřnosti: celé sáčky, když se vejdou do limitu,
-  // jinak sáček na víc nákupů a v období jen cílový podíl (viz bagAlloc).
-  const fishPacks = fishA?.packs ?? 0;
-  const fishGrams = fishA?.grams ?? 0;
-  const boneA = bone ? bagAlloc(bone, rmbShare * need, boneCap(rmbShare * need), days) : null;
-  const bonePacks = boneA?.packs ?? 0;
-  const boneGrams = boneA?.grams ?? 0;
-  const bonePeriods = boneA?.periods ?? 1;
-  const organA = organ ? bagAlloc(organ, organShare * need, 1.4 * organShare * need, days, organShelf) : null;
-  const organPacks = organA?.packs ?? 0;
-  const organGrams = organA?.grams ?? 0;
-  const organPeriods = organA?.periods ?? 1;
+  const need = needAll;
+  const boneA = bone ? boneAllocFor(bone) : null;
+  const organA = organ ? bagAlloc(organ, organShare * need, 1.4 * organShare * need, days) : null;
+  const organ2A = organ2 ? bagAlloc(organ2, organ2Share * need, 1.4 * organ2Share * need, days) : null;
+  const sideGrams = (fishA?.grams ?? 0) + (boneA?.grams ?? 0) + (organA?.grams ?? 0) + (organ2A?.grams ?? 0);
 
   // Mixy: počty balení tak, aby součet seděl na zbytek dávky (viz mixPacks), v rozpisu se střídají.
   // Malý přebytek (do 5 %) se rozprostře do dávky; větší přebytek zůstane v mrazáku do příští dodávky a dávka se nemění.
-  const mixNeed = Math.max(0, need - fishGrams - boneGrams - organGrams);
+  const mixNeed = Math.max(0, need - sideGrams);
   const mixPlan: Product[] = [];
   let spread = true;
   if (mixes.length && mixNeed > 0) {
@@ -860,59 +847,47 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       }
     }
     const mixSum = mixPlan.reduce((s, m) => s + m.weightGrams, 0);
-    const total = mixSum + fishGrams + boneGrams + organGrams;
+    const total = mixSum + sideGrams;
     const dev = (total - need) / need;
     spread = dev <= SPREAD_TOL;
     if (spread && round5(total / days) !== round5(animalGrams)) {
-      notes.push({ kind: "info", text: `Nákup je zaokrouhlený na celá balení: vychází ${round5(total / days)} g živočišné části denně místo ${round5(animalGrams)} g (${dev > 0 ? "+" : ""}${Math.round(dev * 100)} %, v běžné toleranci).` });
+      notes.push({ kind: "info", text: `Nákup je zaokrouhlený na celá balení: vychází ${round5(total / days)} g masa denně místo ${round5(animalGrams)} g (${dev > 0 ? "+" : ""}${Math.round(dev * 100)} %, v běžné toleranci).` });
     }
   }
 
   /* ---------- rozpis den po dni ---------- */
   const pantry = new Pantry();
-
-  // Fronta masa: mixy v pořadí nákupu, rybí balení vložená zhruba jednou týdně (v týdnu za sebou).
   const meatQueue: Pack[] = mixPlan.map((m) => pantry.open(m));
-  if (fish && fishPacks > 0) {
-    const totalMix = meatQueue.reduce((s, q) => s + q.left, 0);
-    const groups = Math.min(fishPacks, Math.max(1, Math.round(days / fishEvery)));
-    for (let k = groups - 1; k >= 0; k--) {
-      const inGroup = Math.floor(fishPacks / groups) + (k < fishPacks % groups ? 1 : 0);
-      const target = (totalMix * (k + 0.5)) / groups;
-      let acc = 0;
-      let pos = 0;
-      while (pos < meatQueue.length && acc < target) {
-        acc += meatQueue[pos].product.weightGrams;
-        pos++;
-      }
-      for (let n = 0; n < inGroup; n++) meatQueue.splice(pos, 0, pantry.open(fish));
-    }
-  }
   // Při otevření jsme balení jen „koupili“; za načaté ho považujeme až první den krmení.
   const touched = new Set<Pack>();
 
   /** Dny krmení kusové položky rovnoměrně po období a porce na jedno krmení (poslední porce dojí zbytek). */
-  const feedDays = (grams: number, product: Product | null, maxPortion: number) => {
-    if (!product || grams <= 0) return { days: new Map<number, number>(), per: 0, count: 0 };
-    const perWeek = days / 7;
-    // Nejmíň jednou týdně, nejvýš denně; porce nejvýš `maxPortion`.
-    let count = Math.max(Math.round(perWeek), Math.ceil(grams / maxPortion));
+  const feedDays = (grams: number, perWeek: number, maxPortion: number, offset = 0) => {
+    if (grams <= 0) return { days: new Map<number, number>(), per: 0, count: 0 };
+    // Nejmíň `perWeek`× týdně, nejvýš denně; porce nejvýš `maxPortion`.
+    let count = Math.max(Math.round((days / 7) * perWeek), Math.ceil(grams / maxPortion));
     count = Math.min(days, Math.max(1, count));
     const per = grams / count;
     const map = new Map<number, number>();
-    for (let j = 0; j < count; j++) map.set(Math.min(days - 1, Math.floor(((j + 0.5) * days) / count)), per);
+    for (let j = 0; j < count; j++) map.set(Math.min(days - 1, Math.floor(((j + 0.5 + offset) * days) / count) % days), per);
     return { days: map, per, count };
   };
-  const boneFeed = feedDays(boneGrams, bone, animalGrams * 0.4);
-  const organFeed = feedDays(organGrams, organ, Math.max(30, animalGrams * 0.15));
-  const boneBags: Pack[] = bone ? Array.from({ length: bonePacks }, () => ({ product: bone!, left: bone!.weightGrams })) : [];
-  const organBags: Pack[] = organ ? Array.from({ length: organPacks }, () => ({ product: organ!, left: organ!.weightGrams })) : [];
-  if (bone) pantry.opened.set(bone.slug, bonePacks);
-  if (organ) pantry.opened.set(organ.slug, organPacks);
-  const lastBoneDay = boneFeed.count ? Math.max(...boneFeed.days.keys()) : -1;
-  const lastOrganDay = organFeed.count ? Math.max(...organFeed.days.keys()) : -1;
 
-  /** Porce z kusového sáčku: vždy z načatého, nový až po dojedení. */
+  /** Balení s vlastním rytmem (ryba, kosti, vnitřnosti): vždy z načatého sáčku, nový až po dojedení. */
+  type Slot = { product: Product; packs: number; periods: number; feed: ReturnType<typeof feedDays>; bags: Pack[]; remaining: number; last: number; note: string; openNote: string; withMeat: boolean };
+  const makeSlot = (product: Product | null, alloc: { packs: number; grams: number; periods?: number } | null, perWeek: number, maxPortion: number, note: string, openNote: string, withMeat: boolean, offset = 0): Slot | null => {
+    if (!product || !alloc || alloc.grams <= 0) return null;
+    const feed = feedDays(alloc.grams, perWeek, maxPortion, offset);
+    pantry.opened.set(product.slug, (pantry.opened.get(product.slug) ?? 0) + alloc.packs);
+    const bags = Array.from({ length: alloc.packs }, () => ({ product, left: product.weightGrams }));
+    return { product, packs: alloc.packs, periods: alloc.periods ?? 1, feed, bags, remaining: alloc.grams, last: feed.count ? Math.max(...feed.days.keys()) : -1, note, openNote, withMeat };
+  };
+  const fishSlot = makeSlot(fish, fishA, 1, animalGrams, "ryba místo masa", "nové balení", false, 0.35);
+  const boneSlot = makeSlot(bone, boneA, muscleBase ? 3 : 1, animalGrams * (muscleBase ? 0.5 : 0.4), `místo části ${baseWord}`, "nový sáček", false);
+  const organSlot = makeSlot(organ, organA, 1, Math.max(30, animalGrams * 0.15), "vnitřnosti", "nové balení", true, 0.2);
+  const organ2Slot = makeSlot(organ2, organ2A, 1, Math.max(30, animalGrams * 0.15), "vnitřnosti", "nové balení", true, 0.6);
+  const slots = [fishSlot, boneSlot, organSlot, organ2Slot].filter((x): x is Slot => x !== null);
+
   const fromBags = (bags: Pack[], grams: number, note: string, openNote: string): DayItem | null => {
     const bag = bags.find((q) => q.left > 0);
     if (!bag || grams <= 0) return null;
@@ -924,8 +899,6 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     return { product: bag.product, grams: round5(g), note: tag ? `${note}, ${tag}` : note };
   };
 
-  let remainingBone = boneGrams;
-  let remainingOrgan = organGrams;
   const remainingMeat = () => meatQueue.reduce((s, q) => s + q.left, 0);
   const start = new Date();
   const weekdayOf = (day: number) => WEEK_DAYS[(start.getDay() + 6 + day) % 7];
@@ -939,7 +912,6 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
       const opening = !touched.has(pack);
       touched.add(pack);
       const tags: string[] = [];
-      if (fish && pack.product.slug === fish.slug) tags.push("ryba místo masa");
       if (opening) tags.push("nové balení");
       if (pack.left <= rest) {
         const g = pack.left;
@@ -961,31 +933,25 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
 
   const schedule: DayPlan[] = Array.from({ length: days }, (_, day) => {
     const out: DayItem[] = [];
+    const after: DayItem[] = [];
     const remDays = days - day;
     const lastDay = day === days - 1;
     // Denní cíl se přepočítává ze zbytku, aby se úpravy porcí vyrovnaly a všechno koupené se snědlo.
     // Když je nákup o víc než pár procent větší než potřeba, krmí se cílová dávka a přebytek zůstane v mrazáku.
-    const evenly = (remainingMeat() + remainingBone + remainingOrgan) / remDays;
+    const evenly = (remainingMeat() + slots.reduce((s, x) => s + x.remaining, 0)) / remDays;
     const dailyTotal = spread ? evenly : Math.min(evenly, animalGrams);
 
-    let boneToday = 0;
-    if (boneFeed.days.has(day)) {
-      const it = fromBags(boneBags, day === lastBoneDay ? remainingBone : Math.min(boneFeed.per, remainingBone), "místo části mixu", "nový sáček");
-      if (it) {
-        out.push(it);
-        boneToday = it.grams;
-        remainingBone = Math.max(0, remainingBone - it.grams);
-      }
+    let fromSlots = 0;
+    for (const s of slots) {
+      if (!s.feed.days.has(day)) continue;
+      const it = fromBags(s.bags, day === s.last ? s.remaining : Math.min(s.feed.per, s.remaining), s.note, s.openNote);
+      if (!it) continue;
+      fromSlots += it.grams;
+      s.remaining = Math.max(0, s.remaining - it.grams);
+      (s.withMeat ? after : out).push(it);
     }
-    let organToday = 0;
-    const organItem = organFeed.days.has(day) ? fromBags(organBags, day === lastOrganDay ? remainingOrgan : Math.min(organFeed.per, remainingOrgan), "vnitřnosti", driedLiver && organ?.slug === driedLiver.slug ? "nové balení" : "nové balení, rozdělte na porce") : null;
-    if (organItem) {
-      organToday = organItem.grams;
-      remainingOrgan = Math.max(0, remainingOrgan - organItem.grams);
-    }
-
-    takeMeat(Math.max(0, dailyTotal - boneToday - organToday), out, lastDay);
-    if (organItem) out.push(organItem);
+    takeMeat(Math.max(0, dailyTotal - fromSlots), out, lastDay);
+    out.push(...after);
     if (oil) out.push({ product: oil, grams: 0, note: `${fmtDose(oilPerDay)} ml` });
     if (veg) out.push(vegDry ? { product: veg, grams: 0, note: "podle návodu na obalu" } : { product: veg, grams: round5(vegPerDay) });
     for (const s of supplements) {
@@ -995,11 +961,6 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     if (kibble && result.kibbleKcal > 0) out.push({ product: kibble, grams: kibblePerDay, note: kibblePerDay > 0 ? "v jiném jídle" : `${result.kibbleKcal} kcal podle obalu` });
     return { day, label: `${day + 1}. den`, weekday: weekdayOf(day), items: out };
   });
-
-  // Sušená játra: v rozpisu skutečné sušené gramy (výpočet běžel v čerstvém ekvivalentu).
-  if (driedLiverReal && organ && organ.slug === driedLiverReal.slug)
-    for (const d of schedule)
-      d.items = d.items.map((it) => (it.product.slug === driedLiverReal.slug ? { ...it, product: driedLiverReal, grams: Math.max(0.5, Math.round((it.grams / DRIED_LIVER_FACTOR) * 2) / 2), note: it.note ? `sušená, ${it.note}` : "sušená" } : it));
 
   /* ---------- nákupní seznam ---------- */
   // Koupí se jen balení, která se v období opravdu načnou (přebytek z mixPacks by jinak ležel celý v mrazáku).
@@ -1018,27 +979,25 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     const used = pantry.used.get(product.slug) ?? 0;
     items.push({ product, qty, gramsPerDay: used / days, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText, role, why });
   };
+  const addSlot = (s: Slot | null, role: Reco["role"], why: string) => s && add(s.product, role, why, perWeekText(s.feed.count, s.feed.per), s.periods);
   const mixUsed = mixes.reduce((s, m) => s + (pantry.used.get(m.slug) ?? 0), 0);
   const mixDaily = mixUsed / days;
   const boughtMixes = mixes.filter((m) => (pantry.opened.get(m.slug) ?? 0) > 0).length;
-  mixes.forEach((m) => add(m, "zaklad", muscleBase ? (boughtMixes > 1 ? "svalovina, střídejte po celých balíčcích" : "svalovina, základ misky") : boughtMixes > 1 ? "střídejte po celých balíčcích" : i.beginner || i.stage === "mlade" ? "jeden druh masa na začátek" : "základ misky", `~${round5(mixDaily)} g denně${boughtMixes > 1 ? " dohromady" : ""}`));
-  if (fish) add(fish, "ryba", fishEvery === 7 ? "místo masa, omega-3" : "jednou za 14 dní místo masa, omega-3", `${fishPacks}× za ${days} dní celé balení místo mixu`);
-  if (bone) add(bone, "kosti", "místo části mixu" + (i.beginner ? ", přidávejte až od 2. týdne" : ""), perWeekText(boneFeed.count, boneFeed.per), bonePeriods);
+  const baseWhy = muscleBase
+    ? boughtMixes > 1 ? "svalovina, druhy střídejte" : "svalovina, základ misky"
+    : boughtMixes > 1 ? "druhy střídejte po celých balíčcích" : i.beginner || i.stage === "mlade" ? "jeden druh masa na začátek" : "základ misky";
+  mixes.forEach((m) => add(m, "zaklad", baseWhy, `~${round5(mixDaily)} g denně${boughtMixes > 1 ? " dohromady" : ""}`));
+  addSlot(fishSlot, "ryba", "jeden den v týdnu místo masa, omega-3");
+  addSlot(boneSlot, "kosti", (muscleBase ? "vápník, místo části masa" : "místo části mixu") + (i.beginner ? ", přidávejte až od 2. týdne" : ""));
   // Rekreační kost pro psy nad 10 kg, mimo dávku.
   if (i.addons.rekreacni && i.species === "pes" && adultKg >= 10 && i.stage !== "mlade") {
     const rec = choose(pool.filter((p) => foodKind(p) === "rekreacni" && (p.nutrition?.boneClass === "rekreacni" || has(p, "žebr", "morkov"))), () => 1);
     if (rec) items.push({ product: rec, qty: 1, gramsPerDay: 0, usedGrams: 0, leftoverGrams: 0, periods: Math.max(1, Math.round(28 / days)), portionText: "na okusování, nepočítá se do dávky", role: "rekreacni", why: "jen pod dohledem" });
   }
   const later = (week: number) => (i.beginner ? `, přidávejte až od ${week}. týdne` : "");
-  if (organ && driedLiverReal && organ.slug === driedLiverReal.slug) {
-    const qty = pantry.opened.get(organ.slug) ?? 0;
-    const used = (pantry.used.get(organ.slug) ?? 0) / DRIED_LIVER_FACTOR;
-    const per = organFeed.per / DRIED_LIVER_FACTOR;
-    const g = `${fmtDose(per)} g sušených`;
-    const perWeek = Math.round(organFeed.count / (days / 7));
-    const text = organFeed.count >= days ? `${g} denně` : perWeek >= 1 ? `${perWeek}× týdně po ${g}` : `každý ${Math.round(days / organFeed.count)}. den po ${g}`;
-    if (qty) items.push({ product: driedLiverReal, qty, gramsPerDay: used / days, usedGrams: used, leftoverGrams: Math.max(0, qty * driedLiverReal.weightGrams - used), periods: organPeriods, portionText: `${text} (odpovídá ~${round5(organFeed.per)} g čerstvých)`, role: "vnitrnosti", why: "játra nejvýš 5 % dávky" + later(3) });
-  } else if (organ) add(organ, "vnitrnosti", (has(organ, "srdce") ? "srdce kvůli taurinu" : has(organ, "játra") ? "játra nejvýš 5 % dávky" : "vnitřnosti do 5 % dávky") + later(3), perWeekText(organFeed.count, organFeed.per), organPeriods);
+  const organWhy = (p: Product) => (has(p, "srdce") ? "srdce kvůli taurinu" : has(p, "játra") ? "játra nejvýš 5 % dávky" : "další vnitřnosti do 5 % dávky");
+  if (organSlot) addSlot(organSlot, "vnitrnosti", organWhy(organSlot.product) + later(3));
+  if (organ2Slot) addSlot(organ2Slot, "vnitrnosti", organWhy(organ2Slot.product) + later(4));
   const daily = (product: Product, gpd: number, role: Reco["role"], why: string, text: string) => {
     const { qty, used, periods } = dailyAlloc(product, gpd, days);
     items.push({ product, qty, gramsPerDay: gpd, usedGrams: used, leftoverGrams: Math.max(0, qty * product.weightGrams - used), periods, portionText: text, role, why });
@@ -1059,9 +1018,12 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   }
   if (kibble && result.kibbleKcal > 0) daily(kibble, kibblePerDay, "granule", `${100 - i.rawShare} % energie`, kibblePerDay > 0 ? `${kibblePerDay} g denně v jiném jídle` : `${result.kibbleKcal} kcal denně podle tabulky na obalu`);
 
-  const longest = Math.max(0, ...mixes.map((m) => m.weightGrams / animalGrams));
-  if (mixes.length && longest > 3) notes.push({ kind: "info", text: `Balení mixu vydrží ${Math.round(longest)} dní, rozmražené se ale má sníst do dvou. Rozmrazte ho jen zčásti, nebo zbytek hned rozdělte na porce a zamrazte.` });
-  if (!mixes.length) notes.push({ kind: "warn", text: i.exclude.length ? "Po vyřazení nevhodných druhů masa nemáme skladem žádný vhodný mix. Stavte se v prodejně, poskládáme set spolu." : "Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu." });
+  // Rozmražené se má sníst do dvou dnů: balení, které vydrží déle, se po dovezení rozporcuje.
+  const longPack = [...mixes, ...(fish ? [fish] : [])].some((m) => m.weightGrams / animalGrams > 2) || [organ, organ2].some((o) => o && o.weightGrams / Math.max(1, organSlot?.feed.per ?? 1) > 2);
+  if (mixes.length && longPack)
+    notes.push({ kind: "info", text: "Balení vystačí na víc než dva dny. Po dovezení ho nakrájejte ještě zmrzlé (nebo jen povolené v lednici) na denní porce a vraťte do mrazáku. Večer před krmením vždy přendejte jednu porci do lednice. Mražené maso vydrží rok." });
+  const baseName = i.mode === "sam" ? "vhodnou svalovinu" : "vhodný mix";
+  if (!mixes.length) notes.push({ kind: "warn", text: `${i.exclude.length ? "Po vyřazení nevhodných druhů masa" : "Pro tuto kombinaci"} zrovna nemáme skladem ${baseName}. Stavte se v prodejně, poskládáme set spolu.` });
 
   // Zbytek mixů do mrazáku: u pravidelných dodávek se po pár dodávkách nastřádá celé balení.
   const mixLeft = items.filter((it) => it.role === "zaklad").reduce((s, it) => s + it.leftoverGrams, 0);
@@ -1182,7 +1144,9 @@ export const addonForRole = (role: Reco["role"]) => ROLE_ADDON[role];
  * a vrátí ho s porcí, počtem balení a cenou tak, jak by vypadal v plánu po přidání.
  */
 export function recommendExtras(products: Product[], i: AnimalInput, days: number): Reco[] {
-  const off = (Object.keys(i.addons) as AddonKey[]).filter((k) => !i.addons[k] && k !== "granule");
+  // Složím si sám: kosti a vnitřnosti jsou v plánu vždy, nenabízí se navíc.
+  const forced: AddonKey[] = i.mode === "sam" ? ["kosti", "vnitrnosti"] : [];
+  const off = (Object.keys(i.addons) as AddonKey[]).filter((k) => !i.addons[k] && k !== "granule" && !forced.includes(k));
   if (!off.length) return [];
   // Každý doplněk se posuzuje k sestavě, kterou zákazník opravdu má: rybí olej se nabídne, když nemá rybu,
   // mořská řasa jen bez ryby, vápník jen bez kostí.
