@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Table, Td } from "@/components/admin/table";
+import { PageHeader } from "@/components/admin/page-header";
 import { Button, buttonClass } from "@/components/ui/button";
 import { formatDate, SHIPPING_LABEL, type CustomerRow, type LoyaltyRow, type OrderRow, type PetDbRow } from "@/lib/admin";
 import { MEAT_LABEL } from "@/lib/barf";
@@ -36,14 +37,12 @@ export default async function CustomerPage({ params, searchParams }: { params: P
 
   return (
     <>
-      <p className="mb-1 text-label text-green">
-        <Link href="/admin/zakaznici" className="hover:underline">
-          Zákazníci
-        </Link>
-      </p>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1>{c.name || c.email || "Zákazník bez jména"}</h1>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader
+        crumbs={[{ href: "/admin/zakaznici", label: "Zákazníci" }]}
+        title={c.name || c.email || "Zákazník bez jména"}
+        subtitle={[c.email, c.phone].filter(Boolean).join(" · ") || "Zákazník bez uloženého kontaktu"}
+        actions={
+          <>
           <Link href={`/admin/objednavky/nova?zakaznik=${c.id}`} className={buttonClass("primary")}>
             Nová objednávka
           </Link>
@@ -52,8 +51,9 @@ export default async function CustomerPage({ params, searchParams }: { params: P
               Předplatné{subList.length > 1 ? ` (${subList.length})` : ""}
             </Link>
           )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
@@ -175,7 +175,9 @@ export default async function CustomerPage({ params, searchParams }: { params: P
           <p className="mt-2 text-small text-muted">Kód z čárového kódu na kartě (Code 128). Prázdné pole kartu odebere. Tisk štítku: pravým tlačítkem na kód → uložit obrázek.</p>
         </form>
 
-        <form action={saveCustomerNote} className="h-fit rounded-card border border-line bg-white p-4">
+        <details className="h-fit rounded-xl border border-line bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-green">Interní poznámka</summary>
+        <form action={saveCustomerNote} className="border-t border-line p-4">
           <input type="hidden" name="id" value={c.id} />
           <label htmlFor="note" className="mb-1 block text-label text-green">
             Poznámka
@@ -185,17 +187,21 @@ export default async function CustomerPage({ params, searchParams }: { params: P
             Uložit poznámku
           </Button>
         </form>
+        </details>
         {admin.isManager && (
-          <div className="rounded-card border border-line bg-white p-4 text-sm">
+          <details className="rounded-xl border border-line bg-white p-4 text-sm">
+            <summary className="cursor-pointer font-semibold text-muted">Anonymizovat údaje (GDPR)</summary>
             <p className="text-eyebrow uppercase text-muted">GDPR</p>
             <p className="mt-1 text-muted">Když zákazník požádá o výmaz, anonymizujte ho: jméno, kontakty a adresa se přepíší na všech dokladech, mazlíčci se vyprázdní, karta zablokuje. Čísla dokladů a částky zůstanou kvůli účetnictví. Nevratné.</p>
             <ConfirmButton action={anonymizeCustomer} fields={{ id: c.id }} title="Anonymizovat zákazníka" text={`${c.name || c.email || "Zákazník"}: osobní údaje se nevratně přepíší na zákazníkovi, objednávkách, předplatném a mazlíčcích. Účet a karta se odpojí.`} confirmLabel="Anonymizovat" reasonName="reason" reasonLabel="Důvod (žádost ze dne…)" reasonRequired variant="ghost" className="mt-2 min-h-9 text-[11px] text-brick-text">
               Anonymizovat
             </ConfirmButton>
-          </div>
+          </details>
         )}
 
-        <form action={adjustPoints} className="rounded-card border border-line bg-white p-4">
+        <details className="rounded-xl border border-line bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-green">Upravit Kostičky · stav {c.points}</summary>
+        <form action={adjustPoints} className="border-t border-line p-4">
           <input type="hidden" name="id" value={c.id} />
           <p className="mb-2 text-label text-green">Kostičky ručně</p>
           <div className="grid grid-cols-[100px_1fr] gap-2">
@@ -219,6 +225,7 @@ export default async function CustomerPage({ params, searchParams }: { params: P
             </ul>
           )}
         </form>
+        </details>
         </div>
       </div>
     </>

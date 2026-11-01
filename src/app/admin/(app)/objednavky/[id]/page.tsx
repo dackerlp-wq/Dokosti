@@ -218,7 +218,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
 
-        <form action={saveOrderNote} className="h-fit rounded-card border border-line bg-white p-4">
+        <details className="h-fit rounded-xl border border-line bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-green">Interní poznámka</summary>
+        <form action={saveOrderNote} className="border-t border-line p-4">
           <input type="hidden" name="id" value={o.id} />
           <label htmlFor="internal_note" className="mb-1 block text-label text-green">
             Interní poznámka (zákazník nevidí)
@@ -228,9 +230,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             Uložit poznámku
           </Button>
         </form>
+        </details>
 
-        <div className="h-fit rounded-card border border-line bg-white p-4">
-          <p className="mb-1 text-label text-green">Historie</p>
+        <details className="h-fit rounded-xl border border-line bg-white p-4">
+          <summary className="cursor-pointer text-sm font-semibold text-green">Historie objednávky a e-maily</summary>
           <ul className="space-y-2 text-sm">
             <li>
               <span className="font-semibold">Objednávka přijata</span>
@@ -265,7 +268,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </ul>
             </>
           )}
-        </div>
+        </details>
         </div>
       </div>
     </>

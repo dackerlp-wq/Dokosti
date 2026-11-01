@@ -3,7 +3,7 @@ import Link from "next/link";
 import { saveSupplier } from "@/app/admin/(app)/dodavatele/actions";
 import { PageHeader } from "@/components/admin/page-header";
 import { Table, Td } from "@/components/admin/table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import type { SupplierRow } from "@/lib/admin";
 import { DAY_NAMES_SHORT } from "@/lib/settings";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
@@ -27,8 +27,10 @@ export default async function SuppliersPage() {
 
   return (
     <>
-      <PageHeader title="Dodavatelé" subtitle="Od koho zboží bereme. Dodavatel u produktu předvyplní příjemku a objednávku a Sklad podle něj radí, kdy a kolik objednat." />
-      <form action={saveSupplier} className="mt-4 flex flex-wrap items-end gap-2 rounded-card border border-line bg-white p-3">
+      <PageHeader title="Dodavatelé" subtitle="Spravujte kontakty a dodací lhůty. Odtud můžete rovnou připravit další objednávku zboží." actions={<Link href="/admin/nakup/nova" className={buttonClass("primary")}>Nová objednávka</Link>} />
+      <details className="mt-4 rounded-xl border border-line bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-green">Přidat dodavatele</summary>
+      <form action={saveSupplier} className="flex flex-wrap items-end gap-2 border-t border-line p-3">
         <label className="min-w-[200px] flex-1">
           <span className="mb-1 block text-label text-green">Nový dodavatel</span>
           <input name="name" required placeholder="např. Yoggies" className="min-h-9 py-1" />
@@ -53,9 +55,10 @@ export default async function SuppliersPage() {
           <input name="lead_days" type="number" min={0} defaultValue={3} className="min-h-9 w-24 py-1" />
         </label>
         <Button type="submit" className="min-h-9">
-          Založit
+          Uložit dodavatele
         </Button>
       </form>
+      </details>
       <div className="mt-4">
         {rows.length === 0 ? (
           <p className="text-muted">Zatím žádný dodavatel. Založte prvního a přiřaďte mu produkty.</p>

@@ -38,11 +38,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   /** Marže v Kč (a %) z prodejní ceny a velkoobchodní nákupní ceny s DPH. Pod 20 % cihlově. */
   const marginCell = (price: number, p: ProductRow) => {
     const m = marginOf(price, p.purchase_price_czk);
-    if (!m) return <span className="text-muted">—</span>;
+    if (!m) return <span className="text-small text-muted">{p.purchase_price_czk === null ? "Doplňte nákupní cenu" : "—"}</span>;
     return (
       <span className={m.pct < 20 ? "text-brick-text" : ""}>
         <span className="font-semibold">{formatMarginCzk(m.czk)}</span>
-        <span className="block text-small text-muted">{m.pct} %</span>
+        <span className="block text-small text-muted">marže {m.pct} % · nákup {formatMarginCzk(Number(p.purchase_price_czk))}</span>
       </span>
     );
   };
@@ -83,30 +83,23 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {products.length === 0 ? (
           <p className="text-muted">{all.length === 0 ? "Zatím žádný produkt. Založte první tlačítkem Nový produkt." : "Nic neodpovídá filtru."}</p>
         ) : (
-          <Table head={manager ? ["Název", "Řada", "Balení", "Nákup", "Cena", "Marže", "Sklad", "Dodavatel", "Stav"] : ["Název", "Řada", "Balení", "Cena", "Sklad", "Dodavatel", "Stav"]}>
+          <Table head={manager ? ["Produkt", "Prodejní cena", "Nákup a marže", "Sklad", "Dostupnost"] : ["Produkt", "Prodejní cena", "Sklad", "Dostupnost"]}>
             {products.map((p) => (
               <tr key={p.id}>
-                <Td>
+                <Td className="min-w-[220px]">
                   <Link href={`/admin/produkty/${p.id}`} className="font-semibold text-brick-text hover:underline">
                     {productName(p)}
                   </Link>
-                  {p.ean && <div className="text-small text-muted">{p.ean}</div>}
+                  <div className="text-small text-muted">{LINE_INFO[p.line].name} · {p.unit === "kg" ? "na váhu" : formatWeight(p.weight_grams)}{p.ean ? ` · EAN ${p.ean}` : ""}</div>
+                  {p.supplier_id && <div className="text-small text-muted">Dodavatel: {supName.get(p.supplier_id) ?? "—"}</div>}
                 </Td>
-                <Td>{LINE_INFO[p.line].name}</Td>
-                <Td>{p.unit === "kg" ? <span className="text-muted">na váhu</span> : formatWeight(p.weight_grams)}</Td>
-                {manager && (
-                  <Td className="whitespace-nowrap">
-                    {p.purchase_price_czk !== null ? formatMarginCzk(Number(p.purchase_price_czk)) : <span className="text-muted">—</span>}
-                    {p.purchase_price_czk !== null && p.unit === "kg" && <span className="text-muted">/kg</span>}
-                  </Td>
-                )}
                 <Td className="whitespace-nowrap">
                   {formatPrice(p.price_czk)}
                   {p.unit === "kg" && <span className="text-muted">/kg</span>}
                   {p.original_price_czk && <span className="ml-1 text-muted line-through">{formatPrice(p.original_price_czk)}</span>}
                   {p.store_price_czk !== null && p.store_price_czk !== p.price_czk && <div className="text-small text-muted">prodejna {formatPrice(p.store_price_czk)}</div>}
                 </Td>
-                {manager && <Td className="whitespace-nowrap">{marginCell(p.price_czk, p)}</Td>}
+                {manager && <Td className="min-w-[200px] whitespace-nowrap">{marginCell(p.price_czk, p)}</Td>}
                 <Td>
                   {p.stock_qty === null ? (
                     <span className="text-muted">{STORAGE_LABEL[p.storage]}</span>
@@ -116,7 +109,6 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                     </Link>
                   )}
                 </Td>
-                <Td className="text-muted">{p.supplier_id ? supName.get(p.supplier_id) ?? "—" : "—"}</Td>
                 <Td>
                   <span className="flex flex-wrap gap-1">
                     {p.is_published ? <Badge kind="skladem">Na webu</Badge> : <Badge>Skryté</Badge>}

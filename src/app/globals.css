@@ -2,6 +2,53 @@
 /* Tokeny e-shopu: barvy, rohy, stíny, zlomy, velikosti písma a základní styl těla stránky (design/DESIGN.md). */
 @import "../../design/dokosti-theme.css";
 
+/* Nový pracovní vzhled administrace. Tokeny jsou lokální, takže zbytek e-shopu zůstává beze změny. */
+.admin-shell {
+  --color-paper: #f3f5f2;
+  --color-cream: #f8faf7;
+  --color-line: #e2e8e2;
+  --color-green: #20382b;
+  --color-green-hover: #172a20;
+  --color-ink: #1d2921;
+  --color-muted: #526057;
+  --color-overlay: rgb(17 30 22 / 0.58);
+  --radius-control: 9px;
+  --radius-card: 14px;
+  color: #26332b;
+}
+
+.admin-sidebar {
+  z-index: 20;
+  background: #1b3025;
+  color: #fff;
+}
+
+.admin-brand { min-height: 76px; }
+.admin-nav { scrollbar-color: rgb(255 255 255 / .2) transparent; scrollbar-width: thin; }
+.admin-nav::-webkit-scrollbar { width: 6px; }
+.admin-nav::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .2); border-radius: 99px; }
+.admin-account { background: rgb(0 0 0 / .08); }
+.admin-main { min-height: calc(100vh - 68px); background: #f3f5f2; }
+.admin-main h1, .admin-main h2, .admin-main h3 { font-family: var(--font-sans), system-ui, sans-serif; }
+.admin-main h2 { font-size: 1.05rem; line-height: 1.35; }
+.admin-main h3 { font-size: .95rem; line-height: 1.4; }
+.admin-main [class*="rounded-card"] { box-shadow: 0 1px 2px rgb(20 38 27 / .04); }
+.admin-table tbody tr { transition: background-color 140ms ease; }
+.admin-table tbody tr:hover { background-color: #f7f9f7; }
+.admin-table tbody tr.bg-paper\/60:hover { background-color: #edf2ed; }
+.admin-main a, .admin-main button, .admin-topbar a, .admin-sidebar a, .admin-sidebar button { transition-duration: 160ms; }
+.admin-topbar { position: sticky; top: 0; z-index: 15; box-shadow: 0 1px 2px rgb(20 38 27 / .03); }
+.admin-shell input, .admin-shell select, .admin-shell textarea { border-color: #d5ddd5; }
+.admin-shell input:focus-visible, .admin-shell select:focus-visible, .admin-shell textarea:focus-visible { border-color: #527b5b; outline-color: #527b5b; }
+
+@media (max-width: 767px) {
+  .admin-sidebar { position: relative; }
+  .admin-brand { min-height: 62px; }
+  .admin-main { min-height: auto; }
+  .admin-topbar { position: static; min-height: 56px; }
+  .admin-top-action { min-height: 36px; padding-inline: 12px; font-size: 12px; }
+}
+
 @layer base {
   html {
     height: 100%;

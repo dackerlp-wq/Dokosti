@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Table, Td } from "@/components/admin/table";
+import { PageHeader } from "@/components/admin/page-header";
+import { StockFilters } from "@/components/admin/stock-filters";
 import { createTask } from "@/app/admin/(app)/ukoly/actions";
 import { formatDate, formatDay, type CustomerRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
@@ -27,50 +29,44 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <h1>Zákazníci</h1>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(
-          [
-            ["", "Vše"],
-            ["ucet", "S účtem"],
-            ["karta", "S kartou"],
-            ["newsletter", "Newsletter"],
-            ["ztracime", "Ztrácíme"],
-            ["novi", "Noví"],
-            ["nejlepsi", "Nejlepší"],
-          ] as [string, string][]
-        ).map(([id, label]) => (
-          <Link key={id} href={id ? `/admin/zakaznici?filtr=${id}` : "/admin/zakaznici"} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${(filtr ?? "") === id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
-            {label}
-          </Link>
-        ))}
+      <PageHeader title="Zákazníci" subtitle="Najděte zákazníka podle kontaktu a otevřete jeho objednávky, historii nákupů i věrnostní kartu." />
+      <div className="mt-4">
+        <StockFilters
+          action="/admin/zakaznici"
+          search={{ name: "q", value: q, placeholder: "Jméno, e-mail nebo telefon" }}
+          selects={[{ name: "filtr", value: filtr, label: "Zobrazit zákazníky", options: [
+            { value: "", label: "Všichni zákazníci" },
+            { value: "ucet", label: "Mají účet" },
+            { value: "karta", label: "Mají věrnostní kartu" },
+            { value: "newsletter", label: "Souhlasili s novinkami" },
+            { value: "novi", label: "Noví za 30 dní" },
+            { value: "nejlepsi", label: "Nejvyšší útrata" },
+            { value: "ztracime", label: "Dlouho nenakoupili" },
+          ] }]}
+        />
       </div>
-      <form className="mt-3 flex max-w-md gap-2">
-        {filtr && <input type="hidden" name="filtr" value={filtr} />}
-        <input name="q" defaultValue={q} placeholder="Jméno, e-mail nebo telefon" aria-label="Hledat zákazníka" />
-        <button type="submit" className="text-small font-semibold shrink-0 rounded-control border border-green px-3 text-green">
-          Hledat
-        </button>
-      </form>
       {filtr === "ztracime" && <p className="mt-3 text-sm text-muted">Nakoupili aspoň dvakrát a přes 60 dní nic. Zavolat, napsat, nabídnout předplatné. Tlačítko „ozvat se“ založí úkol s odkazem na zákazníka.</p>}
       <div className="mt-4">
         {customers.length === 0 ? (
           <p className="text-muted">{filtr === "ztracime" ? "Nikoho neztrácíme. Dobrá zpráva." : "Žádní zákazníci."}</p>
         ) : (
-          <Table head={["Jméno", "E-mail", "Telefon", "Klub", "Objednávek", "Utraceno", "Poslední nákup", ""]}>
+          <Table head={["Zákazník", "Kontakt", "Účet a klub", "Nákupy", "Poslední nákup", ""]}>
             {customers.map((c) => (
               <tr key={c.id}>
                 <Td>
                   <Link href={`/admin/zakaznici/${c.id}`} className="font-semibold text-brick-text hover:underline">
                     {c.name || "(bez jména)"}
                   </Link>
+                  <div className="text-small text-muted">Zákazník od {formatDate(c.created_at)}</div>
                 </Td>
-                <Td>{c.email}</Td>
-                <Td>{c.phone}</Td>
+                <Td>
+                  {c.email && <div><a href={`mailto:${c.email}`} className="hover:underline">{c.email}</a></div>}
+                  {c.phone && <div><a href={`tel:${c.phone}`} className="text-small text-muted hover:underline">{c.phone}</a></div>}
+                  {!c.email && !c.phone && <span className="text-muted">Bez kontaktu</span>}
+                </Td>
                 <Td className="text-small text-muted">{[c.user_id ? "účet" : "", c.card_code ? "karta" : "", c.consent_marketing_email_at ? "newsletter" : ""].filter(Boolean).join(", ")}</Td>
-                <Td>{c.orders_count}</Td>
-                <Td>{formatPrice(c.total_spent_czk)}</Td>
-                <Td className="whitespace-nowrap text-muted">{c.last_order_at ? formatDay(c.last_order_at.slice(0, 10)) : `registrace ${formatDate(c.created_at)}`}</Td>
+                <Td className="whitespace-nowrap"><span className="font-semibold">{c.orders_count} objednávek</span><div className="text-small text-muted">útrata {formatPrice(c.total_spent_czk)}</div></Td>
+                <Td className="whitespace-nowrap text-muted">{c.last_order_at ? formatDay(c.last_order_at.slice(0, 10)) : "Zatím bez nákupu"}</Td>
                 <Td className="text-right">
                   {filtr === "ztracime" && (
                     <form action={createTask}>

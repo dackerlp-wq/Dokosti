@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/admin/page-header";
 import { SettingsForms } from "@/components/admin/settings-forms";
 import { getSettings } from "@/lib/settings";
 import { requireManager } from "@/lib/supabase/auth";
@@ -10,13 +11,12 @@ export default async function SettingsPage() {
   const settings = await getSettings();
   return (
     <>
-      <h1>Nastavení</h1>
-      <p className="mt-1 text-sm text-muted">Změny se na webu projeví hned po uložení.</p>
+      <PageHeader title="Nastavení systému" subtitle="Vyberte oblast, upravte její údaje a uložte. Změny se projeví hned." />
       <div className="mt-5">
         <SettingsForms settings={settings} />
       </div>
-      <section className="mt-8 max-w-3xl rounded-card border border-line bg-white p-4">
-        <h2 className="text-[18px]">Zálohy a data</h2>
+      <section className="mt-8 max-w-3xl rounded-xl border border-line bg-white p-4">
+        <h2 className="text-[18px]">Zálohy a osobní údaje</h2>
         <p className="mt-1 text-sm text-muted">
           Databáze běží v Supabase, které dělá denní zálohy samo. Pro vlastní kopii (účetní, přechod jinam, klid v duši) si stáhněte všechna data najednou. Soubory z úložiště (fotky, dokumenty) v exportu nejsou, zůstávají v Supabase Storage.
         </p>

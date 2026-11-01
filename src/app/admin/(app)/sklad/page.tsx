@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Sparkline } from "@/components/admin/sparkline";
+import { PageHeader } from "@/components/admin/page-header";
 import { StockFilters } from "@/components/admin/stock-filters";
 import { StockStatusBadge } from "@/components/admin/stock-status";
 import { Table, Td } from "@/components/admin/table";
@@ -53,25 +54,18 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1>Sklad</h1>
-          <p className="mt-1 text-sm text-muted">Co se prodává, co leží a co dochází. Prodeje z webu i kasy za zvolené období.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/sklad/inventura" className="mr-2 text-small font-semibold text-brick-text underline">
-            Inventura
+      <PageHeader
+        title="Sklad"
+        subtitle="Nejdřív vyřešte vyprodané a docházející zboží. Historii a úpravu zásoby otevřete kliknutím na produkt."
+        actions={<><Link href="/admin/sklad/inventura" className="text-button inline-flex min-h-10 items-center rounded-lg border border-line bg-white px-3.5 font-semibold text-green">Zahájit inventuru</Link><Link href="/admin/nakup/nova" className="text-button inline-flex min-h-10 items-center rounded-lg bg-green px-3.5 font-semibold text-white">Vytvořit nákup</Link></>}
+      />
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white p-2.5">
+        <span className="mr-1 text-xs font-semibold text-muted">Prodeje za období</span>
+        {STOCK_PERIODS.map((p) => (
+          <Link key={p.id} href={`/admin/sklad${query({ obdobi: p.id })}`} aria-current={p.id === period.id ? "page" : undefined} className={`text-button inline-flex min-h-9 items-center rounded-lg px-3 ${p.id === period.id ? "bg-green text-white" : "text-muted hover:bg-paper hover:text-green"}`}>
+            {p.label}
           </Link>
-          <Link href="/admin/nakup/nova" className="mr-2 text-small font-semibold text-brick-text underline">
-            Objednat u dodavatele
-          </Link>
-          <span className="text-eyebrow uppercase text-muted">Období prodejů</span>
-          {STOCK_PERIODS.map((p) => (
-            <Link key={p.id} href={`/admin/sklad${query({ obdobi: p.id })}`} className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${p.id === period.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"}`}>
-              {p.label}
-            </Link>
-          ))}
-        </div>
+        ))}
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -102,10 +96,10 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
         {all.length === 0 ? (
           <p className="text-muted">Žádný produkt nemá evidovaný sklad. Množství zapnete u produktu (pole Kusů skladem) nebo první příjemkou.</p>
         ) : (
-          <Table head={["Produkt", "Skladem", "Prodáno", "Trend 12 týdnů", "Dní zásoby", "Poslední prodej", "Naskladněno", "Stav", "Hodnota"]}>
+          <Table head={["Produkt", "Skladem", `Prodej · ${period.label}`, "Dní zásoby", "Poslední prodej", "Priorita", "Hodnota zásob"]}>
             {list.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-muted">
+                <td colSpan={7} className="px-3 py-6 text-center text-muted">
                   Nic neodpovídá filtru.
                 </td>
               </tr>
@@ -120,15 +114,15 @@ export default async function StockOverviewPage({ searchParams }: { searchParams
                       {LINE_INFO[s.product.line].name} · {STORAGE_LABEL[s.product.storage]}
                       {!s.product.is_published && " · nezveřejněno"}
                     </div>
+                    <div className="text-small text-muted">Naskladněno {agoLabel(s.daysSinceReceipt, "dosud neznámo")}</div>
                   </Td>
                   <Td className="whitespace-nowrap tabular-nums">{formatQty(s.stock, s.product.unit)}</Td>
-                  <Td className="whitespace-nowrap tabular-nums">{formatQty(s.sold, s.product.unit)}</Td>
                   <Td>
+                    <div className="mb-1 whitespace-nowrap font-semibold tabular-nums">{formatQty(s.sold, s.product.unit)} prodáno</div>
                     <Sparkline values={s.weekly} title={`Prodeje po týdnech: ${s.weekly.map((v) => formatQty(v, s.product.unit)).join(", ")}`} />
                   </Td>
                   <Td className="whitespace-nowrap tabular-nums">{s.daysOfStock === Infinity ? <span className="text-muted">∞</span> : Math.round(s.daysOfStock)}</Td>
                   <Td className={`whitespace-nowrap ${s.status === "dead" ? "text-brick-text" : ""}`}>{agoLabel(s.daysSinceSale)}</Td>
-                  <Td className="whitespace-nowrap text-muted">{agoLabel(s.daysSinceReceipt, "—")}</Td>
                   <Td>
                     <StockStatusBadge status={s.status} />
                   </Td>

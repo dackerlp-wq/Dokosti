@@ -6,36 +6,49 @@ import { Button } from "@/components/ui/button";
 import { DAY_NAMES_SHORT, type Settings } from "@/lib/settings";
 
 const TABS = [
-  { id: "shop", label: "Prodejna" },
-  { id: "shipping", label: "Doprava" },
-  { id: "payment", label: "Platba" },
-  { id: "pages", label: "Texty stránek" },
-  { id: "loyalty", label: "Kostičky" },
-  { id: "subscription", label: "Předplatné" },
-  { id: "pos", label: "Kasa" },
-  { id: "club", label: "Klub" },
-  { id: "stock", label: "Sklad" },
-  { id: "notifications", label: "Upozornění" },
+  { id: "shop", label: "Prodejna", group: "Prodej" },
+  { id: "shipping", label: "Doprava", group: "Prodej" },
+  { id: "payment", label: "Platba", group: "Prodej" },
+  { id: "pages", label: "Texty stránek", group: "Web" },
+  { id: "loyalty", label: "Kostičky", group: "Zákazníci" },
+  { id: "club", label: "Klub", group: "Zákazníci" },
+  { id: "subscription", label: "Předplatné", group: "Zákazníci" },
+  { id: "pos", label: "Kasa", group: "Provoz" },
+  { id: "stock", label: "Sklad", group: "Provoz" },
+  { id: "notifications", label: "Upozornění", group: "Provoz" },
 ] as const;
 
 export function SettingsForms({ settings }: { settings: Settings }) {
   const [tab, setTab] = useState<(typeof TABS)[number]["id"]>("shop");
+  const [group, setGroup] = useState<(typeof TABS)[number]["group"]>("Prodej");
+  const groups = [...new Set(TABS.map((t) => t.group))];
+  const visibleTabs = TABS.filter((t) => t.group === group);
   return (
     <div>
-      <div className="flex flex-wrap gap-2 border-b border-line pb-3">
-        {TABS.map((t) => (
+      <div className="rounded-xl border border-line bg-white p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Oblast nastavení</p>
+        <div className="flex flex-wrap gap-2">
+        {groups.map((g) => (
           <button
-            key={t.id}
+            key={g}
             type="button"
-            onClick={() => setTab(t.id)}
-            aria-pressed={tab === t.id}
-            className={`text-button inline-flex min-h-8 items-center rounded-full border px-3 ${
-              tab === t.id ? "border-green bg-green text-cream" : "border-line bg-paper text-green hover:border-green"
+            onClick={() => { setGroup(g); setTab(TABS.find((t) => t.group === g)!.id); }}
+            aria-pressed={group === g}
+            className={`text-sm inline-flex min-h-9 items-center rounded-lg px-3.5 font-semibold ${
+              group === g ? "bg-green text-white" : "bg-paper text-muted hover:text-green"
             }`}
           >
-            {t.label}
+            {g}
           </button>
         ))}
+      </div>
+        <div className="mt-3 flex flex-wrap gap-1 border-t border-line pt-3" role="tablist" aria-label={`${group}: části nastavení`}>
+          {visibleTabs.map((t) => (
+            <button key={t.id} type="button" onClick={() => setTab(t.id)} aria-pressed={tab === t.id} className={`rounded-md px-3 py-2 text-sm ${tab === t.id ? "bg-[#edf2ed] font-semibold text-green" : "text-muted hover:bg-paper hover:text-green"}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="mt-5 max-w-3xl">
         {tab === "shop" && <ShopForm s={settings.shop} />}
