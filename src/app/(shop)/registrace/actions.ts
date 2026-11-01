@@ -6,6 +6,7 @@ import { clubWelcome } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/seo";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
+import { getSupabase } from "@/lib/supabase/server";
 
 export type RegisterInput = {
   name: string;
