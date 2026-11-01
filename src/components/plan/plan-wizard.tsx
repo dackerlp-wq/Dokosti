@@ -53,7 +53,7 @@ function petName(name: string, species: PetProfile["species"], sex: Sex, pad: Pa
   const dog = species === "pes";
   return pad === "dat" ? (dog ? "vašemu psovi" : "vaší kočce") : pad === "acc" ? (dog ? "vašeho psa" : "vaši kočku") : dog ? "váš pes" : "vaše kočka";
 }
-const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "kost navíc", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", doplnek: "doplněk", granule: "granule" };
+const ROLE_LABEL: Record<Reco["role"], string> = { zaklad: "základ", ryba: "rybí den", kosti: "masité kosti", rekreacni: "na okusování", vnitrnosti: "vnitřnosti", olej: "olej", zelenina: "zelenina", doplnek: "doplněk", granule: "granule" };
 const EXTRA_LABEL: Partial<Record<Reco["role"], string>> = { kosti: "Masité kosti", ryba: "Rybí den", vnitrnosti: "Vnitřnosti", olej: "Olej", zelenina: "Zelenina", doplnek: "Doplněk", rekreacni: "Na okusování" };
 
 /** Datum narození zpětně z věku (měsíce nebo roky), přibližně na začátek měsíce. */
@@ -747,7 +747,7 @@ function PlanStep({
   const PALETTE = ["bg-green text-cream", "bg-brick text-white", "bg-muted text-white", "bg-ochre text-ink", "bg-olive text-white", "bg-ink text-white"];
   const mealItems = plan.items.filter((i) => ["zaklad", "ryba", "kosti", "vnitrnosti"].includes(i.role));
   const colorOf = (slug: string) => PALETTE[Math.max(0, mealItems.findIndex((i) => i.product.slug === slug)) % PALETTE.length];
-  const mealKg = mealItems.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
+  const mealKg = mealItems.reduce((s, i) => s + i.usedGrams, 0) / 1000;
   // Zkratka do kalendáře: první písmeno, při shodě (kuře, králík, kachna) první dvě.
   const letterOf = (slug: string) => {
     const p = mealItems.find((i) => i.product.slug === slug)?.product;
@@ -821,17 +821,17 @@ function PlanStep({
           {mealItems.length > 0 && (
             <section>
               <h3 className="text-heading-lg text-green">Co bude v misce</h3>
-              <p className="mt-1 mb-4 text-[15px]/[24px]">Podíl v dodávce na {period} podle hmotnosti.</p>
-              <div className="flex h-6.5 overflow-hidden rounded-control" role="img" aria-label={mealItems.map((i) => `${productName(i.product)} ${Math.round(((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100)} %`).join(", ")}>
+              <p className="mt-1 mb-4 text-[15px]/[24px]">Kolik čeho za {period} sní, podle hmotnosti. Co z balení zbyde, počká v mrazáku.</p>
+              <div className="flex h-6.5 overflow-hidden rounded-control" role="img" aria-label={mealItems.map((i) => `${productName(i.product)} ${Math.round((i.usedGrams / 1000 / mealKg) * 100)} %`).join(", ")}>
                 {mealItems.map((i) => (
-                  <div key={i.product.slug} className={colorOf(i.product.slug).split(" ")[0]} style={{ width: `${((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100}%` }} />
+                  <div key={i.product.slug} className={colorOf(i.product.slug).split(" ")[0]} style={{ width: `${(i.usedGrams / 1000 / mealKg) * 100}%` }} />
                 ))}
               </div>
               <ul className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5 text-[14px]/[22px]">
                 {mealItems.map((i) => (
                   <li key={i.product.slug} className="inline-flex items-center gap-2">
                     <span className={`size-3 rounded-full ${colorOf(i.product.slug).split(" ")[0]}`} aria-hidden />
-                    <b className="text-green">{Math.round(((i.qty * i.product.weightGrams) / 1000 / mealKg) * 100)} %</b> {productName(i.product).toLowerCase()}
+                    <b className="text-green">{Math.round((i.usedGrams / 1000 / mealKg) * 100)} %</b> {productName(i.product).toLowerCase()}
                   </li>
                 ))}
               </ul>
@@ -928,7 +928,7 @@ function PlanStep({
           {extras.length > 0 && (
             <section aria-label="Doporučujeme navíc">
               <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
-              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části mixu.</p>
+              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části {plan.input.mode === "sam" ? "masa" : "mixu"}.</p>
               <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                 {extras.map((i) => {
                   const lasting = i.periods > 1;

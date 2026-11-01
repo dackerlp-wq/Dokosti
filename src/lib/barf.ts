@@ -373,7 +373,7 @@ export function calculate(i: AnimalInput, kcalPer100g: number | null = null, kib
   if (i.stage === "kojici") notes.push({ kind: "info", text: "Kojící fena či kočka může jíst i několikrát denně podle chuti. Vody neomezeně." });
   if (i.species === "kocka") notes.push({ kind: "warn", text: "Kočka nesmí zůstat bez jídla déle než jeden den. Přechod na syrovou stravu dělejte pomalu, i několik týdnů." });
   if (i.rawShare < 100) notes.push({ kind: "info", text: "Granule a syrovou stravu lze kombinovat, nejlépe v oddělených jídlech. Součet energie hlídá kalkulačka." });
-  if (!energyMode) notes.push({ kind: "info", text: "U zvolených mixů zatím neznáme energii z etikety, proto počítáme s běžnou hustotou syrové stravy. Dávka je orientační." });
+  if (!energyMode) notes.push({ kind: "info", text: "U zvoleného masa zatím neznáme energii z etikety, proto počítáme s běžnou hustotou syrové stravy. Dávka je orientační." });
 
   return {
     idealKg: Math.round(idealKg * 10) / 10,
