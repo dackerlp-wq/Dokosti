@@ -448,7 +448,7 @@ export type ExpenseRow = {
   created_by: string | null;
   created_at: string;
 };
-export type RecurringExpenseRow = { id: string; name: string; category: ExpenseCategory; amount_czk: number; day_of_month: number; supplier: string; note: string; active: boolean; last_generated_month: string | null; created_at: string };
+export type RecurringExpenseRow = { id: string; name: string; category: ExpenseCategory; amount_czk: number; day_of_month: number; frequency: "weekly" | "monthly"; day_of_week: number | null; next_due_on: string; supplier: string; note: string; active: boolean; last_generated_month: string | null; created_at: string };
 export type PayrollMonthRow = { month: string; status: "otevreny" | "uzavreny"; closed_at: string | null; closed_by: string | null; note: string; created_at: string };
 export type PayrollItemRow = {
   id: string;

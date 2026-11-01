@@ -8,6 +8,7 @@ import { Table, Td } from "@/components/admin/table";
 import { Button, buttonClass } from "@/components/ui/button";
 import { EXPENSE_CATEGORY_LABEL, EXPENSE_SOURCE_LABEL, formatDay, isMonth, monthLabel, shiftMonth, type ExpenseCategory, type ExpenseRow, type RecurringExpenseRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
+import { DAY_NAMES, DAY_NAMES_SHORT } from "@/lib/settings";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Výdaje" };
@@ -142,15 +143,16 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
               zavřít
             </Link>
           </div>
-          <p className="mb-3 text-sm text-muted">Nájem, energie, software, pojištění. Každý měsíc v zadaný den vznikne výdaj k zaplacení (denní cron), po zaplacení ho odškrtnete.</p>
+          <p className="mb-3 text-sm text-muted">Nájem, energie, software nebo pojištění. Nastavte týdenní či měsíční interval a další splatnost se vytvoří automaticky.</p>
           {recurring.length > 0 && (
-            <Table head={["Název", "Kategorie", "Částka", "Den", "Dodavatel", "Stav", ""]}>
+            <Table head={["Název", "Kategorie", "Částka", "Opakování", "Další splatnost", "Dodavatel", "Stav", ""]}>
               {recurring.map((r) => (
                 <tr key={r.id} className={r.active ? "" : "text-muted"}>
                   <Td>{r.name}</Td>
                   <Td>{EXPENSE_CATEGORY_LABEL[r.category]}</Td>
                   <Td className="text-right">{formatPrice(Number(r.amount_czk))}</Td>
-                  <Td>{r.day_of_month}.</Td>
+                  <Td>{r.frequency === "weekly" ? `Každý ${DAY_NAMES[r.day_of_week ?? 0]}` : `Měsíčně · ${r.day_of_month}. den`}</Td>
+                  <Td>{formatDay(r.next_due_on)}</Td>
                   <Td>{r.supplier || "—"}</Td>
                   <Td>{r.active ? `aktivní${r.last_generated_month ? `, naposledy ${monthLabel(r.last_generated_month)}` : ""}` : "vypnutý"}</Td>
                   <Td className="text-right">
@@ -160,6 +162,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
                       <input type="hidden" name="category" value={r.category} />
                       <input type="hidden" name="amount_czk" value={String(r.amount_czk)} />
                       <input type="hidden" name="day_of_month" value={String(r.day_of_month)} />
+                      <input type="hidden" name="frequency" value={r.frequency} />
+                      <input type="hidden" name="day_of_week" value={String(r.day_of_week ?? 0)} />
                       <input type="hidden" name="supplier" value={r.supplier} />
                       <input type="hidden" name="note" value={r.note} />
                       <input type="hidden" name="active" value={r.active ? "0" : "1"} />
@@ -172,7 +176,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
               ))}
             </Table>
           )}
-          <form action={saveRecurring} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <form action={saveRecurring} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
             <label className="block lg:col-span-2">
               <span className="mb-1 block text-label text-green">Nový opakovaný výdaj</span>
               <input name="name" required placeholder="např. Nájem prodejny" className="min-h-9 py-1" />
@@ -192,8 +196,21 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
               <input name="amount_czk" type="number" min={0} step="1" required className="min-h-9 py-1" />
             </label>
             <label className="block">
+              <span className="mb-1 block text-label text-green">Opakování</span>
+              <select name="frequency" defaultValue="monthly" className="min-h-9 py-1">
+                <option value="monthly">Každý měsíc</option>
+                <option value="weekly">Každý týden</option>
+              </select>
+            </label>
+            <label className="block">
               <span className="mb-1 block text-label text-green">Den v měsíci</span>
               <input name="day_of_month" type="number" min={1} max={28} defaultValue={1} className="min-h-9 py-1" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-label text-green">Den v týdnu</span>
+              <select name="day_of_week" defaultValue={1} className="min-h-9 py-1">
+                {DAY_NAMES_SHORT.map((name, index) => <option key={name} value={index}>{DAY_NAMES[index]}</option>)}
+              </select>
             </label>
             <div className="flex items-end">
               <Button type="submit" variant="secondary" className="min-h-9">

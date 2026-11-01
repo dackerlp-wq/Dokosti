@@ -73,7 +73,7 @@ export async function markExpensePaid(fd: FormData) {
   await flashOk(undo ? "Vráceno mezi nezaplacené." : "Označeno jako zaplacené.");
 }
 
-/** Opakovaný výdaj (nájem, energie, software): každý měsíc v daný den vznikne výdaj k zaplacení. */
+/** Opakovaný výdaj: týdenní nebo měsíční splatnost. */
 export async function saveRecurring(fd: FormData) {
   const admin = await requireManager();
   const id = String(fd.get("id") ?? "");
@@ -81,13 +81,30 @@ export async function saveRecurring(fd: FormData) {
   const category = String(fd.get("category") ?? "najem");
   const amount = money(fd.get("amount_czk"));
   const day = Math.min(28, Math.max(1, Math.round(Number(fd.get("day_of_month")) || 1)));
+  const frequency = String(fd.get("frequency") ?? "monthly");
+  const dayOfWeek = Math.min(6, Math.max(0, Math.round(Number(fd.get("day_of_week")) || 0)));
+  if (frequency !== "weekly" && frequency !== "monthly") return flashError("Vyberte týdenní nebo měsíční opakování.");
   if (!name || !isCategory(category) || !(amount > 0)) return flashError("Doplňte název, kategorii a částku.");
-  const row = { name, category, amount_czk: amount, day_of_month: day, supplier: String(fd.get("supplier") ?? "").trim().slice(0, 120), note: String(fd.get("note") ?? "").trim().slice(0, 500), active: fd.get("active") !== "0" };
+  const todayParts = new Intl.DateTimeFormat("en", { timeZone: "Europe/Prague", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const todayValues = Object.fromEntries(todayParts.map((part) => [part.type, part.value]));
+  const today = `${todayValues.year}-${todayValues.month}-${todayValues.day}`;
+  const todayDate = new Date(`${today}T00:00:00Z`);
+  let nextDue: string;
+  if (frequency === "weekly") {
+    const daysAhead = (dayOfWeek - todayDate.getUTCDay() + 7) % 7;
+    todayDate.setUTCDate(todayDate.getUTCDate() + daysAhead);
+    nextDue = todayDate.toISOString().slice(0, 10);
+  } else {
+    const [year, month] = today.split("-").map(Number);
+    const dueThisMonth = `${today.slice(0, 8)}${String(day).padStart(2, "0")}`;
+    nextDue = dueThisMonth >= today ? dueThisMonth : new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10);
+  }
+  const row = { name, category, amount_czk: amount, day_of_month: day, frequency, day_of_week: frequency === "weekly" ? dayOfWeek : null, supplier: String(fd.get("supplier") ?? "").trim().slice(0, 120), note: String(fd.get("note") ?? "").trim().slice(0, 500), active: fd.get("active") !== "0" };
   const db = await getAuthSupabase();
-  const { error } = id ? await db.from("recurring_expenses").update(row).eq("id", id) : await db.from("recurring_expenses").insert(row);
+  const { error } = id ? await db.from("recurring_expenses").update(row).eq("id", id) : await db.from("recurring_expenses").insert({ ...row, next_due_on: nextDue });
   if (error) return flashError(error.message);
-  await logActivity(db, admin, { kind: id ? "vydaj.opakovany.upraven" : "vydaj.opakovany.zalozen", subject: "expense", subjectId: "", text: `Opakovaný výdaj ${name}: ${Math.round(amount)} Kč, ${day}. den v měsíci${row.active ? "" : ", vypnutý"}` });
-  // Hned vygenerovat výdaj za tento měsíc, pokud den už nastal.
+  await logActivity(db, admin, { kind: id ? "vydaj.opakovany.upraven" : "vydaj.opakovany.zalozen", subject: "expense", subjectId: "", text: `Opakovaný výdaj ${name}: ${Math.round(amount)} Kč, ${frequency === "weekly" ? `každý ${["neděli", "pondělí", "úterý", "středu", "čtvrtek", "pátek", "sobotu"][dayOfWeek]}` : `každý měsíc ${day}.`}${row.active ? "" : ", vypnutý"}` });
+  // Při dnešním termínu se výdaj vytvoří hned; jinak ho zpracuje denní cron.
   await db.rpc("finance_daily");
   revalidate();
   await flashOk(id ? "Opakovaný výdaj upraven." : `Opakovaný výdaj ${name} založen.`);
