@@ -47,6 +47,6 @@ jobs:
           cd ../..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f mobile/releases/MojeMiska-test.apk
+          git add -f mobile/releases/MojeMiska-test-v0.4.apk
           git commit -m "Build test APK for Android tablet"
           git push origin HEAD:test/moje-miska-android-apk
