@@ -5,7 +5,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -130,93 +138,85 @@ private fun MojeMiska() {
         }
     }
 
+
     Column(Modifier.fillMaxSize().background(cream)) {
-        Column(Modifier.fillMaxWidth().background(green).padding(horizontal=20.dp, vertical=18.dp)) {
-            Text("MOJE MISKA", color=Color(0xFFF3ECDD), fontSize=13.sp, fontWeight=FontWeight.ExtraBold, letterSpacing=2.sp)
-            Text("by DoKosti", color=Color(0xFFD9CFB8), fontSize=13.sp)
-        }
         if (token.isBlank()) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement=Arrangement.spacedBy(14.dp)) {
-                Text("Vítejte zpátky", fontSize=29.sp, fontWeight=FontWeight.Bold, color=green)
-                Text("Přihlaste se stejným účtem jako na dokosti.cz.", color=muted)
-                OutlinedTextField(email, { email = it; sent=false }, label={Text("E-mail")}, singleLine=true, modifier=Modifier.fillMaxWidth(),
-                    keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email))
-                if (usePassword) {
-                    OutlinedTextField(pass, {pass=it}, label={Text("Heslo")}, modifier=Modifier.fillMaxWidth(), singleLine=true,
-                        visualTransformation=PasswordVisualTransformation())
-                    Button(onClick={login("password")}, enabled=!loading && email.contains("@") && pass.isNotBlank(), modifier=Modifier.fillMaxWidth()) { Text("Přihlásit se") }
+            Column(Modifier.fillMaxWidth().background(green).padding(24.dp)) {
+                Text("Moje miska",fontSize=27.sp,color=Color.White,fontWeight=FontWeight.Bold)
+                Text("by DoKosti",fontSize=13.sp,color=Color(0xFFE6A06A))
+            }
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(22.dp),verticalArrangement=Arrangement.spacedBy(14.dp)) {
+                Text("Vítejte zpátky",fontSize=28.sp,fontWeight=FontWeight.Bold,color=green)
+                Text("Přihlaste se účtem DoKosti.",color=muted)
+                OutlinedTextField(email,{email=it;sent=false;otp=""},label={Text("E-mail")},modifier=Modifier.fillMaxWidth(),singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Email),shape=RoundedCornerShape(15.dp))
+                if(usePassword) {
+                    OutlinedTextField(pass,{pass=it},label={Text("Heslo")},singleLine=true,modifier=Modifier.fillMaxWidth(),visualTransformation=PasswordVisualTransformation(),shape=RoundedCornerShape(15.dp))
+                    Button(onClick={login("password")},enabled=!loading && email.contains("@") && pass.isNotBlank(),modifier=Modifier.fillMaxWidth()){Text("Přihlásit se")}
                 } else {
-                    if (sent) {
-                        OutlinedTextField(otp, {otp=it.filter(Char::isDigit).take(8)}, label={Text("Osmimístný kód z e-mailu")}, singleLine=true, modifier=Modifier.fillMaxWidth(),
-                            keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
-                        Button(onClick={login("verify")}, enabled=!loading && otp.length==8, modifier=Modifier.fillMaxWidth()) { Text("Ověřit kód") }
+                    if(sent) {
+                        OutlinedTextField(otp,{otp=it.filter(Char::isDigit).take(8)},label={Text("Osmimístný kód")},modifier=Modifier.fillMaxWidth(),singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),shape=RoundedCornerShape(15.dp))
+                        Button(onClick={login("verify")},enabled=!loading && otp.length==8,modifier=Modifier.fillMaxWidth()){Text("Ověřit kód")}
                     }
-                    OutlinedButton(onClick={login("send")}, enabled=!loading && email.contains("@"), modifier=Modifier.fillMaxWidth()) {
-                        Text(if (sent) "Poslat nový kód" else "Poslat přihlašovací kód")
-                    }
+                    OutlinedButton(onClick={login("send")},enabled=!loading && email.contains("@"),modifier=Modifier.fillMaxWidth()){Text(if(sent)"Poslat nový kód" else "Poslat přihlašovací kód")}
                 }
-                TextButton(onClick={usePassword=!usePassword}) { Text(if(usePassword) "Použít kód z e-mailu" else "Přihlásit se heslem") }
-                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-                if (message.isNotBlank()) Text(message, color=brick)
-                Text("Testovací nativní Android aplikace. Účet a data jsou ze skutečného DoKosti; nákupy se zde neprovádějí.",color=muted,fontSize=12.sp)
+                TextButton(onClick={usePassword=!usePassword}){Text(if(usePassword)"Použít e-mailový kód" else "Přihlásit se heslem")}
+                if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if(message.isNotBlank())Text(message,color=brick)
+                Text("Testovací verze: nákupy ani platby zatím neprovádí.",fontSize=12.sp,color=muted)
             }
         } else {
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement=Arrangement.spacedBy(12.dp)) {
-                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-                if (message.isNotBlank()) Text(message,color=brick,fontSize=13.sp)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal=16.dp, vertical=12.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                if(loading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                if(message.isNotBlank()) Text(message,color=brick,fontSize=12.sp)
                 when(tab) {
-                    0 -> {
-                        Text("Ahoj, parťáku!", fontSize=26.sp, fontWeight=FontWeight.Bold, color=green)
-                        Text(userEmail, color=muted, fontSize=13.sp)
-                        InfoCard("Můj mazlíček", if(pets.length()>0) pets.getJSONObject(0).optString("name") else "Přidejte svého psa či kočku na dokosti.cz")
-                        InfoCard("Věrnostní Kostičky", customer.optInt("points",0).toString())
-                        InfoCard("Poslední objednávka", if(orders.length()>0) orders.getJSONObject(0).optString("order_number") else "Zatím žádná objednávka")
-                        InfoCard("Péče a připomínky", "Kalendář a termíny očkování připravujeme.")
-                    }
+                    0 -> Home05(pets,orders,customer,items,onTab={tab=it},onRefresh={loadAccount(token)})
                     1 -> {
-                        Text("Moje krmení", fontSize=25.sp, fontWeight=FontWeight.Bold)
-                        Text("Produkty, objednávky a bezpečné opakování nákupu.", color=muted)
-                        if (orders.length()==0) Text("Žádná objednávka k zopakování.")
-                        for (i in 0 until orders.length()) {
-                            val o=orders.getJSONObject(i)
-                            InfoCard(o.optString("order_number"), "${o.optInt("total_czk")} Kč · ${o.optString("status")}")
+                        ScreenHeader("Mazlíčci","Váš svět na čtyřech tlapkách")
+                        if(pets.length()==0) ActionCard(Icons.Outlined.Pets,"Zatím bez profilu","Profil můžete přidat na dokosti.cz"){}
+                        for(i in 0 until pets.length()){
+                            val p=pets.getJSONObject(i)
+                            ActionCard(Icons.Outlined.Pets,p.optString("name","Mazlíček"),p.optString("species","Mazlíček")){}
                         }
-                        Text("Aktuální produkty",fontWeight=FontWeight.Bold)
-                        for (i in 0 until minOf(items.length(), 12)) {
-                            val p=items.getJSONObject(i)
-                            val available=p.optBoolean("in_stock")
-                            InfoCard(p.optString("variant").ifBlank { p.optString("slug") },
-                                "${p.optInt("price_czk")} Kč · ${if(available) "Skladem dle katalogu" else "Není skladem"}")
-                        }
-                        Text("Opakování nákupu bude vyžadovat novou kontrolu skladu a výslovné potvrzení. Testovací verze nevytváří objednávku.",color=muted,fontSize=12.sp)
                     }
                     2 -> {
-                        Text("Moji mazlíčci",fontSize=25.sp,fontWeight=FontWeight.Bold)
-                        if (pets.length()==0) Text("Zatím nemáte uložený profil. Můžete jej vytvořit na dokosti.cz.")
-                        for (i in 0 until pets.length()) {
-                            val p=pets.getJSONObject(i)
-                            InfoCard(p.optString("name"), "${p.optString("species")} · ${p.optString("weight_kg").takeUnless { it=="null" } ?: "Hmotnost nezadaná"} kg")
+                        ScreenHeader("Nákupy","Objednávky a nabídka DoKosti")
+                        if(orders.length()==0) ActionCard(Icons.Outlined.ShoppingBag,"Zatím bez objednávek","Po nákupu se vaše objednávky zobrazí tady"){}
+                        for(i in 0 until orders.length()){
+                            val o=orders.getJSONObject(i)
+                            ActionCard(Icons.Outlined.ReceiptLong,o.optString("order_number","Objednávka"),"${o.optInt("total_czk")} Kč · ${o.optString("status")}"){}
                         }
-                        InfoCard("Kalendář péče", "Připomínky očkování a odčervení budou přidané v další verzi.")
+                        Text("Produkty DoKosti",fontWeight=FontWeight.Bold,fontSize=20.sp,color=green)
+                        for(i in 0 until minOf(items.length(),12)){
+                            val p=items.getJSONObject(i)
+                            ActionCard(Icons.Outlined.ShoppingBasket,p.optString("variant").ifBlank{p.optString("slug")},"${p.optInt("price_czk")} Kč · ${if(p.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}"){}
+                        }
+                        Text("Opakování objednávky zatím pouze připravujeme. Aplikace nevytváří nákup.",color=muted,fontSize=12.sp)
                     }
                     3 -> {
-                        Text("V mém okolí",fontSize=25.sp,fontWeight=FontWeight.Bold)
-                        InfoCard("Hlídání a venčení", "Katalog místních služeb bude propojen po ověření poskytovatelů.")
-                        InfoCard("Veterináři", "Kontakty a ordinační doby bez neověřených údajů.")
-                        InfoCard("Výcvik a salony", "Připravujeme přehled služeb.")
+                        ScreenHeader("Péče","Důležité termíny a zdraví")
+                        ActionCard(Icons.Outlined.CalendarMonth,"Termíny","Kalendář péče připravujeme"){}
+                        ActionCard(Icons.Outlined.HealthAndSafety,"Veterinární péče","Zatím nemáte evidované termíny"){}
+                        ActionCard(Icons.Outlined.Inventory2,"Domácí zásoby","Sledování krmiva připravujeme"){}
                     }
                     else -> {
-                        Text("Můj profil",fontSize=25.sp,fontWeight=FontWeight.Bold)
-                        InfoCard("Přihlášený účet", userEmail)
-                        InfoCard("Kostičky", customer.optInt("points",0).toString())
-                        OutlinedButton(onClick={loadAccount(token)}, modifier=Modifier.fillMaxWidth()) { Text("Obnovit údaje") }
-                        OutlinedButton(onClick={token="";userEmail="";pets=JSONArray();orders=JSONArray();items=JSONArray()},modifier=Modifier.fillMaxWidth()) { Text("Odhlásit se") }
+                        ScreenHeader("Více","Účet a užitečné informace")
+                        ActionCard(Icons.Outlined.Person,"Můj účet",userEmail){}
+                        ActionCard(Icons.Outlined.Stars,"Kostičky",if(customer.has("points")&&!customer.isNull("points"))"${customer.optInt("points")}" else "Nejsou dostupné"){}
+                        ActionCard(Icons.Outlined.LocationOn,"V okolí","Služby připravujeme"){}
+                        OutlinedButton(onClick={loadAccount(token)},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.Refresh,null);Text(" Aktualizovat")}
+                        OutlinedButton(onClick={token="";userEmail="";pets=JSONArray();orders=JSONArray();items=JSONArray()},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.Logout,null);Text(" Odhlásit se")}
+                        Text("Moje miska · 0.5 testovací verze",fontSize=12.sp,color=muted)
                     }
                 }
             }
-            NavigationBar(containerColor=paper) {
-                listOf("Domů","Krmení","Péče","V okolí","Profil").forEachIndexed { index, name ->
-                    NavigationBarItem(selected=tab==index, onClick={tab=index}, icon={ Text(listOf("⌂","▣","♡","⌾","●")[index]) },label={Text(name,fontSize=10.sp)})
+            NavigationBar(containerColor=green,tonalElevation=0.dp) {
+                val names=listOf("Domů","Mazlíčci","Nákupy","Péče","Více")
+                val icons=listOf(Icons.Outlined.Home,Icons.Outlined.Pets,Icons.Outlined.ShoppingBag,Icons.Outlined.CalendarMonth,Icons.Outlined.MoreHoriz)
+                names.forEachIndexed { index,name ->
+                    NavigationBarItem(selected=tab==index,onClick={tab=index},
+                        icon={Icon(icons[index],null,modifier=Modifier.size(23.dp))},
+                        label={Text(name,fontSize=10.sp)},
+                        colors=NavigationBarItemDefaults.colors(selectedIconColor=green,selectedTextColor=Color.White,indicatorColor=Color(0xFFF7E5CC),unselectedIconColor=Color(0xFFDDE5DB),unselectedTextColor=Color(0xFFDDE5DB)))
                 }
             }
         }
@@ -232,4 +232,112 @@ private fun InfoCard(title:String,subtitle:String) {
             Text(subtitle, fontSize=14.sp, color=muted)
         }
     }
+}
+
+
+@Composable
+private fun ScreenHeader(title:String,subtitle:String){
+    Column(verticalArrangement=Arrangement.spacedBy(4.dp)){
+        Text(title,color=green,fontSize=27.sp,fontWeight=FontWeight.Bold)
+        Text(subtitle,color=muted,fontSize=13.sp)
+    }
+}
+@Composable
+private fun ActionCard(icon:ImageVector,title:String,subtitle:String,onClick:()->Unit){
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(19.dp),border=BorderStroke(1.dp,Color(0xFFE5D9CA)),colors=CardDefaults.cardColors(containerColor=paper)){
+        Row(Modifier.padding(14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
+            Box(Modifier.size(48.dp).background(Color(0xFFF4E2CE),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){
+                Icon(icon,null,tint=brick,modifier=Modifier.size(25.dp))
+            }
+            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
+                Text(title,fontWeight=FontWeight.Bold,color=green,fontSize=15.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
+                Text(subtitle,color=muted,fontSize=12.sp,maxLines=2,overflow=TextOverflow.Ellipsis)
+            }
+            Icon(Icons.Outlined.ChevronRight,null,tint=muted)
+        }
+    }
+}
+@Composable
+private fun Quick05(modifier:Modifier,icon:ImageVector,title:String,primary:Boolean,onClick:()->Unit){
+    Card(modifier.height(105.dp).clickable(onClick=onClick),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=if(primary)green else Color(0xFFF3E0CB))){
+        Column(Modifier.fillMaxSize().padding(11.dp),verticalArrangement=Arrangement.SpaceBetween,horizontalAlignment=Alignment.CenterHorizontally){
+            Icon(icon,null,tint=if(primary)Color.White else brick,modifier=Modifier.size(30.dp))
+            Text(title,color=if(primary)Color.White else green,fontWeight=FontWeight.Bold,fontSize=12.sp,lineHeight=15.sp,maxLines=2,textAlign=TextAlign.Center)
+        }
+    }
+}
+@Composable
+private fun SmallMetric(modifier:Modifier,icon:ImageVector,title:String,value:String){
+    Column(modifier,horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(4.dp)){
+        Icon(icon,null,tint=brick,modifier=Modifier.size(22.dp))
+        Text(title,color=muted,fontSize=10.sp,maxLines=1)
+        Text(value,color=green,fontSize=12.sp,fontWeight=FontWeight.Bold,maxLines=1,overflow=TextOverflow.Ellipsis)
+    }
+}
+@Composable
+private fun Home05(pets:JSONArray,orders:JSONArray,customer:JSONObject,items:JSONArray,onTab:(Int)->Unit,onRefresh:()->Unit){
+    val p=pets.optJSONObject(0)
+    val dogName=p?.optString("name")?.takeIf{it.isNotBlank()}
+    val greeting=dogName ?: "parťáku"
+    val species=p?.optString("species")?.let{if(it=="pes")"Pes" else if(it=="kocka")"Kočka" else it} ?: "Mazlíček"
+    val weight=p?.opt("weight_kg")?.toString()?.takeUnless{it=="null"}?.let{" · $it kg"} ?: ""
+    val points=if(customer.has("points")&&!customer.isNull("points"))customer.optInt("points").toString() else "—"
+    Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(Color(0xFF203D2F),Color(0xFF48633E))),RoundedCornerShape(26.dp)).padding(19.dp)){
+        Column(verticalArrangement=Arrangement.spacedBy(13.dp)){
+            Row(verticalAlignment=Alignment.CenterVertically){
+                Icon(Icons.Filled.Pets,null,tint=Color(0xFFEFA15B),modifier=Modifier.size(28.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)){
+                    Text("Moje miska",color=Color.White,fontSize=22.sp,fontWeight=FontWeight.Bold)
+                    Text("by DoKosti",color=Color(0xFFF0AE77),fontSize=12.sp)
+                }
+                IconButton(onClick=onRefresh){Icon(Icons.Outlined.Refresh,"Aktualizovat",tint=Color.White)}
+                IconButton(onClick={onTab(4)}){Icon(Icons.Outlined.AccountCircle,"Účet",tint=Color.White)}
+            }
+            Text("Ahoj, $greeting!",color=Color.White,fontWeight=FontWeight.Bold,fontSize=28.sp)
+            Text("Všechno důležité pro vašeho parťáka.",color=Color(0xFFF3ECDD),fontSize=13.sp)
+            Card(Modifier.fillMaxWidth().clickable{onTab(1)},shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=paper)){
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+                    Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
+                        Box(Modifier.size(64.dp).background(Color(0xFFF3DFC4),RoundedCornerShape(22.dp)),contentAlignment=Alignment.Center){
+                            Icon(Icons.Filled.Pets,null,tint=brick,modifier=Modifier.size(33.dp))
+                        }
+                        Column(Modifier.weight(1f)){
+                            Text(dogName ?: "Přidejte mazlíčka",color=green,fontWeight=FontWeight.Bold,fontSize=19.sp)
+                            Text(if(p!=null)"$species$weight" else "Profil zatím není založený",color=muted,fontSize=12.sp)
+                        }
+                        Icon(Icons.Outlined.ChevronRight,null,tint=green)
+                    }
+                    HorizontalDivider(color=Color(0xFFE7DECE))
+                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                        SmallMetric(Modifier.weight(1f),Icons.Outlined.EventAvailable,"Další péče","Nenastaveno")
+                        SmallMetric(Modifier.weight(1f),Icons.Outlined.Inventory2,"Zásoby","Nenastaveno")
+                        SmallMetric(Modifier.weight(1f),Icons.Outlined.Stars,"Kostičky",points)
+                    }
+                }
+            }
+        }
+    }
+    Text("Rychlé akce",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
+    Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){
+        Quick05(Modifier.weight(1f),Icons.Outlined.ShoppingCart,"Objednat znovu",true){onTab(2)}
+        Quick05(Modifier.weight(1f),Icons.Outlined.Inventory2,"Moje zásoby",false){onTab(3)}
+        Quick05(Modifier.weight(1f),Icons.Outlined.EventAvailable,"Péče",false){onTab(3)}
+        Quick05(Modifier.weight(1f),Icons.Outlined.LocationOn,"V okolí",false){onTab(4)}
+    }
+    Text("Co je potřeba vyřešit",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
+    ActionCard(Icons.Outlined.CalendarMonth,"Péče o mazlíčka","Žádné termíny zatím nejsou nastavené"){onTab(3)}
+    ActionCard(Icons.Outlined.Inventory2,"Domácí zásoby","Sledování zásob připravujeme"){onTab(3)}
+    Text("Poslední objednávka",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
+    val order=orders.optJSONObject(0)
+    if(order!=null) ActionCard(Icons.Outlined.ReceiptLong,order.optString("order_number","Objednávka"),"${order.optInt("total_czk")} Kč · ${order.optString("status")}"){onTab(2)}
+    else ActionCard(Icons.Outlined.ShoppingBag,"Zatím žádná objednávka","Vaše nákupy se tu zobrazí automaticky"){onTab(2)}
+    if(items.length()>0){
+        Text("Z nabídky DoKosti",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
+        for(i in 0 until minOf(items.length(),3)){
+            val item=items.getJSONObject(i)
+            ActionCard(Icons.Outlined.ShoppingBasket,item.optString("variant").ifBlank{item.optString("slug")},"${item.optInt("price_czk")} Kč · ${if(item.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}"){onTab(2)}
+        }
+    }
+    Text("Informace o péči a domácích zásobách jsou zatím připravované. Objednávky a Kostičky pocházejí z DoKosti.",color=muted,fontSize=11.sp,modifier=Modifier.padding(bottom=6.dp))
 }
