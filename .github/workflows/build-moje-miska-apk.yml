@@ -43,7 +43,7 @@ jobs:
       - name: Publish direct download on test branch
         run: |
           mkdir -p ../releases
-          cp app/build/outputs/apk/debug/app-debug.apk ../releases/MojeMiska-test.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../releases/MojeMiska-test-v0.4.apk
           cd ../..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

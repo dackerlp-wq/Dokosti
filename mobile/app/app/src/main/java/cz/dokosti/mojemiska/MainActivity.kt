@@ -118,7 +118,7 @@ private fun MojeMiska() {
                     "verify" -> request("/auth/v1/verify", "POST", body=JSONObject().put("email",email.trim()).put("token",otp.trim()).put("type","email"))
                     else -> request("/auth/v1/otp", "POST", body=JSONObject().put("email",email.trim()).put("create_user",false))
                 }
-                if (mode == "send") { sent = true; message = "Zkontrolujte e-mail a zadejte šestimístný kód." }
+                if (mode == "send") { sent = true; message = "Zkontrolujte e-mail a zadejte osmimístný kód." }
                 else {
                     val payload = JSONObject(response)
                     token = payload.getString("access_token")
@@ -147,9 +147,9 @@ private fun MojeMiska() {
                     Button(onClick={login("password")}, enabled=!loading && email.contains("@") && pass.isNotBlank(), modifier=Modifier.fillMaxWidth()) { Text("Přihlásit se") }
                 } else {
                     if (sent) {
-                        OutlinedTextField(otp, {otp=it.filter(Char::isDigit).take(6)}, label={Text("Kód z e-mailu")}, singleLine=true, modifier=Modifier.fillMaxWidth(),
+                        OutlinedTextField(otp, {otp=it.filter(Char::isDigit).take(8)}, label={Text("Osmimístný kód z e-mailu")}, singleLine=true, modifier=Modifier.fillMaxWidth(),
                             keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number))
-                        Button(onClick={login("verify")}, enabled=!loading && otp.length==6, modifier=Modifier.fillMaxWidth()) { Text("Ověřit kód") }
+                        Button(onClick={login("verify")}, enabled=!loading && otp.length==8, modifier=Modifier.fillMaxWidth()) { Text("Ověřit kód") }
                     }
                     OutlinedButton(onClick={login("send")}, enabled=!loading && email.contains("@"), modifier=Modifier.fillMaxWidth()) {
                         Text(if (sent) "Poslat nový kód" else "Poslat přihlašovací kód")
