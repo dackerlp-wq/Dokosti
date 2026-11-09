@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -104,11 +106,11 @@ private fun MojeMiska() {
         scope.launch {
             loading = true
             try {
-                pets = JSONArray(request("/rest/v1/pets?select=id,name,species,weight_kg&order=updated_at.desc&limit=20", token=t))
+                pets = JSONArray(request("/rest/v1/pets?select=id,name,species,breed,weight_kg,data,note&order=updated_at.desc&limit=20", token=t))
                 orders = JSONArray(request("/rest/v1/orders?select=id,order_number,status,total_czk,created_at&order=created_at.desc&limit=30", token=t))
                 val customers = JSONArray(request("/rest/v1/customers?select=id,name,points&limit=1", token=t))
                 customer = if (customers.length() > 0) customers.getJSONObject(0) else JSONObject()
-                items = JSONArray(request("/rest/v1/products?select=slug,variant,price_czk,stock_qty,in_stock,is_complete&is_published=eq.true&limit=20", token=t))
+                items = JSONArray(request("/rest/v1/products?select=slug,variant,price_czk,stock_qty,in_stock,is_complete,image_url&is_published=eq.true&limit=20", token=t))
                 message = ""
             } catch (e: Exception) {
                 message = "Nelze načíst data: ${e.message}"
@@ -175,7 +177,7 @@ private fun MojeMiska() {
                         if(pets.length()==0) ActionCard(Icons.Outlined.Pets,"Zatím bez profilu","Profil můžete přidat na dokosti.cz"){}
                         for(i in 0 until pets.length()){
                             val p=pets.getJSONObject(i)
-                            ActionCard(Icons.Outlined.Pets,p.optString("name","Mazlíček"),p.optString("species","Mazlíček")){}
+                            PetPhotoCard(p,onClick={})
                         }
                     }
                     2 -> {
@@ -188,15 +190,23 @@ private fun MojeMiska() {
                         Text("Produkty DoKosti",fontWeight=FontWeight.Bold,fontSize=20.sp,color=green)
                         for(i in 0 until minOf(items.length(),12)){
                             val p=items.getJSONObject(i)
-                            ActionCard(Icons.Outlined.ShoppingBasket,p.optString("variant").ifBlank{p.optString("slug")},"${p.optInt("price_czk")} Kč · ${if(p.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}"){}
+                            PhotoActionCard(Icons.Outlined.ShoppingBasket,p.optString("variant").ifBlank{p.optString("slug")},"${p.optInt("price_czk")} Kč · ${if(p.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}",p.optString("image_url")){}
                         }
                         Text("Opakování objednávky zatím pouze připravujeme. Aplikace nevytváří nákup.",color=muted,fontSize=12.sp)
                     }
                     3 -> {
                         ScreenHeader("Péče","Důležité termíny a zdraví")
-                        ActionCard(Icons.Outlined.CalendarMonth,"Termíny","Kalendář péče připravujeme"){}
-                        ActionCard(Icons.Outlined.HealthAndSafety,"Veterinární péče","Zatím nemáte evidované termíny"){}
-                        ActionCard(Icons.Outlined.Inventory2,"Domácí zásoby","Sledování krmiva připravujeme"){}
+                        if(pets.length()==0) ActionCard(Icons.Outlined.CalendarMonth,"Termíny","Zatím bez mazlíčka a termínů"){}
+                        for(i in 0 until pets.length()){
+                            val pet=pets.getJSONObject(i)
+                            val d=pet.optJSONObject("data")
+                            val care=d?.optJSONArray("care")?.optJSONObject(0)
+                            val demo=d?.optBoolean("is_demo",false)==true
+                            if(care!=null) ActionCard(Icons.Outlined.CalendarMonth,pet.optString("name"),"${care.optString("title")} · ${care.optString("date")}${if(demo)" · TEST" else ""}"){}
+                            val stock=d?.opt("home_stock_kg")
+                            if(stock!=null && stock!=JSONObject.NULL) ActionCard(Icons.Outlined.Inventory2,"Zásoby · ${pet.optString("name")}","${stock} kg${if(demo)" · TESTOVACÍ ÚDAJ" else ""}"){}
+                        }
+                        Text("Testovací termíny a zásoby nejsou skutečná zdravotní doporučení ani skladové zásoby DoKosti.",fontSize=12.sp,color=muted)
                     }
                     else -> {
                         ScreenHeader("Více","Účet a užitečné informace")
@@ -299,19 +309,17 @@ private fun Home05(pets:JSONArray,orders:JSONArray,customer:JSONObject,items:JSO
             Card(Modifier.fillMaxWidth().clickable{onTab(1)},shape=RoundedCornerShape(22.dp),colors=CardDefaults.cardColors(containerColor=paper)){
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
-                        Box(Modifier.size(64.dp).background(Color(0xFFF3DFC4),RoundedCornerShape(22.dp)),contentAlignment=Alignment.Center){
-                            Icon(Icons.Filled.Pets,null,tint=brick,modifier=Modifier.size(33.dp))
-                        }
+                        PetPhoto(p?.optJSONObject("data")?.optString("photo_url"),Modifier.size(64.dp),RoundedCornerShape(22.dp))
                         Column(Modifier.weight(1f)){
                             Text(dogName ?: "Přidejte mazlíčka",color=green,fontWeight=FontWeight.Bold,fontSize=19.sp)
-                            Text(if(p!=null)"$species$weight" else "Profil zatím není založený",color=muted,fontSize=12.sp)
+                            Text(if(p!=null)"$species$weight${if(p.optJSONObject("data")?.optBoolean("is_demo",false)==true)" · TEST" else ""}" else "Profil zatím není založený",color=muted,fontSize=12.sp)
                         }
                         Icon(Icons.Outlined.ChevronRight,null,tint=green)
                     }
                     HorizontalDivider(color=Color(0xFFE7DECE))
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        SmallMetric(Modifier.weight(1f),Icons.Outlined.EventAvailable,"Další péče","Nenastaveno")
-                        SmallMetric(Modifier.weight(1f),Icons.Outlined.Inventory2,"Zásoby","Nenastaveno")
+                        SmallMetric(Modifier.weight(1f),Icons.Outlined.EventAvailable,"Další péče",p?.optJSONObject("data")?.optJSONArray("care")?.optJSONObject(0)?.optString("date")?.takeLast(5) ?: "Nenastaveno")
+                        SmallMetric(Modifier.weight(1f),Icons.Outlined.Inventory2,"Zásoby",p?.optJSONObject("data")?.opt("home_stock_kg")?.toString()?.let{"$it kg"} ?: "Nenastaveno")
                         SmallMetric(Modifier.weight(1f),Icons.Outlined.Stars,"Kostičky",points)
                     }
                 }
@@ -326,8 +334,12 @@ private fun Home05(pets:JSONArray,orders:JSONArray,customer:JSONObject,items:JSO
         Quick05(Modifier.weight(1f),Icons.Outlined.LocationOn,"V okolí",false){onTab(4)}
     }
     Text("Co je potřeba vyřešit",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
-    ActionCard(Icons.Outlined.CalendarMonth,"Péče o mazlíčka","Žádné termíny zatím nejsou nastavené"){onTab(3)}
-    ActionCard(Icons.Outlined.Inventory2,"Domácí zásoby","Sledování zásob připravujeme"){onTab(3)}
+    val demoData=p?.optJSONObject("data")
+    val demoCare=demoData?.optJSONArray("care")?.optJSONObject(0)
+    val isDemo=demoData?.optBoolean("is_demo",false)==true
+    if(isDemo) Text("TESTOVACÍ DATA · fotografie z fotobanky",fontSize=11.sp,color=brick,fontWeight=FontWeight.Bold)
+    ActionCard(Icons.Outlined.CalendarMonth,"Péče o mazlíčka",if(demoCare!=null)"${demoCare.optString("title")} · ${demoCare.optString("date")} · TEST" else "Žádné termíny zatím nejsou nastavené"){onTab(3)}
+    ActionCard(Icons.Outlined.Inventory2,"Domácí zásoby",demoData?.opt("home_stock_kg")?.toString()?.let{"$it kg · TESTOVACÍ ÚDAJ"} ?: "Sledování zásob připravujeme"){onTab(3)}
     Text("Poslední objednávka",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
     val order=orders.optJSONObject(0)
     if(order!=null) ActionCard(Icons.Outlined.ReceiptLong,order.optString("order_number","Objednávka"),"${order.optInt("total_czk")} Kč · ${order.optString("status")}"){onTab(2)}
@@ -336,8 +348,49 @@ private fun Home05(pets:JSONArray,orders:JSONArray,customer:JSONObject,items:JSO
         Text("Z nabídky DoKosti",color=green,fontSize=20.sp,fontWeight=FontWeight.Bold)
         for(i in 0 until minOf(items.length(),3)){
             val item=items.getJSONObject(i)
-            ActionCard(Icons.Outlined.ShoppingBasket,item.optString("variant").ifBlank{item.optString("slug")},"${item.optInt("price_czk")} Kč · ${if(item.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}"){onTab(2)}
+            PhotoActionCard(Icons.Outlined.ShoppingBasket,item.optString("variant").ifBlank{item.optString("slug")},"${item.optInt("price_czk")} Kč · ${if(item.optBoolean("in_stock"))"Skladem dle katalogu" else "Není skladem"}",item.optString("image_url")){onTab(2)}
         }
     }
     Text("Informace o péči a domácích zásobách jsou zatím připravované. Objednávky a Kostičky pocházejí z DoKosti.",color=muted,fontSize=11.sp,modifier=Modifier.padding(bottom=6.dp))
+}
+
+@Composable
+private fun PetPhoto(url:String?,modifier:Modifier=Modifier,shape:RoundedCornerShape=RoundedCornerShape(16.dp)){
+    if(!url.isNullOrBlank()){
+        AsyncImage(model=url,contentDescription="Fotografie mazlíčka z fotobanky",contentScale=ContentScale.Crop,modifier=modifier.clip(shape))
+    } else {
+        Box(modifier.background(Color(0xFFF3DFC4),shape),contentAlignment=Alignment.Center){
+            Icon(Icons.Filled.Pets,null,tint=brick,modifier=Modifier.size(28.dp))
+        }
+    }
+}
+@Composable
+private fun PetPhotoCard(p:JSONObject,onClick:()->Unit){
+    val d=p.optJSONObject("data")
+    val isDemo=d?.optBoolean("is_demo",false)==true
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(20.dp),colors=CardDefaults.cardColors(containerColor=paper)){
+        Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(13.dp)){
+            PetPhoto(d?.optString("photo_url"),Modifier.size(86.dp),RoundedCornerShape(19.dp))
+            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                Text(p.optString("name"),fontSize=18.sp,fontWeight=FontWeight.Bold,color=green)
+                Text("${p.optString("breed").ifBlank{p.optString("species")}} · ${p.opt("weight_kg")} kg",fontSize=12.sp,color=muted)
+                if(isDemo) Text("TESTOVACÍ PROFIL · FOTO Z FOTOBANKY",fontSize=10.sp,color=brick,fontWeight=FontWeight.Bold)
+                val care=d?.optJSONArray("care")?.optJSONObject(0)
+                if(care!=null)Text("${care.optString("title")} · ${care.optString("date")}",fontSize=12.sp,color=muted)
+            }
+        }
+    }
+}
+@Composable
+private fun PhotoActionCard(icon:ImageVector,title:String,subtitle:String,url:String,onClick:()->Unit){
+    Card(Modifier.fillMaxWidth().clickable(onClick=onClick),shape=RoundedCornerShape(19.dp),colors=CardDefaults.cardColors(containerColor=paper)){
+        Row(Modifier.padding(13.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
+            if(url.isNotBlank()) AsyncImage(model=url,contentDescription="Fotografie produktu DoKosti",contentScale=ContentScale.Crop,modifier=Modifier.size(66.dp).clip(RoundedCornerShape(15.dp)))
+            else Box(Modifier.size(66.dp).background(Color(0xFFF4E2CE),RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){Icon(icon,null,tint=brick)}
+            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)){
+                Text(title,color=green,fontSize=15.sp,fontWeight=FontWeight.Bold,maxLines=2,overflow=TextOverflow.Ellipsis)
+                Text(subtitle,color=muted,fontSize=12.sp,maxLines=2)
+            }
+        }
+    }
 }

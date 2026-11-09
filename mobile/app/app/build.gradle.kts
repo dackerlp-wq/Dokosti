@@ -10,8 +10,8 @@ android {
         applicationId = "cz.dokosti.mojemiska"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.5-test"
+        versionCode = 6
+        versionName = "0.6-test"
     }
     buildFeatures { compose = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -23,6 +23,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }
