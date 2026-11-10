@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { deletePetById, savePetProfile } from "@/app/(shop)/ucet/actions";
+import { BowlTargets } from "@/components/barf/bowl-targets";
 import { PlanCoverage } from "@/components/barf/plan-coverage";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
@@ -17,7 +18,7 @@ import { chipClass, fieldInput } from "@/components/ui/field";
 import { PlanSide } from "@/components/plan/plan-side";
 import { Choice, ChoiceGrid, WizardLabel, WizardLayout, WizardPanel, WizardSteps } from "@/components/plan/wizard-ui";
 import { KIND_TONE } from "@/lib/kind-tone";
-import { ACTIVITY_LABEL, addonForRole, calculate, type AddonKey, BASE_ADDONS, BREEDS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type FeedMode, type Reco } from "@/lib/barf";
+import { ACTIVITY_LABEL, addonForRole, calculate, type AddonKey, BREEDS, FULL_ADDONS, CONDITION_LABEL, buildPlan, foodKind, recommendExtras, shelfDays, type Activity, type AnimalInput, type Condition, type FeedMode, type Reco } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { emptyPet, FEEDING_LABEL, type FeedingNow, type PetProfile, petToAnimal, REPRODUCTION_LABEL, type Reproduction, SEX_LABEL, stageFor } from "@/lib/club";
 import { type Pad, type Sex, sklonuj } from "@/lib/jmena";
@@ -82,9 +83,9 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
   const [delivery, setDelivery] = useState<Delivery>(shipping.rozvoz ? "rozvoz" : "odber");
   const [removed, setRemoved] = useState<string[]>([]);
   const [swaps, setSwaps] = useState<Record<string, string>>({});
-  /** Doplňky k základu (kosti, ryba, olej…): v dodávce jen to, co si zákazník přidá z doporučení. */
-  const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ ...BASE_ADDONS });
-  /** Hotové mixy, nebo si misku složit ze svaloviny, kostí a vnitřností. */
+  /** Co k základu patří (játra, ryba, olej, doplňky): v dodávce je všechno, odebrat jde jednotlivě. */
+  const [addons, setAddons] = useState<Record<AddonKey, boolean>>({ ...FULL_ADDONS });
+  /** Verze plánu: jednoduchá (směsi a maso s kostí, k tomu krátké „proč“), nebo pokročilá (miska po složkách, jen doporučení). */
   const [mode, setMode] = useState<FeedMode>("mixy");
   /** Podíl syrové stravy (zbytek granule) a zda přidat naše granule do dodávky. */
   const [rawShare, setRawShare] = useState<AnimalInput["rawShare"]>(100);
@@ -133,7 +134,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       setAddKibble(st.addKibble);
       setRemoved(st.removed);
       setSwaps(st.swaps);
-      setAddons({ ...BASE_ADDONS, ...(st.addons ?? {}) });
+      setAddons({ ...FULL_ADDONS, ...(st.addons ?? {}) });
       setMode(st.mode === "sam" ? "sam" : "mixy");
       setDays(st.days);
       setDelivery(st.delivery);
@@ -295,7 +296,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     setAgeUnit("roky");
     setRemoved([]);
     setSwaps({});
-    setAddons({ ...BASE_ADDONS });
+    setAddons({ ...FULL_ADDONS });
     setRawShare(100);
     setError(null);
   };
@@ -336,7 +337,13 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
     <WizardSteps labels={SHOWN_STEPS} current={Math.min(step, 8) - 1} />
     <WizardLayout side={step === 7 ? undefined : side}>
       {step === 1 && (
-        <WizardPanel {...panelProps} kicker="Nejdřív se poznáme" title="Pro koho plán děláme?" helper="Vyberte zvíře a napište nám, jak mu říkáte." onSubmit={next}>
+        <WizardPanel {...panelProps} kicker="Nejdřív se poznáme" title="Pro koho plán děláme?" helper="Vyberte verzi plánu a zvíře a napište nám, jak mu říkáte." onSubmit={next}>
+          <div className="mb-6">
+            <ChoiceGrid label="Verze plánu">
+              <Choice icon={Layers} title="Jednoduchý" desc="Začínám s BARFem. Hotový nákup a krátce proč." checked={mode === "mixy"} onSelect={() => setMode("mixy")} />
+              <Choice icon={Drumstick} title="Pokročilý" desc="Misku skládám sám. Gramy po složkách a doporučení." checked={mode === "sam"} onSelect={() => setMode("sam")} />
+            </ChoiceGrid>
+          </div>
           {pets.length > 0 && (
             <div className="mb-5 rounded-panel bg-paper p-4">
               <p className="mb-2 text-label text-green">Z vašeho účtu</p>
@@ -508,13 +515,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       )}
 
       {step === 6 && (
-        <WizardPanel {...panelProps} kicker="Miska a chutě" title={`Jak chcete ${firstAcc} krmit?`} helper="Dávku i nákup spočítáme v obou případech. K masu vždy přidáme, co do BARF misky patří zvlášť (játra, rybu nebo olej, doplňky)." onSubmit={next} nextLabel="Sestavit plán">
-          <ChoiceGrid label="Jak krmit">
-            <Choice icon={Layers} title="Jednoduše" desc="BARF směsi a mleté maso s kostí. Játra a další přidáme zvlášť." checked={mode === "mixy"} onSelect={() => setMode("mixy")} />
-            <Choice icon={Drumstick} title="Složím si sám" desc="Svalovina, masité kosti a vnitřnosti zvlášť, podle plánu." checked={mode === "sam"} onSelect={() => setMode("sam")} />
-          </ChoiceGrid>
-          <h3 className="mt-8 mb-1 text-heading-md text-green">Co {first} nesmí nebo nemá rád?</h3>
-          <p className="mb-3.5 text-small">Označte druhy masa, které vynecháme. Když nic, klidně pokračujte.</p>
+        <WizardPanel {...panelProps} kicker="Chutě" title={`Co ${first} nesmí nebo nemá rád?`} helper="Označte druhy masa, které vynecháme. Když nic, klidně pokračujte." onSubmit={next} nextLabel="Sestavit plán">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {MEATS.map((m) => {
               const on = pet.exclude.includes(m);
@@ -535,7 +536,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               );
             })}
           </div>
-          {pet.species === "pes" && (
+          {mode === "sam" && pet.species === "pes" && (
             <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-white p-4">
               <Carrot className="size-5 shrink-0 text-ochre" strokeWidth={1.75} aria-hidden />
               <span className="flex-1">
@@ -545,7 +546,7 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
               <input type="checkbox" checked={addons.zelenina} onChange={(e) => setAddons((a) => ({ ...a, zelenina: e.target.checked }))} className="size-5 min-h-0 w-5 accent-green" />
             </label>
           )}
-          {!pet.exclude.includes("ryby") && (
+          {mode === "sam" && !pet.exclude.includes("ryby") && (
             <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-panel border border-line bg-white p-4">
               <Fish className="size-5 shrink-0 text-ryby" strokeWidth={1.75} aria-hidden />
               <span className="flex-1">
@@ -750,6 +751,8 @@ function PlanStep({
   cta: string;
 }) {
   const r = plan.result;
+  /** Pokročilý plán: miska po složkách a jen doporučení, bez vysvětlování „proč“. */
+  const advanced = plan.input.mode === "sam";
   const totalKg = plan.items.reduce((s, i) => s + i.qty * i.product.weightGrams, 0) / 1000;
   const shipFree = shipping.freeFromCzk !== null && plan.totalCzk >= shipping.freeFromCzk;
   const bonusPts = subscription.pointsBonusPct > 0 && loyalty.enabled ? Math.round(((plan.totalCzk * subscription.pointsBonusPct) / 100) * (loyalty.redeemStep / loyalty.redeemValueCzk)) : 0;
@@ -825,8 +828,14 @@ function PlanStep({
               <p className="text-small">za den</p>
             </li>
           </ul>
-          <BowlBar plan={plan} />
-          <PlanCoverage plan={plan} extras={extras} className="mt-3.5" />
+          {advanced ? (
+            <BowlTargets plan={plan} className="mt-6" />
+          ) : (
+            <>
+              <BowlBar plan={plan} />
+              <PlanCoverage plan={plan} extras={extras} className="mt-3.5" />
+            </>
+          )}
         </div>
       </section>
 
@@ -899,7 +908,7 @@ function PlanStep({
                       </p>
                       <p className="text-[13px]/[20px]">
                         {i.portionText}
-                        {i.why && !i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? ` · ${i.why}` : ""}
+                        {!advanced && i.why && !i.why.toLowerCase().startsWith(ROLE_LABEL[i.role]) ? ` · ${i.why}` : ""}
                         {leftoverText(i) && <> · {leftoverText(i)}</>}
                       </p>
                     </div>
@@ -942,7 +951,7 @@ function PlanStep({
           {extras.length > 0 && (
             <section aria-label="Doporučujeme navíc">
               <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
-              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části {plan.input.mode === "sam" ? "masa" : "základu"}.</p>
+              {!advanced && <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části základu.</p>}
               <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                 {extras.map((i) => {
                   const lasting = i.periods > 1;

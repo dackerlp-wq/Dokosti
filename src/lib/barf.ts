@@ -86,6 +86,8 @@ export const ADDON_LABEL: Record<AddonKey, string> = {
   granule: "Granule",
 };
 export const DEFAULT_ADDONS: Record<AddonKey, boolean> = { kosti: true, ryba: true, olej: true, zelenina: true, rekreacni: true, vnitrnosti: true, doplnky: true, granule: true };
+/** Plán Krmení na míru (obě verze): v nákupu je všechno, co do BARF misky patří; zelenina a kost na okusování jen na přání. */
+export const FULL_ADDONS: Record<AddonKey, boolean> = { kosti: true, ryba: true, olej: true, zelenina: false, rekreacni: false, vnitrnosti: true, doplnky: true, granule: true };
 /** Kalkulačka: základ je jen mix (a granule při přechodu), doplňky se nabízejí zvlášť jako doporučení. */
 export const BASE_ADDONS: Record<AddonKey, boolean> = { kosti: false, ryba: false, olej: false, zelenina: false, rekreacni: false, vnitrnosti: false, doplnky: false, granule: true };
 
@@ -1235,5 +1237,37 @@ export function planCoverage(plan: Plan, extras: Reco[] = []): CoverageRow[] {
     rows.push(row("srdce", "Srdce (taurin)", inPlan((it) => has(it.product, "srdce")), baseWith("srdce"), inExtras((it) => has(it.product, "srdce")), "syrové srdce jednou týdně"));
   if (plan.result.composition.plant > 0)
     rows.push(row("zelenina", "Zelenina", inPlan((it) => it.role === "zelenina"), baseWith("zelenina"), inExtras((it) => it.role === "zelenina"), "rozmixovaná zelenina, zhruba desetina misky"));
+  return rows;
+}
+
+/* ----------------------------------------------------------------------------------------
+ * Pokročilá verze plánu: rozpis misky po složkách v gramech
+ * -------------------------------------------------------------------------------------- */
+
+export type BowlTarget = { key: string; label: string; pct: number | null; perDay: string; perWeek: string; hint?: string };
+
+/** Podíl jedlé kosti v masitých kostech (krky, křídla), orientačně. Jen pro přepočet „kolik krků“. */
+const RMB_BONE_SHARE = DEFAULT_RMB_BONE_PCT / 100;
+
+/**
+ * Cílová skladba misky po složkách z denní dávky (stejné cíle, ze kterých plán skládá nákup).
+ * Výchozí hodnoty podle obecných zásad syrového krmení, žádný rozbor konkrétních produktů.
+ */
+export function bowlTargets(plan: Plan): BowlTarget[] {
+  const D = plan.result.dailyGrams;
+  const c = plan.result.composition;
+  const g = (pct: number) => round5((D * pct) / 100);
+  const w = (grams: number) => (grams * 7 >= 1000 ? `${(Math.round((grams * 7) / 100) / 10).toLocaleString("cs-CZ")} kg` : `${round5(grams * 7)} g`);
+  const rows: BowlTarget[] = [
+    { key: "sval", label: "Svalovina", pct: c.muscle, perDay: `${g(c.muscle)} g`, perWeek: w(g(c.muscle)), hint: "srdce, žaludky a dršťky se počítají sem" },
+    { key: "kost", label: "Jedlá kost", pct: c.bone, perDay: `${g(c.bone)} g`, perWeek: w(g(c.bone)), hint: `orientačně ~${round5((D * c.bone) / 100 / RMB_BONE_SHARE)} g krků nebo křídel denně` },
+    { key: "jatra", label: "Játra", pct: c.liver, perDay: `${g(c.liver)} g`, perWeek: w(g(c.liver)) },
+    { key: "vnitrnosti", label: "Další vnitřnosti", pct: c.organs, perDay: `${g(c.organs)} g`, perWeek: w(g(c.organs)), hint: "ledvinky, slezina, droby" },
+  ];
+  if (c.plant > 0) rows.push({ key: "zelenina", label: "Zelenina", pct: c.plant, perDay: `${g(c.plant)} g`, perWeek: w(g(c.plant)) });
+  const animal = round5((D * (100 - c.plant)) / 100);
+  if (!plan.input.exclude.includes("ryby")) rows.push({ key: "ryba", label: "Ryba", pct: null, perDay: "1× týdně", perWeek: `${animal} g`, hint: "místo jedné denní porce masa" });
+  const oil = plan.items.find((it) => it.role === "olej");
+  if (oil) rows.push({ key: "olej", label: "Olej", pct: null, perDay: oil.portionText.replace(/ denně.*$/, ""), perWeek: "", hint: productName(oil.product) });
   return rows;
 }
