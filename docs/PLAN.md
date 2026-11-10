@@ -51,6 +51,8 @@ Pořadí: nejdřív software (co jde dělat hned), pak obsah, nakonec spuštěn�
 | Stránka Jak začít s BARFem, FAQ, poradna | hotovo | Texty od vás; dvě formulace jsou blízko zdravotních tvrzení (čistší zuby, krevní rozbor). |
 | Připomínka převážení za 2–4 týdny (e-mail) | nápad | Vyžaduje uložený profil a Resend. |
 | Kalkulačka na detailu produktu („kolik balení pro mého psa“) | nápad | Z uloženého profilu. |
+| Kategorie podle složení a kontrolní seznam „Co do misky patří“ | hotovo | 2026-11, migrace 0042. BARF směsi = jen směsi masa a vnitřností; mleté maso s kostí v Maso s kostí. Plán, kalkulačka, PDF a detail produktu ukazují jen to, co je ve složení od výrobce, a co se přidává zvlášť (`src/lib/skladba.ts`, `planCoverage`). Nikde „kompletní“ ani „vyvážené“. |
+| Dávka lososového oleje z databáze | doladit | Dávka 5–10 ml na 100 g krmiva dává u psa 20 kg kolem 28 ml denně. Ověřit na etiketě, nejspíš jde o 5–10 ml na 1 kg krmiva. |
 
 ## 4. Zákaznický účet
 

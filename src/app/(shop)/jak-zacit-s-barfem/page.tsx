@@ -21,14 +21,14 @@ export const metadata: Metadata = {
 };
 
 const FAQ = [
-  ["Je BARF vhodný pro každého psa a kočku?", "Pro většinu zdravých zvířat ano. U zvířat s onemocněním ledvin, slinivky nebo s oslabenou imunitou se nejdřív poraďte s veterinářem."],
+  ["Je BARF vhodný pro každého psa a kočku?", "Většina zdravých psů a koček syrovou stravu zvládá. U zvířat s onemocněním ledvin, slinivky nebo s oslabenou imunitou se nejdřív poraďte s veterinářem."],
   ["Můžu kombinovat BARF s granulemi?", "Můžete. Nejpřehlednější je dávat například ráno granule a večer syrovou stravu a sečíst energii obou, což za vás udělá kalkulačka. Přechod dělejte postupně."],
   ["Není to drahé?", "Záleží na druhu masa a velikosti zvířete. U středně velkého psa vychází BARF cenově podobně jako kvalitní granule. Kalkulačka výše vám spočítá, kolik krmiva týdně potřebujete."],
   ["Kolikrát denně krmit?", "Dospělého psa jednou až dvakrát denně, kočku dvakrát až třikrát. Štěňata a koťata krmte častěji v menších porcích."],
   ["Jak maso skladovat?", "V mrazáku při −18 °C. Menší porce rozmrazujte v lednici den předem. Maso od nás přichází zamražené v praktických baleních."],
   ["Pes má po přechodu průjem. Co teď?", "Vraťte se o krok zpět a přidejte trochu víc kostí, stolici zpevňují. Pokud průjem trvá déle než dva dny nebo je doprovázený zvracením či apatií, navštivte veterináře."],
   ["Nebojím se salmonely?", "Trávicí trakt psů a koček je na syrové maso přizpůsobený lépe než ten náš. Riziko se týká hlavně lidí v domácnosti, proto dodržujte zásady hygieny popsané výše."],
-  ["Jak poznám, že BARF funguje?", "Během několika týdnů si obvykle všimnete menší a pevnější stolice, lesklejší srsti a stabilní hmotnosti. Chcete-li mít jistotu, nechte po pár měsících udělat krevní rozbor."],
+  ["Jak poznám, že dávka sedí?", "Hlídejte hmotnost a postavu: žebra mají být hmatatelná a pas vidět shora. Po 2 až 4 týdnech zvíře zvažte a dávku upravte. Když se hmotnost, stolice nebo chuť k jídlu mění k horšímu, poraďte se s veterinářem."],
 ] as const;
 
 export default async function HowToStartPage() {
@@ -76,7 +76,7 @@ export default async function HowToStartPage() {
           </p>
           <p>
             Nemusíte být odborník ani trávit hodiny v kuchyni. Stačí dodržet pár základních pravidel a mít po ruce kvalitní suroviny. Ty u nás v DoKosti
-            najdete na jednom místě: BARF mixy, kosti, doplňky i pamlsky.
+            najdete na jednom místě: BARF směsi, maso, kosti, doplňky i pamlsky.
           </p>
         </div>
       </Section>
@@ -88,9 +88,9 @@ export default async function HowToStartPage() {
         </SectionHeader>
         <div className="grid gap-x-5 gap-y-7.5 xs:grid-cols-2 lg:grid-cols-3">
           <IconTile icon={Eye} title="Víte, co je v misce" text="Žádná dlouhá složení, jen maso, kosti a vnitřnosti." />
-          <IconTile icon={Sparkles} title="Lesklejší srst" text="Přirozené tuky a živiny se projeví i na vzhledu." />
-          <IconTile icon={Bone} title="Čistší zuby" text="Okusování masitých kostí pomáhá předcházet zubnímu kameni." />
-          <IconTile icon={Heart} title="Menší stolice" text="Tělo zužitkuje větší část potravy, stolice je menší a méně cítit." />
+          <IconTile icon={Sparkles} title="Pestrost" text="Druhy masa střídáte podle chuti zvířete a toho, co je zrovna k mání." />
+          <IconTile icon={Bone} title="Je co žvýkat" text="Masité kosti a kusové maso dají čelistem práci a zabaví na delší dobu." />
+          <IconTile icon={Heart} title="Menší stolice" text="Majitelé často zmiňují menší a méně cítit stolici." />
           <IconTile icon={Smile} title="Radost z jídla" text="Většina psů i koček se na misku vyloženě těší." />
           <IconTile icon={Utensils} title="Snadné přizpůsobení" text="Když zvířeti některé maso nesedí, jednoduše ho vyřadíte." />
         </div>
@@ -102,22 +102,22 @@ export default async function HowToStartPage() {
       {/* 4. Co patří do misky */}
       <Section tone="paper">
         <SectionHeader eyebrow="Složení" title="Co patří do misky">
-          <p>Dobrý BARF jídelníček stojí na správném poměru surovin. Nemusí sedět každý den na gram. Důležité je, aby vyvážený byl v průběhu týdne až dvou.</p>
+          <p>BARF jídelníček stojí na poměru surovin. Nemusí sedět každý den na gram, důležité je, aby poměr seděl v průběhu týdne až dvou. Jsou to obecně uváděné výchozí hodnoty, stejné, se kterými počítá plán Krmení na míru.</p>
         </SectionHeader>
         <div className="mx-auto grid max-w-narrow gap-10 md:grid-cols-2">
           <div>
             <h3 className="text-heading-lg text-green">Pes</h3>
-            <p className="mt-2.5">Zhruba 80 % živočišné složky a 20 % rostlinné. Živočišnou část rozdělte takto:</p>
+            <p className="mt-2.5">Masová část misky dospělého psa, orientačně:</p>
             <RatioTable
               rows={[
-                ["Svalovina", "50 %", "hovězí, krůtí, kuřecí, jehněčí maso, srdce"],
-                ["Zelené bachory", "20 %", "hovězí nebo jehněčí bachor"],
-                ["Vnitřnosti", "15 %", "játra (asi třetina), ledviny, slezina, plíce"],
-                ["Masité kosti", "15 %", "kuřecí krky, křídla, skelety, krůtí krky"],
+                ["Svalovina", "70 %", "maso, srdce, žaludky, dršťky"],
+                ["Masité kosti", "20 %", "krky, křídla, nebo mleté maso s kostí místo části svaloviny"],
+                ["Vnitřnosti", "10 %", "z toho polovina játra, zbytek ledvinky nebo droby"],
+                ["Ryba", "1× týdně", "místo jedné porce masa, jinak rybí olej"],
               ]}
             />
             <p className="mt-3.5 text-small">
-              Rostlinná část: rozmixovaná nebo spařená zelenina a trocha ovoce, například mrkev, cuketa, dýně, špenát, jablko. Nevhodné jsou cibule, česnek
+              Rostlinná část je u psů volitelná, obvykle kolem desetiny misky: rozmixovaná nebo spařená zelenina a trocha ovoce, například mrkev, cuketa, dýně, špenát, jablko. Nevhodné jsou cibule, česnek
               ve velkém množství, hrozny, rozinky a avokádo.
             </p>
           </div>
@@ -126,8 +126,8 @@ export default async function HowToStartPage() {
             <p className="mt-2.5">Kočka je striktní masožravec, rostlinnou složku nepotřebuje. Orientační poměr:</p>
             <RatioTable
               rows={[
-                ["Svalovina (vč. srdcí)", "80 %", "kuřecí, krůtí, králičí maso, kuřecí srdce"],
-                ["Masité kosti", "10 %", "kuřecí krky, křidélka, mleté kosti"],
+                ["Svalovina (vč. srdcí)", "75 %", "kuřecí, krůtí, králičí maso, kuřecí srdce"],
+                ["Masité kosti", "15 %", "kuřecí krky, křidélka, mleté maso s kostí"],
                 ["Vnitřnosti", "10 %", "játra (polovina), ledviny, slezina"],
               ]}
             />
@@ -231,10 +231,10 @@ export default async function HowToStartPage() {
             <ul className="list-disc space-y-2 pl-5">
               <li><strong>Příliš mnoho novinek najednou.</strong> Když se objeví potíže, nevíte, co je způsobilo.</li>
               <li><strong>Jen svalovina.</strong> Bez kostí a vnitřností chybí vápník, vitamíny a minerály.</li>
-              <li><strong>Moc jater.</strong> Játra jsou výživná, ale ve velkém množství zatěžují trávení.</li>
-              <li><strong>Přehnaná přesnost.</strong> Vyváženost se počítá v průběhu týdne, ne v každé misce.</li>
-              <li><strong>Stále stejné maso.</strong> Střídání druhů zajistí pestřejší spektrum živin.</li>
-              <li><strong>Zapomenutý olej.</strong> Omega-3 mastné kyseliny v mase z chovu často chybí.</li>
+              <li><strong>Moc jater.</strong> Játra mají hodně vitamínu A, proto nejvýš kolem 5 % dávky.</li>
+              <li><strong>Přehnaná přesnost.</strong> Poměry se počítají v průběhu týdne, ne v každé misce.</li>
+              <li><strong>Stále stejné maso.</strong> Střídáním druhů je jídelníček pestřejší.</li>
+              <li><strong>Zapomenutá ryba nebo olej.</strong> Omega-3 mastných kyselin bývá v mase z chovu málo.</li>
               <li><strong>Kosti nevhodné velikosti</strong> nebo tvrdé nosné kosti velkých zvířat, o které si pes může odlomit zub.</li>
             </ul>
           </div>
@@ -244,19 +244,19 @@ export default async function HowToStartPage() {
       {/* 9. Startovací balíčky */}
       <Section tone="paper" id="balicky" className="scroll-mt-4">
         <SectionHeader eyebrow="První nákup" title="Startovací balíčky">
-          <p>Nechcete skládat první nákup sami? Připravili jsme balíčky, které obsahují vše na první týdny přechodu ve správném poměru.</p>
+          <p>Nechcete skládat první nákup sami? Balíčky na první týdny přechodu skládáme podle stejných zásad jako plán Krmení na míru.</p>
         </SectionHeader>
         {packs.length > 0 ? (
           <ProductGrid products={packs} columns={4} />
         ) : (
           <div className="mx-auto grid max-w-narrow gap-5 md:grid-cols-2">
             <Card title="Startovací balíček pro psy">
-              Drůbeží svalovina, masité kosti, vnitřnosti, zelené bachory a lososový olej. Porce jsou rozdělené podle kroků přechodu, takže víte, co kdy
+              Drůbeží maso s kostí, svalovina, játra a další vnitřnosti a lososový olej. Porce jsou rozdělené podle kroků přechodu, takže víte, co kdy
               otevřít.
               <span className="mt-2.5 block text-small">Varianty: malý pes (do 10 kg) · střední pes (10–25 kg) · velký pes (nad 25 kg)</span>
             </Card>
             <Card title="Startovací balíček pro kočky">
-              Jemně mletá drůbeží směs s kostí, kuřecí srdce, vnitřnosti a taurin. Menší porce, které rozmrazíte přesně podle potřeby. Součástí je sáček
+              Mleté drůbeží maso s kostí, kuřecí srdce, játra a další vnitřnosti. Menší porce, které rozmrazíte přesně podle potřeby. Součástí je sáček
               sušených pamlsků na lákání k nové misce.
             </Card>
           </div>

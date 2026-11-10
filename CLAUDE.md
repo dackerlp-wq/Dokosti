@@ -20,9 +20,10 @@ Vzhled e-shopu se řídí design systémem v `design/DESIGN.md`. Před každou p
 
 - Ikony Lucide se `strokeWidth={1.75}` (v disku 1.5), žádné emoji.
 - Název produktu je vždy `productName()` z `src/lib/catalog.ts`: druh masa s velkým písmenem („Kuřecí mix“), řada je štítek.
-  Řady: barf (BARF mixy), maso (Maso, kosti a vnitřnosti; podkategorie svalovina/kosti/vnitrnosti/ryby, barevně odlišené tokeny `svalovina`, `kosti`, `vnitrnosti`, `ryby` přes `src/lib/kind-tone.ts`), mlsky, navic, granule. Řada `kosti` je od migrace 0041 sloučená do maso. Druhy masa jsou `meats` na produktu (podkategorie `/rada/[řada]/[maso]`).
+  Řady: barf (BARF směsi: jen směsi masa a vnitřností), maso (Maso, kosti a vnitřnosti; podkategorie kosti = maso s kostí včetně mletého/svalovina/vnitrnosti/ryby, barevně odlišené tokeny `svalovina`, `kosti`, `vnitrnosti`, `ryby` přes `src/lib/kind-tone.ts`), mlsky, navic, granule. Řada `kosti` je od migrace 0041 sloučená do maso. Druhy masa jsou `meats` na produktu (podkategorie `/rada/[řada]/[maso]`).
 - Ceny a složení produktů nikdy nevymýšlet. Ukázková data v `catalog.ts` jsou označená jako placeholder.
 - Žádná zdravotní tvrzení, při potížích odkaz na veterináře.
+- Mražené maso a BARF směsi nikdy „kompletní“ ani „vyvážené“ (výrobce je tak neoznačuje). Co produkt obsahuje, říkat jen podle složení (`slozeni()` v `src/lib/skladba.ts`); kalkulačka a plán ukazují kontrolní seznam `planCoverage()` a větu `ZASADY`, nic nedopočítávají ani neodhadují.
 
 ## Příkazy
 

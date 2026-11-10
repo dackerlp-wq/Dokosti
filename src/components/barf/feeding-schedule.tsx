@@ -19,7 +19,7 @@ export function FeedingSchedule({ plan }: { plan: Plan }) {
                   <span className="block text-muted normal-case tracking-normal">{d.weekday}</span>
                 </td>
                 <td className="py-1.5">
-                  {d.items.length === 0 && <span className="text-muted">stavte se pro mix, zrovna nic není skladem</span>}
+                  {d.items.length === 0 && <span className="text-muted">zrovna nic není skladem, stavte se v prodejně</span>}
                   {d.items.map((it, j) => (
                     <div key={j} className="flex justify-between gap-2">
                       <span>

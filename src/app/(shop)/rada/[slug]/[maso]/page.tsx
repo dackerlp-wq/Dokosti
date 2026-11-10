@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { LineHero } from "@/components/product/line-hero";
 import { LineProducts } from "@/components/product/line-products";
 import { MasoGuide } from "@/components/product/maso-guide";
@@ -11,9 +11,9 @@ import { getProducts, getProductsByLine } from "@/lib/products";
 
 type Props = { params: Promise<{ slug: string; maso: string }> };
 
-/** „Kosti“ → „kosti“, ale „BARF mixy“ zůstane (zkratka). */
+/** „Kosti“ → „kosti“, ale „BARF směsi“ zůstane (zkratka). */
 const lowerFirst = (s: string) => s.replace(/^(\p{Lu})(\p{Ll})/u, (_, a: string, b: string) => a.toLowerCase() + b);
-/** Nadpis podkategorie: „Kuřecí BARF mixy“, u řad s druhy název druhu („Oleje“, „Žvýkání“). */
+/** Nadpis podkategorie: „Kuřecí BARF směsi“, u řad s druhy název druhu („Oleje“, „Žvýkání“). */
 const facetTitle = (slug: LineSlug, key: FacetKey) => (lineHasKinds(slug) ? KIND_INFO[key as ProductKind].title : `${MEAT_TITLE[key as MeatKey]} ${lowerFirst(LINE_INFO[slug].name)}`);
 const kindText = (slug: LineSlug, key: FacetKey) => (lineHasKinds(slug) ? KIND_INFO[key as ProductKind].text : undefined);
 const plural = (n: number) => `${n} ${n === 1 ? "produkt" : n < 5 ? "produkty" : "produktů"}`;
@@ -36,7 +36,11 @@ export default async function LineMeatPage({ params }: Props) {
   const line = LINE_INFO[slug];
   const products = await getProductsByLine(slug);
   const inMeat = products.filter((p) => productFacets(p).includes(maso));
-  if (inMeat.length === 0) notFound();
+  if (inMeat.length === 0) {
+    // Mleté maso s kostí (kachna, krůta…) se 2026-11 přestěhovalo z BARF směsí do Maso s kostí.
+    if (slug === "barf") redirect("/rada/maso/kosti");
+    notFound();
+  }
 
   return (
     <>

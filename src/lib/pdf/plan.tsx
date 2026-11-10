@@ -1,6 +1,7 @@
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import path from "node:path";
-import { feedingSchedule, scheduleWeeks, STAGE_LABEL, TRANSITION_STEPS, type Plan } from "@/lib/barf";
+import { feedingSchedule, planCoverage, scheduleWeeks, STAGE_LABEL, TRANSITION_STEPS, type Plan } from "@/lib/barf";
+import { ZASADY } from "@/lib/skladba";
 import { productName } from "@/lib/catalog";
 import { SITE_HOST } from "@/lib/seo";
 import type { Settings } from "@/lib/settings";
@@ -100,7 +101,7 @@ function AnimalPage({ plan, shop, logo }: { plan: Plan; shop: Settings["shop"]; 
           <Text style={s.muted}>{fmtKg(r.dailyGrams * 7)} týdně{r.kibbleKcal > 0 ? ` · plus granule ${r.kibbleGrams ? `${r.kibbleGrams} g` : `${r.kibbleKcal} kcal`} denně` : ""}</Text>
         </View>
         <View style={{ flex: 1.3 }}>
-          <Text style={s.label}>Cílové složení</Text>
+          <Text style={s.label}>Výchozí poměr (obecné zásady)</Text>
           <View style={s.bar}>
             {parts.map((p) => (
               <View key={p.l} style={{ width: `${p.v}%`, backgroundColor: p.c }} />
@@ -109,6 +110,17 @@ function AnimalPage({ plan, shop, logo }: { plan: Plan; shop: Settings["shop"]; 
           <Text style={[s.muted, { marginTop: 4, fontSize: 8.5 }]}>{parts.map((p) => `${p.l} ${p.v} %`).join(" · ")}</Text>
         </View>
       </View>
+
+      <Text style={s.h2}>Co do misky patří a čím je to pokryté</Text>
+      <View style={[s.table, { paddingVertical: 4, paddingHorizontal: 8 }]}>
+        {planCoverage(plan).map((c) => (
+          <View key={c.key} style={s.line} wrap={false}>
+            <Text style={{ width: 120, fontWeight: 600 }}>{c.label}</Text>
+            <Text style={[{ flex: 1 }, c.status === "plan" || c.status === "slozeni" ? {} : s.warn]}>{c.status === "chybi" ? `není v nákupu, patří sem: ${c.detail}` : c.detail}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={[s.note, { marginTop: 3 }]}>{ZASADY}</Text>
 
       <Text style={s.h2}>Rozpis po dnech na {plan.days} dní, balení po balení</Text>
       <Text style={s.note}>Jedno balení vždy dojezte a teprve pak načněte další. Porce se den ode dne trochu liší, důležitý je součet za týden.</Text>
@@ -126,7 +138,7 @@ function AnimalPage({ plan, shop, logo }: { plan: Plan; shop: Settings["shop"]; 
               <Text style={s.note}>{d.weekday}</Text>
             </View>
             <View style={s.tdItems}>
-              {d.items.length === 0 && <Text style={s.muted}>stavte se pro mix, zrovna nic není skladem</Text>}
+              {d.items.length === 0 && <Text style={s.muted}>zrovna nic není skladem, stavte se v prodejně</Text>}
               {d.items.map((it, j) => (
                 <View key={j} style={s.line}>
                   <Text>

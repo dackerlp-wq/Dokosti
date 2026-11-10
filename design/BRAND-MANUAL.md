@@ -23,7 +23,8 @@ DoKosti mluví jako prodavač, který krmí syrově vlastní zvířata: věcně,
 - **Tlačítka** začínají slovesem: „Vybrat krmivo“, „Sestavit plán“, „Jen spočítat dávku“, „Do košíku“, „Vložit do košíku“.
 - **Čísla a jednotky** česky: „149 Kč“, „1,3 kg“, desetinná čárka, mezi číslem a jednotkou pevná mezera.
 - **Bez emoji a bez vykřičníků.** Chybová hláška říká, co opravit: „Zkontrolujte e-mail, chybí část za zavináčem.“
-- **Názvy řad** se nemění: BARF mixy, Kosti, Navíc, Mlsky, Granule; služba je „Krmení na míru“, košík je „Košík“.
+- **Názvy řad** se nemění: BARF směsi, Maso, kosti a vnitřnosti, Pamlsky a žvýkání, Doplňky, Granule a konzervy; služba je „Krmení na míru“, košík je „Košík“.
+- **Mražené maso a směsi** nikdy nenazýváme kompletní ani vyvážené. Co v produktu je, říkáme jen podle složení od výrobce; co do misky patří zvlášť, ukazuje web (`src/lib/skladba.ts`).
 
 ## Barvy
 

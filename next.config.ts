@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "krmivahulin.s3.cdn-upgates.com", pathname: "/**" },
     ],
   },
-  // Řada „Základ“ se přejmenovala na „BARF mixy“ (slug barf); staré adresy vedou dál.
+  // Řada „Základ“ se přejmenovala na „BARF mixy“, od 2026-11 „BARF směsi“ (slug barf); staré adresy vedou dál.
   async redirects() {
     return [
       // Samostatná kalkulačka skončila, dávku počítá blok na úvodní stránce a přesně průvodce Krmení na míru.
@@ -31,6 +31,9 @@ const nextConfig: NextConfig = {
       { source: "/rada/konzervy", destination: "/rada/granule/konzervy", permanent: true },
       { source: "/rada/konzervy/:maso", destination: "/rada/granule/konzervy", permanent: true },
       { source: "/rada/barf/ryby", destination: "/rada/maso/ryby", permanent: true },
+      // Doplňky mají od 2026-11 čtyři podkategorie: řasy a vitamíny jsou u minerálů, kolagen u ostatních.
+      { source: "/rada/navic/vitaminy", destination: "/rada/navic/mineraly", permanent: true },
+      { source: "/rada/navic/klouby", destination: "/rada/navic/ostatni", permanent: true },
       // Pamlsky a granule se dřív dělily podle masa, teď podle druhu.
       { source: "/rada/:rada(mlsky|granule)/:maso(kureci|kruti|kachni|hovezi|veprove|jehneci|kralici|kone|zverina|ryby)", destination: "/rada/:rada", permanent: true },
     ];

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { MASO_KINDS, PRODUCTS, type Animal, type BoneClass, type LineSlug, type Nutrition, type Product, type ProductUnit, type Storage, type SupplementDose, isLineKind, isMeatKey } from "@/lib/catalog";
 import { getSupabase } from "@/lib/supabase/server";
+import { slozeni } from "@/lib/skladba";
 
 /** Řádek tabulky products v Supabase (snake_case). */
 type ProductRow = {
@@ -75,8 +76,20 @@ function fromRow(r: ProductRow): Product {
   const old = (r.line as string) === "konzervy";
   // Masité kosti jsou podkategorie řady Maso (migrace 0041); dokud se data nepřevedou, převádí se tady.
   const bones = r.line === "kosti";
-  const line: LineSlug = old ? "granule" : bones ? "maso" : r.line;
-  const kind = old ? "konzervy" : bones ? "kosti" : r.kind;
+  let line: LineSlug = old ? "granule" : bones ? "maso" : r.line;
+  let kind = old ? "konzervy" : bones ? "kosti" : r.kind;
+  // Doplňky mají od 0042 čtyři podkategorie: řasy a vitamíny patří k minerálům, kolagen k ostatním.
+  if (line === "navic" && kind === "vitaminy") kind = "mineraly";
+  if (line === "navic" && kind === "klouby") kind = "ostatni";
+  // BARF směsi jsou jen směsi masa a vnitřností (0042). Mleté maso s kostí bez vnitřností patří do Maso s kostí,
+  // směs s rybou do Ryb; dokud se data v databázi nepřevedou, převádí se tady podle složení.
+  if (line === "barf") {
+    const s = slozeni({ line, kind: undefined, variant: r.variant, composition: r.composition, meats: (r.meats ?? []).filter(isMeatKey) });
+    if (s && !s.vnitrnosti && !s.jatra) {
+      line = "maso";
+      kind = s.ryba ? "ryby" : s.kost ? "kosti" : "svalovina";
+    }
+  }
   return {
     slug: r.slug,
     line,

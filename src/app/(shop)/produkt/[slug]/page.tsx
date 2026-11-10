@@ -15,6 +15,7 @@ import { meatSplit, parseComposition, parseStorage, type StorageKind } from "@/l
 import { formatPct, formatPrice, formatWeight, pricePerKg } from "@/lib/format";
 import { getProduct, getProducts, getProductsByLine } from "@/lib/products";
 import { SITE_URL } from "@/lib/seo";
+import { coPridat, slozeni, slozeniText } from "@/lib/skladba";
 import { stockState } from "@/lib/stock";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -107,6 +108,9 @@ export default async function ProductPage({ params }: Props) {
     product.nutrition?.kcalPer100g !== undefined && { value: `${product.nutrition.kcalPer100g.toLocaleString("cs-CZ")} kcal`, label: "ve 100 g" },
   ].filter((n): n is { value: string; label: string } => Boolean(n));
   const facets = productFacets(product);
+  // Syrové maso: co je ve složení a co do BARF misky obvykle patří zvlášť (bez hodnocení, jen podle složení).
+  const skladba = slozeni(product);
+  const pridat = skladba ? coPridat(skladba) : [];
   // Sekce pod nákupem se střídají papírová / bílá (nákup nahoře je bílý), v pořadí, v jakém se zobrazí.
   const withPct = facts.ingredients.filter((i) => i.pct !== undefined && i.pct >= 1).slice(0, 6);
   const otherIngredients = facts.ingredients.filter((i) => !withPct.includes(i)).slice(0, 12).map((i) => i.name.charAt(0).toLowerCase() + i.name.slice(1));
@@ -304,6 +308,20 @@ export default async function ProductPage({ params }: Props) {
                   ) : (
                     <p className="mt-6">{product.composition}</p>
                   ))}
+                {skladba && (
+                  <div className="mt-6 rounded-card bg-paper p-4.5">
+                    <h3 className="text-[1rem] font-bold text-ink">Do BARF misky</h3>
+                    <p className="mt-1 text-small">
+                      Podle složení od výrobce obsahuje: <span className="font-semibold text-ink">{slozeniText(skladba)}</span>.
+                      {pridat.length > 0 && <> Do jídelníčku obvykle patří ještě {joinCz(pridat)}.</>} Kolik čeho, spočítá{" "}
+                      <Link href="/krmeni-na-miru" className="font-semibold text-brick-text underline">
+                        plán Krmení na míru
+                      </Link>
+                      .
+                    </p>
+                    {skladba.drobyNerozepsane && <p className="mt-1 text-small text-muted">Které droby to jsou, výrobce nerozepisuje.</p>}
+                  </div>
+                )}
               </div>
             )}
 
@@ -367,4 +385,9 @@ export default async function ProductPage({ params }: Props) {
         ))}
     </>
   );
+}
+
+/** Výčet česky: „a, b a c“. */
+function joinCz(list: string[]) {
+  return list.length <= 1 ? (list[0] ?? "") : `${list.slice(0, -1).join(", ")} a ${list[list.length - 1]}`;
 }

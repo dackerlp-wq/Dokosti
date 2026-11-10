@@ -20,17 +20,17 @@ export type Line = {
 export const LINE_INFO: Record<LineSlug, Line> = {
   barf: {
     slug: "barf",
-    name: "BARF mixy",
-    tagline: "Hotové mixy masa, kostí a vnitřností. Denní krmení.",
+    name: "BARF směsi",
+    tagline: "Maso a vnitřnosti v jednom balení, většinou i s kostí.",
     description:
-      "Hotové BARF mixy, ve kterých je maso, masité kosti a vnitřnosti v poměru vhodném pro každodenní krmení. Rozmrazíte, odvážíte, podáte. Vyberte podle druhu masa.",
+      "Mleté směsi masa a vnitřností, u většiny i s kostí. Co přesně v které směsi je, vidíte u produktu podle složení od výrobce. Směsi nejsou kompletní krmivo: játra, rybu nebo olej a doplňky přidáte zvlášť, kolik čeho, spočítá plán Krmení na míru.",
   },
   maso: {
     slug: "maso",
     name: "Maso, kosti a vnitřnosti",
-    tagline: "Suroviny zvlášť: svalovina, masité kosti, vnitřnosti a ryby.",
+    tagline: "Maso s kostí, svalovina, vnitřnosti a ryby zvlášť.",
     description:
-      "Pro ty, kdo si misku skládají sami, a jako doplněk k BARF mixům. Svalovina je základ, masité kosti dodají vápník, vnitřnosti jsou menší část dávky a ryba přijde zhruba jednou týdně.",
+      "Suroviny, ze kterých se miska skládá: maso s kostí (mleté i celé krky a křídla), svalovina, vnitřnosti a ryby. Hodí se k BARF směsím i pro ty, kdo si jídelníček skládají sami.",
   },
   kosti: {
     slug: "kosti",
@@ -80,7 +80,7 @@ export const MEAT_LABEL: Record<MeatKey, string> = {
   zverina: "zvěřina",
   ryby: "ryby",
 };
-/** Název druhu masa do nadpisu podkategorie: „Kuřecí BARF mixy“, „Ryby a BARF mixy“. */
+/** Název druhu masa do nadpisu podkategorie: „Kuřecí BARF směsi“. */
 export const MEAT_TITLE: Record<MeatKey, string> = {
   kureci: "Kuřecí",
   kruti: "Krůtí",
@@ -96,11 +96,12 @@ export const MEAT_TITLE: Record<MeatKey, string> = {
 export function isMeatKey(v: string): v is MeatKey {
   return (MEATS as readonly string[]).includes(v);
 }
-/** Podkategorie řady Doplňky podle účelu. */
-export const NAVIC_KINDS = ["oleje", "mineraly", "vitaminy", "prilohy", "klouby", "ostatni"] as const;
+/** Podkategorie řady Doplňky podle účelu. Řasy a vitamíny jsou od 0042 v „mineraly“, kolagen v „ostatni“. */
+export const NAVIC_KINDS = ["oleje", "mineraly", "prilohy", "ostatni"] as const;
 export type NavicKind = (typeof NAVIC_KINDS)[number];
 /** Podkategorie řady Maso a vnitřnosti. */
-export const MASO_KINDS = ["svalovina", "kosti", "vnitrnosti", "ryby"] as const;
+/** Pořadí podle toho, co zákazník hledá nejčastěji: maso s kostí (mleté i kusy), svalovina, vnitřnosti, ryby. */
+export const MASO_KINDS = ["kosti", "svalovina", "vnitrnosti", "ryby"] as const;
 export type MasoKind = (typeof MASO_KINDS)[number];
 /** Podkategorie řady Pamlsky a žvýkání. */
 export const MLSKY_KINDS = ["pamlsky", "zvykani"] as const;
@@ -119,20 +120,18 @@ export function isLineKind(line: LineSlug, v: string | null | undefined): v is P
 
 /** Popisek do menu a filtru, nadpis podkategorie a krátký popis. */
 export const KIND_INFO: Record<ProductKind, { label: string; title: string; text: string }> = {
-  oleje: { label: "oleje", title: "Oleje", text: "Rybí a rostlinné oleje k mixu. Doplní omega-3 mastné kyseliny, ryby nejsou v misce každý den." },
-  mineraly: { label: "vápník a minerály", title: "Vápník a minerály", text: "Náhrada masitých kostí pro psy, kteří kosti nejedí, a vyrovnání vápníku a fosforu v masité stravě." },
-  vitaminy: { label: "řasy, vitamíny a kvasnice", title: "Řasy, vitamíny a kvasnice", text: "Jód, vitamíny skupiny B a stopové prvky, kterých je v mase a vnitřnostech málo." },
-  prilohy: { label: "přílohy k masu", title: "Přílohy k masu", text: "Zelenina, pohanka a rýže pro BARF s rostlinnou složkou. Vláknina a objem pro žravé psy." },
-  klouby: { label: "klouby a pohyb", title: "Klouby a pohyb", text: "Doplňky s kolagenem pro velká plemena, sportovce a seniory. Při potížích nejdřív k veterináři." },
-  ostatni: { label: "štěňata, lékárnička a pomůcky", title: "Štěňata, lékárnička a pomůcky", text: "Mléko pro štěňata, aktivní uhlí do lékárničky a odměrka na oleje a sypké doplňky." },
-  svalovina: { label: "svalovina", title: "Svalovina", text: "Libové maso, srdce, žaludky a dršťky. Základ dávky pro ty, kdo si jídelníček skládají sami." },
-  kosti: { label: "masité kosti", title: "Masité kosti", text: "Krky, křídla, stehna a sekané kuře, vždy syrové. Zdroj vápníku, velikost podle psa." },
-  vnitrnosti: { label: "vnitřnosti", title: "Vnitřnosti", text: "Játra, ledvinky a droby. Menší část dávky, játra nejvýš zhruba 5 %." },
-  ryby: { label: "ryby", title: "Ryby", text: "Losos, šproty a mořské ryby. Do misky zhruba jednou týdně jako zdroj omega-3." },
+  oleje: { label: "oleje", title: "Oleje", text: "Rybí a rostlinné oleje do misky. Zdroj omega-3 mastných kyselin pro dny, kdy v misce není ryba." },
+  mineraly: { label: "minerály, řasy a vitamíny", title: "Minerály, řasy a vitamíny", text: "Vápník z vaječných skořápek místo kostí, mořské řasy jako zdroj jódu, vitamíny a kvasnice. Dávkuje se po lžičkách podle obalu." },
+  prilohy: { label: "přílohy a zelenina", title: "Přílohy a zelenina", text: "Sušená zelenina, pohanka a rýže pro BARF s rostlinnou složkou." },
+  ostatni: { label: "kolagen, štěňata a pomůcky", title: "Kolagen, štěňata a pomůcky", text: "Kolagen a další doplňky, mléko pro štěňata, aktivní uhlí do lékárničky a odměrka." },
+  svalovina: { label: "svalovina", title: "Svalovina", text: "Maso bez kosti, srdce, žaludky a dršťky. Základ misky pro ty, kdo si ji skládají sami." },
+  kosti: { label: "maso s kostí", title: "Maso s kostí", text: "Mleté maso i s kostí (kuře, krůta, kachna, jehně) a celé krky, křídla a stehna, vždy syrové. Vnitřnosti v nich nejsou, přidávají se zvlášť." },
+  vnitrnosti: { label: "vnitřnosti", title: "Vnitřnosti", text: "Játra, ledvinky a droby. Menší část misky, obvykle se uvádí kolem 10 % dávky, z toho játra zhruba polovina." },
+  ryby: { label: "ryby", title: "Ryby", text: "Losos, šproty a mořské ryby. Obvykle jednou týdně místo porce masa." },
   pamlsky: { label: "pamlsky", title: "Pamlsky", text: "Sušené maso a vnitřnosti na odměnu a výcvik, pro psy i kočky." },
   zvykani: { label: "žvýkání", title: "Žvýkání", text: "Buvolí rohy, jelení paroží, uši, kůže a dřevo na dlouhé hryzání. Podávejte pod dohledem." },
   granule: { label: "granule", title: "Granule", text: "Granule s 60–70 % masa, bez obilovin a brambor. Na přechod k BARFu i na cesty." },
-  konzervy: { label: "konzervy a kapsičky", title: "Konzervy a kapsičky", text: "Masové konzervy a kapsičky s 62–90 % masa. Kompletní krmivo pro psy i kočky." },
+  konzervy: { label: "konzervy a kapsičky", title: "Konzervy a kapsičky", text: "Masové konzervy a kapsičky s 62–90 % masa. Jestli jde o kompletní, nebo doplňkové krmivo, uvádíme u každého produktu podle výrobce." },
 };
 /** Zpětná kompatibilita: popisky a texty podkategorií Doplňků. */
 export const NAVIC_KIND_LABEL = Object.fromEntries(NAVIC_KINDS.map((k) => [k, KIND_INFO[k].label])) as Record<NavicKind, string>;
@@ -281,7 +280,7 @@ export const PRODUCTS: Product[] = [
     weightGrams: 1000,
     priceCzk: 89,
     producer: P,
-    intro: "Kompletní hovězí mix pro psy všech velikostí. Dobrý začátek pro toho, kdo s BARFem začíná.",
+    intro: "Hovězí mix pro psy všech velikostí. Dobrý začátek pro toho, kdo s BARFem začíná.",
     composition: SLOZENI + "hovězí svalovina, hovězí dršťky, hovězí srdce, masité kosti.",
     storageNote: "Skladujte v mrazáku při −18 °C. Rozmrazujte v lednici, rozmražené spotřebujte do 48 hodin.",
     dosage: "Dospělý pes zhruba 2–3 % hmotnosti těla denně, malí psi víc. Dvacetikilový pes tedy 400–600 g, přesněji spočítá kalkulačka.",
@@ -297,7 +296,7 @@ export const PRODUCTS: Product[] = [
     weightGrams: 1000,
     priceCzk: 69,
     producer: P,
-    intro: "Lehčí kuřecí mix pro psy i kočky. Vhodný pro citlivější zažívání a pro seniory.",
+    intro: "Kuřecí mix pro psy i kočky.",
     composition: SLOZENI + "kuřecí maso s kostí, kuřecí krky, kuřecí játra.",
     storageNote: "Skladujte v mrazáku při −18 °C. Rozmrazujte v lednici, rozmražené spotřebujte do 48 hodin.",
     dosage: "Pes zhruba 2–3 % hmotnosti denně, kočka 2–4 % hmotnosti denně. Přesněji spočítá kalkulačka.",
@@ -420,7 +419,7 @@ export const PRODUCTS: Product[] = [
     weightGrams: 250,
     priceCzk: 189,
     producer: P,
-    intro: "Lososový olej na srst a klouby. Po otevření patří do lednice.",
+    intro: "Lososový olej jako zdroj omega-3. Po otevření patří do lednice.",
     composition: SLOZENI + "lososový olej 100 %, lisovaný za studena.",
     storageNote: "Neotevřený v temnu, po otevření v lednici a spotřebovat do 6 týdnů.",
     dosage: "Zhruba 1 ml na 5 kg hmotnosti denně, přidat do misky.",

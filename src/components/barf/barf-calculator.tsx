@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { deletePetById, loadPets } from "@/app/(shop)/ucet/actions";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
+import { PlanCoverage } from "@/components/barf/plan-coverage";
 import { useCart } from "@/components/cart/cart-context";
 import { Choice, ChoiceGrid, WizardLabel, WizardPanel } from "@/components/plan/wizard-ui";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -269,7 +270,7 @@ export function BarfCalculator({ products }: { products: Product[] }) {
             <div className="flex flex-wrap items-center justify-between gap-3.5 border-b border-line px-5 py-4 md:px-7">
               <div>
                 <h3 className="text-heading-lg text-green">Co nakoupit na {days} dní</h3>
-                <p className="text-small">Celá balení, jedno po druhém. Základ jsou mixy, doplňky si přidáte níže.</p>
+                <p className="text-small">Celá balení, jedno po druhém. Tady je jen maso; co do misky patří navíc, ukazuje přehled pod nákupem.</p>
               </div>
               <div className="flex gap-1.25" role="group" aria-label="Období">
                 {DAYS.map((d) => (
@@ -280,7 +281,7 @@ export function BarfCalculator({ products }: { products: Product[] }) {
               </div>
             </div>
             {plan.items.length === 0 ? (
-              <p className="px-5 py-5 md:px-7">Pro tuto kombinaci zrovna nemáme skladem vhodný mix. Stavte se v prodejně, poskládáme set spolu.</p>
+              <p className="px-5 py-5 md:px-7">Pro tuto kombinaci zrovna nemáme skladem vhodné maso. Stavte se v prodejně, poskládáme set spolu.</p>
             ) : (
               <ul className="divide-y divide-line">
                 {plan.items.map((it) => (
@@ -345,11 +346,13 @@ export function BarfCalculator({ products }: { products: Product[] }) {
             </div>
           </section>
 
+          <PlanCoverage plan={plan} extras={extras} />
+
           {extras.length > 0 && (
             <section className="rounded-panel border border-line bg-paper" aria-label="Doporučujeme navíc">
               <div className="border-b border-line px-5 py-4 md:px-7">
                 <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
-                <p className="text-small">Vybráno tak, aby se balení za {days} dní spotřebovalo celé nebo z co největší části. Co přidáte, zapadne do dávky místo části mixu.</p>
+                <p className="text-small">Vybráno tak, aby se balení za {days} dní spotřebovalo celé nebo z co největší části. Co přidáte, zapadne do dávky místo části masa.</p>
               </div>
               <ul className="divide-y divide-line">
                 {extras.map((it) => (

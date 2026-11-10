@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { clubStart, clubVerify } from "@/app/(shop)/registrace/actions";
 import { deletePetById, savePetProfile } from "@/app/(shop)/ucet/actions";
+import { PlanCoverage } from "@/components/barf/plan-coverage";
 import { FeedingSchedule, leftoverText } from "@/components/barf/feeding-schedule";
 import { useCart } from "@/components/cart/cart-context";
 import { savePlan } from "@/lib/cart-plan";
@@ -507,10 +508,10 @@ export function PlanWizard({ products, club, subscription, loyalty, shipping, us
       )}
 
       {step === 6 && (
-        <WizardPanel {...panelProps} kicker="Miska a chutě" title={`Jak chcete ${firstAcc} krmit?`} helper="Obojí je plnohodnotný BARF. Dávku i nákup spočítáme v obou případech." onSubmit={next} nextLabel="Sestavit plán">
+        <WizardPanel {...panelProps} kicker="Miska a chutě" title={`Jak chcete ${firstAcc} krmit?`} helper="Dávku i nákup spočítáme v obou případech. K masu vždy přidáme, co do BARF misky patří zvlášť (játra, rybu nebo olej, doplňky)." onSubmit={next} nextLabel="Sestavit plán">
           <ChoiceGrid label="Jak krmit">
-            <Choice icon={Layers} title="Hotové mixy" desc="Nejjednodušší. Maso, kosti a vnitřnosti v jednom balení." checked={mode === "mixy"} onSelect={() => setMode("mixy")} />
-            <Choice icon={Drumstick} title="Složím si sám" desc="Svalovina, masité kosti a vnitřnosti zvlášť, podle návodu." checked={mode === "sam"} onSelect={() => setMode("sam")} />
+            <Choice icon={Layers} title="Jednoduše" desc="BARF směsi a mleté maso s kostí. Játra a další přidáme zvlášť." checked={mode === "mixy"} onSelect={() => setMode("mixy")} />
+            <Choice icon={Drumstick} title="Složím si sám" desc="Svalovina, masité kosti a vnitřnosti zvlášť, podle plánu." checked={mode === "sam"} onSelect={() => setMode("sam")} />
           </ChoiceGrid>
           <h3 className="mt-8 mb-1 text-heading-md text-green">Co {first} nesmí nebo nemá rád?</h3>
           <p className="mb-3.5 text-small">Označte druhy masa, které vynecháme. Když nic, klidně pokračujte.</p>
@@ -825,6 +826,7 @@ function PlanStep({
             </li>
           </ul>
           <BowlBar plan={plan} />
+          <PlanCoverage plan={plan} extras={extras} className="mt-3.5" />
         </div>
       </section>
 
@@ -940,7 +942,7 @@ function PlanStep({
           {extras.length > 0 && (
             <section aria-label="Doporučujeme navíc">
               <h3 className="text-heading-lg text-green">Doporučujeme navíc</h3>
-              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části {plan.input.mode === "sam" ? "masa" : "mixu"}.</p>
+              <p className="mt-1 mb-3.5 text-[15px]/[24px]">Co přidáte, zapadne do dávky místo části {plan.input.mode === "sam" ? "masa" : "základu"}.</p>
               <ul className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
                 {extras.map((i) => {
                   const lasting = i.periods > 1;
@@ -1034,7 +1036,7 @@ function PlanStep({
           </div>
           {!oneTime && (
             <div className="mb-4 flex flex-col gap-2">
-              <Toggle on={rotate} onChange={(v) => { setRotate(v); setTab("A"); }} title="Střídat druhy masa" desc="každá druhá dodávka s jinými mixy" />
+              <Toggle on={rotate} onChange={(v) => { setRotate(v); setTab("A"); }} title="Střídat druhy masa" desc="každá druhá dodávka s jinými druhy masa" />
               <Toggle on={preview} onChange={setPreview} title="Ukázat dodávku předem" desc={`e-mail ${subscription.reminderDaysBefore} dny před dodávkou, můžete ji upravit`} />
             </div>
           )}
@@ -1100,7 +1102,7 @@ function BowlBar({ plan }: { plan: ReturnType<typeof buildPlan> }) {
   const total = Object.values(sum).reduce((a, b) => a + b, 0);
   if (!total) return null;
   const parts = [
-    { role: "zaklad", label: sam ? "svalovina" : "BARF mix (maso, kosti, droby)", bar: sam ? KIND_TONE.svalovina.bar : "bg-green" },
+    { role: "zaklad", label: sam ? "svalovina" : "základ (směsi a maso s kostí)", bar: sam ? KIND_TONE.svalovina.bar : "bg-green" },
     { role: "kosti", label: "masité kosti", bar: KIND_TONE.kosti.bar },
     { role: "vnitrnosti", label: "vnitřnosti", bar: KIND_TONE.vnitrnosti.bar },
     { role: "ryba", label: "ryba", bar: KIND_TONE.ryby.bar },

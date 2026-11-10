@@ -12,7 +12,7 @@ export type SaleItem = { href: string; name: string; image: string | null; price
 const ROTATE_MS = 6000;
 
 /**
- * Dlaždice v úvodu: „Cena za den“ (nejlevnější BARF mix × orientační dávka psa 15 kg).
+ * Dlaždice v úvodu: „Cena za den“ (nejlevnější BARF směs × orientační dávka psa 15 kg, jen maso).
  * Když v administraci běží akce, střídá se s akčními produkty. Střídání se zastaví při najetí myší,
  * při fokusu a při `prefers-reduced-motion`; přepnout jde i tečkami.
  */
@@ -57,12 +57,12 @@ export function PromoTile({ daily, sales }: { daily: DailyCost | null; sales: Sa
         </Link>
       ) : daily ? (
         <Link href="/rada/barf" className="group flex h-full flex-col justify-center rounded-panel bg-sand p-4 md:p-5">
-          <span className="text-[0.75rem] font-semibold text-muted md:text-small">BARF pro psa {daily.dogKg} kg</span>
+          <span className="text-[0.75rem] font-semibold text-muted md:text-small">BARF směs pro psa {daily.dogKg} kg</span>
           <span className="font-display text-[1.625rem] leading-tight font-black whitespace-nowrap text-ink md:text-[2.5rem]">
             od {formatPrice(daily.perDay)}
             <span className="text-[0.875rem] font-bold text-muted md:text-[1.125rem]"> / den</span>
           </span>
-          <span className="mt-1 text-[0.75rem] text-brick-text group-hover:underline md:text-small">Vybrat BARF mix →</span>
+          <span className="mt-1 text-[0.75rem] text-brick-text group-hover:underline md:text-small">Vybrat BARF směs →</span>
         </Link>
       ) : null}
 

@@ -34,7 +34,7 @@ export default async function HomePage() {
     address: shop.address.startsWith("[") ? undefined : { "@type": "PostalAddress", streetAddress: shop.address, addressLocality: shop.city, addressCountry: "CZ" },
   };
   const featured = products.filter((p) => p.inStock && p.unit !== "kg").slice(0, 8);
-  // Cena za den: nejlevnější kilo BARF mixu skladem × orientační dávka dospělého psa 15 kg.
+  // Cena za den: nejlevnější kilo BARF směsi skladem × orientační dávka dospělého psa 15 kg (jen maso, bez doplňků).
   const DOG_KG = 15;
   const dailyGrams = calculate({ ...newAnimal("pes"), weightKg: DOG_KG }).dailyGrams;
   const perKg = products
@@ -66,7 +66,7 @@ export default async function HomePage() {
               <br />
               <span className="font-normal text-brick italic">pro psy a kočky.</span>
             </h1>
-            <p className="max-w-[420px] text-[1.0625rem]">Mražené BARF mixy, kosti a pamlsky. Na prodejně v Kladně i s doručením.</p>
+            <p className="max-w-[420px] text-[1.0625rem]">Mražené BARF směsi, maso, kosti a pamlsky. Na prodejně v Kladně i s doručením.</p>
             <div className="flex flex-wrap gap-3">
               <ButtonLink href="/rada/barf" variant="action" size="md" className="shadow-float">
                 Nakupovat <ArrowRight className="size-4" strokeWidth={1.75} aria-hidden />

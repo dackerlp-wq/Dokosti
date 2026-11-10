@@ -5,14 +5,14 @@ import { KIND_TONE } from "@/lib/kind-tone";
 /** Skladba misky dospělého psa (stejné cíle jako plán Krmení na míru, viz targetComposition v lib/barf.ts). */
 const SHARES: { kind: MasoKind; pct: number; label: string }[] = [
   { kind: "svalovina", pct: 70, label: "svalovina" },
-  { kind: "kosti", pct: 20, label: "masité kosti" },
+  { kind: "kosti", pct: 20, label: "maso s kostí" },
   { kind: "vnitrnosti", pct: 10, label: "vnitřnosti" },
 ];
 
 const STEPS: { kind: MasoKind; title: string; text: string }[] = [
   { kind: "svalovina", title: "Základ je svalovina", text: "Zhruba 70 % misky. Srdce, žaludky a dršťky se počítají sem. Druhy masa střídejte, ať jsou aspoň tři za dva týdny." },
-  { kind: "kosti", title: "Masité kosti na vápník", text: "Asi pětina misky. Kuřecí krk je zhruba z třetiny kost, takže to dá kolem 8 % jedlé kosti, kolik pes potřebuje. Vždy syrové. Malí psi krky, střední křídla, velcí stehna a sekané kuře." },
-  { kind: "vnitrnosti", title: "Vnitřnosti po troškách", text: "Asi 10 % misky: polovinu játra, polovinu ledvinky nebo další vnitřnosti. Játra nejvýš 5 %, jsou silná. Na začátku BARFu je přidejte až po dvou týdnech." },
+  { kind: "kosti", title: "Maso s kostí na vápník", text: "Asi pětina misky. Krky a křídla jsou zhruba z třetiny kost, v misce to dá kolem 8 % kosti, se kterými počítá plán. Místo nich jde i mleté maso s kostí. Vždy syrové. Malí psi krky, střední křídla, velcí stehna a sekané kuře." },
+  { kind: "vnitrnosti", title: "Vnitřnosti po troškách", text: "Asi 10 % misky: polovinu játra, polovinu ledvinky nebo další vnitřnosti. Játra nejvýš kolem 5 %, mají hodně vitamínu A. Na začátku BARFu je přidejte až po dvou týdnech." },
   { kind: "ryby", title: "Ryba jednou týdně", text: "Losos nebo šproty místo jedné porce masa. Když ryba v misce není, doplní omega-3 olej." },
 ];
 
@@ -22,7 +22,7 @@ export function MasoGuide() {
     <section id="jak-skladat" className="scroll-mt-20 border-t border-line bg-white px-5 py-10 md:py-14">
       <div className="mx-auto max-w-site">
         <h2 className="font-display text-display-md text-ink">Jak z toho složit misku</h2>
-        <p className="mt-2 max-w-text">Pro dospělého psa. Je to výchozí bod, podle postavy psa dávku upravíte. Přesně podle věku, váhy a pohybu to spočítá plán.</p>
+        <p className="mt-2 max-w-text">Pro dospělého psa, podle obecně uváděných zásad syrového krmení. Je to výchozí bod, ne výživový rozbor: podle postavy psa dávku upravíte, podle věku, váhy a pohybu ji spočítá plán.</p>
 
         <div className="mt-6 flex h-10 overflow-hidden rounded-control" role="img" aria-label="Skladba misky: 70 % svalovina, 20 % masité kosti, 10 % vnitřnosti">
           {SHARES.map((s) => (

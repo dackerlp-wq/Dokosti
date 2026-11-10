@@ -250,7 +250,7 @@ export function ProductForm({ product, others = [], manager = true, suppliers = 
 
         <Fieldset title="Údaje z etikety pro kalkulačku">
           <p className="mb-3 text-small text-muted">
-            Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u BARF mixů chybí, kalkulačka počítá orientačně procentem
+            Opište z etikety výrobce, nic nedopočítávejte. Dokud energie u BARF směsí chybí, kalkulačka počítá orientačně procentem
             hmotnosti; s energií počítá přesněji a zobrazí i kcal. Podíl kosti se používá pro bilanci kostí v dávce.
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
