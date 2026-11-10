@@ -66,11 +66,11 @@ export function slozeniText(s: Slozeni): string {
  */
 export function coPridat(s: Slozeni): string[] {
   const out: string[] = [];
-  if (!s.maso) out.push("svalovinu");
+  if (!s.maso) out.push("svalovina");
   if (!s.kost) out.push("kost nebo vápník");
   if (!s.jatra) out.push("játra");
   if (!s.vnitrnosti && !s.jatra) out.push("další vnitřnosti");
-  if (!s.ryba) out.push("rybu nebo rybí olej");
+  if (!s.ryba) out.push("ryba nebo rybí olej");
   return out;
 }
 
