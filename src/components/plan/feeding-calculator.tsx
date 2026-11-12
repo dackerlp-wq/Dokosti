@@ -180,7 +180,8 @@ export function FeedingCalculator({
   const newbie = food !== "barf";
   const meatAllowed = (m: Meat) => m === "mix" || MEAT_OPTION[m].some((k) => !exclude.includes(k));
   const meatWanted: Meat = meatChoice ?? (newbie ? "drubez" : "mix");
-  const meat: Meat = meatAllowed(meatWanted) ? meatWanted : "mix";
+  // Nesmí-li zvíře zvolené maso, nováček dostane první povolený jeden druh, zkušený střídání.
+  const meat: Meat = meatAllowed(meatWanted) ? meatWanted : newbie ? ((["drubez", "hovezi", "jehneci"] as const).find(meatAllowed) ?? "mix") : "mix";
   const days = interval || 14;
 
   const input = useMemo<AnimalInput>(
