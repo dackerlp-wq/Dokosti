@@ -1,17 +1,19 @@
 "use client";
 
-import { Check, ChevronLeft, Minus, Plus } from "lucide-react";
+import { Check, ChevronLeft, Minus, Plus, RefreshCw, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { savePetProfile } from "@/app/(shop)/ucet/actions";
 import { InquiryForm } from "@/components/barf/inquiry-form";
 import { PlanCoverage } from "@/components/barf/plan-coverage";
 import { useCart } from "@/components/cart/cart-context";
 import { ProductImage } from "@/components/product/product-image";
 import { Button } from "@/components/ui/button";
-import { type Activity, type AnimalInput, bowlTargets, buildPlan, FULL_ADDONS, foodKind, newAnimal, seniorAgeYears, type Stage } from "@/lib/barf";
-import { type Product, productName } from "@/lib/catalog";
+import { type Activity, type AnimalInput, bowlTargets, buildPlan, containsMeat, FULL_ADDONS, foodKind, newAnimal, type Plan, seniorAgeYears, shelfDays, type Stage } from "@/lib/barf";
+import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
+import { ageMonths, emptyPet, type FeedingNow, type PetProfile } from "@/lib/club";
 import { savePlan } from "@/lib/cart-plan";
 import { formatPrice } from "@/lib/format";
 import { ZASADY } from "@/lib/skladba";
@@ -31,7 +33,29 @@ type Panel = "" | "proc" | "rozpis" | "rada";
 
 const M = (f: string) => `/maskot/${f}.webp`;
 const ACT_INPUT: Record<Act, Activity> = { klid: "nizka", bezna: "bezna", aktiv: "vysoka" };
-const POULTRY = ["kureci", "kruti", "kachni"];
+const POULTRY: MeatKey[] = ["kureci", "kruti", "kachni"];
+const STATE_KEY = "dokosti-kalkulacka";
+/** Druhy masa, které volba v kroku 4 nabízí; volba zmizí, když zvíře nesmí žádný z nich. */
+const MEAT_OPTION: Record<Exclude<Meat, "mix">, MeatKey[]> = { drubez: POULTRY, hovezi: ["hovezi"], jehneci: ["jehneci"] };
+const FOOD_TO_PROFILE: Record<Food, FeedingNow> = { granule: "granule", konzervy: "konzervy", varene: "", barf: "barf" };
+
+type Saved = { species: Species; name: string; kg: number; ageM: number; act: Act; neutered: boolean; food: Food; exclude: MeatKey[]; meat: Meat | null; interval: Interval; rotate: boolean };
+
+/** Profil z účtu → odpovědi kalkulačky. */
+function fromProfile(p: PetProfile) {
+  const m = ageMonths(p.bornOn);
+  const food: Food = p.feedingNow === "barf" ? "barf" : p.feedingNow === "konzervy" ? "konzervy" : p.feedingNow === "granule" || p.feedingNow === "mix" ? "granule" : p.currentFood ? "varene" : "granule";
+  const act: Act = p.activity === "nizka" ? "klid" : p.activity === "vysoka" || p.activity === "pracovni" ? "aktiv" : "bezna";
+  return { species: p.species as Species, name: p.name, kg: p.weightKg > 0 ? p.weightKg : p.species === "pes" ? 20 : 4, ageM: m === null ? 36 : Math.max(1, m < 12 ? m : Math.round(m / 12) * 12), act, neutered: p.neutered, food, exclude: p.exclude };
+}
+
+/** Přibližné datum narození z věku (k dnešku, 15. den v měsíci). */
+function bornFromMonths(months: number) {
+  const d = new Date();
+  d.setDate(15);
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString().slice(0, 10);
+}
 
 /** Pády jména pro texty: Rex → Rexe; bez jména obecně. */
 function names(name: string, dog: boolean) {
@@ -43,6 +67,25 @@ const plural = (n: number, one: string, few: string, many: string) => (n === 1 ?
 const dec = (n: number) => (Math.round(n * 10) / 10).toLocaleString("cs-CZ");
 const kgText = (g: number) => (g >= 1000 ? `${dec(g / 1000)} kg` : `${Math.round(g / 5) * 5} g`);
 
+/**
+ * Plán jen z toho, co je opravdu skladem: buildPlan bere zboží s příznakem skladem, tady se navíc
+ * vyřadí položky, kterých by plán chtěl víc kusů, než sklad eviduje (pak vybere jiný mix).
+ * Když by po vyřazení nezbyl žádný základ, zůstane původní plán a upozornění dá stav skladu v pokladně.
+ */
+function planInStock(products: Product[], input: AnimalInput, days: number): Plan {
+  let removed = [...input.removed];
+  let plan = buildPlan(products, input, days);
+  for (let k = 0; k < 4; k++) {
+    const over = plan.items.filter((i) => i.product.stockQty != null && i.qty > i.product.stockQty).map((i) => i.product.slug);
+    if (!over.length) break;
+    const next = buildPlan(products, { ...input, removed: [...removed, ...over] }, days);
+    if (!next.items.some((i) => i.role === "zaklad")) break;
+    removed = [...removed, ...over];
+    plan = next;
+  }
+  return plan;
+}
+
 /** Odpovídá mix zvolenému druhu masa? Ostatní produkty (játra, ryba, doplňky) volba nefiltruje. */
 function meatFits(p: Product, meat: Meat) {
   if (meat === "mix" || foodKind(p) !== "mix") return true;
@@ -52,7 +95,17 @@ function meatFits(p: Product, meat: Meat) {
   return m.includes("jehneci");
 }
 
-export function FeedingCalculator({ products, subscription }: { products: Product[]; subscription: { enabled: boolean; discountPct: number; pointsBonusPct: number } }) {
+export function FeedingCalculator({
+  products,
+  subscription,
+  user,
+  pets,
+}: {
+  products: Product[];
+  subscription: { enabled: boolean; discountPct: number; pointsBonusPct: number };
+  user: { email: string } | null;
+  pets: PetProfile[];
+}) {
   const router = useRouter();
   const cart = useCart();
   const [step, setStep] = useState(1);
@@ -67,12 +120,67 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
   const [interval, setInterval] = useState<Interval>(subscription.enabled ? 14 : 0);
   const [panel, setPanel] = useState<Panel>("");
   const [pending, setPending] = useState(false);
+  const [exclude, setExclude] = useState<MeatKey[]>([]);
+  const [rotate, setRotate] = useState(true);
+  /** Načtený profil z účtu: při objednávce se aktualizuje, ostatní údaje (pohlaví, plemeno) zůstanou. */
+  const [profile, setProfile] = useState<PetProfile | null>(null);
+  const [saveNote, setSaveNote] = useState("");
+
+  // Návrat z přihlášení: odpovědi, které zákazník vyplnil před odchodem, se obnoví a ukáže se výsledek.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STATE_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(STATE_KEY);
+      const st = JSON.parse(raw) as Saved;
+      // Obnova stavu z úložiště prohlížeče jde jen na klientovi.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSpecies(st.species);
+      setName(st.name);
+      setKg(st.kg);
+      setAgeM(st.ageM);
+      setAct(st.act);
+      setNeutered(st.neutered);
+      setFood(st.food);
+      setExclude(st.exclude ?? []);
+      setMeat(st.meat);
+      setInterval(st.interval);
+      setRotate(st.rotate);
+      setStep(4);
+    } catch {
+      /* chybějící nebo rozbité úložiště: začneme od začátku */
+    }
+  }, []);
+  const rememberForLogin = () => {
+    try {
+      const st: Saved = { species, name, kg, ageM, act, neutered, food, exclude, meat: meatChoice, interval, rotate };
+      sessionStorage.setItem(STATE_KEY, JSON.stringify(st));
+    } catch {
+      /* bez úložiště se po přihlášení začne znovu */
+    }
+  };
+  function loadPet(p: PetProfile) {
+    const v = fromProfile(p);
+    setProfile(p);
+    setSpecies(v.species);
+    setName(v.name);
+    setKg(v.kg);
+    setAgeM(v.ageM);
+    setAct(v.act);
+    setNeutered(v.neutered);
+    setFood(v.food);
+    setExclude(v.exclude);
+    setMeat(null);
+    setStep(4);
+  }
 
   const dog = species === "pes";
   const { nom, acc } = names(name, dog);
   const stage: Stage = ageM < 12 ? "mlade" : ageM >= seniorAgeYears(species, kg) * 12 ? "senior" : "dospely";
   const newbie = food !== "barf";
-  const meat: Meat = meatChoice ?? (newbie ? "drubez" : "mix");
+  const meatAllowed = (m: Meat) => m === "mix" || MEAT_OPTION[m].some((k) => !exclude.includes(k));
+  const meatWanted: Meat = meatChoice ?? (newbie ? "drubez" : "mix");
+  const meat: Meat = meatAllowed(meatWanted) ? meatWanted : "mix";
   const days = interval || 14;
 
   const input = useMemo<AnimalInput>(
@@ -86,16 +194,56 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
       neutered,
       beginner: newbie && meat !== "mix",
       mode: "mixy",
-      addons: { ...FULL_ADDONS },
+      addons: { ...FULL_ADDONS, ryba: !exclude.includes("ryby") },
+      exclude,
     }),
-    [species, name, kg, stage, ageM, act, neutered, newbie, meat],
+    [species, name, kg, stage, ageM, act, neutered, newbie, meat, exclude],
   );
   /** Plán z nabídky omezené na zvolené maso; když žádný mix neodpovídá, z celé nabídky. */
   const { plan, meatMissing } = useMemo(() => {
     const pool = products.filter((p) => meatFits(p, meat));
-    const fits = pool.some((p) => foodKind(p) === "mix" && p.inStock && p.animals.includes(species));
-    return { plan: buildPlan(fits ? pool : products, input, days), meatMissing: !fits };
-  }, [products, meat, input, days, species]);
+    const fits = pool.some((p) => foodKind(p) === "mix" && p.inStock && p.animals.includes(species) && !containsMeat(p, exclude));
+    return { plan: planInStock(fits ? pool : products, input, days), meatMissing: !fits };
+  }, [products, meat, input, days, species, exclude]);
+
+  /** Balení na víc dodávek (játra, olej): v dalších dodávkách jen každou N., nejvýš po dobu trvanlivosti. */
+  const everyNth = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const i of plan.items) {
+      const every = Math.min(12, i.periods, Math.max(1, Math.floor(shelfDays(i.product) / days)));
+      if (every >= 2) out[i.product.slug] = every;
+    }
+    return out;
+  }, [plan, days]);
+
+  /**
+   * Střídání masa: každá druhá dodávka (B) má místo mixů z dodávky A jiné mixy stejného druhu,
+   * raději s jiným masem a stejnou gramáží. Vybírá jen ze zboží skladem a bez zakázaného masa (plan.pool).
+   */
+  const rotation = useMemo(() => {
+    if (!interval || !rotate) return null;
+    const inA = new Set(plan.items.map((i) => i.product.slug));
+    const meatsA = new Set(plan.items.filter((i) => i.role === "zaklad").flatMap((i) => i.product.meats ?? []));
+    const map: Record<string, string> = {};
+    const taken = new Set<string>();
+    for (const o of plan.items.filter((i) => i.role === "zaklad").map((i) => i.product)) {
+      const cands = plan.pool.filter((p) => foodKind(p) === foodKind(o) && !inA.has(p.slug) && !taken.has(p.slug));
+      const score = (p: Product) => (p.weightGrams === o.weightGrams ? 2 : 0) + ((p.meats ?? []).some((m) => meatsA.has(m)) ? 0 : 1);
+      const pick = [...cands].sort((a, b) => score(b) - score(a))[0];
+      if (pick) {
+        map[o.slug] = pick.slug;
+        taken.add(pick.slug);
+      }
+    }
+    if (!Object.keys(map).length) return null;
+    const planB = planInStock(plan.pool, { ...input, swaps: { ...input.swaps, ...map } }, days);
+    const qa = new Map(plan.items.map((i) => [i.product.slug, i.qty]));
+    const qb = new Map(planB.items.map((i) => [i.product.slug, i.qty]));
+    const aOnly = plan.items.filter((i) => qb.get(i.product.slug) !== i.qty && !everyNth[i.product.slug]).map((i) => i.product.slug);
+    const b = planB.items.filter((i) => qa.get(i.product.slug) !== i.qty && !everyNth[i.product.slug]);
+    if (!b.some((i) => i.role === "zaklad")) return null;
+    return { aOnly, b };
+  }, [interval, rotate, plan, input, days, everyNth]);
   const r = plan.result;
   const base = plan.items.filter((i) => i.role === "zaklad");
   const basePack = base[0]?.product.weightGrams ?? 1000;
@@ -107,20 +255,41 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
   const rule = dog ? (stage === "mlade" ? "u štěňat se běžně uvádí 4–6 %" : "běžně se uvádí 2–3 %") : stage === "mlade" ? "u koťat se běžně uvádí 4–10 %" : "běžně se uvádí 2–4 %";
   const sub = interval > 0;
 
-  function order() {
+  async function order() {
     setPending(true);
+    setSaveNote("");
+    // Přihlášenému se profil zvířete uloží (nebo aktualizuje) v účtu; objednávku chyba uložení nezastaví.
+    if (user && name.trim()) {
+      const base = profile ?? emptyPet(species);
+      const sameAge = profile && fromProfile(profile).ageM === ageM;
+      const res = await savePetProfile(
+        {
+          ...base,
+          species,
+          name: name.trim(),
+          weightKg: kg,
+          bornOn: sameAge ? base.bornOn : bornFromMonths(ageM),
+          activity: profile?.activity === "pracovni" && act === "aktiv" ? "pracovni" : ACT_INPUT[act],
+          neutered,
+          feedingNow: FOOD_TO_PROFILE[food],
+          currentFood: food === "varene" ? "vařené" : base.currentFood,
+          exclude,
+          note: base.note || "Plán z kalkulačky Krmení na míru",
+        },
+        profile?.id,
+      ).catch(() => null);
+      if (!res?.ok) setSaveNote("Profil se nepodařilo uložit, objednávka ale pokračuje.");
+    }
     cart.clear();
     plan.items.forEach((i) => cart.add(i.product.slug, i.qty));
-    const once: Record<string, number> = {};
-    for (const i of plan.items) if (i.periods >= 2) once[i.product.slug] = Math.min(12, i.periods);
     savePlan({
       forName: acc,
       intervalDays: interval,
       delivery: "rozvoz",
       lines: plan.items.map((i) => ({ slug: i.product.slug, qty: i.qty })),
-      once: sub ? once : {},
-      aOnly: [],
-      b: [],
+      once: sub ? everyNth : {},
+      aOnly: rotation ? rotation.aOnly : [],
+      b: rotation ? rotation.b.map((i) => ({ slug: i.product.slug, qty: i.qty, name: productName(i.product) })) : [],
       dailyGrams: r.dailyGrams,
       preview: true,
     });
@@ -169,9 +338,31 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
               </h1>
               <p className="text-[17px] text-muted">Čtyři otázky, za minutu víte, kolik krmit a co koupit.</p>
             </div>
+            {pets.length > 0 && (
+              <div className="flex flex-col items-center gap-2.5">
+                <span className="text-[15px] font-semibold text-green">Vaši mazlíčci</span>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {pets.map((p) => (
+                    <button key={p.id ?? p.name} type="button" onClick={() => loadPet(p)} className="min-h-11 rounded-control border-2 border-line bg-white px-4 text-[15px] font-semibold text-green hover:border-green">
+                      {p.name}
+                      <span className="ml-1.5 font-normal text-muted">
+                        {p.species === "kocka" ? "kočka" : "pes"}
+                        {p.weightKg > 0 ? `, ${dec(p.weightKg)} kg` : ""}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <span className="text-small text-muted">nebo vyplňte nového</span>
+              </div>
+            )}
             <label className="mx-auto flex w-full max-w-[420px] flex-col gap-2">
               <span className="text-[15px] font-semibold text-green">Jak se jmenuje?</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Třeba Rex" maxLength={40} autoComplete="off" className="min-h-13 rounded-control border border-line bg-white px-4 text-[18px]" />
+              <input
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (profile) setProfile(null);
+                }} placeholder="Třeba Rex" maxLength={40} autoComplete="off" className="min-h-13 rounded-control border border-line bg-white px-4 text-[18px]" />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               {(
@@ -187,8 +378,10 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                     type="button"
                     aria-pressed={on}
                     onClick={() => {
+                      if (v === species) return;
                       setSpecies(v);
                       setKg(v === "pes" ? 20 : 4);
+                      setProfile(null);
                     }}
                     className={`flex flex-col items-center gap-2.5 rounded-panel border-2 bg-white px-5 py-7 transition-colors duration-300 ${on ? "border-green shadow-card" : "border-line hover:border-muted"}`}
                   >
@@ -290,6 +483,27 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                 ))}
               </div>
             </div>
+            <div>
+              <p className="text-center text-[15px] font-semibold text-green">Co nesmí nebo nesnáší?</p>
+              <p className="mb-3 text-center text-small text-muted">Označené maso v balíčku nebude, ani ve směsích. Když nic, pokračujte.</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {MEATS.map((m) => {
+                  const on = exclude.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setExclude((x) => (on ? x.filter((k) => k !== m) : [...x, m]))}
+                      className={`inline-flex min-h-11 items-center gap-1.5 rounded-control border-2 px-3.5 text-[15px] font-semibold capitalize transition-colors duration-300 ${on ? "border-brick bg-white text-brick-text line-through" : "border-line bg-white text-ink hover:border-muted"}`}
+                    >
+                      {on && <X className="size-4" strokeWidth={1.75} aria-hidden />}
+                      {MEAT_LABEL[m]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {cta(`Ukázat plán pro ${acc}`)}
           </section>
         )}
@@ -320,13 +534,17 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                     ["jehneci", "Jehněčí", "pro citlivější"],
                     ["mix", "Střídat", "víc druhů masa"],
                   ] as const
-                ).map(([v, label, desc]) => (
-                  <button key={v} type="button" aria-pressed={meat === v} onClick={() => setMeat(v)} className={card(meat === v)}>
-                    <span className="font-bold text-green">{label}</span>
-                    <span className="text-[13px] text-muted">{desc}</span>
-                  </button>
-                ))}
+                ).map(([v, label, desc]) => {
+                  const ok = meatAllowed(v);
+                  return (
+                    <button key={v} type="button" aria-pressed={meat === v} disabled={!ok} onClick={() => setMeat(v)} className={`${card(meat === v)} disabled:cursor-not-allowed disabled:opacity-45`}>
+                      <span className="font-bold text-green">{label}</span>
+                      <span className="text-[13px] text-muted">{ok ? desc : "nesmí"}</span>
+                    </button>
+                  );
+                })}
               </div>
+              {exclude.length > 0 && <p className="mt-2 text-small text-muted">Bez masa: {exclude.map((k) => MEAT_LABEL[k].toLowerCase()).join(", ")}. Hlídáme i směsi a vnitřnosti.</p>}
               {meatMissing && <p className="mt-2 text-small text-brick-text">Tohle maso zrovna nemáme skladem, v balíčku je náhrada.</p>}
             </div>
 
@@ -361,6 +579,21 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                       </li>
                     ))}
                   </ul>
+                )}
+                {rotation && (
+                  <p className="flex items-start gap-2 rounded-control bg-paper px-3 py-2.5 text-small text-ink">
+                    <RefreshCw className="mt-0.5 size-4 shrink-0 text-green" strokeWidth={1.75} aria-hidden />
+                    <span>
+                      Maso se střídá: další dodávka přiveze{" "}
+                      <b>
+                        {rotation.b
+                          .filter((i) => i.role === "zaklad")
+                          .map((i) => productName(i.product))
+                          .join(", ")}
+                      </b>
+                      , pak zase tenhle balíček.
+                    </span>
+                  </p>
                 )}
                 {newbie && (
                   <ol className="grid grid-cols-3 gap-2">
@@ -406,6 +639,10 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                         Každé {d === 14 ? "2 týdny" : "4 týdny"}
                       </button>
                     ))}
+                    <label className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 text-small font-semibold text-green">
+                      <input type="checkbox" checked={rotate} onChange={(e) => setRotate(e.target.checked)} className="size-4.5 accent-green" />
+                      Střídat druhy masa
+                    </label>
                   </div>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -422,6 +659,17 @@ export function FeedingCalculator({ products, subscription }: { products: Produc
                     </Button>
                   </div>
                 </div>
+                {user ? (
+                  name.trim() && <p className="text-small text-muted">Profil {acc} se při objednávce uloží do vašeho účtu, příště stačí jedno kliknutí.</p>
+                ) : (
+                  <p className="text-small text-muted">
+                    <Link href="/ucet/prihlaseni?next=/krmeni-na-miru" onClick={rememberForLogin} className="font-semibold text-brick-text underline">
+                      Přihlaste se
+                    </Link>{" "}
+                    a profil {acc} uložíme, příště ho nebudete vyplňovat.
+                  </p>
+                )}
+                {saveNote && <p className="text-small text-brick-text">{saveNote}</p>}
               </div>
             </div>
 
