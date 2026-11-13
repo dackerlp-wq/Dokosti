@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
-import { PageIntro } from "@/components/ui/page-intro";
+import Image from "next/image";
 import { getCustomerUser } from "@/lib/customer";
 import { getSettings } from "@/lib/settings";
 import { getAuthSupabase } from "@/lib/supabase/auth";
@@ -18,9 +18,15 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   }
   return (
     <>
-      <PageIntro title="Pokladna">
-        <p>Tři kroky: doprava, platba a vaše údaje. Mražené zboží posíláme tak, aby dorazilo mražené.</p>
-      </PageIntro>
+      <div className="bg-gradient-to-b from-cream to-paper">
+        <header className="mx-auto flex max-w-site items-end gap-3.5 px-5 pt-7 pb-5 md:pt-10">
+          <Image src="/maskot/vendy-pozdrav.webp" alt="" width={115} height={190} className="-mb-1.5 hidden h-21 w-auto sm:block" aria-hidden priority />
+          <div>
+            <p className="text-eyebrow text-muted uppercase">Pokladna</p>
+            <h1 className="font-display text-display-md text-green">Dokončení objednávky</h1>
+          </div>
+        </header>
+      </div>
       <div className="mx-auto max-w-site px-5 pb-10 md:pb-15">
         <CheckoutForm
           shipping={shippingMethods(settings)}
