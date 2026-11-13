@@ -51,9 +51,13 @@ export type AnimalInput = {
   addons: Record<AddonKey, boolean>;
   /** Konkrétní produkty, které zákazník z doporučení vyřadil (slugy). */
   removed: string[];
-  /** Náhrady druhu: původní slug → zvolený slug (BARF mixy a Kosti). */
+  /** Náhrady druhu: původní slug → zvolený slug (mixy, ryba, kosti, vnitřnosti, olej, doplňky). */
   swaps: Record<string, string>;
+  /** Části plánu, které zákazník vyhodil: játra, další vnitřnosti, jód (mořská řasa), vápník. Dávku pak doplní maso. */
+  drop?: DropKey[];
 };
+
+export type DropKey = "jatra" | "vnitrnosti" | "jod" | "vapnik";
 
 import { MEAT_LABEL, productName, type MeatKey } from "@/lib/catalog";
 import { slozeni } from "@/lib/skladba";
@@ -765,8 +769,11 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const avgOf = (f: (m: Product) => number) => (mixes.length && !muscleBase ? mixes.reduce((sum, m) => sum + f(m), 0) / mixes.length : 0);
   const liverDeficit = comp.liver - mixShare * avgOf(declaredLiver);
   const otherDeficit = comp.organs - mixShare * avgOf(declaredOther);
-  const liverShare = liverDeficit >= 1 ? Math.min(comp.liver, liverDeficit) / 100 : 0;
-  const otherShare = otherDeficit >= 2 ? Math.min(comp.organs, otherDeficit) / 100 : 0;
+  // Játra jsou silná (řidší stolice): kdo přechází na BARF, začíná polovinou cílového podílu, zbytek dávky je maso.
+  const liverTarget = i.beginner ? comp.liver / 2 : comp.liver;
+  const dropped = (k: DropKey) => Boolean(i.drop?.includes(k));
+  const liverShare = liverDeficit >= 1 && !dropped("jatra") ? Math.min(liverTarget, liverDeficit) / 100 : 0;
+  const otherShare = otherDeficit >= 2 && !dropped("vnitrnosti") ? Math.min(comp.organs, otherDeficit) / 100 : 0;
   const catNeedsHeart = i.species === "kocka" && !mixes.some((m) => m.nutrition?.taurineMgPerKg || has(m, "srdce"));
   const organOn = i.addons.vnitrnosti || muscleBase;
   const organPool = organOn ? pool.filter((p) => foodKind(p) === "vnitrnosti" || (catNeedsHeart && foodKind(p) === "sval" && has(p, "srdce"))) : [];
@@ -777,16 +784,18 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const heartShare = 1 / 14;
   const heart = catNeedsHeart ? pickOrgan(organPool.filter((p) => has(p, "srdce")), heartShare, () => 1) : null;
   if (heart) organPicks.push({ product: heart, share: heartShare, why: "srdce kvůli taurinu" });
-  const liver = pickOrgan(organPool.filter(isLiver), liverShare, () => 1);
-  if (liver) organPicks.push({ product: liver, share: liverShare, why: "játra do 5 % dávky" });
-  const other = pickOrgan(organPool.filter((p) => !isLiver(p) && !has(p, "srdce")), otherShare, (p) => (has(p, "ledvin") ? 1 : 0.7));
+  const swapped = <T extends Product | null>(p: T): T => (p ? (swap(p) as T) : p);
+  const liver = swapped(pickOrgan(organPool.filter(isLiver), liverShare, () => 1));
+  if (liver) organPicks.push({ product: liver, share: liverShare, why: i.beginner ? "játra, ze začátku polovina (kolem 2–3 % dávky)" : "játra do 5 % dávky" });
+  if (liver) notes.push({ kind: "info", text: "Játra jsou silná: dávejte je po malých kouscích k masu a začněte menším množstvím. Když je stolice řidší, játra na pár dní uberte. Při přetrvávajících potížích se poraďte s veterinářem." });
+  const other = swapped(pickOrgan(organPool.filter((p) => !isLiver(p) && !has(p, "srdce")), otherShare, (p) => (has(p, "ledvin") ? 1 : 0.7)));
   if (other) organPicks.push({ product: other, share: otherShare, why: "další vnitřnosti do 5 % dávky" });
   if (organOn && liver && mixes.some((m) => slozeni(m)?.drobyNerozepsane) && !muscleBase)
     notes.push({ kind: "info", text: "Směs obsahuje droby, výrobce ale nerozepisuje které. Játra proto přidáváme zvlášť, nejvýš do 5 % dávky." });
   if (i.addons.vnitrnosti && !muscleBase && !organPicks.length && liverShare === 0 && otherShare === 0 && !catNeedsHeart)
     notes.push({ kind: "info", text: "Vnitřnosti jsou ve složení základu, další nepřidáváme." });
   if (!heart && catNeedsHeart) notes.push({ kind: "info", text: "Kočka potřebuje taurin a v základu ho výrobce neuvádí. Přidejte jednou týdně syrové kuřecí nebo hovězí srdce." });
-  if (organOn && liverShare > 0 && !liver)
+  if (organOn && liverShare > 0 && !liver && !dropped("jatra"))
     notes.push({ kind: muscleBase ? "warn" : "info", text: "Játra zrovna nemáme v balení, které by se pro vaše zvíře hodilo. Do BARF jídelníčku patří, stavte se pro radu v prodejně." });
 
   // Denní doplňky: olej 1 ml na 100 g dávky (rybí, když v plánu není ryba), zelenina 20 % dávky u psů, granule podle energie.
@@ -803,7 +812,9 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   const oilPerDayOf = (p: Product) => oilDoseOf(p)?.min ?? D / 100;
   // Bez ryby v plánu má rybí olej jasnou přednost; s rybou rostlinný (omega-3 už je z ryby).
   const oilPref = (p: Product) => (fish ? (fishOil(p) ? 0.7 : algae(p) ? 0.6 : 1) : fishOil(p) ? 1 : algae(p) ? 0.9 : 0.3);
-  const oil = i.addons.olej ? choose(oilCands, (p) => (dailyAlloc(p, oilPerDayOf(p), days).fit > 0 ? oilPref(p) : 0)) : null;
+  // Ryba v plánu omega-3 pokrývá, olej se k ní nepřidává (kdo si misku skládá sám, si ho může zapnout).
+  const oil0 = i.addons.olej && (!fish || i.mode === "sam") ? choose(oilCands, (p) => (dailyAlloc(p, oilPerDayOf(p), days).fit > 0 ? oilPref(p) : 0)) : null;
+  const oil = oil0 ? swap(oil0) : null;
   const oilPerDay = oil ? oilPerDayOf(oil) : 0;
   const oilDose = oil ? oilDoseOf(oil) : null;
   if (oil && oil.dose?.[i.species]?.per === "food") notes.push({ kind: "info", text: `${productName(oil)}: výrobce doporučuje podle tučnosti masa a celkový tuk v krmivu do 20 %. K tučnějšímu masu (kachna, vepřové) dávejte spodní dávku.` });
@@ -828,13 +839,15 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
     else notes.push({ kind: "warn", text: "Vápník (vaječné skořápky) zrovna nemáme skladem. Svalovina bez kosti ho potřebuje, stavte se pro radu v prodejně." });
   }
   if (i.addons.doplnky) {
-    if (!fish && !(veg && has(veg, "kelp"))) {
-      const kelp = choose(pool.filter((p) => foodKind(p) === "mineraly" && fold(p.variant).includes("kelp")), () => 1);
+    if (!fish && !(veg && has(veg, "kelp")) && !dropped("jod")) {
+      const kelp0 = choose(pool.filter((p) => foodKind(p) === "mineraly" && fold(p.variant).includes("kelp")), () => 1);
+      const kelp = kelp0 ? swap(kelp0) : null;
       if (kelp) supplements.push({ product: kelp, why: "jód, když v jídelníčku není ryba" });
     }
     const bonelessShare = mixes.length ? mixes.filter((m) => !mixHasBone(m)).length / mixes.length : 0;
-    if (!muscleBase && !bone && bonelessShare >= 0.3 && !largePuppy) {
-      const calcium = pick("mineraly", "vaječn", "vápník");
+    if (!muscleBase && !bone && bonelessShare >= 0.3 && !largePuppy && !dropped("vapnik")) {
+      const calcium0 = pick("mineraly", "vaječn", "vápník");
+      const calcium = calcium0 ? swap(calcium0) : null;
       if (calcium) supplements.push({ product: calcium, why: "vápník k základu bez kosti" });
     }
   }
@@ -904,7 +917,11 @@ export function buildPlan(products: Product[], i: AnimalInput, days: number): Pl
   };
   const fishSlot = makeSlot(fish, fishA, 1, animalGrams, "ryba místo masa", "nové balení", false, 0.35);
   const boneSlot = makeSlot(bone, boneA, muscleBase ? 3 : 1, animalGrams * (muscleBase ? 0.5 : 0.4), `místo části ${baseWord}`, "nový sáček", false);
-  const organSlots = organAllocs.map((o, idx) => ({ why: o.why, slot: makeSlot(o.product, o.alloc, 1, Math.max(30, animalGrams * 0.15), "vnitřnosti", "nové balení", true, 0.2 + 0.4 * idx) }));
+  // Játra po malých porcích (zhruba 6 % denní dávky, častěji), ostatní vnitřnosti můžou ve větších kusech méně často.
+  const organSlots = organAllocs.map((o, idx) => {
+    const small = isLiver(o.product);
+    return { why: o.why, slot: makeSlot(o.product, o.alloc, small ? 3 : 1, small ? Math.max(15, animalGrams * 0.06) : Math.max(30, animalGrams * 0.15), small ? "játra, malé kousky" : "vnitřnosti", "nové balení", true, 0.2 + 0.4 * idx) };
+  });
   const slots = [fishSlot, boneSlot, ...organSlots.map((o) => o.slot)].filter((x): x is Slot => x !== null);
 
   const fromBags = (bags: Pack[], grams: number, note: string, openNote: string): DayItem | null => {

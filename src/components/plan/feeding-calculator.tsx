@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, Minus, Plus, RefreshCw, X } from "lucide-react";
+import { ArrowLeftRight, Check, ChevronLeft, Info, Minus, Plus, RefreshCw, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import { PlanCoverage } from "@/components/barf/plan-coverage";
 import { useCart } from "@/components/cart/cart-context";
 import { ProductImage } from "@/components/product/product-image";
 import { Button } from "@/components/ui/button";
-import { type Activity, type AnimalInput, bowlTargets, buildPlan, containsMeat, FULL_ADDONS, foodKind, newAnimal, type Plan, seniorAgeYears, shelfDays, type Stage } from "@/lib/barf";
+import { type Activity, type AnimalInput, bowlTargets, buildPlan, containsMeat, type DropKey, FULL_ADDONS, foodKind, newAnimal, type Plan, type Reco, seniorAgeYears, shelfDays, type Stage } from "@/lib/barf";
 import { MEAT_LABEL, MEATS, type MeatKey, type Product, productName } from "@/lib/catalog";
 import { ageMonths, emptyPet, type FeedingNow, type PetProfile } from "@/lib/club";
 import { savePlan } from "@/lib/cart-plan";
@@ -95,6 +95,77 @@ function meatFits(p: Product, meat: Meat) {
   return m.includes("jehneci");
 }
 
+/** Druh položky v balíčku: podle něj se vysvětluje, nahrazuje a vyhazuje. */
+type ItemKey = "zaklad" | "ryba" | "kosti" | "jatra" | "srdce" | "vnitrnosti" | "olej" | "jod" | "vapnik" | "jine";
+type OffKey = "ryba" | "kosti" | "olej";
+const txt = (p: Product) => `${p.variant} ${p.composition ?? ""}`.toLowerCase();
+
+function itemKey(i: Reco): ItemKey {
+  const t = txt(i.product);
+  if (i.role === "zaklad" || i.role === "ryba" || i.role === "kosti" || i.role === "olej") return i.role;
+  if (i.role === "vnitrnosti") return /játr|jatr/.test(t) ? "jatra" : /srdc/.test(t) ? "srdce" : "vnitrnosti";
+  if (i.role === "doplnek") return /kelp/.test(t) ? "jod" : /vaječn|vápník/.test(t) ? "vapnik" : "jine";
+  return "jine";
+}
+
+/** Čím jde položku nahradit: stejný druh, skladem, bez zakázaného masa (plan.pool) a mimo balíček. */
+function alternativesFor(key: ItemKey, plan: Plan): Product[] {
+  const inPlan = new Set(plan.items.map((i) => i.product.slug));
+  const fits: Partial<Record<ItemKey, (p: Product) => boolean>> = {
+    zaklad: (p) => foodKind(p) === "mix",
+    ryba: (p) => foodKind(p) === "ryba",
+    kosti: (p) => foodKind(p) === "kost",
+    jatra: (p) => foodKind(p) === "vnitrnosti" && /játr|jatr/.test(txt(p)),
+    vnitrnosti: (p) => foodKind(p) === "vnitrnosti" && !/játr|jatr|srdc/.test(txt(p)),
+    olej: (p) => (foodKind(p) === "olej" && /losos|rybí|lněn|konop|mikrořas/.test(txt(p)) && !/tresč/.test(txt(p))) || (foodKind(p) === "mineraly" && /mikrořas/.test(txt(p))),
+    jod: (p) => foodKind(p) === "mineraly" && /kelp/.test(txt(p)),
+    vapnik: (p) => foodKind(p) === "mineraly" && /vaječn|vápník/.test(txt(p)),
+  };
+  const f = fits[key];
+  return f ? plan.pool.filter((p) => f(p) && !inPlan.has(p.slug)) : [];
+}
+
+/** Proč je položka v balíčku: obecně podle druhu, bez zdravotních tvrzení. */
+const WHY: Record<ItemKey, string> = {
+  zaklad: "Hlavní část misky. Co v ní je (maso, vnitřnosti, kost), říká složení od výrobce.",
+  ryba: "Ryba jednou týdně místo porce masa. V mase skoro nejsou omega-3 mastné kyseliny ani jód, ryba je dodá.",
+  kosti: "Masité kosti místo části porce, jako zdroj vápníku. Podávejte syrové, nikdy vařené.",
+  jatra: "Játra jsou v syrové stravě hlavní zdroj vitaminu A. Jsou silná: po malých kouscích k masu a ze začátku méně.",
+  srdce: "Srdce kvůli taurinu, který kočka potřebuje a v základu ho výrobce neuvádí.",
+  vnitrnosti: "Ledvinky a další vnitřnosti patří do misky vedle jater, běžně se uvádí kolem 5 % dávky.",
+  olej: "Omega-3 mastné kyseliny, když v balíčku není ryba. Dávka podle výrobce.",
+  jod: "Mořská řasa jako zdroj jódu, když v jídelníčku není ryba. Dávka podle výrobce.",
+  vapnik: "Vápník k masu, ve kterém není kost. Dávka podle výrobce.",
+  jine: "",
+};
+/** Co se vyhozením ztratí (krátce, k odkazu „vrátit“). */
+const GONE: Record<OffKey | DropKey, string> = {
+  ryba: "bez ryby (omega-3 a jód doplní olej a mořská řasa)",
+  kosti: "bez masitých kostí",
+  olej: "bez oleje",
+  jatra: "bez jater (chybí hlavní zdroj vitaminu A)",
+  vnitrnosti: "bez dalších vnitřností",
+  jod: "bez mořské řasy",
+  vapnik: "bez vápníku",
+};
+const OFF_OF: Partial<Record<ItemKey, OffKey>> = { ryba: "ryba", kosti: "kosti", olej: "olej" };
+const DROP_OF: Partial<Record<ItemKey, DropKey>> = { jatra: "jatra", vnitrnosti: "vnitrnosti", jod: "jod", vapnik: "vapnik" };
+
+/** Ilustrace druhu masa (rytina zvířete); víc druhů se překrývá. */
+function MeatFace({ meats, size = 44 }: { meats: readonly MeatKey[]; size?: number }) {
+  const shown = meats.slice(0, 3);
+  if (!shown.length) return null;
+  return (
+    <span className="flex shrink-0 items-center" aria-hidden>
+      {shown.map((m, idx) => (
+        <span key={m} className="relative overflow-hidden rounded-full border-2 border-white bg-cream" style={{ width: size, height: size, marginLeft: idx ? -size * 0.35 : 0 }}>
+          <Image src={`/kategorie/maso-${m}.png`} alt="" fill sizes={`${size}px`} className="object-cover" />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function FeedingCalculator({
   products,
   subscription,
@@ -125,6 +196,11 @@ export function FeedingCalculator({
   /** Načtený profil z účtu: při objednávce se aktualizuje, ostatní údaje (pohlaví, plemeno) zůstanou. */
   const [profile, setProfile] = useState<PetProfile | null>(null);
   const [saveNote, setSaveNote] = useState("");
+  /** Úpravy balíčku: vypnuté části (ryba, kosti, olej), vyhozené (játra, vnitřnosti, doplňky) a náhrady (původní slug → nový). */
+  const [off, setOff] = useState<OffKey[]>([]);
+  const [drop, setDrop] = useState<DropKey[]>([]);
+  const [swaps, setSwaps] = useState<Record<string, string>>({});
+  const [openItem, setOpenItem] = useState<{ slug: string; mode: "proc" | "nahradit" } | null>(null);
 
   // Návrat z přihlášení: odpovědi, které zákazník vyplnil před odchodem, se obnoví a ukáže se výsledek.
   useEffect(() => {
@@ -195,10 +271,12 @@ export function FeedingCalculator({
       neutered,
       beginner: newbie && meat !== "mix",
       mode: "mixy",
-      addons: { ...FULL_ADDONS, ryba: !exclude.includes("ryby") },
+      addons: { ...FULL_ADDONS, ryba: !exclude.includes("ryby") && !off.includes("ryba"), kosti: !off.includes("kosti"), olej: !off.includes("olej") },
       exclude,
+      drop,
+      swaps,
     }),
-    [species, name, kg, stage, ageM, act, neutered, newbie, meat, exclude],
+    [species, name, kg, stage, ageM, act, neutered, newbie, meat, exclude, off, drop, swaps],
   );
   /** Plán z nabídky omezené na zvolené maso; když žádný mix neodpovídá, z celé nabídky. */
   const { plan, meatMissing } = useMemo(() => {
@@ -232,7 +310,8 @@ export function FeedingCalculator({
       const score = (p: Product) => (p.weightGrams === o.weightGrams ? 2 : 0) + ((p.meats ?? []).some((m) => meatsA.has(m)) ? 0 : 1);
       const pick = [...cands].sort((a, b) => score(b) - score(a))[0];
       if (pick) {
-        map[o.slug] = pick.slug;
+        // Klíčem náhrady je původní volba výpočtu (před zákazníkovou výměnou masa).
+        map[Object.keys(input.swaps).find((k) => input.swaps[k] === o.slug) ?? o.slug] = pick.slug;
         taken.add(pick.slug);
       }
     }
@@ -255,6 +334,30 @@ export function FeedingCalculator({
   const weighImg = dog ? M(stage === "mlade" ? "vek-stene" : stage === "senior" ? "vek-senior" : "vek-dospely") : M("kocka-miska");
   const rule = dog ? (stage === "mlade" ? "u štěňat se běžně uvádí 4–6 %" : "běžně se uvádí 2–3 %") : stage === "mlade" ? "u koťat se běžně uvádí 4–10 %" : "běžně se uvádí 2–4 %";
   const sub = interval > 0;
+  const gone = [...off, ...drop];
+  /** Původní slug položky (před náhradou): náhrady se ukládají k němu. */
+  const origOf = (slug: string) => Object.keys(swaps).find((k) => swaps[k] === slug) ?? slug;
+  function replaceItem(slug: string, to: string) {
+    const o = origOf(slug);
+    setSwaps((sw) => {
+      const nextSw = { ...sw };
+      if (to === o) delete nextSw[o];
+      else nextSw[o] = to;
+      return nextSw;
+    });
+    setOpenItem(null);
+  }
+  function removeItem(key: ItemKey) {
+    const o = OFF_OF[key];
+    const d = DROP_OF[key];
+    if (o) setOff((x) => [...x, o]);
+    if (d) setDrop((x) => [...x, d]);
+    setOpenItem(null);
+  }
+  const restore = (k: OffKey | DropKey) => {
+    setOff((x) => x.filter((v) => v !== k));
+    setDrop((x) => x.filter((v) => v !== k));
+  };
 
   async function order() {
     setPending(true);
@@ -297,18 +400,18 @@ export function FeedingCalculator({
     router.push(`/pokladna?predplatne=${interval}`);
   }
 
-  const card = (on: boolean) => `flex flex-col items-center gap-1 rounded-card border-2 bg-white p-4 text-center transition-colors duration-300 ${on ? "border-green bg-paper" : "border-line hover:border-muted"}`;
+  const card = (on: boolean) => `flex flex-col items-center gap-1 rounded-card border-2 bg-white p-3 text-center sm:p-4 transition-colors duration-300 ${on ? "border-green bg-paper" : "border-line hover:border-muted"}`;
   const chip = (on: boolean) => `min-h-11 rounded-control border-2 px-4 text-[15px] font-semibold transition-colors duration-300 ${on ? "border-green bg-green text-white" : "border-line bg-white text-ink hover:border-muted"}`;
   const next = () => setStep((s) => Math.min(4, s + 1));
   const cta = (label: string) => (
-    <Button variant="action" size="lg" onClick={next} className="self-center px-10">
+    <Button variant="action" size="lg" onClick={next} className="w-full self-center px-10 sm:w-auto">
       {label}
     </Button>
   );
 
   return (
-    <div className="bg-gradient-to-b from-cream to-paper px-5 pt-8 pb-16">
-      <div className="mx-auto flex max-w-[880px] flex-col gap-7">
+    <div className="bg-gradient-to-b from-cream to-paper px-4 pt-5 pb-14 sm:px-6 sm:pt-8 sm:pb-16">
+      <div className={`mx-auto flex w-full flex-col gap-6 sm:gap-7 ${step === 4 ? "max-w-[1160px]" : "max-w-[880px]"}`}>
         <div className="flex items-center justify-between gap-4">
           {step > 1 ? (
             <button type="button" onClick={() => setStep((s) => s - 1)} className="inline-flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-muted hover:text-green">
@@ -328,16 +431,16 @@ export function FeedingCalculator({
         </div>
 
         {step === 1 && (
-          <section className="flex flex-col gap-7" aria-label="Pro koho">
+          <section className="flex flex-col gap-6 sm:gap-7" aria-label="Pro koho">
             <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex h-48 items-end justify-center gap-1" aria-hidden>
-                <Image src={M("vendy-pozdrav")} alt="" width={115} height={190} className="h-44 w-auto" priority />
-                <Image src={M("cerveny-sedi")} alt="" width={132} height={190} className="h-48 w-auto" priority />
+              <div className="flex h-32 items-end justify-center gap-1 sm:h-48" aria-hidden>
+                <Image src={M("vendy-pozdrav")} alt="" width={115} height={190} className="h-30 w-auto sm:h-44" priority />
+                <Image src={M("cerveny-sedi")} alt="" width={132} height={190} className="h-32 w-auto sm:h-48" priority />
               </div>
-              <h1 className="font-display text-display-lg text-green">
+              <h1 className="font-display text-display-md text-green sm:text-display-lg">
                 Pro koho <em className="font-normal text-brick">vaříme?</em>
               </h1>
-              <p className="text-[17px] text-muted">Čtyři otázky, za minutu víte, kolik krmit a co koupit.</p>
+              <p className="text-[15px] text-muted sm:text-[17px]">Čtyři otázky, za minutu víte, kolik krmit a co koupit.</p>
             </div>
             {pets.length > 0 && (
               <div className="flex flex-col items-center gap-2.5">
@@ -365,7 +468,7 @@ export function FeedingCalculator({
                   if (profile) setProfile(null);
                 }} placeholder="Třeba Rex" maxLength={40} autoComplete="off" className="min-h-13 rounded-control border border-line bg-white px-4 text-[18px]" />
             </label>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {(
                 [
                   ["pes", "Pes", "Dávka podle váhy a pohybu", M("cerveny-sedi")],
@@ -384,13 +487,13 @@ export function FeedingCalculator({
                       setKg(v === "pes" ? 20 : 4);
                       setProfile(null);
                     }}
-                    className={`flex flex-col items-center gap-2.5 rounded-panel border-2 bg-white px-5 py-7 transition-colors duration-300 ${on ? "border-green shadow-card" : "border-line hover:border-muted"}`}
+                    className={`flex flex-col items-center gap-2 rounded-panel border-2 bg-white px-3 py-4 transition-colors sm:gap-2.5 sm:px-5 sm:py-7 duration-300 ${on ? "border-green shadow-card" : "border-line hover:border-muted"}`}
                   >
-                    <span className={`flex size-26 items-end justify-center overflow-hidden rounded-full ${on ? "bg-sand" : "bg-cream"}`} aria-hidden>
-                      <Image src={img} alt="" width={80} height={96} className="h-24 w-auto" />
+                    <span className={`flex size-18 items-end justify-center overflow-hidden rounded-full sm:size-26 ${on ? "bg-sand" : "bg-cream"}`} aria-hidden>
+                      <Image src={img} alt="" width={80} height={96} className="h-16 w-auto sm:h-24" />
                     </span>
-                    <span className="font-display text-[30px] font-black text-green">{label}</span>
-                    <span className="text-[15px] text-muted">{desc}</span>
+                    <span className="font-display text-[24px] font-black text-green sm:text-[30px]">{label}</span>
+                    <span className="text-[13px] text-muted sm:text-[15px]">{desc}</span>
                   </button>
                 );
               })}
@@ -400,15 +503,15 @@ export function FeedingCalculator({
         )}
 
         {step === 2 && (
-          <section className="flex flex-col gap-7" aria-label="Váha a věk">
+          <section className="flex flex-col gap-6 sm:gap-7" aria-label="Váha a věk">
             <h1 className="text-center font-display text-display-md text-green md:text-display-lg">Kolik {nom} váží a jak {dog ? "je starý" : "je stará"}?</h1>
             <div className="flex flex-col items-center gap-1.5">
-              <div className="flex h-60 items-end justify-center" aria-hidden>
-                <Image src={weighImg} alt="" width={260} height={400} className="w-auto transition-all duration-300" style={{ height: dog && stage !== "mlade" ? Math.min(240, 170 + kg * 1.8) : 170 }} />
+              <div className="flex h-40 items-end justify-center sm:h-60" aria-hidden>
+                <Image src={weighImg} alt="" width={260} height={400} className="max-h-40 w-auto transition-all duration-300 sm:max-h-60" style={{ height: dog && stage !== "mlade" ? Math.min(240, 170 + kg * 1.8) : 170 }} />
               </div>
               <span className="rounded-full bg-sand px-3 py-1 text-small font-bold text-green">{stageLabel}</span>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <Stepper
                 label="Váha"
                 value={kg}
@@ -433,11 +536,11 @@ export function FeedingCalculator({
         )}
 
         {step === 3 && (
-          <section className="flex flex-col gap-7" aria-label="Pohyb a krmení">
+          <section className="flex flex-col gap-6 sm:gap-7" aria-label="Pohyb a krmení">
             <h1 className="text-center font-display text-display-md text-green md:text-display-lg">Jak žije a co teď jí?</h1>
             <div>
               <p className="mb-3 text-center text-[15px] font-semibold text-green">Pohyb</p>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {(
                   [
                     ["klid", "Klidný", "krátké procházky", "cerveny-lezi"],
@@ -447,12 +550,12 @@ export function FeedingCalculator({
                 ).map(([v, label, desc, img]) => (
                   <button key={v} type="button" aria-pressed={act === v} onClick={() => setAct(v)} className={card(act === v)}>
                     {dog && (
-                      <span className="flex h-28 w-full items-end justify-center" aria-hidden>
-                        <Image src={M(img)} alt="" width={180} height={150} className="max-h-28 w-auto" />
+                      <span className="flex h-16 w-full items-end justify-center sm:h-28" aria-hidden>
+                        <Image src={M(img)} alt="" width={180} height={150} className="max-h-16 w-auto sm:max-h-28" />
                       </span>
                     )}
-                    <span className="text-[18px] font-bold text-green">{label}</span>
-                    <span className="text-small text-muted">{desc}</span>
+                    <span className="text-[15px] font-bold text-green sm:text-[18px]">{label}</span>
+                    <span className="text-[12px] leading-snug text-muted sm:text-small">{desc}</span>
                   </button>
                 ))}
               </div>
@@ -468,18 +571,18 @@ export function FeedingCalculator({
             </div>
             <div>
               <p className="mb-3 text-center text-[15px] font-semibold text-green">Co {nom} jí teď</p>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
                 {(
                   [
                     ["granule", "Granule", "přejdeme postupně"],
                     ["konzervy", "Konzervy", "přejdeme postupně"],
                     ["varene", "Vařené", "syrové zavedeme postupně"],
-                    ["barf", "Už BARF", "rovnou střídání druhů"],
+                    ["barf", "BARF", "rovnou střídání druhů"],
                   ] as const
                 ).map(([v, label, desc]) => (
                   <button key={v} type="button" aria-pressed={food === v} onClick={() => setFood(v)} className={card(food === v)}>
-                    <span className="text-[18px] font-bold text-green">{label}</span>
-                    <span className="text-small text-muted">{desc}</span>
+                    <span className="text-[16px] font-bold text-green sm:text-[18px]">{label}</span>
+                    <span className="text-[12px] text-muted sm:text-small">{desc}</span>
                   </button>
                 ))}
               </div>
@@ -510,49 +613,60 @@ export function FeedingCalculator({
         )}
 
         {step === 4 && (
-          <section className="flex flex-col gap-6" aria-label="Plán">
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-              <Image src={dog ? M("vendy-miska") : M("kocka-miska")} alt="" width={160} height={200} className="h-50 w-auto" aria-hidden />
-              <div className="flex max-w-[460px] flex-col gap-1.5">
-                <p className="text-[17px] text-muted">{nom.charAt(0).toUpperCase() + nom.slice(1)} potřebuje denně</p>
-                <p className="font-display text-[88px] leading-none font-black text-green">{r.dailyGrams} g</p>
-                <p className="text-ink">
-                  {r.mealsPerDay} {plural(r.mealsPerDay, "porce", "porce", "porcí")} po {Math.round(r.dailyGrams / r.mealsPerDay / 5) * 5} g · balení {kgText(basePack)} vydrží {dec(basePack / r.dailyGrams)} dne · {kgText(r.dailyGrams * 7)} týdně
-                </p>
-                <p className="text-small text-muted">
-                  {dec(r.pct)} % váhy denně, {rule}. Po 2 až 4 týdnech {dog ? "psa" : "kočku"} zvažte a dávku upravte.
-                </p>
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8" aria-label="Plán">
+            <div className="flex min-w-0 flex-col gap-6">
+              <div className="flex items-center justify-center gap-4 sm:gap-8 lg:justify-start">
+                <Image src={dog ? M("vendy-miska") : M("kocka-miska")} alt="" width={160} height={200} className="h-28 w-auto shrink-0 sm:h-44 lg:h-50" aria-hidden />
+                <div className="flex min-w-0 max-w-[480px] flex-col gap-1 sm:gap-1.5">
+                  <p className="text-[15px] text-muted sm:text-[17px]">{nom.charAt(0).toUpperCase() + nom.slice(1)} potřebuje denně</p>
+                  <p className="font-display text-[clamp(52px,15vw,88px)] leading-none font-black text-green">{r.dailyGrams} g</p>
+                  <p className="text-[14px] text-ink sm:text-[16px]">
+                    {r.mealsPerDay} {plural(r.mealsPerDay, "porce", "porce", "porcí")} po {Math.round(r.dailyGrams / r.mealsPerDay / 5) * 5} g · balení {kgText(basePack)} vydrží {dec(basePack / r.dailyGrams)} dne · {kgText(r.dailyGrams * 7)} týdně
+                  </p>
+                  <p className="text-[13px] text-muted sm:text-small">
+                    {dec(r.pct)} % váhy denně, {rule}. Po 2 až 4 týdnech {dog ? "psa" : "kočku"} zvažte a dávku upravte.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <p className="mb-2.5 text-[15px] font-semibold text-green">Jaké maso?</p>
-              <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-                {(
-                  [
-                    ["drubez", "Drůbeží", "snese skoro každý"],
-                    ["hovezi", "Hovězí", "bez kuřete"],
-                    ["jehneci", "Jehněčí", "pro citlivější"],
-                    ["mix", "Střídat", "víc druhů masa"],
-                  ] as const
-                ).map(([v, label, desc]) => {
-                  const ok = meatAllowed(v);
-                  return (
-                    <button key={v} type="button" aria-pressed={meat === v} disabled={!ok} onClick={() => setMeat(v)} className={`${card(meat === v)} disabled:cursor-not-allowed disabled:opacity-45`}>
-                      <span className="font-bold text-green">{label}</span>
-                      <span className="text-[13px] text-muted">{ok ? desc : "nesmí"}</span>
-                    </button>
-                  );
-                })}
+              <div>
+                <p className="mb-2.5 text-[15px] font-semibold text-green">Jaké maso?</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-4">
+                  {(
+                    [
+                      ["drubez", "Drůbeží", "snese skoro každý", ["kureci"]],
+                      ["hovezi", "Hovězí", "bez kuřete", ["hovezi"]],
+                      ["jehneci", "Jehněčí", "pro citlivější", ["jehneci"]],
+                      ["mix", "Střídat", "víc druhů masa", ["kureci", "hovezi", "jehneci"]],
+                    ] as const
+                  ).map(([v, label, desc, faces]) => {
+                    const ok = meatAllowed(v);
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        aria-pressed={meat === v}
+                        disabled={!ok}
+                        onClick={() => {
+                          setMeat(v);
+                          setSwaps({});
+                        }}
+                        className={`${card(meat === v)} disabled:cursor-not-allowed disabled:opacity-45`}
+                      >
+                        <MeatFace meats={faces} size={faces.length > 1 ? 38 : 52} />
+                        <span className="font-bold text-green">{label}</span>
+                        <span className="text-[12px] text-muted sm:text-[13px]">{ok ? desc : "nesmí"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {exclude.length > 0 && <p className="mt-2 text-small text-muted">Bez masa: {exclude.map((k) => MEAT_LABEL[k].toLowerCase()).join(", ")}. Hlídáme i směsi a vnitřnosti.</p>}
+                {meatMissing && <p className="mt-2 text-small text-brick-text">Tohle maso zrovna nemáme skladem, v balíčku je náhrada.</p>}
               </div>
-              {exclude.length > 0 && <p className="mt-2 text-small text-muted">Bez masa: {exclude.map((k) => MEAT_LABEL[k].toLowerCase()).join(", ")}. Hlídáme i směsi a vnitřnosti.</p>}
-              {meatMissing && <p className="mt-2 text-small text-brick-text">Tohle maso zrovna nemáme skladem, v balíčku je náhrada.</p>}
-            </div>
 
-            <div className="overflow-hidden rounded-panel border border-line bg-white">
-              <div className="flex flex-col gap-4 p-6">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="font-display text-[28px] font-semibold text-green">
+              <div className="flex flex-col gap-4 rounded-panel border border-line bg-white p-4 sm:p-6">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <h2 className="font-display text-[24px] font-semibold text-green sm:text-[28px]">
                     {newbie ? "Startovací balíček" : "Balíček"} pro {acc}
                   </h2>
                   <span className="text-small text-muted">
@@ -562,24 +676,108 @@ export function FeedingCalculator({
                 {plan.items.length === 0 ? (
                   <p>Pro tuto kombinaci zrovna nemáme skladem vhodné maso. Napište nám níže, poskládáme balíček spolu.</p>
                 ) : (
-                  <ul className="grid gap-2.5 sm:grid-cols-2">
-                    {plan.items.map((i) => (
-                      <li key={i.product.slug} className="flex items-center gap-3 rounded-card bg-paper p-2.5">
-                        <div className="size-13 shrink-0 overflow-hidden rounded-control bg-white">
-                          <ProductImage product={i.product} sizes="52px" className="h-13" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-eyebrow text-muted uppercase">{ROLE[i.role]}</p>
-                          <Link href={`/produkt/${i.product.slug}`} className="block truncate text-[15px] font-bold text-ink hover:underline">
-                            {productName(i.product)}
-                          </Link>
-                          <p className="text-[13px] text-muted">
-                            {i.qty} ks{i.periods > 1 ? `, vydrží na ${i.periods} ${plural(i.periods, "dodávku", "dodávky", "dodávek")}` : ""} · {i.portionText}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
+                  <ul className="flex flex-col gap-2.5">
+                    {plan.items.map((i) => {
+                      const key = itemKey(i);
+                      const alts = alternativesFor(key, plan);
+                      const orig = origOf(i.product.slug);
+                      const swappedFrom = orig !== i.product.slug ? products.find((p) => p.slug === orig) : undefined;
+                      const removable = Boolean(OFF_OF[key] || DROP_OF[key]);
+                      const open = openItem?.slug === i.product.slug ? openItem.mode : null;
+                      const btn = "inline-flex min-h-10 items-center gap-1.5 rounded-control border px-3 text-[13px] font-semibold transition-colors duration-300";
+                      const toggle = (mode: "proc" | "nahradit") => setOpenItem(open === mode ? null : { slug: i.product.slug, mode });
+                      return (
+                        <li key={i.product.slug} className="rounded-card border border-line bg-paper p-3 sm:p-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="size-14 shrink-0 overflow-hidden rounded-control bg-white sm:size-16">
+                              <ProductImage product={i.product} sizes="64px" className="h-14 sm:h-16" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-eyebrow text-muted uppercase">{ROLE[i.role]}</p>
+                              <Link href={`/produkt/${i.product.slug}`} className="block text-[15px] leading-snug font-bold text-ink hover:underline">
+                                {productName(i.product)}
+                              </Link>
+                              <p className="text-[13px] text-muted">
+                                {i.periods > 1 ? `vydrží na ${i.periods} ${plural(i.periods, "dodávku", "dodávky", "dodávek")} · ` : ""}
+                                {i.portionText}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-[15px] font-bold text-green tabular-nums">{formatPrice(i.qty * i.product.priceCzk)}</p>
+                              <p className="text-[13px] text-muted">{i.qty} ks</p>
+                            </div>
+                          </div>
+                          <div className="mt-2.5 flex flex-wrap gap-2">
+                            {WHY[key] && (
+                              <button type="button" aria-expanded={open === "proc"} onClick={() => toggle("proc")} className={`${btn} ${open === "proc" ? "border-green bg-white text-green" : "border-line bg-white text-green hover:border-green"}`}>
+                                <Info className="size-4" strokeWidth={1.75} aria-hidden /> Proč?
+                              </button>
+                            )}
+                            {(alts.length > 0 || swappedFrom) && (
+                              <button type="button" aria-expanded={open === "nahradit"} onClick={() => toggle("nahradit")} className={`${btn} ${open === "nahradit" ? "border-green bg-white text-green" : "border-line bg-white text-green hover:border-green"}`}>
+                                <ArrowLeftRight className="size-4" strokeWidth={1.75} aria-hidden /> {key === "zaklad" ? "Vyměnit maso" : "Nahradit"}
+                              </button>
+                            )}
+                            {removable && (
+                              <button type="button" onClick={() => removeItem(key)} className={`${btn} border-line bg-white text-brick-text hover:border-brick`}>
+                                <X className="size-4" strokeWidth={1.75} aria-hidden /> Vyhodit
+                              </button>
+                            )}
+                          </div>
+                          {open === "proc" && (
+                            <p className="mt-2.5 rounded-control bg-white px-3 py-2.5 text-[14px] text-ink">
+                              {WHY[key]}
+                              {i.why && <span className="mt-1 block text-[13px] text-muted">V tomto plánu: {i.why}.</span>}
+                            </p>
+                          )}
+                          {open === "nahradit" && (
+                            <div className="mt-2.5 flex flex-col gap-2">
+                              <ul className={`grid gap-2 ${key === "zaklad" ? "grid-cols-2 sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                                {[...(swappedFrom ? [swappedFrom] : []), ...alts.filter((a) => a.slug !== swappedFrom?.slug)].map((a) => (
+                                  <li key={a.slug}>
+                                    <button
+                                      type="button"
+                                      onClick={() => replaceItem(i.product.slug, a.slug)}
+                                      className={`flex h-full w-full rounded-card border-2 border-line bg-white p-2.5 text-left transition-colors duration-300 hover:border-green ${key === "zaklad" ? "flex-col items-center gap-1.5 text-center" : "items-center gap-2.5"}`}
+                                    >
+                                      {key === "zaklad" && a.meats?.length ? (
+                                        <MeatFace meats={a.meats} size={a.meats.length > 1 ? 44 : 60} />
+                                      ) : (
+                                        <span className="size-11 shrink-0 overflow-hidden rounded-control bg-cream">
+                                          <ProductImage product={a} sizes="44px" className="h-11" />
+                                        </span>
+                                      )}
+                                      <span className="min-w-0">
+                                        <span className="block text-[14px] leading-snug font-bold text-ink">{productName(a)}</span>
+                                        <span className="block text-[12px] text-muted">
+                                          {formatPrice(a.priceCzk)}
+                                          {a.slug === swappedFrom?.slug ? " · původní volba" : ""}
+                                        </span>
+                                      </span>
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                              {key === "zaklad" && <p className="text-[12px] text-muted">Množství se přepočítá podle nového masa. Jiný druh masa vyberete nahoře.</p>}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
+                )}
+                {gone.length > 0 && (
+                  <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-muted">
+                    <span>Vyhozeno:</span>
+                    {gone.map((g) => (
+                      <span key={g} className="inline-flex items-center gap-1.5 rounded-control bg-paper px-2.5 py-1">
+                        {GONE[g]}
+                        <button type="button" onClick={() => restore(g)} className="font-semibold text-brick-text underline">
+                          vrátit
+                        </button>
+                      </span>
+                    ))}
+                  </p>
                 )}
                 {rotation && (
                   <p className="flex items-start gap-2 rounded-control bg-paper px-3 py-2.5 text-small text-ink">
@@ -600,10 +798,10 @@ export function FeedingCalculator({
                   <ol className="grid grid-cols-3 gap-2">
                     {[
                       ["1. týden", "jen jeden druh masa"],
-                      ["2. týden", "přidat játra"],
+                      ["2. týden", "játra po malých kouscích"],
                       ["3. týden", "rybí den"],
                     ].map(([w, t]) => (
-                      <li key={w} className="rounded-control border border-line px-3 py-2.5 text-[13px] text-muted">
+                      <li key={w} className="rounded-control border border-line px-2.5 py-2 text-[12px] text-muted sm:px-3 sm:py-2.5 sm:text-[13px]">
                         <b className="block text-brick-text">{w}</b>
                         {t}
                       </li>
@@ -611,149 +809,148 @@ export function FeedingCalculator({
                   </ol>
                 )}
               </div>
+            </div>
 
-              <div className="flex flex-col gap-3.5 bg-cream p-6">
-                {subscription.enabled && (
-                  <div role="radiogroup" aria-label="Jak objednat" className="grid gap-3 md:grid-cols-2">
-                    <button type="button" role="radio" aria-checked={sub} onClick={() => setInterval(14)} className={`flex flex-col items-start gap-2 rounded-card border-2 bg-white p-4 text-left ${sub ? "border-green" : "border-line"}`}>
-                      <span className="flex w-full items-center justify-between gap-2">
-                        <span className="text-[17px] font-bold text-green">Posílat pravidelně</span>
-                        <span className="rounded-full bg-brick px-2.5 py-0.5 text-[12px] font-bold text-white">{subscription.discountPct > 0 ? `−${subscription.discountPct} %` : "Doporučujeme"}</span>
-                      </span>
-                      <span className="flex flex-col gap-1 text-small text-muted">
-                        <span>Mrazák nezůstane prázdný, maso přivezeme samo.</span>
-                        {subscription.pointsBonusPct > 0 && <span>Kostičky navíc za každou dodávku.</span>}
-                        <span>Přeskočíte, změníte nebo zrušíte kdykoli v účtu.</span>
-                      </span>
-                    </button>
-                    <button type="button" role="radio" aria-checked={!sub} onClick={() => setInterval(0)} className={`flex flex-col items-start gap-2 rounded-card border-2 bg-white p-4 text-left ${!sub ? "border-green" : "border-line"}`}>
-                      <span className="text-[17px] font-bold text-green">Jen jednou</span>
-                      <span className="text-small text-muted">Vyzkoušet a objednat znovu, až dojde.</span>
-                    </button>
-                  </div>
-                )}
-                {sub && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-small text-muted">Jak často</span>
-                    {([14, 28] as const).map((d) => (
-                      <button key={d} type="button" aria-pressed={interval === d} onClick={() => setInterval(d)} className={chip(interval === d)}>
-                        Každé {d === 14 ? "2 týdny" : "4 týdny"}
-                      </button>
-                    ))}
-                    <label className="ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 text-small font-semibold text-green">
-                      <input type="checkbox" checked={rotate} onChange={(e) => setRotate(e.target.checked)} className="size-4.5 accent-green" />
-                      Střídat druhy masa
-                    </label>
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <p className="flex flex-col">
-                    <span className="font-display text-[44px] leading-none font-black text-green">
-                      {formatPrice(plan.perDayCzk)} <span className="text-[20px] font-semibold">za den</span>
+            <aside className="flex flex-col gap-3.5 rounded-panel border border-line bg-cream p-4 sm:p-6 lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+              {subscription.enabled && (
+                <div role="radiogroup" aria-label="Jak objednat" className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+                  <button type="button" role="radio" aria-checked={sub} onClick={() => setInterval(14)} className={`flex flex-col items-start gap-2 rounded-card border-2 bg-white p-3.5 text-left sm:p-4 ${sub ? "border-green" : "border-line"}`}>
+                    <span className="flex w-full items-center justify-between gap-2">
+                      <span className="text-[16px] font-bold text-green sm:text-[17px]">Posílat pravidelně</span>
+                      <span className="rounded-full bg-brick px-2.5 py-0.5 text-[12px] font-bold text-white">{subscription.discountPct > 0 ? `−${subscription.discountPct} %` : "Doporučujeme"}</span>
                     </span>
-                    <span className="text-[15px] text-muted">{sub ? `dodávka ${formatPrice(plan.totalCzk)} každé ${days === 14 ? "2 týdny" : "4 týdny"}, zrušíte kdykoli` : `nákup celkem ${formatPrice(plan.totalCzk)}`}</span>
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <Image src={M("cerveny-taska")} alt="" width={90} height={96} className="hidden h-24 w-auto sm:block" aria-hidden />
-                    <Button variant="action" size="lg" onClick={order} disabled={pending || plan.items.length === 0}>
-                      {sub ? "Objednat pravidelně" : "Vložit do košíku"}
-                    </Button>
-                  </div>
+                    <span className="flex flex-col gap-1 text-[13px] text-muted sm:text-small">
+                      <span>Mrazák nezůstane prázdný, maso přivezeme včas.</span>
+                      {subscription.pointsBonusPct > 0 && <span>Kostičky navíc za každou dodávku.</span>}
+                      <span>Přeskočíte, změníte nebo zrušíte kdykoli v účtu.</span>
+                    </span>
+                  </button>
+                  <button type="button" role="radio" aria-checked={!sub} onClick={() => setInterval(0)} className={`flex flex-col items-start gap-2 rounded-card border-2 bg-white p-3.5 text-left sm:p-4 ${!sub ? "border-green" : "border-line"}`}>
+                    <span className="text-[16px] font-bold text-green sm:text-[17px]">Jen jednou</span>
+                    <span className="text-[13px] text-muted sm:text-small">Vyzkoušet a objednat znovu, až dojde.</span>
+                  </button>
                 </div>
-                {user ? (
-                  name.trim() && <p className="text-small text-muted">Profil {acc} se při objednávce uloží do vašeho účtu, příště stačí jedno kliknutí.</p>
-                ) : (
-                  <p className="text-small text-muted">
-                    <Link href="/ucet/prihlaseni?next=/krmeni-na-miru" onClick={rememberForLogin} className="font-semibold text-brick-text underline">
-                      Přihlaste se
-                    </Link>{" "}
-                    a profil {acc} uložíme, příště ho nebudete vyplňovat.
-                  </p>
-                )}
-                {saveNote && <p className="text-small text-brick-text">{saveNote}</p>}
-              </div>
-            </div>
-
-            <div className="flex flex-col border-t border-line">
-              {(
-                [
-                  ["proc", "Co v balíčku je a proč", "Pro ty, kdo s BARFem začínají"],
-                  ["rozpis", "Podrobný rozpis", "Gramy po složkách a energie"],
-                  ["rada", "Chci poradit", "Napište nám, projdeme plán s vámi"],
-                ] as const
-              ).map(([id, title, subtitle]) => {
-                const open = panel === id;
-                return (
-                  <div key={id} className="border-b border-line">
-                    <button type="button" aria-expanded={open} onClick={() => setPanel(open ? "" : id)} className="flex min-h-15 w-full items-center justify-between gap-3 px-1 text-left">
-                      <span className="flex flex-col">
-                        <span className="text-[17px] font-bold text-green">{title}</span>
-                        <span className="text-small text-muted">{subtitle}</span>
-                      </span>
-                      {open ? <Minus className="size-5 text-green" strokeWidth={1.75} aria-hidden /> : <Plus className="size-5 text-green" strokeWidth={1.75} aria-hidden />}
+              )}
+              {sub && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {([14, 28] as const).map((d) => (
+                    <button key={d} type="button" aria-pressed={interval === d} onClick={() => setInterval(d)} className={`${chip(interval === d)} flex-1 px-3 sm:flex-none lg:flex-1`}>
+                      Každé {d === 14 ? "2 týdny" : "4 týdny"}
                     </button>
-                    {open && id === "proc" && (
-                      <div className="pb-5">
-                        <PlanCoverage plan={plan} />
-                      </div>
-                    )}
-                    {open && id === "rozpis" && (
-                      <div className="flex flex-col gap-2.5 px-1 pb-5">
-                        <div className="overflow-x-auto rounded-card border border-line bg-white">
-                          <table className="w-full min-w-[480px] text-[15px]">
-                            <thead>
-                              <tr className="text-left text-eyebrow text-muted uppercase">
-                                <th className="px-3.5 py-2.5 font-semibold">Složka</th>
-                                <th className="px-3.5 py-2.5 text-right font-semibold">Podíl</th>
-                                <th className="px-3.5 py-2.5 text-right font-semibold">Denně</th>
-                                <th className="px-3.5 py-2.5 text-right font-semibold">Týdně</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {bowlTargets(plan).map((t) => (
-                                <tr key={t.key} className="border-t border-line">
-                                  <td className="px-3.5 py-2.5">
-                                    <span className="font-semibold text-ink">{t.label}</span>
-                                    {t.hint && <span className="block text-[13px] text-muted">{t.hint}</span>}
-                                  </td>
-                                  <td className="px-3.5 py-2.5 text-right text-muted">{t.pct == null ? "" : `${t.pct.toLocaleString("cs-CZ")} %`}</td>
-                                  <td className="px-3.5 py-2.5 text-right font-bold text-green">{t.perDay}</td>
-                                  <td className="px-3.5 py-2.5 text-right text-muted">{t.perWeek}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <p className="text-small text-muted">
-                          {r.kcalPerDay} kcal denně{r.energyMode ? "" : " při běžné hustotě syrové stravy 150 kcal na 100 g"}. {ZASADY}
-                        </p>
-                      </div>
-                    )}
-                    {open && id === "rada" && (
-                      <div className="pb-5">
-                        <InquiryForm />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {plan.notes.some((n) => n.kind === "warn") && (
-              <ul className="space-y-1 text-small text-brick-text">
-                {plan.notes
-                  .filter((n) => n.kind === "warn")
-                  .map((n) => (
-                    <li key={n.text}>{n.text}</li>
                   ))}
-              </ul>
-            )}
-            <p className="text-center text-[13px] text-muted">
-              Energie podle FEDIAF, poměry složek podle obecných zásad syrového krmení. Orientační výpočet pro zdravé zvíře; mražené maso není kompletní krmivo. Štěně velkého plemene, březí nebo nemocné zvíře: poraďte se s veterinářem.
-            </p>
-            <p className="flex items-center justify-center gap-1.5 text-small text-muted">
-              <Check className="size-4 text-green" strokeWidth={1.75} aria-hidden /> Plán se nikam neukládá, dokud neobjednáte.
-            </p>
+                  <label className="inline-flex min-h-11 w-full cursor-pointer items-center gap-2 text-small font-semibold text-green sm:ml-auto sm:w-auto lg:ml-0 lg:w-full">
+                    <input type="checkbox" checked={rotate} onChange={(e) => setRotate(e.target.checked)} className="size-4.5 accent-green" />
+                    Střídat druhy masa
+                  </label>
+                </div>
+              )}
+              <div className="flex items-end justify-between gap-3">
+                <p className="flex flex-col">
+                  <span className="font-display text-[clamp(34px,9vw,44px)] leading-none font-black text-green">
+                    {formatPrice(plan.perDayCzk)} <span className="text-[18px] font-semibold sm:text-[20px]">za den</span>
+                  </span>
+                  <span className="mt-1 text-[14px] text-muted sm:text-[15px]">{sub ? `dodávka ${formatPrice(plan.totalCzk)} každé ${days === 14 ? "2 týdny" : "4 týdny"}` : `nákup celkem ${formatPrice(plan.totalCzk)}`}</span>
+                </p>
+                <Image src={M("cerveny-taska")} alt="" width={90} height={96} className="h-20 w-auto shrink-0 sm:h-24" aria-hidden />
+              </div>
+              <Button variant="action" size="lg" onClick={order} disabled={pending || plan.items.length === 0} className="w-full">
+                {sub ? "Objednat pravidelně" : "Vložit do košíku"}
+              </Button>
+              {user ? (
+                name.trim() && <p className="text-small text-muted">Profil {acc} se při objednávce uloží do vašeho účtu, příště stačí jedno kliknutí.</p>
+              ) : (
+                <p className="text-small text-muted">
+                  <Link href="/ucet/prihlaseni?next=/krmeni-na-miru" onClick={rememberForLogin} className="font-semibold text-brick-text underline">
+                    Přihlaste se
+                  </Link>{" "}
+                  a profil {acc} uložíme, příště ho nebudete vyplňovat.
+                </p>
+              )}
+              {saveNote && <p className="text-small text-brick-text">{saveNote}</p>}
+            </aside>
+
+            <div className="flex min-w-0 flex-col gap-6 lg:col-start-1">
+              <div className="flex flex-col border-t border-line">
+                {(
+                  [
+                    ["proc", "Co v balíčku je a proč", "Pro ty, kdo s BARFem začínají"],
+                    ["rozpis", "Podrobný rozpis", "Gramy po složkách a energie"],
+                    ["rada", "Chci poradit", "Napište nám, projdeme plán s vámi"],
+                  ] as const
+                ).map(([id, title, subtitle]) => {
+                  const open = panel === id;
+                  return (
+                    <div key={id} className="border-b border-line">
+                      <button type="button" aria-expanded={open} onClick={() => setPanel(open ? "" : id)} className="flex min-h-15 w-full items-center justify-between gap-3 px-1 text-left">
+                        <span className="flex flex-col">
+                          <span className="text-[16px] font-bold text-green sm:text-[17px]">{title}</span>
+                          <span className="text-small text-muted">{subtitle}</span>
+                        </span>
+                        {open ? <Minus className="size-5 shrink-0 text-green" strokeWidth={1.75} aria-hidden /> : <Plus className="size-5 shrink-0 text-green" strokeWidth={1.75} aria-hidden />}
+                      </button>
+                      {open && id === "proc" && (
+                        <div className="pb-5">
+                          <PlanCoverage plan={plan} />
+                        </div>
+                      )}
+                      {open && id === "rozpis" && (
+                        <div className="flex flex-col gap-2.5 px-1 pb-5">
+                          <div className="overflow-x-auto rounded-card border border-line bg-white">
+                            <table className="w-full min-w-[440px] text-[14px] sm:text-[15px]">
+                              <thead>
+                                <tr className="text-left text-eyebrow text-muted uppercase">
+                                  <th className="px-3 py-2.5 font-semibold">Složka</th>
+                                  <th className="px-3 py-2.5 text-right font-semibold">Podíl</th>
+                                  <th className="px-3 py-2.5 text-right font-semibold">Denně</th>
+                                  <th className="px-3 py-2.5 text-right font-semibold">Týdně</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bowlTargets(plan).map((t) => (
+                                  <tr key={t.key} className="border-t border-line">
+                                    <td className="px-3 py-2.5">
+                                      <span className="font-semibold text-ink">{t.label}</span>
+                                      {t.hint && <span className="block text-[13px] text-muted">{t.hint}</span>}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right text-muted">{t.pct == null ? "" : `${t.pct.toLocaleString("cs-CZ")} %`}</td>
+                                    <td className="px-3 py-2.5 text-right font-bold text-green">{t.perDay}</td>
+                                    <td className="px-3 py-2.5 text-right text-muted">{t.perWeek}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <p className="text-small text-muted">
+                            {r.kcalPerDay} kcal denně{r.energyMode ? "" : " při běžné hustotě syrové stravy 150 kcal na 100 g"}. {ZASADY}
+                          </p>
+                        </div>
+                      )}
+                      {open && id === "rada" && (
+                        <div className="pb-5">
+                          <InquiryForm />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {plan.notes.some((n) => n.kind === "warn") && (
+                <ul className="space-y-1 text-small text-brick-text">
+                  {plan.notes
+                    .filter((n) => n.kind === "warn")
+                    .map((n) => (
+                      <li key={n.text}>{n.text}</li>
+                    ))}
+                </ul>
+              )}
+              <p className="text-center text-[13px] text-muted lg:text-left">
+                Energie podle FEDIAF, poměry složek podle obecných zásad syrového krmení. Orientační výpočet pro zdravé zvíře; mražené maso není kompletní krmivo. Štěně velkého plemene, březí nebo nemocné zvíře: poraďte se s veterinářem.
+              </p>
+              <p className="flex items-center justify-center gap-1.5 text-small text-muted lg:justify-start">
+                <Check className="size-4 text-green" strokeWidth={1.75} aria-hidden /> Plán se nikam neukládá, dokud neobjednáte.
+              </p>
+            </div>
           </section>
         )}
       </div>
@@ -765,11 +962,11 @@ const ROLE: Record<string, string> = { zaklad: "Základ", ryba: "Ryba", kosti: "
 
 /** Velké číslo s tlačítky − a + a možností napsat hodnotu. */
 function Stepper({ label, value, unit, onMinus, onPlus, onType, step = 1 }: { label: string; value: number; unit: string; onMinus: () => void; onPlus: () => void; onType: (v: number) => void; step?: number }) {
-  const round = "flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white text-green hover:border-muted";
+  const round = "flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white text-green hover:border-muted sm:size-14";
   return (
-    <div className="flex flex-col items-center gap-2.5 rounded-panel border border-line bg-white p-5">
+    <div className="flex flex-col items-center gap-2 rounded-panel border border-line bg-white p-4 sm:gap-2.5 sm:p-5">
       <span className="text-[15px] font-semibold text-green">{label}</span>
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-2.5 sm:gap-3.5">
         <button type="button" onClick={onMinus} aria-label={`${label}: ubrat`} className={round}>
           <Minus className="size-6" strokeWidth={1.75} aria-hidden />
         </button>
@@ -782,9 +979,9 @@ function Stepper({ label, value, unit, onMinus, onPlus, onType, step = 1 }: { la
             min={0}
             value={value}
             onChange={(e) => onType(Number(e.target.value.replace(",", ".")))}
-            className="min-h-18 w-28 border-0 border-b-2 border-line bg-transparent text-center font-display text-[56px] font-black text-green [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+            className="min-h-14 w-22 border-0 border-b-2 border-line bg-transparent text-center font-display text-[42px] font-black text-green sm:min-h-18 sm:w-28 sm:text-[56px] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <span className="text-[22px] font-semibold text-green">{unit}</span>
+          <span className="text-[17px] font-semibold text-green sm:text-[22px]">{unit}</span>
         </label>
         <button type="button" onClick={onPlus} aria-label={`${label}: přidat`} className={round}>
           <Plus className="size-6" strokeWidth={1.75} aria-hidden />
