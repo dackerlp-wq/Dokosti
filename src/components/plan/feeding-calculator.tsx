@@ -817,6 +817,11 @@ export function FeedingCalculator({
                   </button>
                 </div>
               )}
+              {subscription.enabled && (
+                <Link href="/pravidelne-dodavky" className="-mt-1 text-small font-semibold text-brick-text underline">
+                  Jak pravidelné dodávky fungují
+                </Link>
+              )}
               {sub && (
                 <div className="flex flex-wrap items-center gap-2">
                   {([14, 28] as const).map((d) => (
