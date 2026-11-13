@@ -109,7 +109,7 @@ function itemKey(i: Reco): ItemKey {
 }
 
 /** Čím jde položku nahradit: stejný druh, skladem, bez zakázaného masa (plan.pool) a mimo balíček. */
-function alternativesFor(key: ItemKey, plan: Plan): Product[] {
+function alternativesFor(key: ItemKey, plan: Plan, pool: Product[]): Product[] {
   const inPlan = new Set(plan.items.map((i) => i.product.slug));
   const fits: Partial<Record<ItemKey, (p: Product) => boolean>> = {
     zaklad: (p) => foodKind(p) === "mix",
@@ -122,7 +122,7 @@ function alternativesFor(key: ItemKey, plan: Plan): Product[] {
     vapnik: (p) => foodKind(p) === "mineraly" && /vaječn|vápník/.test(txt(p)),
   };
   const f = fits[key];
-  return f ? plan.pool.filter((p) => f(p) && !inPlan.has(p.slug)) : [];
+  return f ? pool.filter((p) => f(p) && !inPlan.has(p.slug)) : [];
 }
 
 /** Proč je položka v balíčku: obecně podle druhu, bez zdravotních tvrzení. */
@@ -280,10 +280,12 @@ export function FeedingCalculator({
   );
   /** Plán z nabídky omezené na zvolené maso; když žádný mix neodpovídá, z celé nabídky. */
   const { plan, meatMissing } = useMemo(() => {
-    const pool = products.filter((p) => meatFits(p, meat));
+    // Výchozí maso podle zkušenosti (nováček drůbež), náhrady, které si zákazník vybral, platí vždy.
+    const chosen = new Set(Object.values(swaps));
+    const pool = products.filter((p) => meatFits(p, meat) || chosen.has(p.slug));
     const fits = pool.some((p) => foodKind(p) === "mix" && p.inStock && p.animals.includes(species) && !containsMeat(p, exclude));
     return { plan: planInStock(fits ? pool : products, input, days), meatMissing: !fits };
-  }, [products, meat, input, days, species, exclude]);
+  }, [products, meat, input, days, species, exclude, swaps]);
 
   /** Balení na víc dodávek (játra, olej): v dalších dodávkách jen každou N., nejvýš po dobu trvanlivosti. */
   const everyNth = useMemo(() => {
@@ -335,6 +337,8 @@ export function FeedingCalculator({
   const rule = dog ? (stage === "mlade" ? "u štěňat se běžně uvádí 4–6 %" : "běžně se uvádí 2–3 %") : stage === "mlade" ? "u koťat se běžně uvádí 4–10 %" : "běžně se uvádí 2–4 %";
   const sub = interval > 0;
   const gone = [...off, ...drop];
+  /** Čím jde nahrazovat: všechno skladem pro dané zvíře a bez zakázaného masa (i jiné druhy masa než výchozí). */
+  const altPool = products.filter((p) => p.inStock && p.unit !== "kg" && p.animals.includes(species) && !containsMeat(p, exclude));
   /** Balení na víc dodávek: v předplatném chodí jen každou N. dodávku, běžná dodávka je tedy levnější než první. */
   const occasional = plan.items.filter((i) => everyNth[i.product.slug]);
   const regularTotal = plan.items.filter((i) => !everyNth[i.product.slug]).reduce((n, i) => n + i.qty * i.product.priceCzk, 0);
@@ -632,41 +636,6 @@ export function FeedingCalculator({
                 </div>
               </div>
 
-              <div>
-                <p className="mb-2.5 text-[15px] font-semibold text-green">Jaké maso?</p>
-                <div className="grid grid-cols-2 gap-2 sm:gap-2.5 md:grid-cols-4">
-                  {(
-                    [
-                      ["drubez", "Drůbeží", "snese skoro každý", ["kureci"]],
-                      ["hovezi", "Hovězí", "bez kuřete", ["hovezi"]],
-                      ["jehneci", "Jehněčí", "pro citlivější", ["jehneci"]],
-                      ["mix", "Střídat", "víc druhů masa", ["kureci", "hovezi", "jehneci"]],
-                    ] as const
-                  ).map(([v, label, desc, faces]) => {
-                    const ok = meatAllowed(v);
-                    return (
-                      <button
-                        key={v}
-                        type="button"
-                        aria-pressed={meat === v}
-                        disabled={!ok}
-                        onClick={() => {
-                          setMeat(v);
-                          setSwaps({});
-                        }}
-                        className={`${card(meat === v)} disabled:cursor-not-allowed disabled:opacity-45`}
-                      >
-                        <MeatFace meats={faces} size={faces.length > 1 ? 38 : 52} />
-                        <span className="font-bold text-green">{label}</span>
-                        <span className="text-[12px] text-muted sm:text-[13px]">{ok ? desc : "nesmí"}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {exclude.length > 0 && <p className="mt-2 text-small text-muted">Bez masa: {exclude.map((k) => MEAT_LABEL[k].toLowerCase()).join(", ")}. Hlídáme i směsi a vnitřnosti.</p>}
-                {meatMissing && <p className="mt-2 text-small text-brick-text">Tohle maso zrovna nemáme skladem, v balíčku je náhrada.</p>}
-              </div>
-
               <div className="flex flex-col gap-4 rounded-panel border border-line bg-white p-4 sm:p-6">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <h2 className="font-display text-[24px] font-semibold text-green sm:text-[28px]">
@@ -676,13 +645,15 @@ export function FeedingCalculator({
                     na {days === 14 ? "2 týdny" : "4 týdny"} · {kgText(plan.items.reduce((s, i) => s + (i.product.storage === "mrazene" ? i.qty * i.product.weightGrams : 0), 0))} do mrazáku
                   </span>
                 </div>
+                {exclude.length > 0 && <p className="-mt-2 text-small text-muted">Bez masa: {exclude.map((k) => MEAT_LABEL[k].toLowerCase()).join(", ")}. Hlídáme i směsi a vnitřnosti.</p>}
+                {meatMissing && <p className="-mt-2 text-small text-brick-text">Vhodné maso zrovna nemáme skladem, v balíčku je náhrada.</p>}
                 {plan.items.length === 0 ? (
                   <p>Pro tuto kombinaci zrovna nemáme skladem vhodné maso. Napište nám níže, poskládáme balíček spolu.</p>
                 ) : (
                   <ul className="flex flex-col gap-2.5">
                     {plan.items.map((i) => {
                       const key = itemKey(i);
-                      const alts = alternativesFor(key, plan);
+                      const alts = alternativesFor(key, plan, altPool);
                       const orig = origOf(i.product.slug);
                       const swappedFrom = orig !== i.product.slug ? products.find((p) => p.slug === orig) : undefined;
                       const removable = Boolean(OFF_OF[key] || DROP_OF[key]);
@@ -768,7 +739,7 @@ export function FeedingCalculator({
                                   </li>
                                 ))}
                               </ul>
-                              {key === "zaklad" && <p className="text-[12px] text-muted">Množství se přepočítá podle nového masa. Jiný druh masa vyberete nahoře.</p>}
+                              {key === "zaklad" && <p className="text-[12px] text-muted">Množství se přepočítá podle nového masa.</p>}
                             </div>
                           )}
                         </li>
