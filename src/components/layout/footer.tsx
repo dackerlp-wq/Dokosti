@@ -7,6 +7,7 @@ const SERVICE_NAV = [
   { href: "/jak-zacit-s-barfem", label: "Jak začít s BARFem" },
   { href: "/doprava", label: "Doprava a platba" },
   { href: "/pravidelne-dodavky", label: "Pravidelné dodávky" },
+  { href: "/klub", label: "Klub DoKosti" },
   { href: "/o-nas", label: "O nás" },
   { href: "/kontakt", label: "Kontakt" },
   { href: "/ucet", label: "Můj účet" },

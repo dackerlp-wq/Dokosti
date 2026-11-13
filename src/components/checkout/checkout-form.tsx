@@ -193,9 +193,10 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
       </a>
 
       <div className="flex min-w-0 flex-col gap-4">
-        <fieldset className={sectionCls}>
+        <div className={sectionCls}>
+          <fieldset className="min-w-0">
           <StepLegend n={1} title="Doručení" />
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="grid gap-2.5 xl:grid-cols-3">
             {SHIPPING.map((s) => (
               <OptionCard
                 key={s.id}
@@ -237,9 +238,11 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
               <Field label="PSČ" name="zip" autoComplete="postal-code" required defaultValue={prefill?.zip} />
             </div>
           )}
-        </fieldset>
+          </fieldset>
+        </div>
 
-        <fieldset className={sectionCls}>
+        <div className={sectionCls}>
+          <fieldset className="min-w-0">
           <StepLegend n={2} title="Kontakt" />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Jméno a příjmení" name="name" autoComplete="name" required defaultValue={prefill?.name} />
@@ -278,16 +281,19 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
               a údaje vyplníme za vás, uvidíte i Kostičky.
             </p>
           )}
-        </fieldset>
+          </fieldset>
+        </div>
 
-        <fieldset className={sectionCls}>
+        <div className={sectionCls}>
+          <fieldset className="min-w-0">
           <StepLegend n={3} title="Platba" />
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="grid gap-2.5 xl:grid-cols-3">
             {paymentOptions.map((p) => (
               <OptionCard key={p.id} name="payment" checked={payment === p.id} onChange={() => setPayment(p.id)} title={p.name} description={p.description} />
             ))}
           </div>
-        </fieldset>
+          </fieldset>
+        </div>
       </div>
 
       <aside id="souhrn" className="flex scroll-mt-5 flex-col gap-4 rounded-panel border border-line bg-white p-4 sm:p-5 lg:sticky lg:top-5">
