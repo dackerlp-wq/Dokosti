@@ -144,7 +144,17 @@ export const getProducts = cache(async (): Promise<Product[]> => {
     return PRODUCTS;
   }
   if (!data || data.length === 0) return PRODUCTS;
-  return (data as ProductRow[]).map(fromRow);
+  // Očekávané dodávky (nákupy u dodavatele, které ještě nejsou přijaté): jen slug a nejbližší termín.
+  const { data: restock } = await db.rpc("product_restock");
+  const coming = new Map(((restock ?? []) as { slug: string; expected_on: string | null }[]).map((r) => [r.slug, r.expected_on]));
+  const today = new Date().toISOString().slice(0, 10);
+  return (data as ProductRow[]).map((row) => {
+    const p = fromRow(row);
+    if (!coming.has(p.slug)) return p;
+    const on = coming.get(p.slug) ?? null;
+    // Termín v minulosti už nic neříká, ukáže se jen „čekáme na dodávku“.
+    return { ...p, restock: { on: on && on >= today ? on : null } };
+  });
 });
 
 export async function getProduct(slug: string) {

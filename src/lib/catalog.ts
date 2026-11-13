@@ -202,6 +202,8 @@ export type Product = {
   inStock: boolean;
   /** Evidovaný stav skladu v ks (kg u zboží na váhu). null = neeviduje se, platí jen inStock. */
   stockQty?: number | null;
+  /** Není skladem, ale je objednané u dodavatele: předpokládaný termín dodávky (ISO), null = termín neznáme. */
+  restock?: { on: string | null } | null;
   isNew?: boolean;
   /** Obrázek 1:1, viz BRAND.md. Zatím null, zobrazí se zástupná plocha. */
   image: string | null;

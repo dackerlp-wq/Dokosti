@@ -16,10 +16,10 @@ export function maxQty(p: Pick<Product, "inStock" | "stockQty">): number {
   return p.stockQty === null || p.stockQty === undefined ? Infinity : Math.max(0, Math.floor(p.stockQty));
 }
 
-/** Stav skladu pro komponentu StockStatus (skladem / poslední kusy / naskladňujeme). */
-export function stockState(p: Pick<Product, "inStock" | "stockQty" | "unit">): { state: "in" } | { state: "low"; left: number } | { state: "out" } {
+/** Stav skladu pro komponentu StockStatus (skladem / poslední kusy / čekáme na dodávku / naskladňujeme). */
+export function stockState(p: Pick<Product, "inStock" | "stockQty" | "unit" | "restock">): { state: "in" } | { state: "low"; left: number } | { state: "out"; restockOn?: string | null; coming?: boolean } {
   const s = stockLabel(p);
-  if (s.kind === "neni") return { state: "out" };
+  if (s.kind === "neni") return p.restock ? { state: "out", coming: true, restockOn: p.restock.on } : { state: "out" };
   if (s.kind === "posledni") return { state: "low", left: Math.max(1, Math.floor(p.stockQty ?? 1)) };
   return { state: "in" };
 }

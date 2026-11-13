@@ -30,7 +30,10 @@ export function Flag({ kind, children }: { kind: FlagKind; children?: ReactNode 
   return <span className={`inline-block rounded-full px-2.5 py-1 text-[11px]/[14px] font-bold uppercase tracking-wide ${flagStyles[kind]}`}>{children ?? flagLabels[kind]}</span>;
 }
 
-export type Stock = { state: "in" } | { state: "low"; left: number } | { state: "out" };
+export type Stock = { state: "in" } | { state: "low"; left: number } | { state: "out"; restockOn?: string | null; coming?: boolean };
+
+/** „čtvrtek 20. 11.“ z ISO data. */
+const restockDay = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "numeric" });
 
 /** Stav skladu: vždy slovo + značka jiného tvaru, barva sama stav neříká. */
 export function StockStatus({ stock, className = "" }: { stock: Stock; className?: string }) {
@@ -54,7 +57,14 @@ export function StockStatus({ stock, className = "" }: { stock: Stock; className
   return (
     <span className={`${common} text-muted`}>
       <span className="size-2.25 rounded-full ring-2 ring-inset ring-muted" aria-hidden />
-      Naskladňujeme
+      {stock.coming ? (
+        <span>
+          Čekáme na dodávku
+          {stock.restockOn && <span className="font-normal">, předpoklad {restockDay(stock.restockOn)}</span>}
+        </span>
+      ) : (
+        "Naskladňujeme"
+      )}
     </span>
   );
 }
