@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/format";
 
 export type ReceiptProduct = { id: string; name: string; unit: ProductUnit; storage: string; purchase_price_czk: number | null; price_czk: number; ean: string | null; supplier_id: string | null };
 export type ReceiptSupplier = { id: string; name: string };
-export type OpenOrder = { id: string; number: string; supplier_id: string; supplier_name: string; expected_on: string | null; items: { product_id: string; qty: number; unit_cost_czk: number }[] };
+export type OpenOrder = { id: string; number: string; sent: boolean; supplier_id: string; supplier_name: string; expected_on: string | null; items: { product_id: string; qty: number; unit_cost_czk: number }[] };
 
 type Line = ReceiptLine & { key: string; ordered_qty: number | null };
 let seq = 0;
@@ -127,11 +127,11 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
         <div className="mt-4 space-y-4">
           <div>
             <h2 className="text-[20px]">Od koho zboží je</h2>
-            <p className="text-sm text-muted">Z objednávky u dodavatele se položky předvyplní a v kroku 3 uvidíte rozdíly.</p>
+            <p className="text-sm text-muted">Vyberte nákup, který ještě není přijatý: položky se předvyplní a v kroku 3 uvidíte rozdíly. Bez nákupu vyplníte příjemku ručně.</p>
           </div>
           {orders.length > 0 && (
             <label className="block">
-              <span className="mb-1 block text-label text-green">Objednávka u dodavatele</span>
+              <span className="mb-1 block text-label text-green">Nákup u dodavatele</span>
               <select
                 value={orderId}
                 onChange={(e) => {
@@ -143,10 +143,10 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
                   }
                 }}
               >
-                <option value="">bez objednávky</option>
+                <option value="">bez nákupu (ruční příjemka)</option>
                 {orders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.number} · {o.supplier_name} · {o.items.length} položek{o.expected_on ? ` · ${o.expected_on}` : ""}
+                    {o.number} · {o.supplier_name} · {o.items.length} položek · {o.sent ? "na cestě" : "návrh"}{o.expected_on ? ` · ${o.expected_on}` : ""}
                   </option>
                 ))}
               </select>

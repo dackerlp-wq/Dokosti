@@ -37,8 +37,8 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
           actions={
             <>
               <PrintButton />
-              {o.status === "odeslana" && (
-                <Link href={`/admin/sklad/prijemky?objednavka=${o.id}`} className={buttonClass("primary")}>
+              {(o.status === "odeslana" || o.status === "navrh") && (
+                <Link href={`/admin/sklad/prijemky?objednavka=${o.id}`} className={buttonClass(o.status === "odeslana" ? "primary" : "secondary")}>
                   Přijmout příjemkou
                 </Link>
               )}
@@ -91,6 +91,7 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
               <Button type="submit" className="mt-3 w-full">
                 {o.suppliers.email ? "Odeslat" : "Označit jako odeslanou"}
               </Button>
+              <p className="mt-3 text-small text-muted">Zboží už přijelo (třeba nákup přímo ve velkoobchodě)? Rovnou ho přijměte tlačítkem Přijmout příjemkou nahoře.</p>
             </form>
           )}
           {o.status === "odeslana" && (
