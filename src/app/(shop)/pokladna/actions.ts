@@ -225,7 +225,8 @@ function cleanPlan(p: PlanHandoff | undefined): PlanHandoff | undefined {
 }
 
 /**
- * Položky předplatného z košíku a plánu: jednorázové doplňky (once, every_nth = kdy docházejí),
+ * Položky předplatného z košíku a plánu: balení na víc dodávek z plánu (plan.once) chodí samy každou N. dodávku
+ * (every_nth = kdy docházejí; zákazník to vidí už v kalkulačce i v e-mailu před dodávkou),
  * střídání masa (A jen v košíku, B jen v příští dodávce, ostatní v obou) a „jen každou N.“ bez plánu.
  * Co je v košíku navíc k plánu, jde jen do první objednávky, pokud ho zákazník nechce v každé dodávce (keep).
  */
@@ -246,8 +247,9 @@ function subscriptionItems(cart: { product_slug: string; qty: number }[], sub: {
       product_slug: i.product_slug,
       qty: i.qty,
       every_nth: once ? nth(once) : (sub.everyNth[i.product_slug] ?? 1),
+      // Dřív jen nabídka v e-mailu (once); teď se balení, které dochází, přidá do dodávky samo.
       rotation: rotating && plan!.aOnly.includes(i.product_slug) && !plan!.keep.includes(i.product_slug) ? "A" : null,
-      once: Boolean(once),
+      once: false,
     };
   });
   if (out.length === 0) return cart.map((i) => ({ ...i, every_nth: 1, rotation: null, once: false }));

@@ -335,6 +335,9 @@ export function FeedingCalculator({
   const rule = dog ? (stage === "mlade" ? "u štěňat se běžně uvádí 4–6 %" : "běžně se uvádí 2–3 %") : stage === "mlade" ? "u koťat se běžně uvádí 4–10 %" : "běžně se uvádí 2–4 %";
   const sub = interval > 0;
   const gone = [...off, ...drop];
+  /** Balení na víc dodávek: v předplatném chodí jen každou N. dodávku, běžná dodávka je tedy levnější než první. */
+  const occasional = plan.items.filter((i) => everyNth[i.product.slug]);
+  const regularTotal = plan.items.filter((i) => !everyNth[i.product.slug]).reduce((n, i) => n + i.qty * i.product.priceCzk, 0);
   /** Původní slug položky (před náhradou): náhrady se ukládají k němu. */
   const origOf = (slug: string) => Object.keys(swaps).find((k) => swaps[k] === slug) ?? slug;
   function replaceItem(slug: string, to: string) {
@@ -693,12 +696,19 @@ export function FeedingCalculator({
                               <ProductImage product={i.product} sizes="64px" className="h-14 sm:h-16" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-eyebrow text-muted uppercase">{ROLE[i.role]}</p>
+                              <p className="flex flex-wrap items-center gap-x-2 text-eyebrow text-muted uppercase">
+                                {ROLE[i.role]}
+                                {sub && everyNth[i.product.slug] && <span className="rounded-full bg-sand px-2 text-[11px] font-bold tracking-normal text-green normal-case">každou {everyNth[i.product.slug]}. dodávku</span>}
+                              </p>
                               <Link href={`/produkt/${i.product.slug}`} className="block text-[15px] leading-snug font-bold text-ink hover:underline">
                                 {productName(i.product)}
                               </Link>
                               <p className="text-[13px] text-muted">
-                                {i.periods > 1 ? `vydrží na ${i.periods} ${plural(i.periods, "dodávku", "dodávky", "dodávek")} · ` : ""}
+                                {sub && everyNth[i.product.slug]
+                                  ? `přijde teď a pak znovu, až bude docházet · `
+                                  : i.periods > 1
+                                    ? `vydrží na ${i.periods} ${plural(i.periods, "dodávku", "dodávky", "dodávek")} · `
+                                    : ""}
                                 {i.portionText}
                               </p>
                             </div>
@@ -765,6 +775,11 @@ export function FeedingCalculator({
                       );
                     })}
                   </ul>
+                )}
+                {sub && occasional.length > 0 && (
+                  <p className="rounded-control bg-paper px-3 py-2.5 text-small text-ink">
+                    <b className="text-green">Jen občas:</b> {occasional.map((i) => `${productName(i.product)} (každou ${everyNth[i.product.slug]}. dodávku)`).join(", ")}. Balení vydrží déle, proto přijde teď a pak samo znovu, až bude docházet. Před každou dodávkou vám napíšeme, co přijde, a jde to změnit.
+                  </p>
                 )}
                 {gone.length > 0 && (
                   <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-small text-muted">
@@ -849,7 +864,11 @@ export function FeedingCalculator({
                   <span className="font-display text-[clamp(34px,9vw,44px)] leading-none font-black text-green">
                     {formatPrice(plan.perDayCzk)} <span className="text-[18px] font-semibold sm:text-[20px]">za den</span>
                   </span>
-                  <span className="mt-1 text-[14px] text-muted sm:text-[15px]">{sub ? `dodávka ${formatPrice(plan.totalCzk)} každé ${days === 14 ? "2 týdny" : "4 týdny"}` : `nákup celkem ${formatPrice(plan.totalCzk)}`}</span>
+                  <span className="mt-1 text-[14px] text-muted sm:text-[15px]">{sub
+                      ? occasional.length
+                        ? `první dodávka ${formatPrice(plan.totalCzk)}, další obvykle ${formatPrice(regularTotal)} každé ${days === 14 ? "2 týdny" : "4 týdny"}`
+                        : `dodávka ${formatPrice(plan.totalCzk)} každé ${days === 14 ? "2 týdny" : "4 týdny"}`
+                      : `nákup celkem ${formatPrice(plan.totalCzk)}`}</span>
                 </p>
                 <Image src={M("cerveny-taska")} alt="" width={90} height={96} className="h-20 w-auto shrink-0 sm:h-24" aria-hidden />
               </div>

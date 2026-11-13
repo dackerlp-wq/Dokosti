@@ -270,7 +270,7 @@ export function CheckoutForm({ shipping: SHIPPING, payment: PAYMENT, deliveryDay
                 )}
                 {plan && cart.items.some((i) => plan.once[i.product.slug]) && (
                   <p className="mt-1 text-muted">
-                    Jen v této dodávce: {cart.items.filter((i) => plan.once[i.product.slug]).map((i) => productName(i.product)).join(", ")}. Až bude docházet, nabídneme vám ho v e-mailu před dodávkou.
+                    Vydrží déle, proto jen občas: {cart.items.filter((i) => plan.once[i.product.slug]).map((i) => `${productName(i.product)} každou ${plan.once[i.product.slug]}. dodávku`).join(", ")}. Přijde teď a pak znovu, až bude docházet; před každou dodávkou vám napíšeme, co přijde.
                   </p>
                 )}
                 {plan && extras.length > 0 && (
