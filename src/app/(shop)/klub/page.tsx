@@ -80,7 +80,7 @@ export default async function ClubPage() {
         <div className="grid gap-x-5 gap-y-7.5 sm:grid-cols-2 md:grid-cols-3">
           {club.registrationPoints > 0 && <IconTile icon={Gift} title={`${club.registrationPoints} Kostiček na uvítanou`} text="Hned po dokončení registrace, uplatníte je už u prvního nákupu." />}
           {club.petPoints > 0 && (
-            <IconTile icon={PawPrint} title="Kostičky za profil zvířete" text={`${club.petPoints} Kostiček za každý vyplněný profil psa nebo kočky, až za ${club.petPointsMax} zvířata (celkem ${petTotal}).`} />
+            <IconTile icon={PawPrint} title="Kostičky za profil zvířete" text={`${club.petPoints} Kostiček za vyplněný profil psa nebo kočky, za první ${club.petPointsMax} profily na účet (celkem ${petTotal}).`} />
           )}
           <IconTile icon={CreditCard} title="Jedna karta pro web i prodejnu" text="Věrnostní karta z prodejny a účet na webu jsou jedno. Kostičky se sčítají, ať nakupujete kdekoli." />
           <IconTile icon={ClipboardList} title="Krmení na míru pro vaše zvíře" text="Profil psa nebo kočky si uložíte a kalkulačka příště spočítá dávku a balíček jedním kliknutím." />

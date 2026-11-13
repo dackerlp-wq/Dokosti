@@ -158,7 +158,7 @@ export const DEFAULT_SETTINGS: Settings = {
   loyalty: { enabled: true, czkPerPoint: 10, redeemStep: 100, redeemValueCzk: 50 },
   subscription: { enabled: true, discountPct: 0, pointsBonusPct: 5, reminderDaysBefore: 3, cutoffDaysBefore: 1 },
   pos: { autoPrint: false, receiptFooter: "Děkujeme za nákup. Poctivé do kosti." },
-  club: { registrationPoints: 50, petPoints: 150, petPointsMax: 3, termsVersion: "2026-09" },
+  club: { registrationPoints: 50, petPoints: 50, petPointsMax: 3, termsVersion: "2026-09" },
   stock: { deadDays: 90, slowDays: 180, reorderDays: 60, leadDays: 14 },
   notifications: { dailyDigest: false, email: "" },
 };
