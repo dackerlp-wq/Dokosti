@@ -23,7 +23,8 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
   const [{ data: products }, { data: suppliers }, { data: orders }, { data: receipts }] = await Promise.all([
     db.from("products").select("id, line, variant, unit, storage, purchase_price_czk, price_czk, ean, supplier_id").order("line").order("sort_order").order("variant"),
     db.from("suppliers").select("id, name").eq("active", true).order("name"),
-    db.from("purchase_orders").select("id, number, supplier_id, expected_on, suppliers(name), purchase_order_items(product_id, qty, unit_cost_czk)").eq("status", "odeslana").order("created_at"),
+    // Nabízí se jen nákupy, které ještě nejsou přijaté: návrh (zboží mohlo přijet i bez odeslání) a odeslané.
+    db.from("purchase_orders").select("id, number, status, supplier_id, expected_on, suppliers(name), purchase_order_items(product_id, qty, unit_cost_czk)").in("status", ["navrh", "odeslana"]).order("created_at"),
     db.from("stock_receipts").select("id, number, supplier, doc_no, note, total_czk, created_at, due_on, paid_at, invoice_total_czk, purchase_order_id, stock_receipt_items(qty)").order("created_at", { ascending: false }).limit(50),
   ]);
   const list: ReceiptProduct[] = ((products ?? []) as Pick<ProductRow, "id" | "line" | "variant" | "unit" | "storage" | "purchase_price_czk" | "price_czk" | "ean" | "supplier_id">[]).map((p) => ({
@@ -36,9 +37,10 @@ export default async function ReceiptsPage({ searchParams }: { searchParams: Pro
     ean: p.ean,
     supplier_id: p.supplier_id,
   }));
-  const open: OpenOrder[] = ((orders ?? []) as unknown as { id: string; number: string; supplier_id: string; expected_on: string | null; suppliers: { name: string } | null; purchase_order_items: { product_id: string; qty: number; unit_cost_czk: number }[] }[]).map((o) => ({
+  const open: OpenOrder[] = ((orders ?? []) as unknown as { id: string; number: string; status: string; supplier_id: string; expected_on: string | null; suppliers: { name: string } | null; purchase_order_items: { product_id: string; qty: number; unit_cost_czk: number }[] }[]).map((o) => ({
     id: o.id,
     number: o.number,
+    sent: o.status === "odeslana",
     supplier_id: o.supplier_id,
     supplier_name: o.suppliers?.name ?? "",
     expected_on: o.expected_on,
