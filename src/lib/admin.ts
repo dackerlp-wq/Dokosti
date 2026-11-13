@@ -234,7 +234,7 @@ export type SupplierRow = {
 };
 
 export type PurchaseOrderStatus = "navrh" | "odeslana" | "prijata" | "zrusena";
-export const PURCHASE_ORDER_STATUS_LABEL: Record<PurchaseOrderStatus, string> = { navrh: "Návrh", odeslana: "Odeslaná", prijata: "Přijatá", zrusena: "Zrušená" };
+export const PURCHASE_ORDER_STATUS_LABEL: Record<PurchaseOrderStatus, string> = { navrh: "Návrh", odeslana: "Objednáno", prijata: "Přijatá", zrusena: "Zrušená" };
 export type PurchaseOrderRow = {
   id: string;
   number: string;

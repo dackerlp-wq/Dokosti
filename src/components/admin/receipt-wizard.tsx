@@ -146,7 +146,7 @@ export function ReceiptWizard({ products, suppliers, orders, manager, initialOrd
                 <option value="">bez nákupu (ruční příjemka)</option>
                 {orders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.number} · {o.supplier_name} · {o.items.length} položek · {o.sent ? "na cestě" : "návrh"}{o.expected_on ? ` · ${o.expected_on}` : ""}
+                    {o.number} · {o.supplier_name} · {o.items.length} položek · {o.sent ? "objednáno" : "rozpracováno"}{o.expected_on ? ` · ${o.expected_on}` : ""}
                   </option>
                 ))}
               </select>

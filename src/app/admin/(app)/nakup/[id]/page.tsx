@@ -33,7 +33,7 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
           crumbs={[{ href: "/admin/nakup", label: "Objednávky u dodavatelů" }]}
           title={o.number}
           badges={<span className="text-small font-semibold rounded-control border border-line bg-white px-2.5 py-0.5 text-muted">{PURCHASE_ORDER_STATUS_LABEL[o.status]}</span>}
-          subtitle={`${o.suppliers.name} · vytvořena ${formatDate(o.created_at)}${o.sent_at ? ` · odeslána ${formatDate(o.sent_at)}` : ""}${o.expected_on ? ` · očekáváno ${formatDay(o.expected_on)}` : ""}`}
+          subtitle={`${o.suppliers.name} · vytvořena ${formatDate(o.created_at)}${o.sent_at ? ` · objednáno ${formatDate(o.sent_at)}` : ""}${o.expected_on ? ` · očekáváno ${formatDay(o.expected_on)}` : ""}`}
           actions={
             <>
               <PrintButton />
@@ -75,28 +75,17 @@ export default async function PurchaseOrderPage({ params }: { params: Promise<{ 
           {o.status === "navrh" && (
             <form action={sendPurchaseOrder} className="rounded-card border border-line bg-white p-4">
               <input type="hidden" name="id" value={o.id} />
-              <p className="mb-1 text-label text-green">Odeslat dodavateli</p>
-              {o.suppliers.email ? (
-                <>
-                  <p className="text-sm">E-mail s položkami odejde na {o.suppliers.email}.</p>
-                  <label className="mt-2 flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="email" value="on" defaultChecked className="h-4 w-4 min-h-0 w-auto accent-green" />
-                    Poslat e-mail
-                  </label>
-                  <input type="hidden" name="email" value="off" />
-                </>
-              ) : (
-                <p className="text-sm text-muted">Dodavatel nemá e-mail. Objednávku vytiskněte nebo nadiktujte a označte jako odeslanou.</p>
-              )}
+              <input type="hidden" name="email" value="off" />
+              <p className="mb-1 text-label text-green">Rozpracovaný zápis</p>
+              <p className="text-sm">Objednávku jste u dodavatele udělali sami? Označte ji jako objednanou, ať je vidět mezi objednaným zbožím.</p>
               <Button type="submit" className="mt-3 w-full">
-                {o.suppliers.email ? "Odeslat" : "Označit jako odeslanou"}
+                Označit jako objednané
               </Button>
-              <p className="mt-3 text-small text-muted">Zboží už přijelo (třeba nákup přímo ve velkoobchodě)? Rovnou ho přijměte tlačítkem Přijmout příjemkou nahoře.</p>
             </form>
           )}
           {o.status === "odeslana" && (
             <div className="rounded-card border border-line bg-white p-4 text-sm">
-              <p className="mb-1 text-label text-green">Na cestě</p>
+              <p className="mb-1 text-label text-green">Objednáno</p>
               <p>Až zboží přijede, zaúčtujte ho příjemkou z této objednávky: položky se předvyplní a rozdíly uvidíte před zaúčtováním.</p>
             </div>
           )}

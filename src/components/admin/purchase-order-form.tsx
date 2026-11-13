@@ -168,7 +168,7 @@ export function PurchaseOrderForm({ products, suppliers, initialSupplier, manage
             <textarea name="note" rows={3} placeholder="např. doručit dopoledne, zavolat předem" />
           </label>
           <Button type="submit" className="mt-4 w-full" disabled={lines.length === 0}>
-            Uložit návrh objednávky
+            Zapsat objednávku
           </Button>
           <p className="mt-2 text-small text-muted">Návrh ještě nikam neodejde. Odeslání dodavateli potvrdíte v dalším kroku.</p>
         </div>

@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Objednávky u dodavatelů" };
 
 type Row = PurchaseOrderRow & { suppliers: { name: string } | null; purchase_order_items: { qty: number; unit_cost_czk: number }[] };
 
-/** Objednávky zboží u dodavatelů: návrh → odeslaná → přijatá příjemkou. */
+/** Objednávky zboží u dodavatelů (zápis, objednává se mimo e-shop): objednáno → přijatá příjemkou. */
 export default async function PurchaseOrdersPage({ searchParams }: { searchParams: Promise<{ stav?: string; dodavatel?: string }> }) {
   await requireAdmin();
   const { stav, dodavatel } = await searchParams;
@@ -29,10 +29,10 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
     <>
       <PageHeader
         title="Objednávky u dodavatelů"
-        subtitle="Co je objednané a kdy přijede. Příjemka z objednávky porovná dodané množství s objednaným."
+        subtitle="Přehled, co je objednané, u koho a kdy přijede. Objednáváte mimo e-shop, tady jen zapíšete; příjemka pak porovná dodané s objednaným."
         actions={
           <Link href="/admin/nakup/nova" className={buttonClass("primary")}>
-            Nová objednávka
+            Zapsat objednávku
           </Link>
         }
       />
@@ -40,7 +40,7 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
         <Pills
           items={[
             { href: `/admin/nakup?stav=${base ? `&${base.slice(1)}` : ""}`.replace("stav=&", ""), label: "Otevřené", on: !stav },
-            { href: `/admin/nakup?stav=odeslana${base}`, label: "Na cestě", on: stav === "odeslana" },
+            { href: `/admin/nakup?stav=odeslana${base}`, label: "Objednané", on: stav === "odeslana" },
             { href: `/admin/nakup?stav=prijata${base}`, label: "Přijaté", on: stav === "prijata" },
             { href: `/admin/nakup?stav=vse${base}`, label: "Vše", on: stav === "vse" },
           ]}

@@ -27,7 +27,7 @@ export default async function NewPurchaseOrderPage({ searchParams }: { searchPar
 
   return (
     <>
-      <PageHeader crumbs={[{ href: "/admin/nakup", label: "Objednávky u dodavatelů" }]} title="Nová objednávka u dodavatele" subtitle="Vyberte dodavatele, zkontrolujte navržené položky a uložte návrh. Odeslání potvrdíte zvlášť." />
+      <PageHeader crumbs={[{ href: "/admin/nakup", label: "Objednávky u dodavatelů" }]} title="Zapsat objednávku u dodavatele" subtitle="Zapište, co jste objednali a u koho. Dodavateli se nic neposílá; až zboží přijede, převedete objednávku do příjemky." />
       <div className="mt-5">
         {list.length === 0 ? (
           <p className="text-muted">

@@ -20,7 +20,10 @@ function revalidateAll(id?: string) {
   revalidatePath("/admin");
 }
 
-/** Založí objednávku u dodavatele jako návrh (položky z JSON v poli `lines`). */
+/**
+ * Zapíše objednávku u dodavatele (položky z JSON v poli `lines`). Objednává se mimo e-shop (telefon, velkoobchod),
+ * tady je jen přehled, co je objednané a kde: zápis je rovnou ve stavu objednáno, nic se dodavateli neposílá.
+ */
 export async function createPurchaseOrder(fd: FormData) {
   const admin = await requireAdmin();
   const supplierId = String(fd.get("supplier_id") ?? "");
@@ -36,7 +39,7 @@ export async function createPurchaseOrder(fd: FormData) {
   const db = await getAuthSupabase();
   const { data: po, error } = await db
     .from("purchase_orders")
-    .insert({ supplier_id: supplierId, note: String(fd.get("note") ?? "").trim().slice(0, 1000), expected_on: String(fd.get("expected_on") ?? "") || null, created_by: admin.id })
+    .insert({ status: "odeslana", sent_at: new Date().toISOString(), supplier_id: supplierId, note: String(fd.get("note") ?? "").trim().slice(0, 1000), expected_on: String(fd.get("expected_on") ?? "") || null, created_by: admin.id })
     .select("id, number")
     .single();
   if (error || !po) return flashError(`Objednávku se nepodařilo založit: ${error?.message}`);
@@ -45,7 +48,7 @@ export async function createPurchaseOrder(fd: FormData) {
   const { data: s } = await db.from("suppliers").select("name").eq("id", supplierId).maybeSingle();
   await logActivity(db, admin, { kind: "nakup.zalozena", subject: "product", subjectId: "", text: `Objednávka u dodavatele ${po.number} (${s?.name ?? ""}): ${items.length} položek` });
   revalidateAll(po.id);
-  await flashOk(`Objednávka ${po.number} je připravená jako návrh. Odešlete ji dodavateli.`);
+  await flashOk(`Objednávka ${po.number} je zapsaná. Až zboží přijede, přijměte ji příjemkou.`);
   redirect(`/admin/nakup/${po.id}`);
 }
 
@@ -57,7 +60,7 @@ export async function sendPurchaseOrder(fd: FormData) {
   const [{ data: po }, { data: items }, settings] = await Promise.all([db.from("purchase_orders").select("*, suppliers(*)").eq("id", id).maybeSingle(), db.from("purchase_order_items").select("*, products(line, variant, unit, ean)").eq("purchase_order_id", id), getSettings()]);
   if (!po) return flashError("Objednávka nenalezena.");
   const o = po as PurchaseOrderRow & { suppliers: SupplierRow };
-  if (o.status !== "navrh") return flashError("Objednávka už byla odeslána.");
+  if (o.status !== "navrh") return flashError("Objednávka už je označená jako objednaná.");
   const rows = (items ?? []) as (PurchaseOrderItemRow & { products: { line: "barf"; variant: string; unit: "ks" | "kg"; ean: string | null } })[];
   const lines = rows.map((r) => ({ name: productName(r.products), qty: formatQty(r.qty, r.products.unit), ean: r.products.ean ?? "" }));
   let mailed = false;
@@ -69,7 +72,7 @@ export async function sendPurchaseOrder(fd: FormData) {
   if (error) return flashError(error.message);
   await logActivity(db, admin, { kind: "nakup.odeslana", subject: "product", subjectId: "", text: `Objednávka ${o.number} u ${o.suppliers.name} odeslána${mailed ? ` na ${o.suppliers.email}` : " (bez e-mailu, předána jinak)"}` });
   revalidateAll(id);
-  await flashOk(mailed ? `Objednávka odeslána na ${o.suppliers.email}.` : "Objednávka označena jako odeslaná.");
+  await flashOk(mailed ? `Objednávka odeslána na ${o.suppliers.email}.` : "Objednávka označena jako objednaná.");
 }
 
 export async function cancelPurchaseOrder(fd: FormData) {
