@@ -1,34 +1,12 @@
-import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
-import path from "node:path";
+import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { feedingSchedule, planCoverage, scheduleWeeks, STAGE_LABEL, TRANSITION_STEPS, type Plan } from "@/lib/barf";
+import { PDF_COLORS as C, PDF_LOGO, registerPdfFonts } from "@/lib/pdf/brand";
 import { ZASADY } from "@/lib/skladba";
 import { productName } from "@/lib/catalog";
 import { SITE_HOST } from "@/lib/seo";
 import type { Settings } from "@/lib/settings";
 
-/**
- * Plán krmení v PDF: jedna strana A4 na zvíře. Písma a barvy podle BRAND.md,
- * soubory písem jsou v public/fonts (statické řezy z Google Fonts).
- */
-const fontsDir = path.join(process.cwd(), "public", "fonts");
-let registered = false;
-function registerFonts() {
-  if (registered) return;
-  Font.register({ family: "Fraunces", src: path.join(fontsDir, "fraunces-600.ttf"), fontWeight: 600 });
-  Font.register({
-    family: "Archivo",
-    fonts: [
-      { src: path.join(fontsDir, "archivo-400.ttf"), fontWeight: 400 },
-      { src: path.join(fontsDir, "archivo-600.ttf"), fontWeight: 600 },
-    ],
-  });
-  Font.register({ family: "Archivo Narrow", src: path.join(fontsDir, "archivo-narrow-500.ttf"), fontWeight: 500 });
-  Font.registerHyphenationCallback((w) => [w]);
-  registered = true;
-}
-
-const C = { green: "#1f3a2d", cream: "#f3ecdd", paper: "#fbf7ee", brick: "#b5532f", brickText: "#9c4424", ink: "#24221f", muted: "#55645a", line: "#d9cfb8" };
-
+/** Plán krmení v PDF: jedna strana A4 na zvíře. Písma a barvy ze společného základu (brand.ts). */
 const s = StyleSheet.create({
   page: { padding: 36, paddingBottom: 60, backgroundColor: C.paper, color: C.ink, fontFamily: "Archivo", fontSize: 10, lineHeight: 1.4 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 },
@@ -198,8 +176,8 @@ function AnimalPage({ plan, shop, logo }: { plan: Plan; shop: Settings["shop"]; 
 
 /** Vykreslí plán krmení pro jedno nebo více zvířat do PDF (Buffer). */
 export async function renderPlanPdf(plans: Plan[], shop: Settings["shop"]): Promise<Buffer> {
-  registerFonts();
-  const logo = path.join(process.cwd(), "public", "brand", "dokosti-logo-barevne-na-kremove.png");
+  registerPdfFonts();
+  const logo = PDF_LOGO;
   const doc = (
     <Document title={`Plán krmení · ${plans.map((p) => p.input.name || (p.input.species === "pes" ? "pes" : "kočka")).join(", ")}`} author={shop.name} language="cs">
       {plans.map((p) => (

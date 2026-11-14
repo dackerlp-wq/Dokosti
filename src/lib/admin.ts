@@ -473,6 +473,12 @@ export type PayrollItemRow = {
   breakdown: { label: string; amount: number; kind?: string }[];
   note: string;
   updated_at: string;
+  /* Vygenerovaná výplatní páska (migrace 0045): číslo, soubor v bucketu dokumenty, kdy a kdo, dokument zaměstnance. */
+  payslip_no: string | null;
+  payslip_path: string | null;
+  payslip_generated_at: string | null;
+  payslip_generated_by: string | null;
+  payslip_document_id: string | null;
 };
 export type FinanceMonthRow = {
   month: string;

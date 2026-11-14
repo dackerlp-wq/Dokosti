@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/activity";
-import { isMonth, monthLabel, type AttendanceRow, type EmployeeRow, type PayrollItemRow } from "@/lib/admin";
+import { isMonth, monthLabel, type AttendanceRow, type EmployeeRow, type PayrollItemRow, type PayrollMonthRow } from "@/lib/admin";
 import { flashError, flashOk } from "@/lib/flash";
-import { computePayroll, sumHours, type PayrollParams } from "@/lib/payroll";
+import { computePayroll, PAYSLIP_SELECT, payslipNumber, payslipSeq, sumHours, type PayrollParams, type PayslipEmployee } from "@/lib/payroll";
+import { payslipFileName, renderPayslipPdf } from "@/lib/pdf/payslip";
+import { getSettings } from "@/lib/settings";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 async function loadParams(db: Awaited<ReturnType<typeof getAuthSupabase>>, year: number): Promise<PayrollParams | null> {
@@ -138,6 +140,62 @@ export async function closeMonth(fd: FormData) {
   revalidatePath("/admin/finance");
   revalidatePath("/admin/finance/vydaje");
   await flashOk(`Měsíc ${monthLabel(month)} uzavřen, výdaje za mzdy a odvody zapsány do Financí.`);
+}
+
+/**
+ * Vygenerování výplatních pásek za uzavřený měsíc (nebo jedné položky přes `id`): PDF do bucketu dokumenty
+ * (pasky/RRRR-MM), dokument navázaný na zaměstnance (vidí ho mezi svými dokumenty) a číslo pásky.
+ * Přegenerování přepíše soubor, číslo pásky zůstává.
+ */
+export async function generatePayslips(fd: FormData) {
+  const admin = await requireManager();
+  const month = String(fd.get("month") ?? "");
+  const onlyId = String(fd.get("id") ?? "");
+  if (!isMonth(month)) return flashError("Neplatný měsíc.");
+  const [db, settings] = await Promise.all([getAuthSupabase(), getSettings()]);
+  const { data: m } = await db.from("payroll_months").select("*").eq("month", month).maybeSingle();
+  const pm = m as PayrollMonthRow | null;
+  if (pm?.status !== "uzavreny") return flashError("Pásky se generují až po uzavření měsíce.");
+  const { data } = await db.from("payroll_items").select(PAYSLIP_SELECT).eq("month", month).order("employee_name");
+  type Row = PayrollItemRow & { payroll_months: PayrollMonthRow | null; employees: PayslipEmployee | null };
+  const all = (data ?? []) as unknown as Row[];
+  const rows = onlyId ? all.filter((r) => r.id === onlyId) : all;
+  if (rows.length === 0) return flashError("Není co generovat.");
+  let seq = Math.max(0, ...all.map((r) => payslipSeq(r.payslip_no)));
+  const now = new Date().toISOString();
+  let done = 0;
+  let lastNo = "";
+  for (const r of rows) {
+    const no = r.payslip_no ?? payslipNumber(month, ++seq);
+    lastNo = no;
+    const item = { ...r, payslip_no: no, payslip_generated_at: now };
+    const pdf = await renderPayslipPdf({ item, month: pm, employee: r.employees, shop: settings.shop });
+    const fileName = payslipFileName(item);
+    const path = r.payslip_path ?? `pasky/${month}/${fileName}`;
+    const { error: upErr } = await db.storage.from("dokumenty").upload(path, pdf, { contentType: "application/pdf", upsert: true });
+    if (upErr) return flashError(`Pásku ${r.employee_name} se nepodařilo uložit: ${upErr.message}`);
+    let documentId = r.payslip_document_id;
+    if (documentId) {
+      await db.from("document_versions").update({ storage_path: path, file_name: fileName, mime: "application/pdf", size_bytes: pdf.length, note: `Přegenerováno ${new Date(now).toLocaleDateString("cs-CZ")}`, created_by: admin.id }).eq("document_id", documentId).eq("version", 1);
+    } else {
+      const { data: doc, error: docErr } = await db
+        .from("documents")
+        .insert({ title: `Výplatní páska ${monthLabel(month)}`, category: "zamestnanci", linked_type: "employee", linked_id: r.employee_id, remind_days: 0, note: `Páska ${no}, orientační výpočet z interního systému.`, created_by: admin.id })
+        .select("id")
+        .single();
+      if (docErr || !doc) return flashError(`Dokument pásky ${r.employee_name} se nepodařilo založit: ${docErr?.message ?? ""}`);
+      documentId = doc.id as string;
+      const { error: verErr } = await db.from("document_versions").insert({ document_id: documentId, version: 1, storage_path: path, file_name: fileName, mime: "application/pdf", size_bytes: pdf.length, created_by: admin.id });
+      if (verErr) return flashError(`Verze dokumentu ${r.employee_name}: ${verErr.message}`);
+    }
+    const { error } = await db.from("payroll_items").update({ payslip_no: no, payslip_path: path, payslip_generated_at: now, payslip_generated_by: admin.id, payslip_document_id: documentId }).eq("id", r.id);
+    if (error) return flashError(`Záznam pásky ${r.employee_name}: ${error.message}`);
+    done++;
+  }
+  await logActivity(db, admin, { kind: "mzdy.pasky", subject: "payroll", subjectId: month, text: `Mzdy ${monthLabel(month)}: vygenerováno ${done} výplatních pásek${onlyId ? ` (${rows[0].employee_name})` : ""}` });
+  revalidatePath("/admin/mzdy");
+  revalidatePath("/admin/dokumenty");
+  await flashOk(done === 1 ? `Výplatní páska ${rows[0].employee_name} (${lastNo}) vygenerována.` : `Vygenerováno ${done} výplatních pásek za ${monthLabel(month)}.`);
 }
 
 /** Parametry roku (minimální mzda, limity DPP/DPČ, sazby). Výchozí hodnoty správce potvrdí s účetní. */
