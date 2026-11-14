@@ -166,3 +166,16 @@ export function sumHours(rows: { kind: string; hours: number | null }[]) {
   }
   return s;
 }
+
+/* Výplatní páska (PDF): společný výběr sloupců pro trasu a generování. */
+export const PAYSLIP_SELECT = "*, payroll_months(*), employees(position, bank_account, tax_declaration, address, birth_date, started_on, ended_on)";
+export type PayslipEmployee = { position: string; bank_account: string; tax_declaration: boolean; address: string; birth_date: string | null; started_on: string | null; ended_on: string | null };
+
+/** Číslo pásky: VP-RRRR-MM-NNN, pořadí v měsíci podle abecedy při prvním generování; při přegenerování zůstává. */
+export function payslipNumber(month: string, seq: number) {
+  return `VP-${month}-${String(seq).padStart(3, "0")}`;
+}
+export function payslipSeq(no: string | null | undefined) {
+  const m = /-(\d{3})$/.exec(no ?? "");
+  return m ? Number(m[1]) : 0;
+}

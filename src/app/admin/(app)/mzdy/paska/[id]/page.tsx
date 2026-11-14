@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { generatePayslips } from "@/app/admin/(app)/mzdy/actions";
 import { PrintButton } from "@/components/admin/print-button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { CONTRACT_LABEL, formatDate, monthLabel, type PayrollItemRow, type PayrollMonthRow } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
@@ -20,6 +22,7 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
   const r = data as unknown as PayrollItemRow & { payroll_months: PayrollMonthRow | null; employees: { position: string; bank_account: string; tax_declaration: boolean } | null };
   const closed = r.payroll_months?.status === "uzavreny";
   const lines = (r.breakdown ?? []) as { label: string; amount: number; kind?: string }[];
+  const stale = !!r.payslip_generated_at && r.payslip_generated_at < r.updated_at;
 
   return (
     <>
@@ -37,8 +40,30 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
           </p>
           <h1>Výplatní páska</h1>
           <p className="text-sm text-muted">{closed ? `Měsíc uzavřen ${r.payroll_months?.closed_at ? formatDate(r.payroll_months.closed_at) : ""}.` : "Měsíc je ještě otevřený, čísla se mohou změnit."} Orientační výpočet, oficiální pásku vystavuje účetní.</p>
+          {r.payslip_no ? (
+            <p className={`text-sm ${stale ? "text-brick-text" : "text-muted"}`}>
+              PDF {r.payslip_no} vygenerováno {r.payslip_generated_at ? formatDate(r.payslip_generated_at) : ""}
+              {stale ? ", podklady se od té doby změnily, vygenerujte ji znovu." : "."}
+            </p>
+          ) : (
+            closed && admin.isManager && <p className="text-sm text-muted">PDF páska ještě není vygenerovaná.</p>
+          )}
         </div>
-        <PrintButton />
+        <div className="flex flex-wrap items-center gap-2">
+          <a href={`/admin/mzdy-paska/${r.id}?stahnout=1`} className={buttonClass("secondary")}>
+            {r.payslip_path ? "Stáhnout PDF" : "Stáhnout předběžné PDF"}
+          </a>
+          {closed && admin.isManager && (
+            <form action={generatePayslips}>
+              <input type="hidden" name="month" value={r.month} />
+              <input type="hidden" name="id" value={r.id} />
+              <Button type="submit" variant="secondary">
+                {r.payslip_path ? "Přegenerovat PDF" : "Vygenerovat PDF"}
+              </Button>
+            </form>
+          )}
+          <PrintButton />
+        </div>
       </div>
       <div className="mx-auto max-w-[700px] rounded-card border border-line bg-white p-6 text-[13px] print:max-w-none print:border-0 print:p-0">
         <div className="flex items-start justify-between gap-4 border-b border-line pb-3">
@@ -47,7 +72,7 @@ export default async function PayslipPage({ params }: { params: Promise<{ id: st
             <p className="text-muted">{[settings.shop.address, settings.shop.city].filter(Boolean).join(", ")}</p>
           </div>
           <div className="text-right">
-            <p className="text-eyebrow uppercase text-muted">Výplatní páska</p>
+            <p className="text-eyebrow uppercase text-muted">Výplatní páska{r.payslip_no ? ` ${r.payslip_no}` : ""}</p>
             <p className="text-[20px] font-semibold">{monthLabel(r.month)}</p>
             <p className="text-eyebrow uppercase text-brick-text">{closed ? "orientační" : "předběžná, orientační"}</p>
           </div>

@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Pills } from "@/components/admin/stat";
 import { Table, Td } from "@/components/admin/table";
 import { Button, buttonClass } from "@/components/ui/button";
-import { ATTENDANCE_KIND_LABEL, CONTRACT_LABEL, DOCUMENT_CATEGORY_LABEL, formatDate, formatDay, type AttendanceRow, type ChecklistRow, type ChecklistRunRow, type ContractType, type DocumentRow, type EmployeeRow } from "@/lib/admin";
+import { ATTENDANCE_KIND_LABEL, CONTRACT_LABEL, DOCUMENT_CATEGORY_LABEL, formatDate, formatDay, type AttendanceRow, type ChecklistRow, type ChecklistRunRow, type ContractType, type DocumentRow, type EmployeeRow, monthLabel as payrollMonthLabel, type PayrollItemRow } from "@/lib/admin";
+import { formatPrice } from "@/lib/format";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Zaměstnanec" };
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: "Zaměstnanec" };
 const TABS = [
   { id: "dochazka", label: "Docházka" },
   { id: "dokumenty", label: "Smlouvy a dokumenty" },
+  { id: "mzdy", label: "Mzdy a pásky" },
   { id: "udaje", label: "Údaje" },
   { id: "pristup", label: "Přístup" },
   { id: "zaskoleni", label: "Zaškolení" },
@@ -26,18 +28,20 @@ export default async function EmployeePage({ params, searchParams }: { params: P
   const tab = TABS.find((t) => t.id === sp.karta)?.id ?? "dochazka";
   const month = sp.mesic && /^\d{4}-\d{2}$/.test(sp.mesic) ? sp.mesic : new Date().toISOString().slice(0, 7);
   const db = await getAuthSupabase();
-  const [{ data }, { data: att }, { data: docs }, { data: users }, { data: onboarding }, { data: run }] = await Promise.all([
+  const [{ data }, { data: att }, { data: docs }, { data: users }, { data: onboarding }, { data: run }, { data: pay }] = await Promise.all([
     db.from("employees").select("*").eq("id", id).maybeSingle(),
     db.from("attendance").select("*").eq("employee_id", id).gte("day", `${month}-01`).lte("day", `${month}-31`).order("day", { ascending: false }).order("started_at", { ascending: false }),
     db.from("documents").select("*").eq("linked_type", "employee").eq("linked_id", id).is("archived_at", null).order("created_at", { ascending: false }),
     db.rpc("admin_list"),
     db.from("checklists").select("*").eq("period", "nastup").eq("active", true).limit(1).maybeSingle(),
     db.from("checklist_runs").select("*").eq("period_key", `employee:${id}`),
+    db.from("payroll_items").select("*, payroll_months(status)").eq("employee_id", id).order("month", { ascending: false }).limit(24),
   ]);
   if (!data) notFound();
   const e = data as EmployeeRow;
   const rows = (att ?? []) as AttendanceRow[];
   const documents = (docs ?? []) as DocumentRow[];
+  const payroll = (pay ?? []) as unknown as (PayrollItemRow & { payroll_months: { status: string } | null })[];
   const accounts = (users ?? []) as { user_id: string; email: string; name: string; role: string }[];
   const checklist = onboarding as ChecklistRow | null;
   const checklistRun = ((run ?? []) as ChecklistRunRow[]).find((r) => r.checklist_id === checklist?.id) ?? null;
@@ -132,6 +136,64 @@ export default async function EmployeePage({ params, searchParams }: { params: P
               ))}
             </Table>
           )}
+        </div>
+      )}
+
+      {tab === "mzdy" && (
+        <div className="mt-4 space-y-3">
+          {payroll.length === 0 ? (
+            <p className="text-muted">
+              Zatím žádné podklady pro mzdy. Vznikají v{" "}
+              <Link href="/admin/mzdy" className="text-brick-text underline">
+                Mzdách
+              </Link>{" "}
+              načtením z docházky.
+            </p>
+          ) : (
+            <Table head={["Měsíc", "Hodiny", "Hrubá", "Čistá", "Výplatní páska", ""]}>
+              {payroll.map((r) => {
+                const closed = r.payroll_months?.status === "uzavreny";
+                const stale = !!r.payslip_generated_at && r.payslip_generated_at < r.updated_at;
+                return (
+                  <tr key={r.id}>
+                    <Td>
+                      <Link href={`/admin/mzdy?mesic=${r.month}`} className="font-semibold text-brick-text hover:underline">
+                        {payrollMonthLabel(r.month)}
+                      </Link>
+                      <div className="text-small text-muted">{closed ? "uzavřeno" : "otevřený měsíc"}</div>
+                    </Td>
+                    <Td className="whitespace-nowrap">{Number(r.hours_work).toLocaleString("cs-CZ", { maximumFractionDigits: 2 })} h</Td>
+                    <Td className="whitespace-nowrap text-right">{formatPrice(Number(r.gross_czk))}</Td>
+                    <Td className="whitespace-nowrap text-right font-semibold">{formatPrice(Number(r.net_czk))}</Td>
+                    <Td className="whitespace-nowrap">
+                      {r.payslip_no ? (
+                        <>
+                          {r.payslip_no}
+                          <div className={`text-small ${stale ? "text-brick-text" : "text-muted"}`}>
+                            {r.payslip_generated_at ? formatDate(r.payslip_generated_at) : ""}
+                            {stale ? ", podklady se změnily" : ""}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-muted">{closed ? "nevygenerována" : "předběžná"}</span>
+                      )}
+                    </Td>
+                    <Td className="whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2 text-sm">
+                        <Link href={`/admin/mzdy/paska/${r.id}`} className="text-brick-text hover:underline">
+                          zobrazit
+                        </Link>
+                        <a href={`/admin/mzdy-paska/${r.id}`} target="_blank" rel="noopener" className="text-brick-text hover:underline">
+                          PDF
+                        </a>
+                      </div>
+                    </Td>
+                  </tr>
+                );
+              })}
+            </Table>
+          )}
+          <p className="text-small text-muted">Vygenerovaná páska se uloží i mezi dokumenty zaměstnance, po přihlášení si ji stáhne sám. Orientační výpočet, oficiální pásku vystavuje účetní.</p>
         </div>
       )}
 

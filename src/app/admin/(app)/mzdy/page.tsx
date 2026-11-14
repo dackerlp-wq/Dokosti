@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { closeMonth, recomputeMonth, savePayrollItem } from "@/app/admin/(app)/mzdy/actions";
+import { closeMonth, generatePayslips, recomputeMonth, savePayrollItem } from "@/app/admin/(app)/mzdy/actions";
 import { ConfirmButton } from "@/components/admin/confirm-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { Pills, Stat } from "@/components/admin/stat";
@@ -38,6 +38,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   if (!p) warnings.add(`Pro rok ${month.slice(0, 4)} nejsou zadané parametry mezd.`);
   else if (!p.verified) warnings.add(`Parametry roku ${month.slice(0, 4)} ještě nepotvrdila účetní, výpočet je orientační.`);
   for (const r of rows) if (!r.hourly_rate_czk && !r.monthly_salary_czk) warnings.add(`${r.employee_name} nemá sazbu ani měsíční mzdu.`);
+  const generated = rows.filter((r) => r.payslip_path).length;
+  const stale = rows.filter((r) => r.payslip_generated_at && r.payslip_generated_at < r.updated_at).length;
+  if (closed && stale > 0) warnings.add(`${stale} ${stale === 1 ? "páska je" : "pásky jsou"} starší než poslední změna podkladů, vygenerujte je znovu.`);
 
   return (
     <>
@@ -60,6 +63,14 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 </Button>
               </form>
             )}
+            {closed && rows.length > 0 && (
+              <form action={generatePayslips}>
+                <input type="hidden" name="month" value={month} />
+                <Button type="submit" variant="secondary" className="min-h-9">
+                  {generated === rows.length ? "Přegenerovat pásky" : generated > 0 ? `Vygenerovat zbylé pásky (${rows.length - generated})` : "Vygenerovat pásky"}
+                </Button>
+              </form>
+            )}
             {rows.length > 0 && (
               <ConfirmButton
                 action={closeMonth}
@@ -75,7 +86,16 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             )}
           </>
         }
-        badges={closed ? <span className="text-small font-semibold rounded-control bg-green px-2 py-0.5 text-cream">uzavřeno {pm?.closed_at ? formatDate(pm.closed_at) : ""}</span> : pm ? <span className="text-small font-semibold rounded-control border border-line bg-white px-2 py-0.5 text-muted">otevřený měsíc</span> : null}
+        badges={
+          closed ? (
+            <>
+              <span className="text-small font-semibold rounded-control bg-green px-2 py-0.5 text-cream">uzavřeno {pm?.closed_at ? formatDate(pm.closed_at) : ""}</span>
+              {rows.length > 0 && <span className="text-small font-semibold rounded-control border border-line bg-white px-2 py-0.5 text-muted">pásky {generated} / {rows.length}</span>}
+            </>
+          ) : pm ? (
+            <span className="text-small font-semibold rounded-control border border-line bg-white px-2 py-0.5 text-muted">otevřený měsíc</span>
+          ) : null
+        }
       />
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Pills
@@ -115,7 +135,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
             Zatím žádné podklady. Klikněte na „Načíst z docházky“: vezmou se hodiny ze směn a docházky za {monthLabel(month)} a sazby z karet zaměstnanců.
           </p>
         ) : (
-          <Table head={["Zaměstnanec", "Hodiny", "Sazba", "Hrubá", "Odvody a daň", "Čistá", "Náklad", "Odměna / srážka / poznámka", ""]}>
+          <Table head={["Zaměstnanec", "Hodiny", "Sazba", "Hrubá", "Odvody a daň", "Čistá", "Náklad", "Odměna / srážka / poznámka", "Páska"]}>
             {rows.map((r) => (
               <tr key={r.id}>
                 <Td>
@@ -151,9 +171,22 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   )}
                 </Td>
                 <Td className="whitespace-nowrap text-right">
-                  <Link href={`/admin/mzdy/paska/${r.id}`} className="text-sm text-brick-text hover:underline">
-                    páska
-                  </Link>
+                  <div className="flex items-center justify-end gap-2 text-sm">
+                    <Link href={`/admin/mzdy/paska/${r.id}`} className="text-brick-text hover:underline">
+                      zobrazit
+                    </Link>
+                    <a href={`/admin/mzdy-paska/${r.id}`} target="_blank" rel="noopener" className="text-brick-text hover:underline">
+                      PDF
+                    </a>
+                  </div>
+                  {r.payslip_no ? (
+                    <div className={`text-small ${r.payslip_generated_at && r.payslip_generated_at < r.updated_at ? "text-brick-text" : "text-muted"}`}>
+                      {r.payslip_no}
+                      {r.payslip_generated_at ? ` · ${formatDate(r.payslip_generated_at)}` : ""}
+                    </div>
+                  ) : (
+                    <div className="text-small text-muted">{closed ? "nevygenerována" : "předběžná"}</div>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -162,6 +195,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       </div>
       <p className="mt-3 text-small text-muted">
         Výpočet je orientační: dovolená a svátek sazbou, nemoc 60 % sazby, daň {p ? p.tax_rate_pct : 15} % bez progrese, u DPP a DPČ odvody až od rozhodné částky. Hodiny se berou z docházky, tam je i opravíte (po přepočtu se promítnou).
+        Výplatní pásky v PDF se generují po uzavření měsíce: dostanou číslo, uloží se mezi dokumenty zaměstnance a ten si je stáhne po přihlášení. U otevřeného měsíce je PDF jen předběžný náhled.
       </p>
     </>
   );
