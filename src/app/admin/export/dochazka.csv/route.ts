@@ -1,4 +1,4 @@
-import { ATTENDANCE_KIND_LABEL, type AttendanceRow, type EmployeeRow } from "@/lib/admin";
+import { ATTENDANCE_KIND_LABEL, type AttendanceRow, type EmployeeRow, monthEnd } from "@/lib/admin";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 /** Podklady pro mzdy: docházka za měsíc po dnech (CSV se středníkem). */
@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const sp = new URL(request.url).searchParams;
   const month = sp.get("mesic") && /^\d{4}-\d{2}$/.test(sp.get("mesic")!) ? sp.get("mesic")! : new Date().toISOString().slice(0, 7);
   const db = await getAuthSupabase();
-  const [{ data: emps }, { data: rows }] = await Promise.all([db.from("employees").select("*"), db.from("attendance").select("*").gte("day", `${month}-01`).lte("day", `${month}-31`).order("day").order("started_at")]);
+  const [{ data: emps }, { data: rows }] = await Promise.all([db.from("employees").select("*"), db.from("attendance").select("*").gte("day", `${month}-01`).lte("day", monthEnd(month)).order("day").order("started_at")]);
   const byId = new Map(((emps ?? []) as EmployeeRow[]).map((e) => [e.id, e]));
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" }) : "");

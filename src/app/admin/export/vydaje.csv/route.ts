@@ -1,14 +1,14 @@
-import { EXPENSE_CATEGORY_LABEL, EXPENSE_SOURCE_LABEL, isMonth, type ExpenseRow } from "@/lib/admin";
+import { EXPENSE_CATEGORY_LABEL, EXPENSE_SOURCE_LABEL, isMonth, type ExpenseRow, monthEnd } from "@/lib/admin";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
 /** Výdaje pro účetní (CSV): měsíc nebo vše. */
 export async function GET(request: Request) {
   await requireManager();
   const sp = new URL(request.url).searchParams;
-  const month = sp.get("mesic");
+  const month = sp.get("mesic") ?? undefined;
   const db = await getAuthSupabase();
   let q = db.from("expenses").select("*").order("day");
-  if (isMonth(month ?? undefined)) q = q.gte("day", `${month}-01`).lte("day", `${month}-31`);
+  if (isMonth(month)) q = q.gte("day", `${month}-01`).lte("day", monthEnd(month));
   const { data } = await q.limit(10000);
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const head = ["Datum", "Popis", "Kategorie", "Dodavatel", "Doklad", "Zdroj", "Částka", "Splatnost", "Zaplaceno", "Poznámka"];

@@ -6,7 +6,7 @@ import { Pills, Stat } from "@/components/admin/stat";
 import { StockFilters } from "@/components/admin/stock-filters";
 import { Table, Td } from "@/components/admin/table";
 import { Button, buttonClass } from "@/components/ui/button";
-import { EXPENSE_CATEGORY_LABEL, EXPENSE_SOURCE_LABEL, formatDay, isMonth, monthLabel, shiftMonth, type ExpenseCategory, type ExpenseRow, type RecurringExpenseRow } from "@/lib/admin";
+import { EXPENSE_CATEGORY_LABEL, EXPENSE_SOURCE_LABEL, formatDay, isMonth, monthLabel, shiftMonth, type ExpenseCategory, type ExpenseRow, type RecurringExpenseRow, monthEnd } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
@@ -23,7 +23,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   const month = sp.pohled === "neplaceno" || sp.pohled === "vse" ? null : isMonth(sp.mesic) ? sp.mesic : current;
   const db = await getAuthSupabase();
   let q = db.from("expenses").select("*").order("day", { ascending: false }).order("created_at", { ascending: false }).limit(500);
-  if (month) q = q.gte("day", `${month}-01`).lte("day", `${month}-31`);
+  if (month) q = q.gte("day", `${month}-01`).lte("day", monthEnd(month));
   if (sp.pohled === "neplaceno") q = q.is("paid_at", null);
   if (sp.kategorie && isCategory(sp.kategorie)) q = q.eq("category", sp.kategorie);
   if (sp.q) q = q.or(`description.ilike.%${sp.q}%,supplier.ilike.%${sp.q}%,document_no.ilike.%${sp.q}%`);
