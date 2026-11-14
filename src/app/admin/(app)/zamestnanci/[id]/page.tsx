@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Pills } from "@/components/admin/stat";
 import { Table, Td } from "@/components/admin/table";
 import { Button, buttonClass } from "@/components/ui/button";
-import { ATTENDANCE_KIND_LABEL, CONTRACT_LABEL, DOCUMENT_CATEGORY_LABEL, formatDate, formatDay, type AttendanceRow, type ChecklistRow, type ChecklistRunRow, type ContractType, type DocumentRow, type EmployeeRow, monthLabel as payrollMonthLabel, type PayrollItemRow } from "@/lib/admin";
+import { ATTENDANCE_KIND_LABEL, CONTRACT_LABEL, DOCUMENT_CATEGORY_LABEL, formatDate, formatDay, type AttendanceRow, type ChecklistRow, type ChecklistRunRow, type ContractType, type DocumentRow, type EmployeeRow, monthLabel as payrollMonthLabel, type PayrollItemRow, monthEnd } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { getAuthSupabase, requireManager } from "@/lib/supabase/auth";
 
@@ -30,7 +30,7 @@ export default async function EmployeePage({ params, searchParams }: { params: P
   const db = await getAuthSupabase();
   const [{ data }, { data: att }, { data: docs }, { data: users }, { data: onboarding }, { data: run }, { data: pay }] = await Promise.all([
     db.from("employees").select("*").eq("id", id).maybeSingle(),
-    db.from("attendance").select("*").eq("employee_id", id).gte("day", `${month}-01`).lte("day", `${month}-31`).order("day", { ascending: false }).order("started_at", { ascending: false }),
+    db.from("attendance").select("*").eq("employee_id", id).gte("day", `${month}-01`).lte("day", monthEnd(month)).order("day", { ascending: false }).order("started_at", { ascending: false }),
     db.from("documents").select("*").eq("linked_type", "employee").eq("linked_id", id).is("archived_at", null).order("created_at", { ascending: false }),
     db.rpc("admin_list"),
     db.from("checklists").select("*").eq("period", "nastup").eq("active", true).limit(1).maybeSingle(),

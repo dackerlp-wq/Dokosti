@@ -506,6 +506,10 @@ export function shiftMonth(month: string, by: number) {
   d.setMonth(d.getMonth() + by);
   return d.toISOString().slice(0, 7);
 }
+/** Poslední den měsíce (RRRR-MM-DD). Pro filtry „do konce měsíce“; „-31“ Postgres u kratších měsíců odmítne. */
+export function monthEnd(month: string) {
+  return new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).toISOString().slice(0, 10);
+}
 export function isMonth(v: string | undefined): v is string {
   return !!v && /^\d{4}-\d{2}$/.test(v);
 }

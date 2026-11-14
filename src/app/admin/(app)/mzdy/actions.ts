@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/activity";
-import { isMonth, monthLabel, type AttendanceRow, type EmployeeRow, type PayrollItemRow, type PayrollMonthRow } from "@/lib/admin";
+import { isMonth, monthEnd, monthLabel, type AttendanceRow, type EmployeeRow, type PayrollItemRow, type PayrollMonthRow } from "@/lib/admin";
 import { flashError, flashOk } from "@/lib/flash";
 import { computePayroll, PAYSLIP_SELECT, payslipNumber, payslipSeq, sumHours, type PayrollParams, type PayslipEmployee } from "@/lib/payroll";
 import { payslipFileName, renderPayslipPdf } from "@/lib/pdf/payslip";
@@ -26,16 +26,27 @@ export async function recomputeMonth(fd: FormData) {
   const month = String(fd.get("month") ?? "");
   if (!isMonth(month)) return flashError("Neplatný měsíc.");
   const db = await getAuthSupabase();
-  const { data: m } = await db.from("payroll_months").select("status").eq("month", month).maybeSingle();
+  const { data: m, error: mErr } = await db.from("payroll_months").select("status").eq("month", month).maybeSingle();
+  if (mErr) return flashError(`Měsíc se nepodařilo načíst: ${mErr.message}`);
   if (m?.status === "uzavreny") return flashError("Měsíc je uzavřený, přepočet není možný.");
-  if (!m) await db.from("payroll_months").insert({ month });
+  if (!m) {
+    const { error } = await db.from("payroll_months").insert({ month });
+    if (error) return flashError(`Měsíc se nepodařilo založit: ${error.message}`);
+  }
   const params = await loadParams(db, Number(month.slice(0, 4)));
   if (!params) return flashError("Chybí parametry roku, doplňte je v Parametrech mezd.");
-  const [{ data: emps }, { data: att }, { data: existing }] = await Promise.all([
-    db.from("employees").select("*").or(`ended_on.is.null,ended_on.gte.${month}-01`).or(`started_on.is.null,started_on.lte.${month}-31`),
-    db.from("attendance").select("employee_id, kind, hours").gte("day", `${month}-01`).lte("day", `${month}-31`).not("employee_id", "is", null),
+  const lastDay = monthEnd(month);
+  const [emp, attendance, items] = await Promise.all([
+    db.from("employees").select("*").or(`ended_on.is.null,ended_on.gte.${month}-01`).or(`started_on.is.null,started_on.lte.${lastDay}`),
+    db.from("attendance").select("employee_id, kind, hours").gte("day", `${month}-01`).lte("day", lastDay).not("employee_id", "is", null),
     db.from("payroll_items").select("*").eq("month", month),
   ]);
+  // Čtení musí projít: s prázdným výsledkem by se existující řádky zkoušely vložit znovu.
+  const readErr = emp.error ?? attendance.error ?? items.error;
+  if (readErr) return flashError(`Podklady se nepodařilo načíst: ${readErr.message}`);
+  const emps = emp.data;
+  const att = attendance.data;
+  const existing = items.data;
   const prev = new Map(((existing ?? []) as PayrollItemRow[]).map((i) => [i.employee_id, i]));
   const byEmp = new Map<string, Pick<AttendanceRow, "kind" | "hours">[]>();
   for (const a of (att ?? []) as Pick<AttendanceRow, "employee_id" | "kind" | "hours">[]) byEmp.set(a.employee_id!, [...(byEmp.get(a.employee_id!) ?? []), a]);

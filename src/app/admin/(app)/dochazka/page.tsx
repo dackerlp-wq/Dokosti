@@ -5,7 +5,7 @@ import { ConfirmButton } from "@/components/admin/confirm-button";
 import { PageHeader } from "@/components/admin/page-header";
 import { Table, Td } from "@/components/admin/table";
 import { Button, buttonClass } from "@/components/ui/button";
-import { ATTENDANCE_KIND_LABEL, formatDay, type AttendanceKind, type AttendanceRow, type EmployeeRow } from "@/lib/admin";
+import { ATTENDANCE_KIND_LABEL, formatDay, type AttendanceKind, type AttendanceRow, type EmployeeRow, monthEnd } from "@/lib/admin";
 import { getAuthSupabase, requireAdmin } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = { title: "Docházka" };
@@ -19,7 +19,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
   const [{ data: employees }, { data: rows }] = await Promise.all([
     admin.isManager ? db.from("employees").select("*").is("ended_on", null).order("name") : db.from("employees").select("*").eq("user_id", admin.id),
     (() => {
-      let q = db.from("attendance").select("*").gte("day", `${month}-01`).lte("day", `${month}-31`).order("day", { ascending: false }).order("started_at", { ascending: false });
+      let q = db.from("attendance").select("*").gte("day", `${month}-01`).lte("day", monthEnd(month)).order("day", { ascending: false }).order("started_at", { ascending: false });
       if (admin.isManager && sp.zamestnanec) q = q.eq("employee_id", sp.zamestnanec);
       if (!admin.isManager) q = q.eq("user_id", admin.id);
       return q;
