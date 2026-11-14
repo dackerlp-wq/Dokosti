@@ -1,7 +1,7 @@
 -- Testovací záznamy pro výplatní pásky: Barbora Balážová (DPP, 180 Kč/h, prohlášení poplatníka),
 -- docházka za říjen a listopad 2026 a podklady mezd (říjen uzavřený, listopad otevřený).
 -- Částky spočítala computePayroll() ze src/lib/payroll.ts s parametry roku 2026 z migrace 0030
--- (říjen: 65 h práce + svátek 8 h + odměna 500 Kč; listopad: 36 h). Lze spustit opakovaně.
+-- (říjen: 65 h práce + dovolená 8 h + svátek 8 h + odměna 500 Kč; listopad: 36 h + nemoc 6 h, u DPP neplacená). Lze spustit opakovaně.
 -- Je to testovací sada, ne skutečné mzdy; před ostrým provozem záznamy smažte nebo přepočítejte.
 do $$
 declare
@@ -29,7 +29,9 @@ begin
   select v_emp, d::date, (d || ' 08:00+02')::timestamptz, (d || ' 16:30+02')::timestamptz, 30, null, 'prace', 'rucne', 'Testovací záznam'
   from unnest(array['2026-10-12', '2026-10-14', '2026-10-16', '2026-10-19', '2026-10-21', '2026-10-23', '2026-10-26']) as d;
   insert into attendance (employee_id, day, started_at, ended_at, break_minutes, hours, kind, source, note)
-  values (v_emp, '2026-10-28', null, null, 0, 8, 'svatek', 'rucne', 'Testovací záznam');
+  values (v_emp, '2026-10-28', null, null, 0, 8, 'svatek', 'rucne', 'Testovací záznam'),
+         (v_emp, '2026-10-30', null, null, 0, 8, 'dovolena', 'rucne', 'Testovací záznam'),
+         (v_emp, '2026-11-10', null, null, 0, 6, 'nemoc', 'rucne', 'Testovací záznam');
   -- 29. 10.: 9 h, jen pokud ten den ještě žádný záznam není (v databázi už ručně zapsaný bývá)
   insert into attendance (employee_id, day, started_at, ended_at, break_minutes, hours, kind, source, note)
   select v_emp, '2026-10-29', '2026-10-29 09:00+01', '2026-10-29 18:00+01', 0, null, 'prace', 'rucne', 'Testovací záznam'
@@ -44,10 +46,10 @@ begin
 
   insert into payroll_items (month, employee_id, employee_name, contract_type, hours_work, hours_vacation, hours_sick, hours_holiday, hourly_rate_czk, monthly_salary_czk, bonus_czk, deduction_czk, gross_czk, emp_levies_czk, tax_czk, net_czk, er_levies_czk, employer_cost_czk, breakdown, note, updated_at)
   values
-    ('2026-10', v_emp, 'Barbora Balážová', 'dpp', 65, 0, 0, 8, 180, null, 500, 0, 13640, 1583, 0, 12057, 4611, 18251,
-     '[{"label":"Odpracováno 65 h × 180 Kč","amount":11700,"kind":"base"},{"label":"Svátek 8 h","amount":1440,"kind":"plus"},{"label":"Odměna / příplatek","amount":500,"kind":"plus"},{"label":"Hrubá mzda","amount":13640,"kind":"base"},{"label":"Sociální pojištění 7.1 %","amount":-969,"kind":"minus"},{"label":"Zdravotní pojištění 4.5 %","amount":-614,"kind":"minus"},{"label":"Záloha na daň 15 % ze 13 700 Kč","amount":-2055,"kind":"minus"},{"label":"Sleva na poplatníka","amount":2055,"kind":"plus"},{"label":"Čistá mzda k výplatě","amount":12057,"kind":"base"},{"label":"Odvody zaměstnavatele 33.8 %","amount":4611,"kind":"info"},{"label":"Celkové náklady zaměstnavatele","amount":18251,"kind":"info"}]'::jsonb,
+    ('2026-10', v_emp, 'Barbora Balážová', 'dpp', 65, 8, 0, 8, 180, null, 500, 0, 15080, 1750, 0, 13330, 5098, 20178,
+     '[{"label":"Odpracováno 65 h × 180 Kč","amount":11700,"kind":"base"},{"label":"Dovolená 8 h","amount":1440,"kind":"plus"},{"label":"Svátek 8 h","amount":1440,"kind":"plus"},{"label":"Odměna / příplatek","amount":500,"kind":"plus"},{"label":"Hrubá mzda","amount":15080,"kind":"base"},{"label":"Sociální pojištění 7.1 %","amount":-1071,"kind":"minus"},{"label":"Zdravotní pojištění 4.5 %","amount":-679,"kind":"minus"},{"label":"Záloha na daň 15 % ze 15 100 Kč","amount":-2265,"kind":"minus"},{"label":"Sleva na poplatníka","amount":2265,"kind":"plus"},{"label":"Čistá mzda k výplatě","amount":13330,"kind":"base"},{"label":"Odvody zaměstnavatele 33.8 %","amount":5098,"kind":"info"},{"label":"Celkové náklady zaměstnavatele","amount":20178,"kind":"info"}]'::jsonb,
      'Odměna za zaškolení v prodejně (testovací záznam).', v_closed - interval '1 hour'),
-    ('2026-11', v_emp, 'Barbora Balážová', 'dpp', 36, 0, 0, 0, 180, null, 0, 0, 6480, 0, 0, 6480, 0, 6480,
+    ('2026-11', v_emp, 'Barbora Balážová', 'dpp', 36, 0, 6, 0, 180, null, 0, 0, 6480, 0, 0, 6480, 0, 6480,
      '[{"label":"Odpracováno 36 h × 180 Kč","amount":6480,"kind":"base"},{"label":"Hrubá mzda","amount":6480,"kind":"base"},{"label":"Bez odvodů (DPP pod 12 500 Kč)","amount":0,"kind":"info"},{"label":"Záloha na daň 15 % ze 6 500 Kč","amount":-975,"kind":"minus"},{"label":"Sleva na poplatníka","amount":975,"kind":"plus"},{"label":"Čistá mzda k výplatě","amount":6480,"kind":"base"},{"label":"Celkové náklady zaměstnavatele","amount":6480,"kind":"info"}]'::jsonb,
      '', now())
   on conflict (month, employee_id) do update set
@@ -58,9 +60,11 @@ begin
 
   -- Výdaje za uzavřený říjen, jako je zapisuje uzavření měsíce (hrubé mzdy a odvody zaměstnavatele).
   insert into expenses (day, category, description, amount_czk, source_type, source_id, due_on, note)
-  select '2026-10-31', 'mzdy', 'Mzdy říjen 2026', 13640, 'payroll', '2026-10:mzdy', '2026-11-15', '1 lidí, hrubé mzdy (testovací záznam)'
+  select '2026-10-31', 'mzdy', 'Mzdy říjen 2026', 15080, 'payroll', '2026-10:mzdy', '2026-11-15', '1 lidí, hrubé mzdy (testovací záznam)'
   where not exists (select 1 from expenses where source_type = 'payroll' and source_id = '2026-10:mzdy');
   insert into expenses (day, category, description, amount_czk, source_type, source_id, due_on, note)
-  select '2026-10-31', 'odvody', 'Odvody zaměstnavatele říjen 2026', 4611, 'payroll', '2026-10:odvody', '2026-11-15', 'Sociální a zdravotní pojištění za zaměstnavatele (testovací záznam)'
+  select '2026-10-31', 'odvody', 'Odvody zaměstnavatele říjen 2026', 5098, 'payroll', '2026-10:odvody', '2026-11-15', 'Sociální a zdravotní pojištění za zaměstnavatele (testovací záznam)'
   where not exists (select 1 from expenses where source_type = 'payroll' and source_id = '2026-10:odvody');
+  update expenses set amount_czk = 15080 where source_type = 'payroll' and source_id = '2026-10:mzdy' and note like '%testovací záznam%';
+  update expenses set amount_czk = 5098 where source_type = 'payroll' and source_id = '2026-10:odvody' and note like '%testovací záznam%';
 end $$;
